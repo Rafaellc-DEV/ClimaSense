@@ -1,0 +1,22 @@
+{
+  "fonte": "https://www2.recife.pe.gov.br/servico/localizacao-das-usf",
+  "verificado_em": "2026-09-17",
+  "motivo": "O CSV indicado na aula diverge da relação de bairros dos distritos VII e VIII publicada pela Secretaria de Saúde. Preservam-se o CSV bruto e os códigos originais no registro de auditoria.",
+  "bairros": {
+    "Alto Jose Bonifacio": 7,
+    "Alto Jose do Pinho": 7,
+    "Brejo da Guabiraba": 7,
+    "Corrego do Jenipapo": 7,
+    "Guabiraba": 7,
+    "Macaxeira": 7,
+    "Mangabeira": 7,
+    "Morro da Conceicao": 7,
+    "Nova Descoberta": 7,
+    "Passarinho": 7,
+    "Pau Ferro": 7,
+    "Vasco da Gama": 7,
+    "Cohab": 8,
+    "Ibura": 8,
+    "Jordao": 8
+  }
+}

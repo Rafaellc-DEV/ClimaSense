@@ -1,0 +1,24 @@
+title = "ClimaSense"
+[extend]
+useDefault = true
+
+[[rules]]
+id = "mongodb-uri-com-credencial"
+description = "String de conexão MongoDB com usuário e senha"
+regex = '''mongodb(?:\+srv)?://[^:\s/]+:[^@\s]+@[^\s'"]+'''
+tags = ["mongo", "credencial"]
+
+[[rules]]
+id = "postgres-uri-com-credencial"
+description = "String de conexão Postgres com usuário e senha"
+regex = '''postgres(?:ql)?://[^:\s/]+:[^@\s]+@[^\s'"]+'''
+tags = ["postgres", "credencial"]
+
+[allowlist]
+description = "Exemplos documentados, sem valores reais"
+regexTarget = "match"
+regexes = [
+  '''USUARIO:SENHA@''',
+  '''climasense:climasense@localhost''',
+  '''SESSAO_INATIVIDADE_MIN''',
+]

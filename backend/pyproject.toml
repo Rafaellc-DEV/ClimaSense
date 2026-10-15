@@ -1,0 +1,68 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "climasense"
+version = "0.1.0"
+description = "ClimaSense — inteligência climática para a Vigilância em Saúde do Recife"
+readme = "../README.md"
+requires-python = ">=3.12"
+dependencies = [
+  "fastapi>=0.115,<1",
+  "uvicorn[standard]>=0.30,<1",
+  "pydantic>=2.8,<3",
+  "pydantic-settings>=2.4,<3",
+  "email-validator>=2.2,<3",
+  "sqlalchemy>=2.0.30,<2.1",
+  "alembic>=1.13,<2",
+  "psycopg2-binary>=2.9.9,<3",
+  "pymongo>=4.8,<5",
+  "certifi>=2024.7.4",
+  "python-dotenv>=1.0,<2",
+  "requests>=2.32.3,<3",
+  "pandas>=2.2,<4",
+  "pyproj>=3.6,<4",
+  "shapely>=2.0,<3",
+  "folium>=0.17,<1",
+  "pwdlib[argon2]>=0.2.1,<1",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.2",
+  "pytest-cov>=5",
+  "httpx>=0.27",
+  "mongomock>=4.1",
+  "ruff>=0.6",
+  "pre-commit>=3.7",
+]
+
+[project.scripts]
+climasense = "climasense.__main__:main"
+
+[tool.setuptools.packages.find]
+include = ["climasense*"]
+
+[tool.setuptools.package-data]
+climasense = ["etl/gold/*.sql", "territorio/assets/**/*"]
+
+[tool.ruff]
+line-length = 110
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "S", "SIM"]
+ignore = ["S101", "B008"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S105", "S106", "S311"]
+"migrations/**" = ["E501"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"
+markers = [
+  "integracao: precisa de um Postgres real (DATABASE_URL_TESTE)",
+  "atlas: conecta ao MongoDB Atlas real usando o .env (opcional, manual)",
+]

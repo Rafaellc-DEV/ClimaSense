@@ -1,0 +1,125 @@
+{
+  "author": "Secretaria de Meio Ambiente",
+  "author_email": "",
+  "creator_user_id": "29a76a44-2c7d-4ed1-8a05-fb36e745dccc",
+  "id": "1bf02d9c-2754-41cc-aede-1ac8e237f166",
+  "isopen": true,
+  "license_id": "odc-odbl",
+  "license_title": "Open Data Commons Open Database License (ODbL)",
+  "license_url": "http://www.opendefinition.org/licenses/odc-odbl",
+  "maintainer": "EMPREL",
+  "maintainer_email": "dadosabertos@recife.pe.gov.br",
+  "metadata_created": "2026-02-27T12:24:09.287943",
+  "metadata_modified": "2026-03-02T14:44:26.782189",
+  "name": "faixas-marginais-dos-recursos-hidricos",
+  "notes": "Fornecer uma base com as faixas marginais dos recursos hídricos, que servirá de subsídio para a criação das áreas de SSA1- Setor de Sustentabilidade Ambiental 1 (Lei 17.511/2008).\r\n\r\n:As faixas marginais foram elaboradas utilizando como base a vetorização dos recursos hídricos. Estas faixas, possuem larguras mínimas horizontais que variam de: 40 (quarenta) metros para os cursos d'água de até 10 (dez) metros de largura; de 60 (Sessenta) metros para os cursos d'água que tenham acima de 10 (dez) e até 50 (cinquenta) metros de largura; e de 120 (cento e vinte) metros para os cursos d'água que tenham largura superior a 50 (cinquenta) metros (Lei 16.930/2003).\r\n\r\nCréditos: Prefeitura da Cidade do Recife, Secretaria de Mobilidade e Controle Urbano – SEMOC, Secretaria Executiva de Licenciamento e Controle Ambiental – SELCA, Unidade de Informação e Geoprocessamento - UIG",
+  "num_resources": 1,
+  "num_tags": 7,
+  "organization": {
+    "id": "e8d56065-0e2d-41ea-978b-a783e8848f8a",
+    "name": "secretaria-de-meio-ambiente-e-sustentabilidade",
+    "title": "Secretaria de Meio Ambiente e Sustentabilidade",
+    "type": "organization",
+    "description": "É responsável pela gestão da política ambiental do município, realizando atividades como licenciamento, fiscalização, fomento da educação ambiental, preservação das Unidades de Conservação da Natureza (UCN) e dos Imóveis de Proteção de Áreas Verdes (IPAVs), além do tombamento de árvores. Frente aos anseios da sociedade e ao cenário mundial de desenvolvimento com equilíbrio ecológico, atua hoje de forma integrada às demais secretarias e órgãos municipais, buscando inserir o componente de sustentabilidade nas ações de planejamento e na execução de serviços da Prefeitura do Recife.\r\n\r\nSuas atividades são realizadas através de três secretarias-executivas: Controle Ambiental, Sustentabilidade e Unidades Protegidas. A primeira tem entre as suas atribuições licenciar e fiscalizar os diversos empreendimentos públicos e privados na cidade, além de atender a denúncias de infrações previstas no Código Municipal de Meio Ambiente (Lei nº 16.243/96) e definir os Projetos de Revitalização de Áreas Verdes (PRAVs).\r\n\r\nDesenvolver políticas de baixo carbono e atividades de educação ambiental é a tarefa da Secretaria Executiva de Sustentabilidade.  Já a Secretaria Executiva de Unidades Protegidas faz o acompanhamento das UCNs (parques naturais, matas, margens de cursos de água, etc) e dos IPAVs (imóveis preservados em razão da vegetação que abriga). Aqui, também são identificadas e tombadas árvores raras, com características especiais, ou que possuem importância histórica para cidade.",
+    "image_url": "https://dados.recife.pe.gov.br/base/images/recife/organizacao-meioambiente.png",
+    "created": "2026-02-25T11:46:47.324710",
+    "is_organization": true,
+    "approval_status": "approved",
+    "state": "active"
+  },
+  "owner_org": "e8d56065-0e2d-41ea-978b-a783e8848f8a",
+  "private": false,
+  "state": "active",
+  "title": "Faixas Marginais dos recursos hídricos",
+  "type": "dataset",
+  "url": "Secretaria de Meio Ambiente",
+  "version": "",
+  "extras": [
+    {
+      "key": "Fonte",
+      "value": "http://vocab.e.gov.br/2011/03/vcge#reserva-legal"
+    },
+    {
+      "key": "Frequência de atualização",
+      "value": "anual"
+    }
+  ],
+  "resources": [
+    {
+      "cache_last_updated": null,
+      "cache_url": null,
+      "created": "2026-03-02T14:44:26.802890",
+      "datastore_active": false,
+      "description": "Fornecer uma base com as faixas marginais dos recursos hídricos, que servirá de subsídio para a criação das áreas de SSA1- Setor de Sustentabilidade Ambiental 1 (Lei 17.511/2008).\r\n\r\nAs faixas marginais foram elaboradas utilizando como base a vetorização dos recursos hídricos. Estas faixas, possuem larguras mínimas horizontais que variam de: 40 (quarenta) metros para os cursos d'água de até 10 (dez) metros de largura; de 60 (Sessenta) metros para os cursos d'água que tenham acima de 10 (dez) e até 50 (cinquenta) metros de largura; e de 120 (cento e vinte) metros para os cursos d'água que tenham largura superior a 50 (cinquenta) metros (Lei 16.930/2003).",
+      "format": "GeoJSON",
+      "hash": "",
+      "id": "81310c02-4bb8-4fea-b676-0c42977b4aef",
+      "last_modified": "2026-03-02T14:44:26.775863",
+      "metadata_modified": "2026-03-02T14:44:26.787015",
+      "mimetype": "application/geo+json",
+      "mimetype_inner": null,
+      "name": "Faixas Marginais dos Recursos Hídricos",
+      "package_id": "1bf02d9c-2754-41cc-aede-1ac8e237f166",
+      "position": 0,
+      "resource_type": "file.upload",
+      "size": 3411982,
+      "state": "active",
+      "url": "https://dados.recife.pe.gov.br:443/dataset/1bf02d9c-2754-41cc-aede-1ac8e237f166/resource/81310c02-4bb8-4fea-b676-0c42977b4aef/download/faixas-marginais-dos-recursos-hidricos.geojson",
+      "url_type": "upload"
+    }
+  ],
+  "tags": [
+    {
+      "display_name": "ambiental",
+      "id": "a549b02f-5b7f-4338-a875-23a303d3c32f",
+      "name": "ambiental",
+      "state": "active",
+      "vocabulary_id": null
+    },
+    {
+      "display_name": "controle ambiental",
+      "id": "bf274c46-17e1-4cfd-80a3-9cc57f610434",
+      "name": "controle ambiental",
+      "state": "active",
+      "vocabulary_id": null
+    },
+    {
+      "display_name": "hidrico",
+      "id": "bcdc6ac4-cc0d-4f0c-9b20-ed7aad559f7c",
+      "name": "hidrico",
+      "state": "active",
+      "vocabulary_id": null
+    },
+    {
+      "display_name": "meio ambiente",
+      "id": "d9dbd682-1e51-4eb0-bbf6-a0abbc9f311c",
+      "name": "meio ambiente",
+      "state": "active",
+      "vocabulary_id": null
+    },
+    {
+      "display_name": "nascente",
+      "id": "3f8a3962-d145-410e-a396-6aaf1182cf84",
+      "name": "nascente",
+      "state": "active",
+      "vocabulary_id": null
+    },
+    {
+      "display_name": "recursos hídricos",
+      "id": "bb56f1c2-7c1b-430f-b572-12132dfb0efe",
+      "name": "recursos hídricos",
+      "state": "active",
+      "vocabulary_id": null
+    },
+    {
+      "display_name": "sustentabilidade",
+      "id": "eace0911-d9ec-48c4-a73b-edae66bc1fb5",
+      "name": "sustentabilidade",
+      "state": "active",
+      "vocabulary_id": null
+    }
+  ],
+  "groups": [],
+  "relationships_as_subject": [],
+  "relationships_as_object": []
+}

@@ -69,14 +69,14 @@ M1 (identidade) corre em paralelo ao backend desde o início, para que as telas 
 
 | ☐ | ID | Tarefa | Pronto quando | Req | Dep | Tam |
 |---|---|---|---|---|---|---|
-| ☐ | T0.1 | Criar a árvore de pastas do design §4 e o `README.md` com as seções: visão, como rodar (PowerShell e bash), estrutura, links para `specs/`. | A árvore confere com o design §4. O README abre e os links funcionam. | RNF-MAN-06 | — | P |
-| ☐ | T0.2 | `.gitignore` (`.env`, `.venv`, `node_modules`, `dist`, `__pycache__`, `tmp`) e `.env.example` com todas as variáveis do design §10.1, sem valores reais. | `git check-ignore .env` retorna `.env`. O `.env.example` não tem nenhum valor real. | R-04, RNF-SEG-01 | T0.1 | P |
-| ☐ | T0.3 | Inicializar o Git (branch `main`) e configurar o pre-commit com **gitleaks**, **ruff** e **prettier**. | `pre-commit run --all-files` passa. Um commit de teste contendo `mongodb+srv://u:s@x` é bloqueado. | CA-12 | T0.2 | P |
-| ☐ | T0.4 | Copiar `Desktop/AVD/dados/*` para `data/territorio/` e gerar `data/territorio/MANIFEST.sha256`. | `sha256sum -c MANIFEST.sha256` confere todos os arquivos com os originais. | RN-12, R-01 | T0.1 | P |
-| ☐ | T0.5 | Backend: `pyproject.toml` com as dependências do design §3.1, configuração do ruff e do pytest, e o pacote `climasense` com `__init__.py` (corrige o `_init_.py` antigo). | `pip install -e backend[dev]` funciona em Windows e Linux. `python -c "import climasense"` funciona e `pytest` roda (0 testes). | R-02, RNF-MAN-04 | T0.1 | P |
-| ☐ | T0.6 | Frontend: Vite + React + TS, ESLint, Prettier, Vitest, Playwright e @axe-core/playwright configurados. | `npm run lint`, `npm test` e `npm run build` passam. | D4 | T0.1 | P |
+| ☑ | T0.1 | Criar a árvore de pastas do design §4 e o `README.md` com as seções: visão, como rodar (PowerShell e bash), estrutura, links para `specs/`. | A árvore confere com o design §4. O README abre e os links funcionam. | RNF-MAN-06 | — | P |
+| ☑ | T0.2 | `.gitignore` (`.env`, `.venv`, `node_modules`, `dist`, `__pycache__`, `tmp`) e `.env.example` com todas as variáveis do design §10.1, sem valores reais. | `git check-ignore .env` retorna `.env`. O `.env.example` não tem nenhum valor real. | R-04, RNF-SEG-01 | T0.1 | P |
+| ☑ | T0.3 | Inicializar o Git (branch `main`) e configurar o pre-commit com **gitleaks**, **ruff** e **prettier**. | `pre-commit run --all-files` passa. Um commit de teste contendo uma string de conexão MongoDB com usuário e senha é bloqueado. | CA-12 | T0.2 | P |
+| ☑ | T0.4 | Copiar `Desktop/AVD/dados/*` para `data/territorio/` e gerar `data/territorio/MANIFEST.sha256`. | `sha256sum -c MANIFEST.sha256` confere todos os arquivos com os originais. | RN-12, R-01 | T0.1 | P |
+| ☑ | T0.5 | Backend: `pyproject.toml` com as dependências do design §3.1, configuração do ruff e do pytest, e o pacote `climasense` com `__init__.py` (corrige o `_init_.py` antigo). | `pip install -e backend[dev]` funciona em Windows e Linux. `python -c "import climasense"` funciona e `pytest` roda (0 testes). | R-02, RNF-MAN-04 | T0.1 | P |
+| ☑ | T0.6 | Frontend: Vite + React + TS, ESLint, Prettier, Vitest, Playwright e @axe-core/playwright configurados. | `npm run lint`, `npm test` e `npm run build` passam. | D4 | T0.1 | P |
 | ☐ | T0.7 | Scripts `dev.ps1` / `dev.sh` (API na porta 8000 + Vite na 5173 com proxy `/api`) e `docker-compose.yml` com Postgres local opcional. | Um único comando sobe os dois. `http://localhost:5173/api/v1/health` responde através do proxy. | RNF-MAN-05 | T0.5, T0.6, T2.2 | P |
-| ☐ | T0.8 | CI no GitHub Actions: ruff, pytest (unidade), lint, testes e build do frontend, gitleaks. | O workflow valida (`actionlint`) e roda verde no primeiro push. | RNF-MAN-02 | T0.3–T0.6 | P |
+| ☑ | T0.8 | CI no GitHub Actions: ruff, pytest (unidade), lint, testes e build do frontend, gitleaks. | O workflow valida (`actionlint`) e roda verde no primeiro push. | RNF-MAN-02 | T0.3–T0.6 | P |
 
 ### M1 — Identidade visual e design system
 

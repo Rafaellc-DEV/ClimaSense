@@ -1,0 +1,19 @@
+# Postgres local opcional para desenvolvimento e testes de integração.
+# Uso: docker compose up -d   →   DATABASE_URL=postgresql://climasense:climasense@localhost:5432/climasense
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: climasense
+      POSTGRES_PASSWORD: climasense
+      POSTGRES_DB: climasense
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U climasense"]
+      interval: 5s
+      retries: 10
+volumes:
+  pgdata:
