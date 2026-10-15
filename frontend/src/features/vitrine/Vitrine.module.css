@@ -1,0 +1,198 @@
+.pagina {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: var(--e-7) var(--e-6) var(--e-9);
+}
+@media (max-width: 640px) {
+  .pagina {
+    padding: var(--e-6) var(--e-4) var(--e-8);
+  }
+}
+.topo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--e-4);
+  margin-bottom: var(--e-7);
+}
+.topo img {
+  height: 52px;
+  width: auto;
+}
+.titulo {
+  font-size: var(--t-1);
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+  margin-bottom: var(--e-3);
+}
+.lead {
+  font-size: 1.25rem;
+  color: var(--cs-tinta-2);
+  max-width: 62ch;
+}
+.secao {
+  padding: var(--e-7) 0;
+  border-top: var(--borda);
+}
+.secao > h2 {
+  font-size: var(--t-2);
+  line-height: 1.15;
+  margin-bottom: var(--e-2);
+}
+.secao > p {
+  color: var(--cs-tinta-2);
+  max-width: 68ch;
+  margin-bottom: var(--e-5);
+}
+.linha {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--e-4);
+  align-items: center;
+}
+.grade {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: var(--e-4);
+}
+.cor {
+  background: var(--cs-papel);
+  border: var(--borda);
+  border-radius: var(--r-painel);
+  overflow: hidden;
+}
+.cor div {
+  height: 64px;
+  border-bottom: var(--borda);
+}
+.cor p {
+  padding: var(--e-2) var(--e-3);
+  font-size: var(--t-apoio);
+}
+.cor code {
+  display: block;
+  color: var(--cs-tinta-2);
+}
+.marca {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: var(--e-4);
+}
+.marca figure {
+  border: var(--borda);
+  border-radius: var(--r-painel);
+  padding: var(--e-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--e-3);
+  align-items: flex-start;
+  background: var(--cs-papel);
+}
+.marca figure.escuro {
+  background: var(--cs-mare);
+  color: #fff;
+}
+.marca img {
+  max-height: 72px;
+  width: auto;
+}
+.marca figcaption {
+  font-size: var(--t-apoio);
+}
+.tipo p {
+  display: grid;
+  grid-template-columns: 110px 1fr;
+  gap: var(--e-4);
+  align-items: baseline;
+  padding: var(--e-3) 0;
+  border-bottom: var(--borda);
+}
+.tipo span:first-child {
+  color: var(--cs-tinta-2);
+  font-size: var(--t-apoio);
+}
+.regua {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--e-7);
+  align-items: start;
+}
+@media (max-width: 760px) {
+  .regua {
+    grid-template-columns: 1fr;
+  }
+}
+.formulario {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: var(--e-5);
+  align-items: start;
+}
+.duas {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr;
+  gap: var(--e-5);
+  align-items: start;
+}
+@media (max-width: 960px) {
+  .duas {
+    grid-template-columns: 1fr;
+  }
+}
+.empilha {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e-3);
+}
+.traco {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--e-5);
+}
+@media (max-width: 760px) {
+  .traco {
+    grid-template-columns: 1fr;
+  }
+}
+.traco figure {
+  background: var(--cs-papel);
+  border: var(--borda);
+  border-radius: var(--r-painel);
+  padding: var(--e-4);
+}
+.traco svg {
+  width: 100%;
+  height: auto;
+  max-height: 420px;
+  display: block;
+}
+.rios :global(.agua) {
+  fill: var(--cs-mare);
+  fill-opacity: 0.1;
+  stroke: var(--cs-mare);
+  stroke-opacity: 0.35;
+  stroke-width: 0.6;
+}
+.rios :global(.cidade) {
+  fill: none;
+  stroke: var(--cs-mare);
+  stroke-opacity: 0.3;
+  stroke-width: 1.2;
+}
+.distrito {
+  fill: var(--cs-nevoa);
+  stroke: #9aaebc;
+  stroke-width: 1.2;
+  stroke-linejoin: round;
+}
+.distritoRotulo {
+  font-size: 20px;
+  font-weight: 800;
+  fill: var(--cs-tinta-2);
+  text-anchor: middle;
+  dominant-baseline: middle;
+  paint-order: stroke;
+  stroke: #fff;
+  stroke-width: 4px;
+}

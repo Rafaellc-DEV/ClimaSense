@@ -39,25 +39,23 @@ ClimaSense/
 
 ## Primeira configuração
 
-**Windows (PowerShell)**
+O ambiente virtual **`.venv`** fica dentro da pasta `ClimaSense` e é criado no seu computador (ele não vai para o Git). Um único script cria a `.venv`, instala todas as bibliotecas Python e do frontend e prepara o `.env`.
+
+**Windows — no terminal do VS Code, dentro da pasta ClimaSense:**
 
 ```powershell
-py -3.12 -m venv .venv
-.\.venv\Scripts\pip install -e ".\backend[dev]"
-cd frontend; npm install; cd ..
-Copy-Item .env.example .env      # depois preencha MONGO_URI, DATABASE_URL e SESSION_SECRET
-.\.venv\Scripts\pre-commit install
+powershell -ExecutionPolicy Bypass -File .\setup.ps1
 ```
 
-**Linux / macOS (bash)**
+**Linux / macOS:**
 
 ```bash
-python3.12 -m venv .venv
-.venv/bin/pip install -e "./backend[dev]"
-(cd frontend && npm install)
-cp .env.example .env              # depois preencha MONGO_URI, DATABASE_URL e SESSION_SECRET
-.venv/bin/pre-commit install
+./setup.sh
 ```
+
+Depois, preencha no `.env` as mesmas `MONGO_URI` e `DATABASE_URL` (Neon) usadas no ETL anterior. No VS Code, escolha o interpretador `.venv\Scripts\python.exe` (Ctrl+Shift+P → *Python: Select Interpreter*).
+
+As bibliotecas estão fixadas em [`backend/requirements.txt`](backend/requirements.txt) (aplicação e ETL) e [`backend/requirements-dev.txt`](backend/requirements-dev.txt) (testes e qualidade). O frontend usa o `frontend/package-lock.json`.
 
 > O arquivo `.env` **nunca** vai para o Git. O `pre-commit` roda o gitleaks e bloqueia commits que contenham credenciais.
 
@@ -99,7 +97,7 @@ cd frontend; npm test; npm run lint
 
 ## Origem do código
 
-O ClimaSense une o que já existia nos projetos da disciplina, **sem alterar as pastas originais**: o ETL (`Projeto-ETL_AVD`), a visualização territorial com MongoDB Atlas (`Desktop/AVD`, Aula 07) e os métodos estatísticos das Atividades 3 e 4. A tabela completa de origem está no [`design.md` §4.1](specs/design.md).
+O ClimaSense une o que já existia nos projetos da disciplina, **sem alterar as pastas originais** e usando **somente dados reais**: o ETL (`Projeto-ETL_AVD`), a visualização territorial com MongoDB Atlas (`Desktop/AVD`, Aula 07) e os métodos estatísticos das Atividades 3 e 4. A tabela completa de origem está no [`design.md` §4.1](specs/design.md).
 
 ## Equipe
 

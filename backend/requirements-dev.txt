@@ -1,0 +1,23 @@
+# Gerado a partir do ambiente testado do ClimaSense (Python 3.12+). Instale com: pip install -r backend/requirements-dev.txt
+-r requirements.txt
+cfgv==3.5.0
+coverage==7.16.2
+distlib==0.4.3
+filelock==4.2.0
+identify==2.6.20
+iniconfig==2.3.1
+mongomock==4.3.0
+nodeenv==1.11.0
+packaging==26.3
+platformdirs==4.13.1
+pluggy==1.7.0
+pre-commit==4.7.0
+pygments==2.21.0
+pytest==9.1.1
+pytest-cov==7.1.0
+python-discovery==1.6.2
+pytz==2026.5
+pyyaml==6.0.3
+ruff==0.17.1
+sentinels==1.1.1
+virtualenv==21.14.7

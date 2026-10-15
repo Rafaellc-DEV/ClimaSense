@@ -1,0 +1,18 @@
+.vazio {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--e-3);
+  padding: var(--e-6);
+  border: 2px dashed var(--cs-linha);
+  border-radius: var(--r-painel);
+  background: var(--cs-papel);
+  max-width: 68ch;
+}
+.titulo {
+  font-size: var(--t-4);
+  line-height: 1.3;
+}
+.texto {
+  color: var(--cs-tinta-2);
+}

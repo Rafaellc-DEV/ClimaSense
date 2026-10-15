@@ -3,7 +3,7 @@
 | Campo | Valor |
 |---|---|
 | Fase SDD | 2 de 4 — Design (como será feito) |
-| Versão | 0.2 — aprovada em 15/10/2026, com a seção 8.8 (identidade moderna) incluída |
+| Versão | 0.3 — revisada em 15/10/2026: somente dados reais (D8) |
 | Data | 15/10/2026 |
 | Entrada | `specs/requirements.md` v0.2 (aprovado, com as decisões P1–P3) |
 | Saída | Base para o `specs/tasks.md` |
@@ -23,7 +23,7 @@ Este documento responde **como** cada requisito será implementado: arquitetura,
 | D5 | **Apache ECharts** para os gráficos | Cobre todos os gráficos previstos (linha com faixa de incerteza, calendário-heatmap, barras, séries longas). Tem padrões de textura (`decal`) para daltonismo e descrição ARIA automática. | RF-08, RF-09, RNF-ACE-09, RNF-VIS-05 |
 | D6 | **Leaflet 1.9.4** para o mapa, com `model.js` portado para TypeScript | É a mesma biblioteca do mapa atual. A lógica testada (escala, classes, busca sem acento, CSV) é migrada com os testes. | RF-07, RF-13.6 |
 | D7 | **Sessão no servidor** (cookie `HttpOnly`) + token CSRF | Permite expirar por inatividade, revogar e registrar a sessão, sem guardar tokens no navegador. | RF-02, RNF-SEG-03 |
-| D8 | **Conectores climáticos especificados, mas não implementados.** Um conector **demonstrativo** usa o mesmo formato. | Decisão P3: entregar todas as telas e o backend existente unido. ANA, APAC e as demais fontes entram depois, sem refazer as telas. | RF-12.4, RF-12.10, RN-19 |
+| D8 | **Somente dados reais.** O ETL (POO) integra fontes climáticas reais sem cadastro já no MVP (Open-Meteo: histórico, previsão e maré; Dados Abertos do Recife: alagamentos). ANA, APAC, INMET, Cemaden e a Marinha seguem como conectores planejados. | Decisão P3 revisada: nada simulado no produto. Fontes que exigem credencial entram quando o acesso for liberado, sem refazer as telas. | RF-12.4, RF-12.10, RN-19 |
 | D9 | **Identidade “Régua de maré”** (seção 8) | O elemento visual central vem do próprio Recife: a régua que mede o nível da água nas pontes do Capibaribe. Ela mostra o nível do aviso, em vez de enfeitar. | RNF-VIS-01, RF-01 |
 
 ---
@@ -73,7 +73,7 @@ flowchart LR
 | Autenticação | `climasense/auth/` | Autenticação e Autorização | Sessões, hash de senha, papéis e CSRF. |
 | ETL | `climasense/etl/` | Fontes Externas + Validação e Qualidade | Extract, Transform e Load preservados, com conectores e registro de execuções. |
 | Território | `climasense/territorio/` | Fontes Externas + Persistência | Carga oficial no Atlas (porte do `load_mongo.py`) e mapa portátil (porte do `gerar_mapa.py`). |
-| Modelos | `climasense/modelos/` | (novo) | Interface do estimador de alagamento. No MVP, só a implementação demonstrativa. |
+| Modelos | `climasense/modelos/` | (novo) | Interface do estimador de alagamento. No MVP, uma regra de referência simples sobre dados reais, marcada como experimental. |
 
 Regra de dependência: `api → servicos → dominio ← infra`. O domínio não importa nada de fora. Os serviços recebem os repositórios por injeção (`Depends`), o que permite testar com dublês.
 
@@ -167,13 +167,13 @@ ClimaSense/
 │   │   ├── servicos/       (um por módulo da seção 2.3)
 │   │   ├── infra/          mongo.py, postgres.py, modelos_sql.py, repositorios/
 │   │   ├── etl/            extract.py, transform.py, load.py   ← preservados
-│   │   │                   conectores/ (base.py, vacinacao.py, demonstrativo.py,
+│   │   │                   conectores/ (base.py, vacinacao.py, open_meteo.py, recife_alagamento.py,
 │   │   │                                ana.py*, apac.py*, inmet.py*, cemaden.py*,
 │   │   │                                recife_alagamento.py*, mare.py*)   *esqueleto
 │   │   │                   execucao.py, cli.py
 │   │   ├── territorio/     carga.py (porte do load_mongo.py), geometria.py,
 │   │   │                   mapa_portatil.py (porte do gerar_mapa.py), assets/
-│   │   └── modelos/        estimador.py (interface), demonstrativo.py
+│   │   └── modelos/        estimador.py (interface), referencia.py
 │   └── tests/
 │       ├── unit/           dominio, etl, territorio (inclui test_distritos portado)
 │       ├── integration/    api + bancos
@@ -236,7 +236,7 @@ flowchart LR
 | `Recife.DistritosSanitarios` | 8 features GeoJSON enriquecidas (bairros, área, auditoria). Upsert por `properties.cdistscodi`. | Preservado (`load_mongo.py`) |
 | `Recife.FaixasHidricas` | 81 features das faixas marginais, com a geometria original e uma versão `geometry_web` simplificada (tolerância de cerca de 5 m). | Novo. O arquivo original tem 3,4 MB, e a versão simplificada reduz o tráfego da tela (RNF-DES-03). |
 | `vacinacao.bronze_vacinados` | Registros originais da API + `_fonte`, `_execucao_id`, `_data_carga`. **Acumulativa.** | Preservado (nome mantido), com a mudança da RN-09 |
-| `bronze.<fonte>` | Uma coleção por conector futuro (ex.: `bronze.ana_telemetria`, `bronze.demonstrativo_clima`) | Novo |
+| `bronze.<fonte>` | Uma coleção por conector futuro (ex.: `bronze.open_meteo_historico`, `bronze.recife_alagamento`) | Novo |
 
 Índices: `{_execucao_id: 1}` nas coleções bronze e `{"properties.cdistscodi": 1}` (único) nos distritos.
 
@@ -248,7 +248,7 @@ flowchart LR
 |---|---|
 | `silver.vacinados` | as colunas atuais do `Transform` + `execucao_id`. A view `public.silver_vacinados` mantém a compatibilidade. |
 | `silver.estacoes` | `id`, `fonte_id`, `codigo_fonte`, `nome`, `lat`, `lon`, `territorio_id`, `ativa` |
-| `silver.observacoes` | `id`, `fonte_id`, `estacao_id` (nulo se for por área), `territorio_id`, `variavel` (`chuva_mm`, `nivel_m`, `mare_m`, `temp_c`), `valor` (**nulo ≠ 0**, RN-02), `unidade`, `tipo` (`observada`, `prevista`, `derivada`, `demonstrativa`), `observado_em` (UTC), `emitido_em`, `horizonte_h`, `coletado_em`, `qualidade` (`ok`, `suspeito`, `ausente`), `execucao_id` |
+| `silver.observacoes` | `id`, `fonte_id`, `estacao_id` (nulo se for por área), `territorio_id`, `variavel` (`chuva_mm`, `nivel_m`, `mare_m`, `temp_c`), `valor` (**nulo ≠ 0**, RN-02), `unidade`, `tipo` (`observada`, `prevista`, `derivada`), `observado_em` (UTC), `emitido_em`, `horizonte_h`, `coletado_em`, `qualidade` (`ok`, `suspeito`, `ausente`), `execucao_id` |
 | `silver.ocorrencias` | `id`, `fonte_id`, `territorio_id`, `ocorrido_em`, `registrado_em`, `tipo`, `confirmada` (bool/nulo), `precisao_espacial` |
 | `silver.previsoes_emitidas` | `id`, `territorio_id`, `horizonte_h`, `emitida_em`, `metodo`, `versao_metodo`, `saida` jsonb, `insumos` jsonb (o que se sabia naquele momento, RF-09.8) |
 
@@ -283,26 +283,41 @@ Convenções: horários em `timestamptz` (UTC), exibidos em `America/Recife` (RN
 ### 5.4 Conectores (interface comum)
 
 ```python
-class Conector(Protocol):
-    id: str                     # "vacinacao", "ana-telemetria", "demonstrativo-clima"
-    fonte: FonteInfo            # nome, órgão, url, licença, tipo
-    def extrair(self, ctx: ExecucaoCtx) -> Iterable[dict]: ...      # → bronze
-    def transformar(self, bruto: pd.DataFrame, ctx) -> pd.DataFrame: ...  # → silver
-    def destino_silver(self) -> str: ...
+# POO, como no ETL da disciplina: as classes Extract, Transform e Load são preservadas,
+# e cada fonte é uma subclasse de Conector que as combina.
+class Conector(ABC):
+    id: str                       # "vacinacao", "open-meteo-historico", "recife-alagamento"
+    fonte: FonteInfo              # nome, órgão, url, licença, tipo (observada | prevista | derivada)
+
+    def __init__(self, extract: Extract, transform: Transform, load: Load): ...
+
+    @abstractmethod
+    def extrair(self, ctx: ExecucaoCtx) -> list[dict]: ...            # API → registros (bronze)
+    @abstractmethod
+    def transformar(self, bruto: pd.DataFrame) -> pd.DataFrame: ...    # bronze → silver
+
+    def executar(self, ctx: ExecucaoCtx) -> ResultadoExecucao:        # método-modelo comum a todos
+        registros = self.extrair(ctx)
+        self.load.salvar_bronze(registros, ctx)
+        df = self.transformar(self.extract.ler_bronze(ctx))
+        self.load.salvar_silver(df, ctx)
+        ...
+
+class ConectorVacinacao(Conector): ...          # porte direto do Projeto-ETL_AVD
+class ConectorOpenMeteoHistorico(Conector): ...
 ```
 
 | Conector | Estado no MVP | Notas |
 |---|---|---|
 | `vacinacao` | **Implementado** (porte do ETL existente) | API CKAN, paginação de 500, limite configurável. A gold traz `amostra_n`. |
 | `territorio-oficial` | **Implementado** (porte do `load_mongo.py`) | Distritos, bairros e faixas hídricas. |
-| `demonstrativo-clima` | **Implementado** | Gera chuva horária e diária, maré, previsão de 24–72 h e ocorrências sintéticas para os 8 distritos, com semente fixa (reproduzível), `tipo = demonstrativa` e lacunas propositais para exercitar a RN-01 e a RN-02. |
+| `open-meteo-historico` · `open-meteo-previsao` · `open-meteo-mare` | **Implementado no MVP** | Open-Meteo (sem cadastro): chuva horária e diária por ponto representativo de cada distrito (reanálise ERA5, `tipo = derivada`), previsão de chuva até 72 h e nível do mar previsto, que inclui a maré (`tipo = prevista`). Termos de uso para projeto acadêmico a confirmar na tarefa. A execução acontece no computador da equipe. |
+| `recife-alagamento` | **Implementado no MVP** | Dados Abertos do Recife (conjuntos com a tag alagamento / Defesa Civil). Ocorrências entram como **não confirmadas** por padrão (contexto §14.2). |
 | `ana-telemetria` | Esqueleto + documentação | ANA, HidroWebService (chuva e nível de rios em estações telemétricas). Requer cadastro e credenciais (`ANA_USUARIO`, `ANA_SENHA` no `.env`). Endpoints e limites serão confirmados no manual oficial na tarefa do conector. |
 | `apac-chuva` | Esqueleto | APAC: monitoramento e serviço de chuva acumulada de 24 h (ArcGIS REST). |
 | `inmet` | Esqueleto | Estações automáticas (Recife A301). Acesso e termos a verificar. |
 | `cemaden` | Esqueleto | Pluviômetros automáticos. Acesso a verificar. |
-| `recife-alagamento` | Esqueleto | Dados Abertos do Recife: conjuntos com a tag alagamento / Defesa Civil. Viram ocorrências **não confirmadas** por padrão (contexto §14.2). |
-| `mare` | Esqueleto | Tábua de maré (Marinha, Porto do Recife). Formato a definir. |
-| `previsao-numerica` | Esqueleto | Previsão de chuva horária (ex.: Open-Meteo). Verificar os termos de uso para o caso institucional. |
+| `mare-marinha` | Esqueleto | Tábua de maré oficial da Marinha (Porto do Recife), para comparar com o nível previsto do Open-Meteo. Formato a definir. |
 
 Os esqueletos têm a classe, a documentação no dicionário de dados e um teste marcado `skip`. A tela de Fontes mostra essas fontes como “Planejada”.
 
@@ -314,7 +329,7 @@ class EstimadorAlagamento(Protocol):
     def estimar(self, territorio_id: str, horizonte_h: int, insumos: Insumos) -> Estimativa: ...
 ```
 
-`Estimativa` tem `janela_atencao`, `prioridade` (categoria, **nunca porcentagem**, RN-06), `fatores[]`, `faixa_incerteza`, `qualidade` (`completa`, `parcial`, `insuficiente`) e `limitacoes[]`. No MVP existe só o `EstimadorDemonstrativo`, uma regra simples e transparente sobre os dados demonstrativos. Toda saída é gravada em `silver.previsoes_emitidas`. O modelo real (referência simples → candidatos → validação temporal, contexto §14.4) entra numa etapa própria.
+`Estimativa` tem `janela_atencao`, `prioridade` (categoria, **nunca porcentagem**, RN-06), `fatores[]`, `faixa_incerteza`, `qualidade` (`completa`, `parcial`, `insuficiente`) e `limitacoes[]`. No MVP existe só o `EstimadorReferencia`, uma regra simples e transparente sobre dados **reais** (chuva prevista, maré prevista e histórico de ocorrências), sempre com `experimental = true`. Toda saída é gravada em `silver.previsoes_emitidas`. O modelo real (referência simples → candidatos → validação temporal, contexto §14.4) entra numa etapa própria.
 
 ---
 
@@ -330,8 +345,8 @@ O FastAPI gera o OpenAPI completo em `/api/docs` (Swagger) e `/api/openapi.json`
 {
   "dados": [ ... ],
   "meta": {
-    "fontes": [{"id": "demonstrativo-clima", "nome": "Série demonstrativa", "tipo": "demonstrativa",
-                "atualizado_em": "2026-10-15T20:00:00Z", "status": "demonstrativa"}],
+    "fontes": [{"id": "open-meteo-historico", "nome": "Open-Meteo (reanálise ERA5)", "tipo": "derivada",
+                "atualizado_em": "2026-10-15T20:00:00Z", "status": "atualizada"}],
     "recorte": {"territorio_id": "ds-4", "inicio": "2026-07-01", "fim": "2026-10-15", "granularidade": "distrito"},
     "cobertura_pct": 92.5,
     "amostra": {"n": 5000, "total_fonte": 1400000},
@@ -420,7 +435,6 @@ components:
         validade_fim: {type: string, format: date-time}
         emitido_por: {type: string, example: "Vigilância em Saúde do Recife"}
         publicado_em: {type: string, format: date-time}
-        demonstrativo: {type: boolean}
     TerritorioRef:
       type: object
       properties:
@@ -432,7 +446,7 @@ components:
       properties:
         t: {type: string, format: date-time}
         valor: {type: number, nullable: true, description: "null = sem dado (diferente de 0)"}
-        tipo: {type: string, enum: [observada, prevista, derivada, demonstrativa]}
+        tipo: {type: string, enum: [observada, prevista, derivada]}
     Estimativa:
       type: object
       properties:
@@ -474,8 +488,7 @@ Implementação: `dominio/fluxo_revisao.py` define a tabela de transições `(es
 ### 7.2 Status das fontes (RF-06)
 
 ```text
-se fonte.tipo == demonstrativa                 → "Demonstrativa"
-senão se não implementada                      → "Planejada"
+se não implementada                      → "Planejada"
 senão se última execução == falha              → "Com falha"   (mostra o último dado válido)
 senão se agora - último sucesso > limite       → "Desatualizada"
 senão                                          → "Atualizada"
@@ -514,7 +527,7 @@ Antes de fixar o plano, comparei-o com o que sairia “no automático” para um
 | Hero com número grande + 3 cards de estatística + gradiente azul | É o padrão de qualquer dashboard. Não diz se há aviso. | Hero = **frase de estado** em tipo grande + régua de maré. Os números vão para dentro da área da equipe. |
 | Divisores de seção em forma de onda | É o clichê de toda marca ligada à água. Não carrega informação. | Nenhuma onda decorativa. A única água é a linha da régua, que tem um valor. |
 | Rótulos em CAIXA ALTA espaçada acima de cada título (como “INTELIGÊNCIA CLIMÁTICA” nos protótipos) | É uma marca de template e é mais difícil de ler para o público idoso. | Tudo em caixa normal. O texto auxiliar da logo vira “Inteligência climática para a saúde”. |
-| “Recife • PE”, “Protótipo • Dados fictícios” (meta com pontos) | É uma convenção genérica e pouco legível. | Frases completas: “Recife, Pernambuco”, “Dados demonstrativos”. |
+| “Recife • PE”, “Protótipo • Dados fictícios” (meta com pontos) | É uma convenção genérica e pouco legível. | Frases completas: “Recife, Pernambuco”. |
 | Painéis todos iguais, com sombra cinza e o mesmo raio | O “kit SaaS”, que achata a hierarquia. | Hierarquia por **peso e espaço**: painéis com borda de 1 px e sem sombra. Sombra só em elementos flutuantes (diálogos, menus). Raios diferentes por função (seção 8.5). |
 | Fonte Inter ou Segoe | Escolha neutra, sem relação com o público. | **Atkinson Hyperlegible Next**, criada pelo Braille Institute para leitores com baixa visão. A escolha vem do público (equipes mais velhas). |
 | Barra de filtros com 4 selects | Exige leitura técnica. | **Filtro em frase**: “Mostrando **Recife inteiro**, de **1º de julho** a **15 de outubro de 2026**.” Cada parte em destaque é um botão grande que abre a escolha. |
@@ -545,7 +558,7 @@ Derivadas da logo enviada: azul “Clima” `#013C69` (amostrado), verde-azulado
 | Informativo | Fique atento | `#1F6FB2` | `#E6F0F9` | `#0E2433` | 1 de 4 |
 | Atenção | Atenção | `#C98A00` | `#FFF4D6` | `#0E2433` | 2 de 4 |
 | Alerta | Alerta | `#D2581F` | `#FDE7DA` | `#0E2433` | 3 de 4 |
-| Crítico | Situação crítica | `#B42318` | `#B42318` | `#FFFFFF` (6,6:1) | 4 de 4 |
+| Crítico | Situação crítica | `#A41F15` | `#A41F15` | `#FFFFFF` (7,5:1) | 4 de 4 |
 | Dados insuficientes | Dados insuficientes | `#6B7A85` + hachura 45° | `#EEF1F3` | `#0E2433` | régua vazia, tracejada |
 | Sem aviso | Nenhum aviso ativo | `#0B6F6C` | `#E3F3F1` | `#0E2433` | linha d’água na base |
 
@@ -627,7 +640,7 @@ Elementos da marca a produzir (tarefas da trilha M1):
 - Siglas sempre por extenso na primeira vez: “Distrito Sanitário IV (DS IV)”.
 - Erros dizem o que fazer: “Não foi possível carregar os dados de chuva. A fonte não respondeu às 14h. Tente de novo em alguns minutos.” Sem pedir desculpas.
 - Estados vazios convidam a agir: “Nenhuma avaliação ainda. Comece pelo mapa e registre a primeira.”
-- Vocabulário fixo (glossário em `frontend/src/textos/`): aviso (público) × comunicado (interno) · avaliação · revisar · publicar · encerrar · dados insuficientes · dados demonstrativos.
+- Vocabulário fixo (glossário em `frontend/src/textos/`): aviso (público) × comunicado (interno) · avaliação · revisar · publicar · encerrar · dados insuficientes.
 
 ---
 
@@ -707,7 +720,7 @@ menu: 296px (cada item cabe em uma linha), fundo papel, itens 52px, ícone + tex
 < 1024px: o menu vira gaveta (botão “Menu”), e o filtro em frase quebra em linhas
 ```
 
-Uma faixa “Ambiente de demonstração: dados demonstrativos” aparece no topo **somente** quando `AMBIENTE=demonstracao` (RN-19).
+Uma faixa “Ambiente de testes” aparece no topo quando `AMBIENTE` não é `producao`, para ninguém confundir o ambiente. Os dados continuam reais (RN-19).
 
 ### 9.4 Painel inicial (`/app`)
 
@@ -743,7 +756,7 @@ Checklist de equivalência RF-07.1–14 nos testes E2E (seção 11). A nota da c
 - Linha de controles: Variável [Chuva ▾] · Frequência (Diária | Semanal | Mensal, botões segmentados) · Comparar com [Média histórica ▾].
 - Gráfico protagonista: “Chuva ao longo do tempo”, com a série azul, a referência cinza tracejada e as lacunas visíveis como faixa hachurada. Acima do gráfico, um **resumo em frase** gerado pela API: “Em setembro choveu 38% abaixo da média de 2021–2025. Faltam dados em 4 dias.”
 - Abaixo, dois painéis: **Calendário de chuvas** (ano × mês, rampa azul) e **Estatística descritiva** (tabela simples: medida, valor, o que significa).
-- Aviso de série curta (RN-08) e o selo “Dados demonstrativos” quando aplicável.
+- Aviso de série curta (RN-08) e o tipo da fonte (observada, prevista ou derivada) na legenda.
 
 ### 9.7 Cenários de alagamento (`/app/cenarios`)
 
@@ -791,7 +804,7 @@ Três abas: **Usuários** (tabela + formulário de papéis com caixas de seleç�
 | `FiltroFrase` | Filtro global como frase editável, sincronizado com a URL | RF-05 |
 | `QuadroGrafico` | Título, resumo em frase, gráfico ECharts, “Ver como tabela”, legenda de fonte, selos de estado | RF-06.4, RNF-ACE-09 |
 | `LegendaFonte` | “Fonte: … · Atualizado em …” | CA-02 |
-| `EstadoDados` | Dados insuficientes, desatualizado, demonstrativo, com falha | RN-01, RN-19 |
+| `EstadoDados` | Dados insuficientes, desatualizado, com falha | RN-01 |
 | `MapaTerritorio` | Leaflet + `model.ts` | RF-07 |
 | `EtapasFluxo` | Etapas do fluxo de revisão | RF-11.2 |
 | `LinhaDoTempo` | Histórico de versões e decisões | RF-11.7 |
@@ -880,7 +893,7 @@ Cabeçalhos: `Content-Security-Policy` (permitindo os tiles configurados), `X-Co
 | GeoJSON das faixas é pesado (3,4 MB) | Geometria simplificada para a web, `ETag` e compressão gzip. |
 | Plano gratuito do Neon suspende por inatividade | A primeira requisição pode demorar. O frontend mostra “Conectando aos dados…” em vez de erro imediato. |
 | Escopo grande para o semestre | O `tasks.md` vai separar em marcos entregáveis: base → mapa e ETL → séries e cenários → fluxo de comunicados → polimento e acessibilidade. |
-| Fontes reais diferentes do formato demonstrativo | O formato `silver.observacoes` foi pensado a partir dos metadados mínimos do contexto §16.2, e os conectores reais só precisam preenchê-lo. |
+| Fontes reais com formatos diferentes entre si | O formato `silver.observacoes` foi pensado a partir dos metadados mínimos do contexto §16.2, e os conectores reais só precisam preenchê-lo. |
 
 ---
 

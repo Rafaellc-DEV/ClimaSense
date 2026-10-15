@@ -1,0 +1,41 @@
+.gatilho {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--e-3);
+  min-height: var(--alvo);
+  min-width: 220px;
+  padding: 0 var(--e-4);
+  border: 2px solid var(--cs-linha-forte);
+  border-radius: var(--r-campo);
+  background: var(--cs-papel);
+  font-size: var(--t-corpo);
+  cursor: pointer;
+}
+.conteudo {
+  background: var(--cs-papel);
+  border: var(--borda);
+  border-radius: var(--r-campo);
+  box-shadow: var(--sombra-flutuante);
+  padding: var(--e-1);
+  z-index: 50;
+  min-width: var(--radix-select-trigger-width);
+}
+.item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--e-3);
+  min-height: var(--alvo-lista);
+  padding: 0 var(--e-3);
+  border-radius: var(--r-campo);
+  font-size: var(--t-corpo);
+  cursor: pointer;
+  outline: none;
+}
+.item[data-highlighted] {
+  background: var(--cs-mare-suave);
+}
+.item[data-state="checked"] {
+  font-weight: 700;
+}

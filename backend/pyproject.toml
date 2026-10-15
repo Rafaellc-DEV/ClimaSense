@@ -6,7 +6,6 @@ build-backend = "setuptools.build_meta"
 name = "climasense"
 version = "0.1.0"
 description = "ClimaSense — inteligência climática para a Vigilância em Saúde do Recife"
-readme = "../README.md"
 requires-python = ">=3.12"
 dependencies = [
   "fastapi>=0.115,<1",

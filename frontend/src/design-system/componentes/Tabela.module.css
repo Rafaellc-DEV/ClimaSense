@@ -1,0 +1,38 @@
+.moldura {
+  overflow-x: auto;
+  border: var(--borda);
+  border-radius: var(--r-painel);
+  background: var(--cs-papel);
+}
+.tabela {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--t-corpo);
+}
+.legenda {
+  text-align: left;
+  padding: var(--e-4) var(--e-4) var(--e-2);
+  font-weight: 700;
+}
+.tabela th,
+.tabela td {
+  text-align: left;
+  padding: var(--e-3) var(--e-4);
+  border-top: var(--borda);
+  vertical-align: top;
+}
+.tabela thead th {
+  font-size: var(--t-apoio);
+  color: var(--cs-tinta-2);
+  font-weight: 700;
+  background: var(--cs-nevoa);
+}
+.numero {
+  text-align: right !important;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.vazio {
+  color: var(--cs-tinta-2);
+  font-style: italic;
+}

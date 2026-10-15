@@ -1,0 +1,61 @@
+.botao {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--e-3);
+  min-height: var(--alvo);
+  padding: 0 var(--e-5);
+  border: 2px solid transparent;
+  border-radius: var(--r-campo);
+  font-weight: 700;
+  font-size: var(--t-corpo);
+  line-height: 1.2;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    background-color var(--mov-rapido),
+    border-color var(--mov-rapido);
+}
+.botao:disabled,
+.botao[aria-disabled="true"] {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+.botao svg {
+  width: 1.2em;
+  height: 1.2em;
+  flex: none;
+}
+.grande {
+  min-height: var(--alvo-grande);
+  font-size: 1.1875rem;
+  padding: 0 var(--e-6);
+}
+.larguraTotal {
+  width: 100%;
+}
+.principal {
+  background: var(--cs-mare);
+  color: var(--cs-sobre-mare);
+}
+.principal:hover:not(:disabled) {
+  background: var(--cs-mare-forte);
+}
+.secundario {
+  background: var(--cs-papel);
+  color: var(--cs-mare);
+  border-color: var(--cs-mare);
+}
+.secundario:hover:not(:disabled) {
+  background: var(--cs-mare-suave);
+}
+.discreto {
+  background: transparent;
+  color: var(--cs-mangue);
+  padding: 0 var(--e-3);
+  text-decoration: underline;
+}
+.perigo {
+  background: var(--n-critico);
+  color: var(--n-critico-texto);
+}

@@ -1,0 +1,43 @@
+.selo {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--e-2);
+  padding: 6px 12px 6px 8px;
+  border-radius: var(--r-campo);
+  font-weight: 700;
+  font-size: 1.0625rem;
+  line-height: 1.2;
+  background: var(--fundo);
+  color: var(--texto);
+  white-space: nowrap;
+}
+.mini {
+  display: grid;
+  grid-template-rows: repeat(4, 5px);
+  gap: 2px;
+  width: 16px;
+  flex: none;
+}
+.mini i {
+  display: block;
+  border: 1.5px solid var(--cor);
+}
+.mini i[data-cheio="true"] {
+  background: var(--cor);
+}
+.critico .mini i {
+  border-color: var(--texto);
+}
+.critico .mini i[data-cheio="true"] {
+  background: var(--texto);
+}
+.insuficiente {
+  background: repeating-linear-gradient(45deg, var(--n-insuf-bg) 0 6px, #e1e6ea 6px 8px);
+}
+.insuficiente .mini i {
+  border-style: dashed;
+}
+.grande {
+  font-size: var(--t-corpo);
+  padding: 8px 16px 8px 12px;
+}

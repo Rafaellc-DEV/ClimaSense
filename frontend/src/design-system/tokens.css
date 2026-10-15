@@ -1,0 +1,128 @@
+/* ClimaSense — tokens do design system (design.md §8.3–8.6).
+   Fonte única da verdade para cores, tipografia, espaço e forma. Não use hex soltos nos componentes. */
+:root {
+  color-scheme: light;
+
+  /* Marca */
+  --cs-mare: #0f4c75;
+  --cs-mare-forte: #0a3a5c;
+  --cs-mare-suave: rgba(15, 76, 117, 0.08);
+  --cs-mangue: #0b6f6c;
+  --cs-sol: #edb105;
+  --cs-papel: #ffffff;
+  --cs-nevoa: #f2f6f8;
+  --cs-tinta: #0e2433;
+  --cs-tinta-2: #44596a;
+  --cs-linha: #d5e0e7;
+  --cs-linha-forte: #7a8e9c;
+  --cs-foco: #b35c00;
+  --cs-sobre-mare: #ffffff;
+
+  /* Níveis de aviso: cor da marca/borda, fundo do selo, texto do selo */
+  --n-sem: #0b6f6c;
+  --n-sem-bg: #e3f3f1;
+  --n-info: #1f6fb2;
+  --n-info-bg: #e6f0f9;
+  --n-atencao: #c98a00;
+  --n-atencao-bg: #fff4d6;
+  --n-alerta: #d2581f;
+  --n-alerta-bg: #fde7da;
+  --n-critico: #a41f15;
+  --n-critico-bg: #a41f15;
+  --n-critico-texto: #ffffff;
+  --n-insuf: #6b7a85;
+  --n-insuf-bg: #eef1f3;
+  --n-texto: #0e2433;
+
+  /* Gráficos — ordem fixa validada (CVD e contraste); referência sempre cinza tracejado */
+  --g-1: #1f6fb2;
+  --g-2: #c4612b;
+  --g-3: #0a8f63;
+  --g-4: #7a52c7;
+  --g-5: #5d7f1f;
+  --g-6: #b8478f;
+  --g-ref: #6b7a85;
+  --g-grade: #d5e0e7;
+  --g-eixo: #8fa3b1;
+  --g-seq-1: #e3eef7;
+  --g-seq-2: #b9d4ea;
+  --g-seq-3: #86b3d9;
+  --g-seq-4: #4f8cc2;
+  --g-seq-5: #1f6fb2;
+  --g-seq-6: #17558a;
+  --g-seq-7: #0e3a60;
+  --g-saude-1: #a7dcc6;
+  --g-saude-6: #044d36;
+
+  /* Tipografia */
+  --fonte: "Atkinson Hyperlegible Next Variable", "Atkinson Hyperlegible Next", "Atkinson Hyperlegible",
+    system-ui, sans-serif;
+  --t-estado: clamp(2.5rem, 6vw, 4.5rem);
+  --t-1: 2.75rem;
+  --t-2: 2.1875rem;
+  --t-3: 1.75rem;
+  --t-4: 1.375rem;
+  --t-corpo: 1.125rem;
+  --t-apoio: 1rem;
+  --altura-corpo: 1.55;
+
+  /* Espaço (base 8) */
+  --e-1: 4px;
+  --e-2: 8px;
+  --e-3: 12px;
+  --e-4: 16px;
+  --e-5: 24px;
+  --e-6: 32px;
+  --e-7: 48px;
+  --e-8: 64px;
+  --e-9: 96px;
+
+  /* Forma: raios por função */
+  --r-campo: 4px;
+  --r-painel: 10px;
+  --r-pilula: 999px;
+  --borda: 1px solid var(--cs-linha);
+  --sombra-flutuante: 0 12px 32px rgba(14, 36, 51, 0.18), 0 2px 6px rgba(14, 36, 51, 0.08);
+
+  /* Alvos de toque */
+  --alvo: 48px;
+  --alvo-grande: 56px;
+  --alvo-lista: 44px;
+
+  /* Movimento */
+  --mov-agua: 700ms cubic-bezier(0.2, 0.7, 0.2, 1);
+  --mov-rapido: 150ms ease-out;
+}
+
+/* Modo escuro — área da equipe (RNF-VIS-04). Ativado por data-tema="escuro" ou pela preferência do sistema. */
+:root[data-tema="escuro"] {
+  color-scheme: dark;
+  --cs-mare: #7fb6e0;
+  --cs-mare-forte: #a9cfee;
+  --cs-mare-suave: rgba(127, 182, 224, 0.12);
+  --cs-mangue: #4fc1b6;
+  --cs-sol: #f2c23a;
+  --cs-papel: #13222c;
+  --cs-nevoa: #0c1820;
+  --cs-tinta: #e8f0f5;
+  --cs-tinta-2: #b4c4cf;
+  --cs-linha: #2a3d4a;
+  --cs-linha-forte: #6b8494;
+  --cs-foco: #ffb45c;
+  --cs-sobre-mare: #0c1820;
+  --n-sem-bg: #123a38;
+  --n-info-bg: #14324e;
+  --n-atencao-bg: #3d2f08;
+  --n-alerta-bg: #43230f;
+  --n-insuf-bg: #24323b;
+  --n-texto: #e8f0f5;
+  --g-1: #4a93d6;
+  --g-2: #d9713a;
+  --g-3: #22a874;
+  --g-4: #9b7ce0;
+  --g-5: #7c9e33;
+  --g-6: #d465a8;
+  --g-ref: #8fa3b1;
+  --g-grade: #2a3d4a;
+  --g-eixo: #4d6575;
+}

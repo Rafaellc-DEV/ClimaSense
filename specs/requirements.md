@@ -5,7 +5,7 @@
 | Campo | Valor |
 |---|---|
 | Fase SDD | 1 de 4 — Especificação (o quê e por quê) |
-| Versão | 0.2 — aprovada em 15/10/2026, com as decisões P1–P3 incorporadas |
+| Versão | 0.3 — revisada em 15/10/2026: somente dados reais (P3) |
 | Data | 15/10/2026 |
 | Próximas fases | `design.md` (como) → `tasks.md` (passos) → execução |
 | Documentos-base | `ClimaSense-contexto-completo.md` v1.0; Atividade de Arquitetura de Software (template preenchido); Planejamento CRISP-DM (AVD); código das pastas `Projetos/AVD`, `Desktop/AVD` e `Desktop/Projeto-ETL_AVD` |
@@ -212,8 +212,8 @@ Uma pessoa pode acumular papéis (RN-15), mas **nunca aprova o próprio conteúd
 
 | ID | Critério de aceite |
 |---|---|
-| RF-06.1 | O sistema DEVE listar cada fonte com nome, órgão, link, tipo (observada, prevista, derivada ou demonstrativa), última coleta bem-sucedida, cobertura temporal e espacial, licença e status. |
-| RF-06.2 | O status DEVE ser um de: **Atualizada**, **Desatualizada**, **Com falha** ou **Demonstrativa**, sempre com texto, ícone e cor. |
+| RF-06.1 | O sistema DEVE listar cada fonte com nome, órgão, link, tipo (observada, prevista ou derivada), última coleta bem-sucedida, cobertura temporal e espacial, licença e status. |
+| RF-06.2 | O status DEVE ser um de: **Atualizada**, **Desatualizada**, **Com falha** ou **Planejada** (ainda não integrada), sempre com texto, ícone e cor. |
 | RF-06.3 | SE a última coleta for mais antiga que o limite configurado para a fonte, ENTÃO a fonte DEVE aparecer como “Desatualizada” em todas as telas que usam seus dados. |
 | RF-06.4 | Todo gráfico, card e camada do mapa DEVE ter uma legenda “Fonte: … · Atualizado em …”. |
 | RF-06.5 | Lacunas DEVEM aparecer de forma visível (falha na linha do gráfico, hachura no mapa ou célula “sem dado”), nunca como zero (RN-02). |
@@ -255,7 +255,7 @@ Todas as funcionalidades do mapa atual (`Desktop/AVD`, Aula 07) DEVEM continuar 
 | RF-08.8 | Exportar os dados do gráfico em CSV, com as mesmas regras do RF-07.10. |
 | RF-08.9 | Comparação entre municípios da RMR (Olinda, Jaboatão) PODE vir na evolução (contexto RF09), com critérios equivalentes. |
 
-### RF-09 — Cenários de alagamento · **DEVE** a tela, com dados demonstrativos · o modelo de ML fica para a evolução (contexto RF08)
+### RF-09 — Cenários de alagamento · **DEVE** a tela, com dados reais de chuva prevista e maré · o modelo de ML fica para a evolução (contexto RF08)
 
 | ID | Critério de aceite |
 |---|---|
@@ -298,8 +298,8 @@ Todas as funcionalidades do mapa atual (`Desktop/AVD`, Aula 07) DEVEM continuar 
 | RF-12.1 | Manter a estrutura **Extract / Transform / Load** e as camadas **bronze → silver** do projeto `Projeto-ETL_AVD`. |
 | RF-12.2 | Manter a extração **paginada** da API CKAN da Prefeitura (`datastore_search`, 500 registros por página, limite configurável). |
 | RF-12.3 | Manter todas as transformações atuais da vacinação: texto sem espaços e em maiúsculas, vazio vira nulo, conversão de idade, dose e data, derivação de `vacina`, `distrito_sanitario` e `unidade_saude`, e remoção de inválidos e duplicados. |
-| RF-12.4 | Generalizar para **várias fontes**. Cada fonte é um conector com configuração própria. No MVP estão implementados: vacinação (existente), distritos e bairros, faixas hídricas (existentes) e o **conector demonstrativo** de chuva e maré. Ficam especificados para a evolução: **ANA** (HidroWebService: chuva e nível de rios), APAC, INMET, Cemaden, Dados Abertos do Recife (alagamento/Defesa Civil), tábua de maré e previsão numérica. Esses conectores alimentam o futuro modelo de ML. |
-| RF-12.10 | O conector demonstrativo DEVE gerar dados no **mesmo formato** dos conectores reais, com `tipo = "demonstrativa"`. Todas as telas que o usam DEVEM mostrar o selo “Dados demonstrativos” (RN-19). |
+| RF-12.4 | Generalizar para **várias fontes**, todas **reais**. Cada fonte é uma classe conector (POO) com configuração própria. No MVP: vacinação, distritos e bairros, faixas hídricas (existentes) + `open-meteo-historico` (chuva horária e diária por distrito, reanálise ERA5), `open-meteo-previsao` (chuva prevista até 72 h), `open-meteo-mare` (nível do mar previsto, que inclui a maré) e `recife-alagamento` (Dados Abertos do Recife, ocorrências **não confirmadas** por padrão). Ficam especificados para a sequência: **ANA** (HidroWebService, exige cadastro), APAC, INMET, Cemaden e a tábua de maré da Marinha. Esses conectores alimentam o futuro modelo de ML. |
+| RF-12.10 | **Somente dados reais.** O produto não contém dados simulados, sintéticos ou inventados. Quando uma fonte ainda não está integrada ou não respondeu, a tela mostra **“Dados insuficientes”** e diz qual fonte falta (RN-01, RN-19). |
 | RF-12.5 | Cada execução DEVE registrar: fonte, início, fim, status, registros lidos, gravados e descartados, motivo dos descartes e mensagem de erro (sem segredos). |
 | RF-12.6 | Executar por linha de comando (ex.: `python -m climasense.etl run vacinacao`) e, para o administrador, pela interface (RF-16). |
 | RF-12.7 | A bronze DEVE guardar o dado **original**, com metadados técnicos (`_data_carga`, `_execucao_id`, `_fonte`). |
@@ -366,7 +366,7 @@ Todas as funcionalidades do mapa atual (`Desktop/AVD`, Aula 07) DEVEM continuar 
 | **RN-16** | **Fuso e formatos.** Horários exibidos em `America/Recife`, datas no formato dd/mm/aaaa, números no padrão pt-BR (vírgula decimal). O armazenamento é em UTC. |
 | **RN-17** | **Cor nunca sozinha.** Todo nível ou estado aparece em texto e cor (e ícone quando couber). |
 | **RN-18** | **Não é alerta oficial.** O ClimaSense apoia a decisão e a comunicação da equipe. Não substitui a Defesa Civil e não emite alerta oficial. |
-| **RN-19** | **Demonstrativo sempre identificado.** Um dado com `tipo = "demonstrativa"` nunca aparece sem o selo “Dados demonstrativos”. Um comunicado **não pode ser publicado** na landing com evidências exclusivamente demonstrativas fora do ambiente de demonstração. |
+| **RN-19** | **Somente dados reais e identificados.** Todo valor exibido vem de uma fonte real, com nome, tipo (observada, prevista ou derivada) e data. Nenhum dado é simulado ou inventado: na falta, vale a RN-01. Dados de modelos (reanálise, previsão) são reais, mas aparecem como **“derivada”** ou **“prevista”**, nunca como “observada”. |
 
 ### 6.1 Níveis de aviso (proposta para validação)
 
@@ -530,7 +530,7 @@ O template marca a combinação de **camadas + MVC + microsserviços**. O `desig
 |---|---|---|---|
 | **P1** ✅ | Logo e telas de protótipo. | Identidade visual. | **Resolvido (15/10):** logo anexada e acesso liberado a `Documents/Codex/2026-09-10/ger/outputs/`. |
 | **P2** ✅ | Onde fica a silver. | Arquitetura de dados. | **Decidido (15/10):** Atlas para a bronze e o território. **Postgres/Neon** para a silver, a gold e os dados da aplicação (usuários, comunicados, auditoria). O ETL é preservado como está. |
-| **P3** ✅ | Fontes climáticas do MVP. | RF-08, RF-09. | **Decidido (15/10):** o objetivo inicial é ter **todas as telas do frontend prontas e o backend existente unido e completo**. Conectores climáticos reais (ANA, APAC, INMET, Cemaden, Dados Abertos do Recife, previsão numérica) ficam **especificados e com interface pronta**, mas são implementados depois. Até lá, as telas usam séries **demonstrativas rotuladas** no mesmo formato. O modelo de ML fica para uma etapa posterior. |
+| **P3** ✅ | Fontes climáticas do MVP. | RF-08, RF-09. | **Decidido (15/10) e revisado (15/10, 19h50):** o objetivo é ter **todas as telas prontas e o backend existente unido e completo**, usando **somente dados reais** (sem dados simulados). Fontes climáticas reais do MVP: `open-meteo-historico` (chuva horária e diária por distrito, reanálise ERA5), `open-meteo-previsao` (chuva prevista até 72 h), `open-meteo-mare` (nível do mar previsto, que inclui a maré) e `recife-alagamento` (Dados Abertos do Recife, ocorrências **não confirmadas** por padrão). ANA (com credenciais), APAC, INMET, Cemaden e a tábua da Marinha vêm em seguida. O ETL segue POO (classes `Extract`, `Transform`, `Load` e `Conector`), como ensinado na disciplina. O modelo de ML fica para uma etapa posterior. Os termos de uso e a disponibilidade de cada API serão verificados na tarefa do conector. |
 | **P4** | Limite de 5.000 registros da vacinação. | RF-15, RN-10. | Manter configurável e rotular como amostra. Avaliar uma carga completa com agregação na fonte. |
 | **P5** | Nomes e critérios dos níveis de aviso. | RF-01, RF-11. | Validar a seção 6.1 com a Vigilância e a Defesa Civil. |
 | **P6** | Composição da equipe (Grupo 1 × Grupo 3). | Landing (“Sobre”), documentação. | Confirmar a lista. |
