@@ -21,4 +21,6 @@ regexes = [
   '''USUARIO:SENHA@''',
   '''climasense:climasense@localhost''',
   '''SESSAO_INATIVIDADE_MIN''',
+  '''@[\w.-]*\.invalid(?:/|$)''',            # domínio reservado (RFC 2606): credenciais claramente fictícias nos testes
+  '''chave-de-teste-nao-usar-em-producao''',
 ]

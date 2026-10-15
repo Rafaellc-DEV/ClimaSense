@@ -81,7 +81,7 @@ cd backend
 ## Testes
 
 ```powershell
-cd backend;  ..\.venv\Scripts\pytest            # unidade (+ integração se DATABASE_URL_TESTE estiver definido)
+cd backend;  ..\.venv\Scripts\pytest            # unidade; integração com Postgres real se DATABASE_URL_TESTE estiver definido
 cd frontend; npm test; npm run lint
 ```
 
@@ -92,7 +92,7 @@ cd frontend; npm test; npm run lint
 | M0 Fundação do repositório | Concluído |
 | M1 Identidade visual e design system | Concluído |
 | M2 Backend base e arquitetura | Concluído |
-| M3 Autenticação e papéis | Concluído |
+| M3 Autenticação e papéis | Em andamento |
 | M4 em diante (território, ETL, API analítica, telas) | Planejado — ver [`specs/tasks.md`](specs/tasks.md) |
 
 ## Origem do código
