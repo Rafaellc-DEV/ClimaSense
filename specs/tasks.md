@@ -111,14 +111,14 @@ M1 (identidade) corre em paralelo ao backend desde o início, para que as telas 
 
 | ☐ | ID | Tarefa | Pronto quando | Req | Dep | Tam |
 |---|---|---|---|---|---|---|
-| ☐ | T3.1 | Domínio `papeis.py` (analista, revisor, coordenação, administrador; permissões cumulativas) + `auth/senhas.py` (Argon2id via pwdlib). | Testes de permissão por papel e de hash e verificação de senha. | RF-03 | T0.5 | P |
-| ☐ | T3.2 | Sessões no servidor: criar (token de 32 bytes, só o hash guardado), validar, expirar por 60 min de inatividade, renovar e revogar. Cookies `cs_sessao` e `cs_csrf`. | Testes com relógio simulado: 59 min é válida, 61 min expirou. A revogação invalida a sessão na hora. | RF-02.5, RNF-SEG-03 | T2.3, T3.1 | M |
-| ☐ | T3.3 | Proteção CSRF (double-submit) em todos os métodos que alteram dados. | Teste: POST sem `X-CSRF-Token` → 403 com a mensagem em português. | RNF-SEG-04 | T3.2 | P |
-| ☐ | T3.4 | Bloqueio por força bruta: 5 falhas em 15 min → 15 min bloqueado. Mensagem genérica de credencial inválida. | Testes da 5ª e da 6ª tentativa e do desbloqueio após o tempo. | RF-02.2, 02.3 | T3.2 | P |
-| ☐ | T3.5 | Rotas `/auth/entrar`, `/sair`, `/eu`, `/renovar`, `/trocar-senha` + auditoria de login. | Testes de integração do fluxo completo. A auditoria registra sucesso e falha. | RF-02, RF-14.1 | T3.2–T3.4, T2.6 | M |
-| ☐ | T3.6 | Dependência `exige_papel(...)` + **matriz de autorização** gerada a partir das rotas (rota × papel → código esperado). | Um teste parametrizado cobre todas as rotas existentes. Uma rota nova sem papel declarado faz o teste falhar. | RF-03.1 | T3.5 | M |
-| ☐ | T3.7 | CLI `python -m climasense.admin criar-admin` (lê `ADMIN_EMAIL` e `ADMIN_SENHA_INICIAL`; exige a troca no 1º acesso). | Rodar duas vezes não duplica. A senha não aparece em nenhuma saída. | RF-16.1 | T3.5 | P |
-| ☐ | T3.8 | `/admin/usuarios`: listar, criar, editar papéis, desativar e reativar (sem excluir), redefinir senha (força a troca). | Testes. Um usuário desativado não consegue entrar. A auditoria registra cada alteração. | RF-16.1, RF-02.7 | T3.6 | M |
+| ☑ | T3.1 | Domínio `papeis.py` (analista, revisor, coordenação, administrador; permissões cumulativas) + `auth/senhas.py` (Argon2id via pwdlib). | Testes de permissão por papel e de hash e verificação de senha. | RF-03 | T0.5 | P |
+| ☑ | T3.2 | Sessões no servidor: criar (token de 32 bytes, só o hash guardado), validar, expirar por 60 min de inatividade, renovar e revogar. Cookies `cs_sessao` e `cs_csrf`. | Testes com relógio simulado: 59 min é válida, 61 min expirou. A revogação invalida a sessão na hora. | RF-02.5, RNF-SEG-03 | T2.3, T3.1 | M |
+| ☑ | T3.3 | Proteção CSRF (double-submit) em todos os métodos que alteram dados. | Teste: POST sem `X-CSRF-Token` → 403 com a mensagem em português. | RNF-SEG-04 | T3.2 | P |
+| ☑ | T3.4 | Bloqueio por força bruta: 5 falhas em 15 min → 15 min bloqueado. Mensagem genérica de credencial inválida. | Testes da 5ª e da 6ª tentativa e do desbloqueio após o tempo. | RF-02.2, 02.3 | T3.2 | P |
+| ☑ | T3.5 | Rotas `/auth/entrar`, `/sair`, `/eu`, `/renovar`, `/trocar-senha` + auditoria de login. | Testes de integração do fluxo completo. A auditoria registra sucesso e falha. | RF-02, RF-14.1 | T3.2–T3.4, T2.6 | M |
+| ☑ | T3.6 | Dependência `exige_papel(...)` + **matriz de autorização** gerada a partir das rotas (rota × papel → código esperado). | Um teste parametrizado cobre todas as rotas existentes. Uma rota nova sem papel declarado faz o teste falhar. | RF-03.1 | T3.5 | M |
+| ☑ | T3.7 | CLI `python -m climasense.admin criar-admin` (lê `ADMIN_EMAIL` e `ADMIN_SENHA_INICIAL`; exige a troca no 1º acesso). | Rodar duas vezes não duplica. A senha não aparece em nenhuma saída. | RF-16.1 | T3.5 | P |
+| ☑ | T3.8 | `/admin/usuarios`: listar, criar, editar papéis, desativar e reativar (sem excluir), redefinir senha (força a troca). | Testes. Um usuário desativado não consegue entrar. A auditoria registra cada alteração. | RF-16.1, RF-02.7 | T3.6 | M |
 
 ### M4 — Território (porte do `Desktop/AVD`)
 

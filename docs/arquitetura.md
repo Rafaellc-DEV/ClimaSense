@@ -84,7 +84,7 @@ As regras que mais importam ao produto (ausência de dado ≠ risco baixo, ningu
 | Módulo | Domínio | Serviço | Rotas | Marco |
 |---|---|---|---|---|
 | Saúde do sistema | — | — | `/health` | M2 ✅ |
-| Autenticação e papéis | `papeis.py` | `auth/` | `/auth/*`, `/admin/usuarios` | M3 |
+| Autenticação e papéis | `papeis.py`, `bloqueio.py`, `senha.py` | `autenticacao.py`, `usuarios.py` | `/auth/*`, `/admin/usuarios` | M3 ✅ |
 | Território | `territorio.py` | `territorio.py` | `/territorios/*` | M4 |
 | Fontes e qualidade | `qualidade.py` | `fontes.py` | `/fontes`, `/etl` | M5 |
 | Séries | `estatistica.py`, `series.py` | `series.py` | `/series/*` | M6 |

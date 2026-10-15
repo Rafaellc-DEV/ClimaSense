@@ -7,11 +7,13 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from climasense import __version__
 from climasense.api.erros import registrar_tratadores
-from climasense.api.routers import saude
+from climasense.api.routers import admin_usuarios, auth, saude
 from climasense.api.seguranca import CabecalhosSeguranca
 from climasense.config import Configuracao, obter_configuracao
 
 PREFIXO = "/api/v1"
+# Ordem de inclusão sob /api/v1. Também lida pelo teste da matriz de autorização.
+ROTEADORES = [saude.router, auth.router, admin_usuarios.router]
 
 
 def criar_app(config: Configuracao | None = None) -> FastAPI:
@@ -36,7 +38,8 @@ def criar_app(config: Configuracao | None = None) -> FastAPI:
     )
 
     v1 = APIRouter(prefix=PREFIXO)
-    v1.include_router(saude.router)
+    for roteador in ROTEADORES:
+        v1.include_router(roteador)
     app.include_router(v1)
     return app
 

@@ -59,13 +59,20 @@ As bibliotecas estão fixadas em [`backend/requirements.txt`](backend/requiremen
 
 > O arquivo `.env` **nunca** vai para o Git. O `pre-commit` roda o gitleaks e bloqueia commits que contenham credenciais.
 
-## Banco de dados
+## Banco de dados e primeiro acesso
+
+No `.env`, além de `MONGO_URI` e `DATABASE_URL`, preencha `ADMIN_EMAIL` e `ADMIN_SENHA_INICIAL` (pelo menos 10 caracteres; uma frase curta funciona bem). Se o `SESSION_SECRET` estiver vazio, o `setup.ps1` gera um, ou gere com `python -c "import secrets; print(secrets.token_urlsafe(48))"`.
 
 ```powershell
 cd backend
-..\.venv\Scripts\alembic upgrade head                # cria os esquemas app, silver e gold
-..\.venv\Scripts\python -m climasense.admin criar-admin   # usa ADMIN_EMAIL e ADMIN_SENHA_INICIAL do .env
+..\.venv\Scripts\alembic upgrade head                    # cria os esquemas app, silver e gold
+..\.venv\Scripts\python -m climasense.admin criar-admin   # cria o primeiro administrador
+cd ..
 ```
+
+> **Neon com o ETL antigo:** se já existir a tabela `public.silver_vacinados` criada pelo `Projeto-ETL_AVD`, a migração a preserva com o nome `silver_vacinados_legado_etl_avd` (nenhum dado é apagado). O nome antigo passa a ser uma view sobre a nova silver.
+
+No primeiro acesso, o ClimaSense pede a troca da senha. As demais contas da equipe são criadas pelo administrador; cada pessoa recebe uma senha temporária, que precisa trocar ao entrar.
 
 ## Rodar em desenvolvimento
 
@@ -82,6 +89,7 @@ cd backend
 
 ```powershell
 cd backend;  ..\.venv\Scripts\pytest            # unidade; integração com Postgres real se DATABASE_URL_TESTE estiver definido
+#   Ex.: $env:DATABASE_URL_TESTE="postgresql://climasense:climasense@localhost:5432/climasense"  (docker compose up -d)
 cd frontend; npm test; npm run lint
 ```
 
@@ -92,7 +100,7 @@ cd frontend; npm test; npm run lint
 | M0 Fundação do repositório | Concluído |
 | M1 Identidade visual e design system | Concluído |
 | M2 Backend base e arquitetura | Concluído |
-| M3 Autenticação e papéis | Em andamento |
+| M3 Autenticação e papéis | Concluído |
 | M4 em diante (território, ETL, API analítica, telas) | Planejado — ver [`specs/tasks.md`](specs/tasks.md) |
 
 ## Origem do código

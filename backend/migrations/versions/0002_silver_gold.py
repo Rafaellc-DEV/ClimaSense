@@ -12,6 +12,16 @@ branch_labels = None
 depends_on = None
 
 SQL = """
+-- O ETL antigo (Projeto-ETL_AVD) criou a TABELA public.silver_vacinados no Neon com to_sql.
+-- Ela é preservada com outro nome (nenhum dado é apagado) e o nome antigo passa a ser uma view.
+do $$
+begin
+  if exists (select 1 from pg_class c join pg_namespace n on n.oid = c.relnamespace
+             where n.nspname = 'public' and c.relname = 'silver_vacinados' and c.relkind = 'r') then
+    alter table public.silver_vacinados rename to silver_vacinados_legado_etl_avd;
+  end if;
+end $$;
+
 create schema if not exists silver;
 create schema if not exists gold;
 
