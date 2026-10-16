@@ -16,7 +16,15 @@ from tests.integration.apoio import Relogio, cliente, criar_conta, entrar
 
 pytestmark = [precisa_postgres, pytest.mark.integracao]
 
-PUBLICAS = {("GET", "/api/v1/health"), ("POST", "/api/v1/auth/entrar")}
+PUBLICAS = {
+    ("GET", "/api/v1/health"),
+    ("POST", "/api/v1/auth/entrar"),
+    ("GET", "/api/v1/publico/estado"),
+    ("GET", "/api/v1/publico/avisos"),
+    ("GET", "/api/v1/publico/avisos/{aviso_id}"),
+    ("GET", "/api/v1/publico/fontes"),
+    ("GET", "/api/v1/publico/territorios/busca"),
+}
 
 
 def _rotas():

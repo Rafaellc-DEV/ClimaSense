@@ -56,7 +56,8 @@ ignore = ["S101", "B008", "E501", "UP046", "SIM117"]
 
 [tool.ruff.lint.per-file-ignores]
 "tests/**" = ["S105", "S106", "S311"]
-"migrations/**" = ["E501"]
+"migrations/**" = ["E501", "S608"]
+"climasense/etl/gold.py" = ["S608"]  # nomes de tabela fixos no próprio módulo
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

@@ -1,0 +1,174 @@
+.editor {
+  display: grid;
+  grid-template-columns: minmax(0, 58fr) minmax(0, 42fr);
+  gap: var(--e-5);
+  align-items: start;
+}
+.etapas {
+  margin-bottom: var(--e-5);
+}
+.previa {
+  position: sticky;
+  top: var(--e-4);
+  display: grid;
+  gap: var(--e-3);
+  padding: var(--e-5);
+  background: var(--cs-nevoa);
+  border: 1px dashed var(--cs-linha-forte);
+  border-radius: var(--r-painel);
+}
+.previa h2 {
+  font-size: var(--t-4);
+}
+.subtitulo {
+  font-size: var(--t-corpo);
+  margin-top: var(--e-3);
+}
+.hash {
+  font-size: var(--t-apoio);
+  color: var(--cs-tinta-2);
+}
+.rotulo {
+  font-weight: 700;
+  margin-bottom: var(--e-2);
+}
+.territorios ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--e-2);
+  align-items: center;
+}
+.territorios li:not(:last-child) {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 40px;
+  padding: 0 4px 0 14px;
+  border: 2px solid var(--cs-mare);
+  border-radius: var(--r-pilula);
+  font-weight: 600;
+}
+.territorios li button {
+  display: inline-grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  cursor: pointer;
+}
+.territorios li button:hover {
+  background: var(--cs-mare-suave);
+}
+.opcoes {
+  list-style: none;
+  margin: var(--e-4) 0;
+  padding: 0;
+  max-height: 46vh;
+  overflow-y: auto;
+  display: grid;
+  gap: 2px;
+}
+.opcoes label {
+  display: flex;
+  align-items: center;
+  gap: var(--e-3);
+  min-height: 44px;
+  padding: 0 var(--e-2);
+  cursor: pointer;
+}
+.opcoes input {
+  width: 20px;
+  height: 20px;
+  accent-color: var(--cs-mare);
+}
+.orientacoes {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--e-3);
+  justify-items: start;
+}
+.orientacoes legend {
+  font-weight: 700;
+  margin-bottom: var(--e-2);
+}
+.orientacao {
+  width: 100%;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--e-2);
+  align-items: end;
+}
+.longa {
+  padding: var(--e-3) var(--e-4);
+  background: var(--n-atencao-bg);
+  border-left: 4px solid var(--n-atencao);
+  border-radius: var(--r-campo);
+  color: var(--n-texto);
+}
+.erro {
+  padding: var(--e-3) var(--e-4);
+  background: var(--n-alerta-bg);
+  border-left: 4px solid var(--n-critico);
+  border-radius: var(--r-campo);
+  color: var(--n-texto);
+  font-weight: 600;
+}
+.acoesFluxo {
+  margin-top: var(--e-5);
+  padding-top: var(--e-4);
+  border-top: var(--borda);
+  display: grid;
+  gap: var(--e-2);
+}
+.versoes {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--e-2);
+}
+.versoes li {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--e-2);
+  font-size: var(--t-apoio);
+}
+.diferenca {
+  display: grid;
+  gap: var(--e-4);
+  max-height: 60vh;
+  overflow-y: auto;
+}
+.diferenca h3 {
+  font-size: var(--t-corpo);
+  margin-bottom: var(--e-1);
+}
+.diferenca p {
+  white-space: pre-line;
+}
+.diferenca ins {
+  background: var(--n-sem-bg);
+  text-decoration: underline 2px var(--n-sem);
+  text-underline-offset: 3px;
+}
+.diferenca del {
+  background: var(--n-alerta-bg);
+  text-decoration: line-through 2px var(--n-critico);
+}
+@media (max-width: 1100px) {
+  .editor {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .previa {
+    position: static;
+  }
+}

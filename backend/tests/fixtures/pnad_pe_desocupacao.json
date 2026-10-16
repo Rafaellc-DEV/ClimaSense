@@ -1,0 +1,302 @@
+[
+  {
+    "periodo": "201201",
+    "total": 9.6,
+    "homens": 7.1,
+    "mulheres": 13.1
+  },
+  {
+    "periodo": "201202",
+    "total": 8.3,
+    "homens": 6.4,
+    "mulheres": 11.0
+  },
+  {
+    "periodo": "201203",
+    "total": 9.4,
+    "homens": 7.6,
+    "mulheres": 11.8
+  },
+  {
+    "periodo": "201204",
+    "total": 9.2,
+    "homens": 7.9,
+    "mulheres": 11.1
+  },
+  {
+    "periodo": "201301",
+    "total": 10.7,
+    "homens": 8.2,
+    "mulheres": 14.2
+  },
+  {
+    "periodo": "201302",
+    "total": 9.7,
+    "homens": 8.3,
+    "mulheres": 11.7
+  },
+  {
+    "periodo": "201303",
+    "total": 8.5,
+    "homens": 6.6,
+    "mulheres": 11.2
+  },
+  {
+    "periodo": "201304",
+    "total": 7.4,
+    "homens": 6.1,
+    "mulheres": 9.3
+  },
+  {
+    "periodo": "201401",
+    "total": 8.8,
+    "homens": 7.4,
+    "mulheres": 10.9
+  },
+  {
+    "periodo": "201402",
+    "total": 8.0,
+    "homens": 7.2,
+    "mulheres": 9.2
+  },
+  {
+    "periodo": "201403",
+    "total": 8.5,
+    "homens": 7.4,
+    "mulheres": 9.9
+  },
+  {
+    "periodo": "201404",
+    "total": 7.7,
+    "homens": 6.7,
+    "mulheres": 9.1
+  },
+  {
+    "periodo": "201501",
+    "total": 8.2,
+    "homens": 6.8,
+    "mulheres": 10.2
+  },
+  {
+    "periodo": "201502",
+    "total": 9.2,
+    "homens": 8.3,
+    "mulheres": 10.4
+  },
+  {
+    "periodo": "201503",
+    "total": 11.3,
+    "homens": 10.1,
+    "mulheres": 12.9
+  },
+  {
+    "periodo": "201504",
+    "total": 11.1,
+    "homens": 10.3,
+    "mulheres": 12.3
+  },
+  {
+    "periodo": "201601",
+    "total": 13.4,
+    "homens": 12.5,
+    "mulheres": 14.8
+  },
+  {
+    "periodo": "201602",
+    "total": 14.2,
+    "homens": 13.0,
+    "mulheres": 15.9
+  },
+  {
+    "periodo": "201603",
+    "total": 15.5,
+    "homens": 14.0,
+    "mulheres": 17.5
+  },
+  {
+    "periodo": "201604",
+    "total": 15.9,
+    "homens": 14.3,
+    "mulheres": 18.2
+  },
+  {
+    "periodo": "201701",
+    "total": 17.3,
+    "homens": 15.5,
+    "mulheres": 19.9
+  },
+  {
+    "periodo": "201702",
+    "total": 19.0,
+    "homens": 17.4,
+    "mulheres": 21.2
+  },
+  {
+    "periodo": "201703",
+    "total": 18.1,
+    "homens": 17.1,
+    "mulheres": 19.3
+  },
+  {
+    "periodo": "201704",
+    "total": 17.0,
+    "homens": 15.8,
+    "mulheres": 18.6
+  },
+  {
+    "periodo": "201801",
+    "total": 17.9,
+    "homens": 17.4,
+    "mulheres": 18.6
+  },
+  {
+    "periodo": "201802",
+    "total": 17.1,
+    "homens": 16.7,
+    "mulheres": 17.7
+  },
+  {
+    "periodo": "201803",
+    "total": 17.0,
+    "homens": 15.9,
+    "mulheres": 18.5
+  },
+  {
+    "periodo": "201804",
+    "total": 15.6,
+    "homens": 13.8,
+    "mulheres": 18.0
+  },
+  {
+    "periodo": "201901",
+    "total": 16.3,
+    "homens": 14.2,
+    "mulheres": 19.1
+  },
+  {
+    "periodo": "201902",
+    "total": 16.1,
+    "homens": 14.5,
+    "mulheres": 18.3
+  },
+  {
+    "periodo": "201903",
+    "total": 16.0,
+    "homens": 13.3,
+    "mulheres": 19.6
+  },
+  {
+    "periodo": "201904",
+    "total": 14.2,
+    "homens": 12.3,
+    "mulheres": 16.6
+  },
+  {
+    "periodo": "202001",
+    "total": 14.8,
+    "homens": 13.4,
+    "mulheres": 16.7
+  },
+  {
+    "periodo": "202202",
+    "total": 13.6,
+    "homens": 11.0,
+    "mulheres": 17.0
+  },
+  {
+    "periodo": "202203",
+    "total": 14.0,
+    "homens": 11.0,
+    "mulheres": 17.8
+  },
+  {
+    "periodo": "202204",
+    "total": 12.3,
+    "homens": 10.0,
+    "mulheres": 15.5
+  },
+  {
+    "periodo": "202301",
+    "total": 14.1,
+    "homens": 11.8,
+    "mulheres": 17.2
+  },
+  {
+    "periodo": "202302",
+    "total": 14.2,
+    "homens": 12.5,
+    "mulheres": 16.4
+  },
+  {
+    "periodo": "202303",
+    "total": 13.3,
+    "homens": 11.5,
+    "mulheres": 15.7
+  },
+  {
+    "periodo": "202304",
+    "total": 12.0,
+    "homens": 10.2,
+    "mulheres": 14.4
+  },
+  {
+    "periodo": "202401",
+    "total": 12.4,
+    "homens": 10.3,
+    "mulheres": 15.2
+  },
+  {
+    "periodo": "202402",
+    "total": 11.6,
+    "homens": 10.0,
+    "mulheres": 13.6
+  },
+  {
+    "periodo": "202403",
+    "total": 10.6,
+    "homens": 8.9,
+    "mulheres": 12.9
+  },
+  {
+    "periodo": "202404",
+    "total": 10.3,
+    "homens": 8.1,
+    "mulheres": 13.0
+  },
+  {
+    "periodo": "202501",
+    "total": 11.6,
+    "homens": 9.7,
+    "mulheres": 14.0
+  },
+  {
+    "periodo": "202502",
+    "total": 10.4,
+    "homens": 9.3,
+    "mulheres": 11.8
+  },
+  {
+    "periodo": "202503",
+    "total": 10.0,
+    "homens": 8.0,
+    "mulheres": 12.8
+  },
+  {
+    "periodo": "202504",
+    "total": 8.8,
+    "homens": 8.2,
+    "mulheres": 9.7
+  },
+  {
+    "periodo": "202601",
+    "total": 9.2,
+    "homens": 7.7,
+    "mulheres": 11.1
+  },
+  {
+    "periodo": "202602",
+    "total": 8.3,
+    "homens": 6.8,
+    "mulheres": 10.4
+  }
+]

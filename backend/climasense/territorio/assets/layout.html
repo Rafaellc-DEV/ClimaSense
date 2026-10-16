@@ -1,0 +1,58 @@
+<a class="skip-link" href="#explorar">Pular para os controles do mapa</a>
+<header class="topbar">
+  <a class="brand" href="#"><span class="brand-mark" aria-hidden="true">r<span>·</span></span><span>recife<span class="brand-light"> / atlas</span></span></a>
+  <nav aria-label="Navegação principal"><span class="nav-active">Explorar território</span><button id="about-open">Sobre os dados <span aria-hidden="true">↗</span></button></nav>
+  <span class="course-tag">AVD <span>2026.2 / AULA 07</span></span>
+</header>
+<main>
+  <section class="intro" aria-labelledby="page-title">
+    <div><div class="eyebrow"><span></span> OBSERVATÓRIO TERRITORIAL · RECIFE, PE</div><h1 id="page-title">Uma cidade. <em>Oito distritos.</em></h1><p>Explore o território, descubra os bairros e acompanhe os caminhos da água.</p></div>
+    <button id="download" class="download-button"><span aria-hidden="true">↓</span> Exportar dados <small>CSV</small></button>
+  </section>
+  <section class="stats" aria-label="Resumo da base completa">
+    <div><span class="stat-icon" aria-hidden="true">◫</span><div><span class="stat-label">DISTRITOS SANITÁRIOS</span><strong id="total-districts">8</strong></div><small>Território integrado</small></div>
+    <div><span class="stat-icon" aria-hidden="true">⌘</span><div><span class="stat-label">BAIRROS NA BASE</span><strong id="total-neighborhoods">94</strong></div><small>Vinculados por código</small></div>
+    <div><span class="stat-icon" aria-hidden="true">◰</span><div><span class="stat-label">ÁREA MAPEADA</span><strong id="total-area">—</strong></div><small>Polígonos dos distritos</small></div>
+    <div><span class="stat-icon water" aria-hidden="true">≈</span><div><span class="stat-label">FAIXAS HÍDRICAS</span><strong id="total-water">81</strong></div><small>Feições na camada</small></div>
+  </section>
+  <section class="workspace" aria-label="Explorador de distritos">
+    <aside class="sidebar" id="explorar" tabindex="-1">
+      <div class="sidebar-head"><div class="eyebrow">SEU RECORTE DO TERRITÓRIO</div><h2>Explore o mapa</h2></div>
+      <label class="field-label" for="search">Distrito ou bairro</label>
+      <div class="search-box"><span aria-hidden="true">⌕</span><input id="search" type="search" placeholder="Ex.: Boa Viagem, DS II…" autocomplete="off"></div>
+      <label class="field-label" for="metric">Colorir por</label>
+      <select id="metric"><option value="quantidade_bairros">Quantidade de bairros</option><option value="area_km2">Área do distrito (km²)</option></select>
+      <p class="field-help" id="metric-help">Quanto mais escuro, maior o número de bairros.</p>
+      <p class="data-note">Vínculos dos DS VII e VIII conferidos com a Secretaria de Saúde. <button id="correction-open">Ver nota</button></p>
+      <div class="section-label"><h3>Camadas</h3><span>02</span></div>
+      <label class="toggle-row"><span><i class="layer-dot districts-dot"></i>Distritos sanitários</span><input id="districts-toggle" type="checkbox" checked role="switch"></label>
+      <label class="toggle-row"><span><i class="layer-dot water-dot"></i>Faixas de recursos hídricos</span><input id="water-toggle" type="checkbox" checked role="switch"></label>
+      <label class="opacity-label" for="opacity">Intensidade do preenchimento <output id="opacity-value">72%</output></label>
+      <input type="range" id="opacity" min="20" max="95" value="72">
+      <div class="section-label district-list-heading"><h3>Distritos</h3><span id="result-count" role="status">8 de 8</span></div>
+      <div id="district-list" class="district-list"></div>
+      <p class="empty-state" id="no-results" hidden>Nenhum distrito encontrado. Tente outro nome ou limpe a busca.</p>
+      <button id="reset" class="reset-button">↺ <span>Limpar filtros e ver todos</span></button>
+    </aside>
+    <div class="map-column">
+      <div class="map-toolbar"><div><span class="live-dot"></span><strong>Mapa dos distritos</strong><span class="toolbar-location">Recife · Pernambuco</span></div><button id="fit" title="Enquadrar os distritos visíveis"><span aria-hidden="true">⛶</span> Enquadrar</button></div>
+      <div class="map-canvas" id="map-canvas">
+        <div id="map-slot" aria-label="Mapa interativo dos distritos sanitários do Recife"></div>
+        <div class="map-label">RECIFE <span>8°03′ S · 34°54′ O</span></div>
+        <div class="legend" aria-label="Legenda de intensidade"><span class="eyebrow">LEITURA DO MAPA</span><h3 id="legend-title">Bairros por distrito</h3><div id="legend-bins"></div><div class="water-key"><i></i>Faixas marginais dos recursos hídricos</div></div>
+        <p class="map-network" id="network-notice" hidden>Mapa de ruas indisponível. Os distritos e recursos hídricos continuam navegáveis.</p>
+      </div>
+      <div class="map-status"><span><span class="live-dot"></span><span id="map-status" role="status">8 distritos visíveis</span></span><span>Arraste para navegar · Role para ampliar</span></div>
+    </div>
+    <aside class="detail-panel" aria-label="Detalhes do distrito">
+      <div class="eyebrow">OLHAR DE PERTO</div><h2 id="detail-title">Conheça o território</h2>
+      <p id="detail-description">Selecione um distrito no mapa ou na lista para explorar seus bairros.</p>
+      <div id="detail-content" hidden><span class="selected-tag">DISTRITO SELECIONADO</span><div class="detail-values"><div><strong id="detail-count"></strong><span>bairros</span></div><div><strong id="detail-area"></strong><span>km² de área</span></div></div><h3>Bairros do distrito</h3><div id="neighborhood-list" class="neighborhood-list"></div><button id="clear-selection" class="reset-button">Voltar à visão geral</button></div>
+      <div id="overview-content"><div class="mini-guide"><span aria-hidden="true">↖</span><p><strong>O mapa é seu ponto de partida.</strong>Passe o cursor para consultar. Clique para aproximar.</p></div><h3>Compare os distritos</h3><p class="subtle" id="ranking-caption">Quantidade de bairros</p><div id="ranking" class="ranking"></div></div>
+      <div class="insight"><span class="eyebrow">COMO INTERPRETAR</span><p id="interpretation">As cores representam a quantidade de bairros em cada distrito. Não representam população, risco ou qualidade dos serviços de saúde.</p></div>
+    </aside>
+  </section>
+  <footer><span><strong>Dados que aproximam.</strong> Uma leitura aberta do território.</span><span>Fonte: <a href="https://dados.recife.pe.gov.br/dataset/distritos-sanitarios" target="_blank" rel="noopener">Dados Abertos do Recife ↗</a><span class="footer-divider">/</span><span id="snapshot-date"></span></span></footer>
+</main>
+<dialog id="about-dialog"><button id="about-close" class="dialog-close" aria-label="Fechar sobre os dados">×</button><div class="eyebrow">DADOS ABERTOS · AULA 07</div><h2>Um mapa, fontes verificáveis.</h2><p>Os limites oficiais dos distritos são relacionados ao CSV de bairros pelo código <code>cdistscodi / distrito_sanitario</code>. A coleção <code>Recife.DistritosSanitarios</code> armazena os documentos no MongoDB Atlas.</p><p id="provenance"></p><h3>O que as cores mostram?</h3><p>O indicador inicial conta bairros distintos por distrito. A opção de área usa o elipsoide WGS84, em km², descontando os anéis internos. A escala tem cinco intervalos iguais entre o menor e o maior valor da base completa; os filtros não alteram seus limites.</p><h3>Recursos hídricos</h3><p>A camada azul exibe as <strong>faixas marginais</strong> associadas aos recursos hídricos, como solicitado no exercício. São polígonos de entorno, não apenas os leitos ou eixos dos rios. Os nomes e as bacias aparecem ao passar o cursor.</p><h3>Correção documentada: distritos VII e VIII</h3><p>O CSV da aula apresenta vínculos divergentes para esses dois distritos. A relação da Secretaria de Saúde foi usada para atribuir 13 bairros ao DS VII (incluindo Guabiraba e Brejo de Beberibe) e 3 ao DS VIII (Cohab, Ibura e Jordão). O CSV original foi preservado; os 15 ajustes estão registrados em <code>dados/correcoes-bairros.json</code> e os códigos originais permanecem nos documentos exportados.</p><p><a href="https://www2.recife.pe.gov.br/servico/localizacao-das-usf" target="_blank" rel="noopener">Consultar a relação da Secretaria de Saúde ↗</a></p><p>A data exibida é a data de geração do HTML, não um novo censo. O HTML contém uma fotografia dos dados; execute novamente o gerador para atualizar.</p><div class="source-links"><a href="https://dados.recife.pe.gov.br/dataset/distritos-sanitarios" target="_blank" rel="noopener">Distritos e bairros ↗</a><a href="https://dados.recife.pe.gov.br/dataset/faixas-marginais-dos-recursos-hidricos" target="_blank" rel="noopener">Faixas marginais ↗</a></div></dialog>
+<noscript>Ative o JavaScript no navegador para explorar o mapa.</noscript>

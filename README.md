@@ -68,6 +68,22 @@ cd ..
 
 No primeiro acesso, o ClimaSense pede a troca da senha. As demais contas da equipe são criadas pelo administrador; cada pessoa recebe uma senha temporária, que precisa trocar ao entrar.
 
+## Carregar os dados reais
+
+Com o `.env` preenchido, dentro de `backend` (cada comando busca a fonte real pela internet):
+
+```powershell
+..\.venv\Scripts\python -m climasense.territorio carregar      # distritos, bairros e faixas hídricas → Atlas + app.territorios
+..\.venv\Scripts\python -m climasense.etl listar                # fontes e situação
+..\.venv\Scripts\python -m climasense.etl run vacinacao --limite 1000
+..\.venv\Scripts\python -m climasense.etl run open-meteo-historico
+..\.venv\Scripts\python -m climasense.etl run open-meteo-previsao
+..\.venv\Scripts\python -m climasense.etl run open-meteo-mare
+..\.venv\Scripts\python -m climasense.etl verificar-gold        # confere se a gold é recalculável da silver
+```
+
+As fontes planejadas (ANA, APAC, INMET, Cemaden, alagamentos, tábua da Marinha) estão descritas em [`docs/dicionario-dados/`](docs/dicionario-dados/) e não geram dados até terem conector.
+
 ## Rodar em desenvolvimento
 
 ```powershell
@@ -96,7 +112,9 @@ cd frontend; npm test; npm run lint
 | M1 Identidade visual e design system | Concluído |
 | M2 Backend base e arquitetura | Concluído |
 | M3 Autenticação e papéis | Concluído |
-| M4 em diante (território, ETL, API analítica, telas) | Planejado — ver [`specs/tasks.md`](specs/tasks.md) |
+| M4 Território (Atlas, GeoJSON, mapa portátil) | Concluído |
+| M5 ETL em POO e fontes reais (vacinação, Open-Meteo) | Concluído |
+| M6 em diante (séries, cenários, avaliações, telas da equipe) | Planejado — ver [`specs/tasks.md`](specs/tasks.md) |
 
 ## Origem do código
 

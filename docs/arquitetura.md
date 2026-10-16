@@ -85,8 +85,8 @@ As regras que mais importam ao produto (ausência de dado ≠ risco baixo, ningu
 |---|---|---|---|---|
 | Saúde do sistema | — | — | `/health` | M2 ✅ |
 | Autenticação e papéis | `papeis.py`, `bloqueio.py`, `senha.py` | `autenticacao.py`, `usuarios.py` | `/auth/*`, `/admin/usuarios` | M3 ✅ |
-| Território | `territorio.py` | `territorio.py` | `/territorios/*` | M4 |
-| Fontes e qualidade | `qualidade.py` | `fontes.py` | `/fontes`, `/etl` | M5 |
+| Território | `territorio.py` | — (rotas finas sobre `territorio/`) | `/territorios/*`, `/publico/estado` | M4 ✅ |
+| Fontes e qualidade | `qualidade.py` | `etl/execucao.py` | `/fontes`, `/etl` | M5 ✅ |
 | Séries | `estatistica.py`, `series.py` | `series.py` | `/series/*` | M6 |
 | Cenários | `cenario.py` | `cenarios.py` | `/cenarios` | M6 |
 | Saúde agregada | `saude.py` | `saude.py` | `/saude/*` | M6 |
@@ -122,7 +122,8 @@ classDiagram
   Conector o-- Load
   Conector <|-- ConectorVacinacao
   Conector <|-- ConectorOpenMeteoHistorico
-  Conector <|-- ConectorRecifeAlagamento
+  Conector <|-- ConectorOpenMeteoPrevisao
+  Conector <|-- ConectorOpenMeteoMare
 ```
 
 `executar()` é o método-modelo comum: extrai → grava a bronze (acumulativa, com `_execucao_id`) → transforma → grava a silver → registra a execução em `app.etl_execucoes`. Para adicionar uma fonte nova, crie uma subclasse de `Conector` e implemente `extrair` e `transformar`.
@@ -181,6 +182,6 @@ backend/
 │   ├── etl/                 extract.py, transform.py, load.py, conectores/, gold/*.sql
 │   ├── territorio/          carga oficial, geometria, mapa portátil
 │   └── modelos/             interface do estimador de alagamento
-├── migrations/versions/     0001 app · 0002 silver e gold · 0003 auditoria somente-inclusão
+├── migrations/versions/     0001 app · 0002 silver e gold · 0003 auditoria · 0004 fontes
 └── tests/                   unit/ (sem banco) · integration/ (Postgres real)
 ```

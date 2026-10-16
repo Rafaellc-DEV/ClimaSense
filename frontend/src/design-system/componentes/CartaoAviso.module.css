@@ -1,0 +1,57 @@
+.cartao {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--e-3);
+  padding: var(--e-5) var(--e-5) var(--e-5) calc(var(--e-5) + 6px);
+  background: var(--cs-papel);
+  border: var(--borda);
+  border-radius: var(--r-painel);
+  overflow: hidden;
+}
+/* a faixa lateral na cor do nível é a régua deitada: a cor nunca aparece sem o selo com o texto (RN-17) */
+.cartao::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 6px;
+  background: var(--cor-nivel);
+}
+.titulo {
+  font-size: var(--t-4);
+  line-height: 1.3;
+  font-weight: 700;
+  color: var(--cs-tinta);
+}
+.titulo a {
+  color: inherit;
+}
+.onde {
+  font-weight: 600;
+}
+.rotulo {
+  color: var(--cs-tinta-2);
+  font-weight: 700;
+}
+.texto {
+  max-width: 68ch;
+}
+.fazer h4 {
+  margin: 0 0 var(--e-2);
+  font-size: var(--t-corpo);
+  font-weight: 700;
+}
+.fazer ul {
+  margin: 0;
+  padding-left: 1.2em;
+  display: grid;
+  gap: var(--e-1);
+}
+.validade {
+  padding-top: var(--e-3);
+  border-top: var(--borda);
+  width: 100%;
+  font-size: var(--t-apoio);
+  color: var(--cs-tinta-2);
+}

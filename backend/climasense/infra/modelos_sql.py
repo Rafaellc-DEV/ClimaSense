@@ -122,6 +122,7 @@ class Avaliacao(Base):
     versao_atual: Mapped[int] = mapped_column(Integer, default=1)
     criado_por: Mapped[uuid.UUID] = mapped_column(ForeignKey("app.usuarios.id"))
     criado_em: Mapped[datetime] = _agora()
+    atualizado_em: Mapped[datetime] = _agora()
 
 
 class AvaliacaoVersao(Base):
@@ -153,6 +154,9 @@ class Comunicado(Base):
     publicado_em: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     publicado_por: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("app.usuarios.id"), nullable=True)
     avaliacao_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("app.avaliacoes.id"), nullable=True)
+    criado_por: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("app.usuarios.id"), nullable=True)
+    criado_em: Mapped[datetime] = _agora()
+    atualizado_em: Mapped[datetime] = _agora()
 
 
 class ComunicadoVersao(Base):
@@ -168,6 +172,11 @@ class ComunicadoVersao(Base):
     autor_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("app.usuarios.id"))
     criado_em: Mapped[datetime] = _agora()
     hash_conteudo: Mapped[str] = mapped_column(String(64))
+    territorios: Mapped[list[str]] = mapped_column(ARRAY(String(80)))
+    publico: Mapped[str] = mapped_column(String(40))
+    nivel: Mapped[str] = mapped_column(String(15))
+    validade_inicio: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    validade_fim: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
 
 class Revisao(Base):

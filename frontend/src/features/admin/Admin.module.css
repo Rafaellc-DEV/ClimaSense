@@ -1,0 +1,134 @@
+.abas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--e-2);
+  margin-bottom: var(--e-5);
+  border-bottom: var(--borda);
+}
+.abas a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 48px;
+  padding: 0 var(--e-4);
+  color: var(--cs-tinta-2);
+  font-weight: 600;
+  text-decoration: none;
+  border-bottom: 4px solid transparent;
+  margin-bottom: -1px;
+}
+.abas a:global(.active) {
+  color: var(--cs-mare);
+  font-weight: 700;
+  border-bottom-color: var(--cs-mangue);
+}
+.pessoa {
+  display: flex;
+  flex-direction: column;
+}
+.pessoa span {
+  font-weight: 400;
+  font-size: var(--t-apoio);
+  color: var(--cs-tinta-2);
+}
+.situacao {
+  font-weight: 700;
+}
+.situacao[data-ativo="false"] {
+  color: var(--cs-tinta-2);
+}
+.acoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+}
+.form {
+  display: grid;
+  gap: var(--e-4);
+  margin-top: var(--e-4);
+}
+.papeis {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--e-2);
+}
+.papeis legend {
+  font-weight: 700;
+  margin-bottom: var(--e-2);
+}
+.papeis label {
+  display: flex;
+  gap: var(--e-3);
+  align-items: flex-start;
+  padding: var(--e-3);
+  border: var(--borda);
+  border-radius: var(--r-campo);
+  cursor: pointer;
+}
+.papeis label:has(input:checked) {
+  border: 2px solid var(--cs-mare);
+  background: var(--cs-mare-suave);
+}
+.papeis input {
+  width: 20px;
+  height: 20px;
+  margin-top: 3px;
+  accent-color: var(--cs-mare);
+}
+.papeis label > span {
+  display: flex;
+  flex-direction: column;
+}
+.papeis label > span span {
+  font-size: var(--t-apoio);
+  color: var(--cs-tinta-2);
+}
+.senha {
+  margin: var(--e-4) 0;
+  padding: var(--e-4);
+  background: var(--cs-nevoa);
+  border: 2px dashed var(--cs-mare);
+  border-radius: var(--r-campo);
+  font-size: var(--t-4);
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+.erro {
+  color: var(--n-critico);
+  font-weight: 700;
+}
+.execucao {
+  display: flex;
+  flex-direction: column;
+  font-weight: 700;
+}
+.execucao small {
+  font-weight: 400;
+  font-size: var(--t-apoio);
+  color: var(--cs-tinta-2);
+}
+.execucao[data-status="falha"] {
+  color: var(--n-critico);
+}
+.explicacao {
+  color: var(--cs-tinta-2);
+  margin-bottom: var(--e-4);
+}
+.filtros {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: var(--e-4);
+  margin-bottom: var(--e-5);
+}
+.detalhes {
+  font-size: 14px;
+  color: var(--cs-tinta-2);
+  overflow-wrap: anywhere;
+}
+.paginas {
+  display: flex;
+  align-items: center;
+  gap: var(--e-4);
+  margin-top: var(--e-4);
+}

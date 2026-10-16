@@ -1,0 +1,52 @@
+.painel {
+  min-width: 0;
+  padding: var(--e-5);
+  background: var(--cs-papel);
+  border: var(--borda);
+  border-radius: var(--r-painel);
+}
+.largo {
+  grid-column: 1 / -1;
+}
+.topo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--e-2) var(--e-4);
+  margin-bottom: var(--e-4);
+}
+.topo h2 {
+  font-size: var(--t-4);
+  line-height: 1.3;
+  font-weight: 650;
+}
+.carregando {
+  display: flex;
+  align-items: center;
+  gap: var(--e-3);
+  color: var(--cs-tinta-2);
+  padding: var(--e-3) 0;
+}
+.barra {
+  width: 40px;
+  height: 4px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, var(--cs-linha) 0 50%, var(--cs-mare) 50% 100%);
+  background-size: 200% 100%;
+  animation: correr 1s linear infinite;
+}
+@keyframes correr {
+  to {
+    background-position: -100% 0;
+  }
+}
+.tentar {
+  background: none;
+  border: 0;
+  padding: 0;
+  color: var(--cs-mangue);
+  font-weight: 700;
+  text-decoration: underline;
+  cursor: pointer;
+}

@@ -5,7 +5,10 @@
   gap: var(--e-3);
   min-height: var(--alvo);
   min-width: 220px;
-  padding: 0 var(--e-4);
+  max-width: 100%;
+  padding: var(--e-2) var(--e-4);
+  text-align: left;
+  line-height: 1.3;
   border: 2px solid var(--cs-linha-forte);
   border-radius: var(--r-campo);
   background: var(--cs-papel);

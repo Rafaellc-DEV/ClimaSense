@@ -1,0 +1,125 @@
+.controles {
+  display: grid;
+  grid-template-columns: minmax(180px, 240px) auto minmax(220px, 300px);
+  gap: var(--e-5);
+  align-items: start;
+  margin-bottom: var(--e-5);
+  padding: var(--e-4) var(--e-5);
+  background: var(--cs-papel);
+  border: var(--borda);
+  border-radius: var(--r-painel);
+}
+.segmentado {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+}
+.segmentado legend {
+  padding: 0;
+  margin-bottom: var(--e-2);
+  font-weight: 700;
+}
+.segmentado div {
+  display: inline-flex;
+  border: 2px solid var(--cs-mare);
+  border-radius: var(--r-campo);
+  overflow: hidden;
+}
+.segmentado label {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 var(--e-4);
+  font-weight: 600;
+  color: var(--cs-mare);
+  cursor: pointer;
+}
+.segmentado label + label {
+  border-left: 2px solid var(--cs-mare);
+}
+.segmentado label[data-marcado="true"] {
+  background: var(--cs-mare);
+  color: var(--cs-sobre-mare);
+  font-weight: 700;
+}
+.segmentado input {
+  position: absolute;
+  opacity: 0;
+}
+.segmentado label:has(input:focus-visible) {
+  outline: 3px solid var(--cs-foco);
+  outline-offset: -3px;
+}
+.pilha {
+  display: grid;
+  gap: var(--e-5);
+}
+.avisos {
+  margin: 0;
+  padding: var(--e-3) var(--e-4) var(--e-3) var(--e-7);
+  background: var(--n-info-bg);
+  border-left: 4px solid var(--n-info);
+  border-radius: var(--r-campo);
+  color: var(--n-texto);
+}
+.cobertura {
+  font-size: var(--t-apoio);
+  color: var(--cs-tinta-2);
+  margin-top: calc(-1 * var(--e-3));
+}
+.duas {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--e-5);
+  align-items: start;
+}
+.metodo {
+  max-width: 80ch;
+  color: var(--cs-tinta-2);
+}
+@media (max-width: 1200px) {
+  .duas {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media (max-width: 900px) {
+  .controles {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.legendaMedidas {
+  font-size: var(--t-apoio);
+  color: var(--cs-tinta-2);
+  margin: var(--e-3) 0;
+}
+.medidas {
+  margin: 0 0 var(--e-4);
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: var(--e-3);
+}
+.medidas div {
+  padding: var(--e-3);
+  border: var(--borda);
+  border-radius: var(--r-campo);
+}
+.medidas dt {
+  font-weight: 700;
+}
+.medidas dd {
+  margin: 0;
+}
+.valorMedida {
+  font-size: var(--t-4);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--cs-mare);
+}
+.explicacaoMedida {
+  margin-top: var(--e-1) !important;
+  font-size: var(--t-apoio);
+  color: var(--cs-tinta-2);
+}

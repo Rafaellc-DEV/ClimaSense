@@ -45,7 +45,7 @@ export function QuadroGrafico({
       ...opcao,
       aria: { enabled: texturas, label: { enabled: false }, decal: { show: texturas } },
     }),
-    [opcao, titulo, resumo, texturas],
+    [opcao, texturas],
   );
 
   return (

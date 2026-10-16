@@ -1,0 +1,589 @@
+/* Landing pública (design §9.1). A régua e a frase de estado são o primeiro elemento percebido (RNF-VIS-03). */
+.pagina {
+  min-height: 100vh;
+  background: var(--cs-nevoa);
+  color: var(--cs-tinta);
+  overflow-x: hidden;
+}
+.pular {
+  position: absolute;
+  left: var(--e-4);
+  top: -100px;
+  z-index: 100;
+  padding: var(--e-3) var(--e-4);
+  background: var(--cs-papel);
+  border: 2px solid var(--cs-mare);
+  border-radius: var(--r-campo);
+  font-weight: 700;
+}
+.pular:focus {
+  top: var(--e-3);
+}
+
+/* ---------- topo */
+.topo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--e-4);
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: var(--e-4) var(--e-6);
+}
+.logo {
+  width: 188px;
+  height: auto;
+  display: block;
+}
+.nav {
+  display: flex;
+  align-items: center;
+  gap: var(--e-5);
+}
+.nav a {
+  color: var(--cs-tinta);
+  font-weight: 600;
+  text-decoration: none;
+}
+.nav a:hover {
+  text-decoration: underline;
+}
+.nav .entrar {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 var(--e-4);
+  border: 2px solid var(--cs-linha-forte);
+  border-radius: var(--r-campo);
+  color: var(--cs-mare);
+}
+
+/* ---------- herói: régua + frase de estado */
+.heroi {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: var(--e-8);
+  align-items: center;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: var(--e-7) var(--e-6) var(--e-8);
+  isolation: isolate;
+}
+.rios {
+  position: absolute;
+  inset: -10% -20% -10% 30%;
+  z-index: -1;
+  opacity: 0.55;
+  pointer-events: none;
+}
+.rios :global(svg) {
+  width: 100%;
+  height: 100%;
+}
+.rios :global(path) {
+  fill: none;
+  stroke: var(--g-seq-3);
+  stroke-width: 1.1;
+}
+.heroiRegua {
+  padding-left: var(--e-2);
+}
+.heroiTexto {
+  max-width: 820px;
+}
+.seloMovel {
+  display: none;
+  margin-bottom: var(--e-4);
+}
+.frase {
+  font-size: var(--t-estado);
+  line-height: 1.05;
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  color: var(--cs-mare);
+  max-width: 17ch;
+}
+.apoio {
+  margin-top: var(--e-5);
+  font-size: 1.25rem;
+  max-width: 52ch;
+}
+.verificacao {
+  margin-top: var(--e-3);
+  color: var(--cs-tinta-2);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- busca do bairro */
+.busca {
+  margin-top: var(--e-6);
+  max-width: 640px;
+}
+.busca label {
+  display: block;
+  font-weight: 700;
+  margin-bottom: var(--e-2);
+}
+.buscaLinha {
+  display: flex;
+  gap: var(--e-2);
+}
+.buscaLinha input {
+  flex: 1;
+  min-width: 0;
+  min-height: var(--alvo-grande);
+  padding: 0 var(--e-4);
+  border: 2px solid var(--cs-linha-forte);
+  border-radius: var(--r-campo);
+  background: var(--cs-papel);
+  font-size: var(--t-corpo);
+}
+.buscaLinha button {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--e-2);
+  min-height: var(--alvo-grande);
+  padding: 0 var(--e-5);
+  border: 0;
+  border-radius: var(--r-campo);
+  background: var(--cs-mare);
+  color: var(--cs-sobre-mare);
+  font-weight: 700;
+  font-size: var(--t-corpo);
+  white-space: nowrap;
+  cursor: pointer;
+}
+.buscaLinha button:hover {
+  background: var(--cs-mare-forte);
+}
+.buscaNota {
+  margin-top: var(--e-2);
+  font-size: var(--t-apoio);
+  color: var(--cs-tinta-2);
+}
+.sugestoes {
+  list-style: none;
+  margin: var(--e-2) 0 0;
+  padding: var(--e-1);
+  background: var(--cs-papel);
+  border: var(--borda);
+  border-radius: var(--r-campo);
+  box-shadow: var(--sombra-flutuante);
+}
+.sugestoes button {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  gap: var(--e-3);
+  min-height: var(--alvo-lista);
+  padding: var(--e-2) var(--e-3);
+  border: 0;
+  border-radius: var(--r-campo);
+  background: none;
+  text-align: left;
+  cursor: pointer;
+}
+.sugestoes button:hover {
+  background: var(--cs-nevoa);
+}
+.sugestoes span {
+  color: var(--cs-tinta-2);
+  font-size: var(--t-apoio);
+}
+.resultado {
+  margin-top: var(--e-3);
+  padding: var(--e-3) var(--e-4);
+  background: var(--cs-papel);
+  border: var(--borda);
+  border-left: 4px solid var(--cs-mangue);
+  border-radius: var(--r-campo);
+}
+.resultado ul {
+  margin: var(--e-2) 0 0;
+  padding-left: 1.2em;
+}
+
+.buscaMovel {
+  display: none;
+}
+
+/* ---------- emergência */
+.emergencia {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--e-3) var(--e-6);
+  padding: var(--e-4) max(var(--e-6), calc((100vw - 1280px) / 2 + var(--e-6)));
+  background: var(--cs-mare);
+  color: #fff;
+}
+.emergencia h2 {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--e-2);
+  font-size: var(--t-corpo);
+  font-weight: 700;
+}
+.emergencia ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--e-3);
+}
+.emergencia a {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--e-2);
+  min-height: var(--alvo);
+  padding: var(--e-2) var(--e-4);
+  border: 2px solid rgba(255, 255, 255, 0.55);
+  border-radius: var(--r-campo);
+  color: #fff;
+  font-weight: 600;
+  text-decoration: none;
+}
+.emergencia a:hover {
+  background: #fff;
+  color: var(--cs-mare);
+}
+.emergencia a:focus-visible {
+  outline-color: var(--cs-sol);
+}
+.numero {
+  font-size: 1.5rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- avisos em vigor + mapa */
+.vigor {
+  display: grid;
+  grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+  gap: var(--e-7);
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: var(--e-8) var(--e-6);
+}
+.h2 {
+  font-size: var(--t-3);
+  line-height: 1.2;
+  font-weight: 700;
+  color: var(--cs-mare);
+  margin-bottom: var(--e-3);
+}
+.lead {
+  max-width: 62ch;
+  color: var(--cs-tinta-2);
+  margin-bottom: var(--e-5);
+}
+.cartoes {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--e-4);
+}
+.mapa {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--e-4);
+}
+.mapa svg {
+  width: 100%;
+  max-width: 360px;
+  height: auto;
+}
+.distrito {
+  fill: transparent;
+  stroke: var(--cs-mare);
+  stroke-width: 1.4;
+  stroke-linejoin: round;
+}
+[data-afetado="true"] .distrito {
+  fill: var(--cor-nivel);
+  fill-opacity: 0.85;
+  stroke: var(--cs-tinta);
+  stroke-width: 2;
+  animation: preencher 700ms ease-out;
+}
+@keyframes preencher {
+  from {
+    fill-opacity: 0;
+  }
+}
+.rotuloDistrito {
+  font-size: 15px;
+  font-weight: 800;
+  fill: var(--cs-tinta);
+  paint-order: stroke;
+  stroke: var(--cs-nevoa);
+  stroke-width: 4px;
+}
+.listaDistritos {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 2px;
+}
+.listaDistritos li {
+  display: grid;
+  grid-template-columns: 14px minmax(0, 1fr) auto;
+  gap: var(--e-3);
+  align-items: center;
+  padding: 6px 0;
+  border-bottom: var(--borda);
+  font-size: var(--t-apoio);
+}
+.marcador {
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--cs-mare);
+  border-radius: 2px;
+}
+.listaDistritos li[data-afetado="true"] .marcador {
+  background: var(--cor-nivel);
+  border-color: var(--cs-tinta);
+}
+.listaDistritos li[data-afetado="true"] {
+  font-weight: 700;
+}
+.situacaoDistrito {
+  color: var(--cs-tinta-2);
+}
+.notaMapa {
+  margin-top: var(--e-3);
+  font-size: var(--t-apoio);
+  color: var(--cs-tinta-2);
+}
+
+/* ---------- seções */
+.faixaClara {
+  background: var(--cs-papel);
+  border-top: var(--borda);
+  border-bottom: var(--borda);
+}
+.secao {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: var(--e-8) var(--e-6);
+}
+.passos {
+  list-style: none;
+  counter-reset: passo;
+  margin: var(--e-5) 0 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--e-6);
+}
+.passos li {
+  counter-increment: passo;
+  position: relative;
+  padding-top: var(--e-7);
+  border-top: 2px solid var(--cs-mare);
+}
+/* sequência real: a numeração carrega informação (design §8.2) */
+.passos li::before {
+  content: counter(passo);
+  position: absolute;
+  top: var(--e-3);
+  left: 0;
+  font-size: var(--t-3);
+  font-weight: 800;
+  line-height: 1;
+  color: var(--cs-mangue);
+}
+.passos h3 {
+  font-size: var(--t-4);
+  margin-bottom: var(--e-2);
+}
+.passos p {
+  color: var(--cs-tinta-2);
+  max-width: 40ch;
+}
+.sobre {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--e-6);
+  margin-top: var(--e-4);
+}
+.sobre h3 {
+  font-size: var(--t-4);
+  margin-bottom: var(--e-2);
+}
+.sobre p {
+  max-width: 56ch;
+}
+.fontes {
+  list-style: none;
+  margin: var(--e-4) 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: var(--e-3);
+}
+.fontes li {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: var(--e-4);
+  background: var(--cs-papel);
+  border: var(--borda);
+  border-radius: var(--r-painel);
+}
+.fontes li[data-status="planejada"] {
+  background: transparent;
+  border-style: dashed;
+}
+.fontes li span {
+  font-size: var(--t-apoio);
+  color: var(--cs-tinta-2);
+}
+.fontes .statusFonte {
+  font-weight: 700;
+  color: var(--cs-tinta);
+}
+.nota {
+  max-width: 68ch;
+  color: var(--cs-tinta-2);
+}
+
+/* ---------- rodapé */
+.rodape {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: var(--e-6);
+  align-items: start;
+  padding: var(--e-7) max(var(--e-6), calc((100vw - 1280px) / 2 + var(--e-6)));
+  background: var(--cs-tinta);
+  color: #fff;
+}
+.rodape img {
+  width: 160px;
+  height: auto;
+}
+.rodape p + p {
+  margin-top: var(--e-2);
+  opacity: 0.85;
+}
+.rodape ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--e-2);
+}
+.rodape a {
+  color: #fff;
+}
+
+/* ---------- detalhe do aviso */
+.detalhe {
+  max-width: 820px;
+  margin: 0 auto;
+  padding: var(--e-6) var(--e-6) var(--e-8);
+  display: grid;
+  gap: var(--e-5);
+}
+.voltar {
+  font-weight: 600;
+}
+
+@media (max-width: 1023px) {
+  .vigor {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .heroi {
+    gap: var(--e-6);
+  }
+}
+@media (max-width: 760px) {
+  .topo {
+    padding: var(--e-3) var(--e-4);
+  }
+  .logo {
+    width: 140px;
+  }
+  .nav a:not(.entrar) {
+    display: none;
+  }
+  .nav .entrar {
+    min-height: 40px;
+    padding: 0 var(--e-3);
+    border-width: 1px;
+    font-size: var(--t-apoio);
+  }
+  /* no celular a régua grande vira selo, para os telefones caberem na primeira tela (RF-01.6) */
+  .heroi {
+    grid-template-columns: minmax(0, 1fr);
+    padding: var(--e-4) var(--e-4) var(--e-5);
+  }
+  .heroiRegua {
+    display: none;
+  }
+  .seloMovel {
+    display: block;
+    margin-bottom: var(--e-3);
+  }
+  .frase {
+    font-size: 2.1rem;
+  }
+  .apoio {
+    margin-top: var(--e-3);
+    font-size: var(--t-corpo);
+  }
+  .buscaDesktop {
+    display: none;
+  }
+  .buscaMovel {
+    display: block;
+    padding: var(--e-2) var(--e-4) 0;
+  }
+  .buscaLinha {
+    flex-direction: column;
+  }
+  .emergencia {
+    padding: var(--e-3) var(--e-4);
+    gap: var(--e-2);
+  }
+  .emergencia ul {
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--e-2);
+  }
+  .emergencia a {
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+    padding: var(--e-1) var(--e-2);
+    font-size: 15px;
+  }
+  .vigor,
+  .secao {
+    padding: var(--e-6) var(--e-4);
+  }
+  .passos,
+  .sobre {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--e-5);
+  }
+  .rodape {
+    grid-template-columns: minmax(0, 1fr);
+    padding: var(--e-6) var(--e-4);
+  }
+  .detalhe {
+    padding: var(--e-4);
+  }
+  .listaDistritos li {
+    grid-template-columns: 14px minmax(0, 1fr);
+  }
+  .situacaoDistrito {
+    grid-column: 2;
+    font-size: 15px;
+  }
+}

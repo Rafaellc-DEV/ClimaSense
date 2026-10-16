@@ -40,9 +40,12 @@ class UsuarioAtual(BaseModel):
     permissoes: list[str]
     troca_senha_obrigatoria: bool
     expira_em: datetime
+    ambiente: str
+    inatividade_min: int
+    mapa_tiles_url: str
 
 
-def _usuario_atual(usuario: Usuario, expira_em: datetime) -> UsuarioAtual:
+def _usuario_atual(usuario: Usuario, expira_em: datetime, config: Configuracao) -> UsuarioAtual:
     return UsuarioAtual(
         id=usuario.id,
         nome=usuario.nome,
@@ -51,6 +54,9 @@ def _usuario_atual(usuario: Usuario, expira_em: datetime) -> UsuarioAtual:
         permissoes=sorted(p.value for p in permissoes(usuario.papeis)),
         troca_senha_obrigatoria=usuario.troca_senha_obrigatoria,
         expira_em=expira_em,
+        ambiente=config.ambiente,
+        inatividade_min=config.sessao_inatividade_min,
+        mapa_tiles_url=config.map_tiles_url,
     )
 
 
@@ -80,7 +86,7 @@ def entrar(
     except FalhaAutenticacao as erro:
         raise ErroClimaSense(erro.status, erro.mensagem) from None
     _cookies(resposta, config, r.sessao.token, r.sessao.csrf)
-    return _usuario_atual(r.usuario, r.sessao.expira_em)
+    return _usuario_atual(r.usuario, r.sessao.expira_em, config)
 
 
 @router.post("/sair", status_code=204, summary="Sair")
@@ -98,14 +104,18 @@ def sair(
 
 
 @router.get("/eu", response_model=UsuarioAtual, summary="Conta atual e expiração da sessão")
-def eu(ctx: Contexto = Depends(contexto_autenticado)) -> UsuarioAtual:
-    return _usuario_atual(ctx.usuario, ctx.sessao.expira_em)
+def eu(
+    ctx: Contexto = Depends(contexto_autenticado), config: Configuracao = Depends(configuracao)
+) -> UsuarioAtual:
+    return _usuario_atual(ctx.usuario, ctx.sessao.expira_em, config)
 
 
 @router.post("/renovar", response_model=UsuarioAtual, summary="Continuar conectado")
-def renovar(ctx: Contexto = Depends(contexto_autenticado)) -> UsuarioAtual:
+def renovar(
+    ctx: Contexto = Depends(contexto_autenticado), config: Configuracao = Depends(configuracao)
+) -> UsuarioAtual:
     # A própria validação renova a inatividade; este endpoint existe para o botão “Continuar conectado”.
-    return _usuario_atual(ctx.usuario, ctx.sessao.expira_em)
+    return _usuario_atual(ctx.usuario, ctx.sessao.expira_em, config)
 
 
 @router.post("/trocar-senha", status_code=204, summary="Trocar a senha")
