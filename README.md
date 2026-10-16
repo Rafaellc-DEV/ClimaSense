@@ -41,16 +41,10 @@ ClimaSense/
 
 O ambiente virtual **`.venv`** fica dentro da pasta `ClimaSense` e é criado no seu computador (ele não vai para o Git). Um único script cria a `.venv`, instala todas as bibliotecas Python e do frontend e prepara o `.env`.
 
-**Windows — no terminal do VS Code, dentro da pasta ClimaSense:**
+No terminal do VS Code, dentro da pasta ClimaSense (só uma vez):
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\setup.ps1
-```
-
-**Linux / macOS:**
-
-```bash
-./setup.sh
 ```
 
 Depois, preencha no `.env` as mesmas `MONGO_URI` e `DATABASE_URL` (Neon) usadas no ETL anterior. No VS Code, escolha o interpretador `.venv\Scripts\python.exe` (Ctrl+Shift+P → *Python: Select Interpreter*).
@@ -77,9 +71,10 @@ No primeiro acesso, o ClimaSense pede a troca da senha. As demais contas da equi
 ## Rodar em desenvolvimento
 
 ```powershell
-.\dev.ps1        # Windows
-./dev.sh         # Linux / macOS
+powershell -ExecutionPolicy Bypass -File .\dev.ps1
 ```
+
+Para desligar, aperte **Ctrl+C** no terminal.
 
 - Frontend: http://localhost:5173
 - API: http://localhost:8000/api/v1 · documentação interativa em http://localhost:8000/api/docs

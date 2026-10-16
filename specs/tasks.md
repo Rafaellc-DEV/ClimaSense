@@ -75,7 +75,7 @@ M1 (identidade) corre em paralelo ao backend desde o início, para que as telas 
 | ☑ | T0.4 | Copiar `Desktop/AVD/dados/*` para `data/territorio/` e gerar `data/territorio/MANIFEST.sha256`. | `sha256sum -c MANIFEST.sha256` confere todos os arquivos com os originais. | RN-12, R-01 | T0.1 | P |
 | ☑ | T0.5 | Backend: `pyproject.toml` com as dependências do design §3.1, configuração do ruff e do pytest, e o pacote `climasense` com `__init__.py` (corrige o `_init_.py` antigo). | `pip install -e backend[dev]` funciona em Windows e Linux. `python -c "import climasense"` funciona e `pytest` roda (0 testes). | R-02, RNF-MAN-04 | T0.1 | P |
 | ☑ | T0.6 | Frontend: Vite + React + TS, ESLint, Prettier, Vitest, Playwright e @axe-core/playwright configurados. | `npm run lint`, `npm test` e `npm run build` passam. | D4 | T0.1 | P |
-| ☑ | T0.7 | Scripts `dev.ps1` / `dev.sh` (API na porta 8000 + Vite na 5173 com proxy `/api`) e `docker-compose.yml` com Postgres local opcional. | Um único comando sobe os dois. `http://localhost:5173/api/v1/health` responde através do proxy. | RNF-MAN-05 | T0.5, T0.6, T2.2 | P |
+| ☑ | T0.7 | Script `dev.ps1` (API na porta 8000 + Vite na 5173 com proxy `/api`) e `docker-compose.yml` com Postgres local opcional. | Um único comando sobe os dois. `http://localhost:5173/api/v1/health` responde através do proxy. | RNF-MAN-05 | T0.5, T0.6, T2.2 | P |
 | ☑ | T0.8 | CI no GitHub Actions: ruff, pytest (unidade), lint, testes e build do frontend, gitleaks. | O workflow valida (`actionlint`) e roda verde no primeiro push. | RNF-MAN-02 | T0.3–T0.6 | P |
 
 ### M1 — Identidade visual e design system

@@ -129,7 +129,7 @@ Regra de dependência: `api → servicos → dominio ← infra`. O domínio não
 
 ### 3.3 Execução
 
-- **Desenvolvimento:** `uvicorn` (porta 8000) + `vite` (porta 5173, com proxy de `/api`). Scripts `dev.ps1` (Windows) e `dev.sh`.
+- **Desenvolvimento:** `uvicorn` (porta 8000) + `vite` (porta 5173, com proxy de `/api`). Script `dev.ps1`.
 - **Demonstração e produção:** a API serve o build do frontend (`frontend/dist`) num único processo. O ETL roda como comando agendado (Agendador de Tarefas do Windows, cron ou GitHub Actions).
 - **Bancos:** Atlas e Neon na nuvem. Um branch “dev” do Neon é usado no desenvolvimento. O `docker-compose.yml` sobe um Postgres local opcional para os testes de integração.
 
