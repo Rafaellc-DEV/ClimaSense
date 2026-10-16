@@ -4,9 +4,9 @@ import { QuadroGrafico } from "@/charts/QuadroGrafico";
 import type { Esquemas } from "@/lib/api";
 import { formatarMm, nomeMes } from "@/lib/formatos";
 
-const RAMPA = ["#e3eef7", "#b9d4ea", "#86b3d9", "#4f8cc2", "#1f6fb2", "#17558a", "#0e3a60"];
+const RAMPA = ["#fff3c4", "#fed976", "#fdae4b", "#fd7e33", "#e8481f", "#b71c1c", "#7f0a1a"];
 
-/** Calendário ano × mês em mapa de calor (RF-08.5): uma só matiz azul; mês sem dado completo fica vazio e hachurado. */
+/** Calendário ano × mês em mapa de calor (RF-08.5): rampa de calor (amarelo → vermelho); mês sem dado completo fica vazio e hachurado. */
 export function Calendario({
   dados,
   fontes,

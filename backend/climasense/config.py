@@ -47,9 +47,7 @@ class Configuracao(BaseSettings):
 
     etl_limite_vacinacao: int = Field(default=5000, ge=1)
     supressao_minima: int = Field(default=5, ge=1)
-    map_tiles_url: str = (
-        "https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}"
-    )
+    map_tiles_url: str = "https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}"
 
     ana_usuario: str | None = None
     ana_senha: SecretStr | None = None

@@ -35,6 +35,16 @@ const QUALIDADE: Record<string, string> = {
 };
 
 /** Cenários de alagamento (design §9.7, RF-09). Tudo EXPERIMENTAL; prioridade nunca é chance de alagar (RN-06). */
+/** “hoje”, “amanhã” ou “18/10”: curto para caber embaixo da hora no eixo. */
+function diaCurto(d: Date) {
+  const hoje = new Date();
+  hoje.setHours(0, 0, 0, 0);
+  const dias = Math.round((new Date(d).setHours(0, 0, 0, 0) - hoje.getTime()) / 86_400_000);
+  if (dias === 0) return "hoje";
+  if (dias === 1) return "amanhã";
+  return `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}`;
+}
+
 export function TelaCenarios() {
   const { recorte } = useRecorte();
   const { pode } = useSessao();
@@ -57,17 +67,20 @@ export function TelaCenarios() {
     const inicio = new Date(d.estimativa.emitida_em);
     inicio.setMinutes(0, 0, 0);
     const fim = new Date(inicio.getTime() + d.horizonte_h * 3_600_000);
+    const passo = (d.horizonte_h <= 24 ? 3 : d.horizonte_h <= 48 ? 6 : 12) * 3_600_000;
     // os dois gráficos usam o MESMO domínio de tempo: os eixos ficam alinhados
     const eixoX = {
       type: "time" as const,
       min: inicio.getTime(),
       max: fim.getTime(),
       // o mesmo intervalo de marcação nos dois gráficos: os rótulos de hora caem nos mesmos lugares
-      interval: (d.horizonte_h <= 24 ? 3 : d.horizonte_h <= 48 ? 6 : 12) * 3_600_000,
+      // (o ECharts só respeita o intervalo do eixo de tempo com mínimo e máximo iguais)
+      minInterval: passo,
+      maxInterval: passo,
       axisLabel: {
-        formatter: (v: number) =>
-          `${formatarHora(new Date(v), true)}\n${quandoRelativo(new Date(v)).split(",")[0]}`,
+        formatter: (v: number) => `${formatarHora(new Date(v), true)}\n${diaCurto(new Date(v))}`,
         hideOverlap: true,
+        lineHeight: 20,
       },
     };
     const grade = { left: 64, right: 24, top: 40, bottom: 56, containLabel: false };

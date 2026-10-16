@@ -36,7 +36,7 @@ const INDICADORES: Record<
     rotulo: "Quantidade de bairros",
     unidade: "bairros",
     casas: 0,
-    ajuda: "Quanto mais escuro, maior o número de bairros.",
+    ajuda: "Quanto mais quente a cor (do amarelo ao vermelho), maior o número de bairros.",
     interpretar:
       "As cores mostram quantos bairros cada distrito tem. Não representam população, risco nem a qualidade dos serviços de saúde.",
     fonte: "territorio-oficial",
@@ -45,7 +45,7 @@ const INDICADORES: Record<
     rotulo: "Área do distrito (km²)",
     unidade: "km²",
     casas: 1,
-    ajuda: "Quanto mais escuro, maior a área do distrito.",
+    ajuda: "Quanto mais quente a cor (do amarelo ao vermelho), maior a área do distrito.",
     interpretar:
       "As cores mostram a área geográfica, calculada a partir dos limites oficiais. A área não representa população nem demanda por serviços.",
     fonte: "territorio-oficial",
@@ -54,7 +54,8 @@ const INDICADORES: Record<
     rotulo: "Vacinação COVID-19 (doses, amostra)",
     unidade: "doses",
     casas: 0,
-    ajuda: "Quanto mais escuro, mais doses na amostra carregada, no período escolhido.",
+    ajuda:
+      "Quanto mais quente a cor (do amarelo ao vermelho), mais doses na amostra carregada, no período escolhido.",
     interpretar:
       "As cores mostram doses registradas na amostra carregada da base, não o total de vacinados. O dado existe só por distrito: não diz nada sobre bairros.",
     fonte: "vacinacao",
@@ -104,7 +105,7 @@ export function TelaMapa() {
   const [busca, setBusca] = useState("");
   const [mostrarDistritos, setMostrarDistritos] = useState(true);
   const [mostrarFaixas, setMostrarFaixas] = useState(true);
-  const [opacidade, setOpacidade] = useState(72);
+  const [opacidade, setOpacidade] = useState(85);
   const [sobre, setSobre] = useState(false);
   const controle = useRef<ControleMapa>(null);
 
@@ -274,12 +275,6 @@ export function TelaMapa() {
             }))}
             ajuda={info.ajuda}
           />
-          <p className={estilos.nota}>
-            Os vínculos dos Distritos Sanitários VII e VIII foram conferidos com a Secretaria de Saúde.{" "}
-            <button type="button" className={estilos.linkBotao} onClick={() => setSobre(true)}>
-              Ver nota
-            </button>
-          </p>
           <fieldset className={estilos.camadas}>
             <legend>Camadas</legend>
             <label>

@@ -4,8 +4,8 @@
  * busca sem acento e células de CSV protegidas contra fórmulas.
  */
 
-/** Cores das classes: a rampa sequencial azul do design §8.4, começando em #86B3D9 para a classe mais baixa não sumir. */
-export const colors = ["#86b3d9", "#4f8cc2", "#1f6fb2", "#17558a", "#0e3a60"];
+/** Cores das classes: rampa de calor (amarelo → vermelho escuro), começando em #FED976 para a classe mais baixa não sumir. */
+export const colors = ["#fed976", "#fd9a3c", "#f0592a", "#c81e1e", "#7f0a1a"];
 
 export interface Classe {
   low: number;

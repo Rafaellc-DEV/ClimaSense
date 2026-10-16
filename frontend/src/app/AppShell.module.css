@@ -20,15 +20,6 @@
 .pular:focus {
   top: var(--e-3);
 }
-.faixaAmbiente {
-  margin: 0;
-  padding: var(--e-2) var(--e-5);
-  background: repeating-linear-gradient(135deg, var(--n-atencao-bg) 0 14px, transparent 14px 28px),
-    var(--n-atencao-bg);
-  border-bottom: 1px solid var(--n-atencao);
-  font-size: var(--t-apoio);
-  color: var(--n-texto);
-}
 .grade {
   display: grid;
   grid-template-columns: 296px minmax(0, 1fr);
@@ -154,26 +145,29 @@
   border-color: var(--cs-mare);
   color: var(--cs-mare);
 }
-.lugar {
-  padding: 0 var(--e-3);
-  font-size: var(--t-apoio);
-  color: var(--cs-tinta-2);
-}
-
 /* ---------- coluna de conteúdo */
 .coluna {
   min-width: 0;
   display: flex;
   flex-direction: column;
 }
+/* O conteúdo tem largura máxima e fica centrado: em monitores ultrawide ele não gruda na esquerda. */
 .topo {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  background: var(--cs-papel);
+  border-bottom: var(--borda);
+}
+.topoInterno {
   display: flex;
   align-items: center;
   gap: var(--e-4);
+  width: 100%;
+  max-width: var(--largura-conteudo);
   min-height: 72px;
-  padding: var(--e-3) var(--e-7);
-  background: var(--cs-papel);
-  border-bottom: var(--borda);
+  margin-inline: auto;
+  padding: var(--e-3) var(--e-6);
 }
 .botaoMenu {
   display: none;
@@ -190,8 +184,9 @@
 }
 .conteudo {
   width: 100%;
-  max-width: 1440px;
-  padding: var(--e-6) var(--e-7) var(--e-9);
+  max-width: var(--largura-conteudo);
+  margin-inline: auto;
+  padding: var(--e-7) var(--e-6) var(--e-9);
 }
 .conteudo:focus {
   outline: none;
@@ -202,7 +197,7 @@
   align-items: flex-end;
   justify-content: space-between;
   gap: var(--e-4);
-  margin-bottom: var(--e-6);
+  margin-bottom: var(--e-7);
 }
 .cabecalhoTela h1 {
   font-size: var(--t-2);
@@ -278,6 +273,9 @@
     display: inline-flex;
   }
   .topo {
+    position: static;
+  }
+  .topoInterno {
     flex-wrap: wrap;
     padding: var(--e-3) var(--e-4);
   }

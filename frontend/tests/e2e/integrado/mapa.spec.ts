@@ -58,7 +58,7 @@ test("mapa do território: checklist RF-07 da Aula 07", async ({ page }) => {
   await page.getByRole("slider").fill("40");
   await expect(page.getByText("40%")).toBeVisible();
   await expect(page.locator(".leaflet-overlay-pane path").first()).toHaveAttribute("fill-opacity", "0.4");
-  await page.getByRole("slider").fill("72");
+  await page.getByRole("slider").fill("85");
 
   // colorir por área: a legenda muda (RF-07.2, 07.9)
   await page.getByRole("combobox", { name: "Colorir por" }).click();

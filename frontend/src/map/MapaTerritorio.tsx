@@ -63,8 +63,8 @@ export const MapaTerritorio = forwardRef<ControleMapa, Props>(function MapaTerri
     return {
       fillColor: c === "hachura" ? `url(#${HACHURA})` : c,
       fillOpacity: c === "hachura" ? 1 : p.opacidade,
-      color: sel ? "#0e2433" : "#0f4c75",
-      weight: sel ? 3.5 : 1.4,
+      color: sel ? "#0e2433" : "#ffffff",
+      weight: sel ? 3.5 : 2,
       opacity: 0.95,
     };
   }

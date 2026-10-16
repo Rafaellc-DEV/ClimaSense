@@ -9,7 +9,7 @@ from pathlib import Path
 import folium
 
 ASSETS = Path(__file__).resolve().parent / "assets"
-TILES = "https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}"
+TILES = "https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}"
 
 
 def gerar(geo: dict, water: dict, source: str, agora: datetime | None = None) -> str:

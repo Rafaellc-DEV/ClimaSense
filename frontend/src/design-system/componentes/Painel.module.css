@@ -1,6 +1,6 @@
 .painel {
   min-width: 0;
-  padding: var(--e-5);
+  padding: var(--e-6);
   background: var(--cs-papel);
   border: var(--borda);
   border-radius: var(--r-painel);
@@ -14,7 +14,7 @@
   align-items: baseline;
   justify-content: space-between;
   gap: var(--e-2) var(--e-4);
-  margin-bottom: var(--e-4);
+  margin-bottom: var(--e-5);
 }
 .topo h2 {
   font-size: var(--t-4);
@@ -49,4 +49,9 @@
   font-weight: 700;
   text-decoration: underline;
   cursor: pointer;
+}
+@media (max-width: 640px) {
+  .painel {
+    padding: var(--e-5) var(--e-4);
+  }
 }

@@ -122,42 +122,37 @@ export function AppShell() {
       <a href="#conteudo" className={estilos.pular}>
         Pular para o conteúdo
       </a>
-      {usuario.ambiente !== "producao" && (
-        <p className={estilos.faixaAmbiente} role="note">
-          Ambiente de {usuario.ambiente === "teste" ? "testes" : "desenvolvimento"}. Os dados são reais; as
-          contas e os avisos publicados aqui não chegam à população.
-        </p>
-      )}
       <div className={estilos.grade}>
         <aside className={estilos.lateral} aria-label="Navegação">
           <Marca />
           <Navegacao />
           {conta}
-          <p className={estilos.lugar}>Recife, Pernambuco</p>
         </aside>
 
         <div className={estilos.coluna}>
           <header className={estilos.topo}>
-            <Dialog.Root open={gaveta} onOpenChange={setGaveta}>
-              <Dialog.Trigger className={estilos.botaoMenu}>
-                <Menu aria-hidden="true" size={22} /> Menu
-              </Dialog.Trigger>
-              <Dialog.Portal>
-                <Dialog.Overlay className={estilos.veu} />
-                <Dialog.Content className={estilos.gaveta} aria-describedby={undefined}>
-                  <Dialog.Title className="so-leitor">Menu</Dialog.Title>
-                  <div className={estilos.gavetaTopo}>
-                    <Marca />
-                    <Dialog.Close className={estilos.fecharGaveta}>
-                      <X aria-hidden="true" size={22} /> Fechar
-                    </Dialog.Close>
-                  </div>
-                  <Navegacao aoEscolher={() => setGaveta(false)} />
-                  {conta}
-                </Dialog.Content>
-              </Dialog.Portal>
-            </Dialog.Root>
-            {comRecorte ? <FiltroFrase /> : <span />}
+            <div className={estilos.topoInterno}>
+              <Dialog.Root open={gaveta} onOpenChange={setGaveta}>
+                <Dialog.Trigger className={estilos.botaoMenu}>
+                  <Menu aria-hidden="true" size={22} /> Menu
+                </Dialog.Trigger>
+                <Dialog.Portal>
+                  <Dialog.Overlay className={estilos.veu} />
+                  <Dialog.Content className={estilos.gaveta} aria-describedby={undefined}>
+                    <Dialog.Title className="so-leitor">Menu</Dialog.Title>
+                    <div className={estilos.gavetaTopo}>
+                      <Marca />
+                      <Dialog.Close className={estilos.fecharGaveta}>
+                        <X aria-hidden="true" size={22} /> Fechar
+                      </Dialog.Close>
+                    </div>
+                    <Navegacao aoEscolher={() => setGaveta(false)} />
+                    {conta}
+                  </Dialog.Content>
+                </Dialog.Portal>
+              </Dialog.Root>
+              {comRecorte && <FiltroFrase />}
+            </div>
           </header>
           <main id="conteudo" className={estilos.conteudo} tabIndex={-1}>
             <Outlet />

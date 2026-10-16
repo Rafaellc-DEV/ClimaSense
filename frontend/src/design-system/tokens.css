@@ -79,10 +79,21 @@
 
   /* Forma: raios por função */
   --r-campo: 4px;
-  --r-painel: 10px;
+  --r-painel: 14px;
   --r-pilula: 999px;
   --borda: 1px solid var(--cs-linha);
   --sombra-flutuante: 0 12px 32px rgba(14, 36, 51, 0.18), 0 2px 6px rgba(14, 36, 51, 0.08);
+
+  /* Largura máxima do conteúdo (centrado em telas largas) */
+  --largura-conteudo: 1280px;
+  --largura-leitura: 760px;
+
+  /* Rampa de calor: intensidade no mapa e no calendário (amarelo → vermelho escuro) */
+  --g-calor-1: #fed976;
+  --g-calor-2: #fd9a3c;
+  --g-calor-3: #f0592a;
+  --g-calor-4: #c81e1e;
+  --g-calor-5: #7f0a1a;
 
   /* Alvos de toque */
   --alvo: 48px;

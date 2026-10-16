@@ -97,3 +97,15 @@
     grid-template-columns: 1fr;
   }
 }
+/* no celular a frase do recorte fica compacta, para não empurrar o conteúdo para baixo */
+@media (max-width: 640px) {
+  .frase {
+    width: 100%;
+    gap: 6px;
+    font-size: var(--t-apoio);
+  }
+  .parte {
+    min-height: 40px;
+    padding: 2px 12px;
+  }
+}
