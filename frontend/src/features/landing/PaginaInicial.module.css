@@ -178,15 +178,12 @@
     stroke-dashoffset: 0;
   }
 }
-/* a malha só existe à direita, longe da frase de estado */
+/* a malha cobre o herói inteiro, inclusive atrás do texto (pontos a 14% não atrapalham a leitura do branco);
+   some perto da onda */
 .heroiMalha {
   --ponto: var(--cs-ponto-sobre-mare);
-  -webkit-mask: linear-gradient(to right, transparent 38%, #000 68%),
-    radial-gradient(ellipse 70% 80% at 75% 45%, #000 30%, transparent 75%);
-  -webkit-mask-composite: source-in;
-  mask: linear-gradient(to right, transparent 38%, #000 68%),
-    radial-gradient(ellipse 70% 80% at 75% 45%, #000 30%, transparent 75%);
-  mask-composite: intersect;
+  -webkit-mask-image: linear-gradient(to bottom, #000 70%, transparent 96%);
+  mask-image: linear-gradient(to bottom, #000 70%, transparent 96%);
 }
 /* holofote: a mesma malha, acesa só perto do cursor (useHolofote) */
 .heroiHolofote {
@@ -216,31 +213,47 @@
 .heroiTexto {
   max-width: 780px;
 }
+/* etiqueta em pílula translúcida, com a gota de chuva em sol */
 .sobrescrito {
-  margin-bottom: var(--e-4);
-  font-size: 1.125rem;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--e-2);
+  margin-bottom: var(--e-7);
+  padding: 8px 16px 8px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: var(--r-pilula);
+  background: rgba(255, 255, 255, 0.08);
+  font-size: 1rem;
   font-weight: 600;
-  color: #cfe3ee;
+  color: #fff;
+}
+.sobrescrito svg {
+  flex: none;
+  color: var(--cs-sol);
 }
 .seloMovel {
   display: none;
   margin-bottom: var(--e-4);
 }
+/* a frase de estado na mesma família geométrica da logo, em caixa alta e peso pesado (o leitor de tela lê o
+   texto como foi escrito; a caixa alta é só visual) */
 .frase {
-  font-size: clamp(2.4rem, 5vw, 4.5rem);
-  line-height: 1.04;
+  font-family: "Outfit Variable", var(--fonte);
+  font-size: clamp(2.1rem, 4vw, 3.5rem);
+  line-height: 1.02;
   font-weight: 800;
-  letter-spacing: -0.025em;
+  letter-spacing: -0.01em;
+  text-transform: uppercase;
   color: #fff;
-  max-width: 17ch;
+  max-width: 19ch;
   text-wrap: balance;
 }
 .apoio {
   margin-top: var(--e-5);
-  font-size: 1.25rem;
+  font-size: 1.1rem;
   line-height: 1.55;
   max-width: 52ch;
-  color: #e6eff5;
+  color: rgba(255, 255, 255, 0.86);
 }
 .verificacao {
   margin-top: var(--e-4);
@@ -1135,7 +1148,6 @@
     width: 110%;
     right: -40%;
   }
-  .heroiMalha,
   .heroiHolofote {
     display: none;
   }
@@ -1148,11 +1160,11 @@
     margin-bottom: var(--e-3);
   }
   .frase {
-    font-size: 2rem;
+    font-size: 1.7rem;
   }
   .apoio {
     margin-top: var(--e-3);
-    font-size: var(--t-corpo);
+    font-size: 1rem;
   }
   .verificacao {
     margin-top: var(--e-2);

@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { ArrowLeft, ArrowRight, BellOff, Map, Megaphone, Route, Search } from "lucide-react";
+import { ArrowLeft, ArrowRight, BellOff, CloudRain, Map, Megaphone, Route, Search } from "lucide-react";
 import rios from "@/assets/tracos/rios.svg?raw";
 import { CartaoAviso } from "@/design-system/componentes/CartaoAviso";
 import { ReguaMare } from "@/design-system/componentes/ReguaMare";
@@ -105,7 +105,10 @@ export function PaginaInicial() {
         />
         <div className={estilos.heroiInterno}>
           <div className={estilos.heroiTexto}>
-            <p className={estilos.sobrescrito}>Avisos de chuva e alagamento no Recife</p>
+            <p className={estilos.sobrescrito}>
+              <CloudRain aria-hidden="true" size={18} />
+              Avisos de chuva e alagamento no Recife
+            </p>
             <div className={estilos.seloMovel}>
               <SeloNivel nivel={f.nivel} grande />
             </div>
