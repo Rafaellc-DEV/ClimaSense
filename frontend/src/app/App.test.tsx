@@ -60,9 +60,12 @@ test("a página inicial mostra o estado real dos avisos e os telefones de emerg�
     await screen.findByRole("heading", { level: 1, name: /^Alerta para 2 bairros até/ }),
   ).toBeInTheDocument();
   expect(await screen.findByText(/E mais 1 aviso em vigor/)).toBeInTheDocument();
-  expect(screen.getAllByRole("link", { name: /199\s*Defesa Civil/ })[0]).toHaveAttribute("href", "tel:199");
+  expect(screen.getAllByRole("link", { name: /Defesa Civil, 199/ })[0]).toHaveAttribute("href", "tel:199");
   // o distrito afetado aparece em texto, não só em cor (RN-17)
-  const linha = (await screen.findByText("Distrito Sanitário V")).closest("li");
+  // o nome aparece também na chamada do mapa; a linha da legenda é a que fica num <li>
+  const linha = (await screen.findAllByText("Distrito Sanitário 5"))
+    .map((e) => e.closest("li"))
+    .find(Boolean);
   expect(linha).toHaveAttribute("data-afetado", "true");
   expect(linha).toHaveTextContent("Alerta");
 });

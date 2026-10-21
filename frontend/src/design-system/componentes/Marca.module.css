@@ -1,0 +1,22 @@
+/* Logo: símbolo e nome na mesma cor (currentColor). --marca é a altura do nome; o símbolo acompanha. */
+.marca {
+  display: inline-flex;
+  align-items: center;
+  gap: calc(var(--marca, 30px) * 0.25);
+  color: currentColor;
+  line-height: 1;
+  white-space: nowrap;
+}
+.simbolo {
+  flex: none;
+  width: calc(var(--marca, 30px) * 1.8);
+  height: calc(var(--marca, 30px) * 1.8);
+}
+.nome {
+  font-family: "Outfit Variable", var(--fonte);
+  font-size: var(--marca, 30px);
+  font-weight: 300;
+  letter-spacing: -0.02em;
+  /* a linha de base do nome fica alinhada com a onda do símbolo */
+  transform: translateY(0.04em);
+}

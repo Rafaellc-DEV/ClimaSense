@@ -118,7 +118,7 @@ test("com alerta: a régua chega ao nível 3 e só o distrito afetado é pintado
   const pintados = page.locator('svg g[data-afetado="true"]');
   await expect(pintados).toHaveCount(1);
   await expect(
-    page.locator("li", { hasText: "Distrito Sanitário V" }).filter({ hasText: "Alerta" }),
+    page.locator("li", { hasText: "Distrito Sanitário 5" }).filter({ hasText: "Alerta" }),
   ).toBeVisible();
 });
 

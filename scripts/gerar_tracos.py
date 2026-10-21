@@ -2,7 +2,8 @@
 
 Saídas (em frontend/src/assets/tracos/):
 - rios.svg        faixas marginais dos recursos hídricos + contorno da cidade (fundo da landing)
-- distritos.json  os 8 distritos sanitários como caminhos SVG (mapa vivo "Onde há aviso agora")
+- distritos.json  os 8 distritos sanitários como caminhos SVG (mapa vivo "Onde há aviso agora"), com os bairros
+                  de cada um (vínculo já corrigido em distritos-enriquecidos.geojson)
 
 É reproduzível: a mesma entrada gera exatamente os mesmos arquivos.
 Uso:  python scripts/gerar_tracos.py
@@ -12,6 +13,8 @@ from __future__ import annotations
 
 import json
 import math
+import re
+import unicodedata
 from pathlib import Path
 
 from shapely.geometry import shape
@@ -21,6 +24,23 @@ RAIZ = Path(__file__).resolve().parents[1]
 DADOS = RAIZ / "data" / "territorio"
 SAIDA = RAIZ / "frontend" / "src" / "assets" / "tracos"
 ROMANOS = {1: "I", 2: "II", 3: "III", 4: "IV", 5: "V", 6: "VI", 7: "VII", 8: "VIII"}
+# Bairros conhecidos citados na chamada de cada distrito no mapa, para quem não sabe o número do seu distrito.
+REFERENCIAS = {
+    1: ["Boa Vista", "Santo Amaro"],
+    2: ["Encruzilhada", "Campo Grande"],
+    3: ["Casa Amarela", "Gracas"],
+    4: ["Madalena", "Varzea"],
+    5: ["Afogados", "Mustardinha"],
+    6: ["Boa Viagem", "Pina"],
+    7: ["Nova Descoberta", "Macaxeira"],
+    8: ["Ibura", "Cohab"],
+}
+
+
+def _slug(nome: str) -> str:
+    """O mesmo id de bairro de climasense.territorio.carga.slug (bairro-<slug>)."""
+    sem_acento = unicodedata.normalize("NFD", nome).encode("ascii", "ignore").decode()
+    return re.sub(r"[^a-z0-9]+", "-", sem_acento.lower()).strip("-")
 
 
 def _ler(nome: str) -> dict:
@@ -59,6 +79,10 @@ class Projecao:
 def gerar() -> dict[str, int]:
     distritos = _ler("distritos-sanitarios-do-recife.geojson")["features"]
     rios = _ler("faixas-marginais-dos-recursos-hidricos.geojson")["features"]
+    bairros = {
+        int(f["properties"]["cdistscodi"]): f["properties"]["bairros"]
+        for f in _ler("distritos-enriquecidos.geojson")["features"]
+    }
     cidade = unary_union([shape(f["geometry"]) for f in distritos]).buffer(0)
     SAIDA.mkdir(parents=True, exist_ok=True)
 
@@ -88,6 +112,8 @@ def gerar() -> dict[str, int]:
                 "d": pd.caminho(g, 0.0004),
                 "x": round(x),
                 "y": round(y),
+                "referencias": REFERENCIAS[codigo],
+                "bairros": [{"id": f"bairro-{_slug(b)}", "nome": b} for b in bairros[codigo]],
             }
         )
     dados = {"largura": pd.largura, "altura": pd.altura, "distritos": itens}

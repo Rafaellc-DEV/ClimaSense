@@ -1,0 +1,434 @@
+/* Sobre o ClimaSense. Lado a lado: o que a ferramenta é (texto limpo, malha de pluviômetros nos cantos) e o que ela
+   não é (placa azul maré com o traço dos rios e a linha d’água em sol). Abaixo, as fontes são estações num rio
+   que se desenha quando a lista entra na tela, e a régua vazia e tracejada explica “Dados insuficientes”. */
+.secao {
+  position: relative;
+  overflow: hidden;
+  background: var(--cs-papel);
+  color: var(--cs-tinta);
+}
+.interno {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: var(--e-8) var(--margem, var(--e-6));
+}
+.h2 {
+  scroll-margin-top: 96px;
+  font-size: clamp(1.75rem, 3vw, 2.5rem);
+  line-height: 1.15;
+  font-weight: 800;
+  letter-spacing: -0.015em;
+  color: var(--cs-mare);
+  text-wrap: balance;
+}
+
+/* ---------- o par: é / não é */
+.par {
+  display: grid;
+  grid-template-columns: minmax(0, 7fr) minmax(0, 6fr);
+  align-items: center;
+  margin-top: var(--e-6);
+}
+.conteudo {
+  position: relative;
+  z-index: 1;
+}
+.conteudo h3 {
+  margin: var(--e-4) 0 var(--e-2);
+  font-size: var(--t-3);
+  line-height: 1.2;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+.conteudo p {
+  max-width: 44ch;
+  font-size: var(--t-corpo);
+  line-height: var(--altura-corpo);
+  text-wrap: pretty;
+}
+
+/* o que é: a malha de pluviômetros só nos cantos, para o texto ficar limpo */
+.eh {
+  --sobreposicao: var(--e-7);
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  align-content: center;
+  padding: var(--e-8) calc(var(--e-8) + var(--sobreposicao)) var(--e-8) var(--e-8);
+}
+.pontos {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-image: radial-gradient(circle, var(--cs-ponto) 0 1.2px, transparent 1.7px);
+  background-size: var(--malha) var(--malha);
+  -webkit-mask-image: radial-gradient(circle at 0 100%, #000 0, transparent 45%),
+    linear-gradient(to left, #000 0, transparent 22%);
+  mask-image: radial-gradient(circle at 0 100%, #000 0, transparent 45%),
+    linear-gradient(to left, #000 0, transparent 22%);
+}
+.eh h3 {
+  color: var(--cs-mare-forte);
+}
+
+/* o que não é: placa maré que avança sobre a mancha, como uma ponte sobre o rio */
+.naoEh {
+  position: relative;
+  overflow: hidden;
+  margin-left: calc(-1 * var(--e-7));
+  padding: var(--e-7) var(--e-6) var(--e-6);
+  background: var(--cs-mare);
+  color: #fff;
+  border-radius: 28px 40px 32px 44px;
+  box-shadow: var(--sombra-flutuante);
+}
+.naoEhRios {
+  position: absolute;
+  top: -30%;
+  right: -28%;
+  width: 80%;
+  height: 170%;
+  opacity: 0.18;
+  pointer-events: none;
+}
+.naoEhRios svg {
+  width: 100%;
+  height: 100%;
+}
+.naoEhRios path {
+  fill: none;
+  stroke: #fff;
+  stroke-width: 1.2;
+}
+.naoEhRios :global(.cidade) {
+  fill: rgba(255, 255, 255, 0.06);
+}
+.linhaDagua {
+  position: absolute;
+  top: var(--e-5);
+  left: 0;
+  width: 100%;
+  height: 24px;
+}
+.linhaDagua path {
+  fill: none;
+  stroke: var(--cs-sol);
+  stroke-width: 3;
+  stroke-linecap: round;
+}
+.naoEh h3 {
+  color: #fff;
+}
+.naoEh p {
+  color: #e6eff5;
+}
+.naoEh :focus-visible {
+  outline: 3px solid var(--cs-sol);
+  outline-offset: 3px;
+}
+
+/* disco do ícone com o anel concêntrico, igual aos atalhos da página */
+.disco {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: var(--cs-mangue);
+  color: #fff;
+}
+.disco::after {
+  content: "";
+  position: absolute;
+  inset: -6px;
+  border: 2px solid var(--cs-mangue);
+  border-radius: 50%;
+}
+.disco[data-tom="mare"] {
+  background: #fff;
+  color: var(--cs-mare);
+}
+.disco[data-tom="mare"]::after {
+  border-color: rgba(255, 255, 255, 0.7);
+}
+
+.ligar {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--e-2);
+  min-height: var(--alvo);
+  margin-top: var(--e-5);
+  padding: 0 var(--e-5);
+  border-radius: var(--r-pilula);
+  background: #fff;
+  color: var(--cs-mare-forte);
+  font-weight: 800;
+  text-decoration: none;
+  font-variant-numeric: tabular-nums;
+  transition: background-color var(--mov-rapido);
+}
+.ligar:hover {
+  background: var(--cs-espuma);
+}
+
+/* ---------- de onde vêm os dados */
+.dados {
+  display: grid;
+  grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+  gap: var(--e-7) var(--e-8);
+  align-items: start;
+  margin-top: var(--e-9);
+}
+.h3 {
+  scroll-margin-top: 96px;
+  font-size: var(--t-3);
+  line-height: 1.2;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: var(--cs-mare);
+  text-wrap: balance;
+}
+.insuficiente {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--e-4);
+  margin-top: var(--e-5);
+  padding: var(--e-5);
+  background: var(--n-insuf-bg);
+  border-radius: 28px 40px 32px 44px;
+}
+.insuficiente p {
+  color: var(--cs-tinta-2);
+  font-size: var(--t-apoio);
+  line-height: var(--altura-corpo);
+}
+.insuficiente strong {
+  color: var(--cs-tinta);
+  white-space: nowrap;
+}
+.reguaVazia {
+  flex: none;
+  width: 30px;
+  height: 76px;
+}
+.reguaCorpo {
+  fill: var(--cs-papel);
+  stroke: var(--n-insuf);
+  stroke-width: 2;
+  stroke-dasharray: 5 4;
+}
+.reguaMarca {
+  stroke: var(--n-insuf);
+  stroke-width: 2;
+}
+
+/* o rio: linha sinuosa que passa pelo centro das estações */
+.leito {
+  position: relative;
+}
+.rio {
+  position: absolute;
+  top: 24px;
+  bottom: 24px;
+  left: 4px;
+  width: 40px;
+  height: calc(100% - 48px);
+  overflow: visible;
+}
+.rio path {
+  fill: none;
+  stroke: var(--cs-mangue);
+  stroke-width: 2;
+  stroke-dasharray: 0.012 0.012;
+}
+.fontes {
+  position: relative;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--e-4);
+}
+.fonte {
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--e-2) var(--e-4);
+}
+.estacao {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--cs-mare);
+  color: #fff;
+  box-shadow: 0 0 0 6px var(--cs-papel);
+}
+.fonte:not([data-status="atualizada"]) .estacao {
+  background: var(--cs-papel);
+  color: var(--cs-tinta-2);
+  box-shadow:
+    inset 0 0 0 2px var(--cs-linha-forte),
+    0 0 0 6px var(--cs-papel);
+}
+.fonteTexto {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  padding: var(--e-3) 0;
+  overflow-wrap: anywhere;
+}
+.fonteTexto strong {
+  font-weight: 700;
+  line-height: 1.3;
+}
+.fonteTexto span {
+  color: var(--cs-tinta-2);
+  font-size: var(--t-apoio);
+}
+.status {
+  padding: 4px 10px;
+  border-radius: var(--r-campo);
+  background: var(--cs-espuma);
+  color: var(--cs-mare-forte);
+  font-size: var(--t-apoio);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.status:not([data-status="atualizada"]) {
+  background: var(--cs-nevoa);
+  color: var(--cs-tinta);
+  box-shadow: inset 0 0 0 1px var(--cs-linha-forte);
+}
+
+.estado {
+  padding: var(--e-5);
+  background: var(--cs-nevoa);
+  border-radius: 28px 40px 32px 44px;
+  color: var(--cs-tinta-2);
+  font-size: var(--t-corpo);
+}
+.tentar {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--e-2);
+  min-height: var(--alvo);
+  margin-top: var(--e-4);
+  padding: 0 var(--e-5);
+  border: 2px solid var(--cs-mare);
+  border-radius: var(--r-pilula);
+  background: var(--cs-papel);
+  color: var(--cs-mare);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    background-color var(--mov-rapido),
+    color var(--mov-rapido);
+}
+.tentar:hover:not(:disabled) {
+  background: var(--cs-mare);
+  color: #fff;
+}
+.tentar:disabled {
+  cursor: progress;
+  opacity: 0.7;
+}
+.planejadas {
+  margin: var(--e-5) 0 0 64px;
+  color: var(--cs-tinta-2);
+  font-size: var(--t-apoio);
+}
+
+/* o único movimento ligado à rolagem: o rio se desenha quando a lista de fontes entra na tela */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .rio path {
+      stroke-dasharray: 1;
+      animation: desenhar linear both;
+      animation-timeline: view();
+      animation-range: entry 10% cover 45%;
+    }
+  }
+}
+@keyframes desenhar {
+  from {
+    stroke-dashoffset: 1;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@media (max-width: 1023px) {
+  .eh {
+    padding: var(--e-7) calc(var(--e-7) + var(--sobreposicao)) var(--e-7) var(--e-7);
+  }
+  .dados {
+    gap: var(--e-6);
+  }
+}
+@media (max-width: 860px) {
+  .par,
+  .dados {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .eh {
+    padding: var(--e-7) var(--e-6) calc(var(--e-7) + var(--e-6));
+  }
+  .naoEh {
+    margin: calc(-1 * var(--e-6)) 0 0;
+  }
+  .dados {
+    margin-top: var(--e-8);
+  }
+}
+@media (max-width: 760px) {
+  .interno {
+    padding: var(--e-7) var(--margem, var(--e-4));
+  }
+  .eh {
+    padding: var(--e-6) var(--e-5) var(--e-8);
+  }
+  .naoEh {
+    margin-left: 0;
+    padding: var(--e-7) var(--e-5) var(--e-5);
+  }
+  .disco {
+    width: 56px;
+    height: 56px;
+  }
+  .conteudo h3,
+  .h3 {
+    font-size: var(--t-4);
+  }
+  .ligar {
+    width: 100%;
+    justify-content: center;
+    padding: 0 var(--e-4);
+  }
+  .fonte {
+    grid-template-columns: 48px minmax(0, 1fr);
+  }
+  .status {
+    grid-column: 2;
+    justify-self: start;
+    margin-top: calc(-1 * var(--e-3));
+  }
+  .insuficiente {
+    padding: var(--e-4);
+  }
+  .planejadas {
+    margin-left: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ligar,
+  .tentar {
+    transition: none;
+  }
+}

@@ -115,7 +115,7 @@ test("jornada do comunicado: rascunho → revisão → publicação → landing 
   await expect(page.locator("#avisos article", { hasText: titulo })).toBeVisible();
   await expect(page.locator('svg g[data-afetado="true"]').first()).toBeVisible();
   await expect(
-    page.locator("li", { hasText: "Distrito Sanitário V" }).filter({ hasText: "Alerta" }).first(),
+    page.locator("li", { hasText: "Distrito Sanitário 5" }).filter({ hasText: "Alerta" }).first(),
   ).toBeVisible();
 
   // 5. vence e some sozinho (RN-14)

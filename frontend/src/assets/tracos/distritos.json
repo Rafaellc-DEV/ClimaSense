@@ -9,7 +9,54 @@
       "nome": "Distrito Sanitário I",
       "d": "M319.7,395.3L328.0,385.7L359.0,368.9L364.4,355.1L370.5,356.9L389.9,310.2L400.0,306.7L385.3,289.2L371.1,279.2L368.0,278.2L321.3,300.7L303.4,324.7L302.7,333.9L297.3,341.5L295.5,341.1L296.7,353.0L293.3,354.0L289.7,350.6L281.4,359.5L281.4,364.7L286.6,369.9L295.3,393.3L310.5,392.0L319.7,395.3Z",
       "x": 338,
-      "y": 338
+      "y": 338,
+      "referencias": ["Boa Vista", "Santo Amaro"],
+      "bairros": [
+        {
+          "id": "bairro-boa-vista",
+          "nome": "Boa Vista"
+        },
+        {
+          "id": "bairro-cabanga",
+          "nome": "Cabanga"
+        },
+        {
+          "id": "bairro-coelhos",
+          "nome": "Coelhos"
+        },
+        {
+          "id": "bairro-ilha-joana-bezerra",
+          "nome": "Ilha Joana Bezerra"
+        },
+        {
+          "id": "bairro-ilha-do-leite",
+          "nome": "Ilha do Leite"
+        },
+        {
+          "id": "bairro-paissandu",
+          "nome": "Paissandu"
+        },
+        {
+          "id": "bairro-recife",
+          "nome": "Recife"
+        },
+        {
+          "id": "bairro-santo-amaro",
+          "nome": "Santo Amaro"
+        },
+        {
+          "id": "bairro-santo-antonio",
+          "nome": "Santo Antonio"
+        },
+        {
+          "id": "bairro-sao-jose",
+          "nome": "Sao Jose"
+        },
+        {
+          "id": "bairro-soledade",
+          "nome": "Soledade"
+        }
+      ]
     },
     {
       "id": "ds-2",
@@ -18,7 +65,82 @@
       "nome": "Distrito Sanitário II",
       "d": "M319.1,198.1L307.8,197.0L303.1,193.7L299.0,194.8L284.2,185.2L273.6,172.1L256.1,161.0L256.7,158.6L250.4,159.7L251.1,162.3L239.8,172.0L245.9,191.1L256.9,196.5L258.4,199.3L263.1,201.3L263.3,202.9L267.6,205.3L271.8,205.5L269.9,208.5L272.1,217.3L266.2,219.5L270.0,221.8L272.3,220.5L273.2,225.7L271.3,235.1L275.1,235.4L278.6,239.4L295.4,245.6L299.7,254.5L309.4,258.6L304.5,260.8L300.8,265.8L301.9,266.9L296.7,275.7L299.2,276.2L298.6,278.7L311.0,283.5L310.2,286.1L312.4,287.0L315.5,287.6L316.5,284.2L325.6,286.6L334.5,294.1L368.0,278.2L356.4,267.6L354.8,262.9L362.7,232.2L347.1,230.1L344.9,216.7L336.7,210.7L331.8,204.4L319.1,198.1Z",
       "x": 310,
-      "y": 227
+      "y": 227,
+      "referencias": ["Encruzilhada", "Campo Grande"],
+      "bairros": [
+        {
+          "id": "bairro-agua-fria",
+          "nome": "Agua Fria"
+        },
+        {
+          "id": "bairro-alto-santa-terezinha",
+          "nome": "Alto Santa Terezinha"
+        },
+        {
+          "id": "bairro-arruda",
+          "nome": "Arruda"
+        },
+        {
+          "id": "bairro-beberibe",
+          "nome": "Beberibe"
+        },
+        {
+          "id": "bairro-bomba-do-hemeterio",
+          "nome": "Bomba do Hemeterio"
+        },
+        {
+          "id": "bairro-cajueiro",
+          "nome": "Cajueiro"
+        },
+        {
+          "id": "bairro-campina-do-barreto",
+          "nome": "Campina do Barreto"
+        },
+        {
+          "id": "bairro-campo-grande",
+          "nome": "Campo Grande"
+        },
+        {
+          "id": "bairro-dois-unidos",
+          "nome": "Dois Unidos"
+        },
+        {
+          "id": "bairro-encruzilhada",
+          "nome": "Encruzilhada"
+        },
+        {
+          "id": "bairro-fundao",
+          "nome": "Fundao"
+        },
+        {
+          "id": "bairro-hipodromo",
+          "nome": "Hipodromo"
+        },
+        {
+          "id": "bairro-linha-do-tiro",
+          "nome": "Linha do Tiro"
+        },
+        {
+          "id": "bairro-peixinhos",
+          "nome": "Peixinhos"
+        },
+        {
+          "id": "bairro-ponto-de-parada",
+          "nome": "Ponto de Parada"
+        },
+        {
+          "id": "bairro-porto-da-madeira",
+          "nome": "Porto da Madeira"
+        },
+        {
+          "id": "bairro-rosarinho",
+          "nome": "Rosarinho"
+        },
+        {
+          "id": "bairro-torreao",
+          "nome": "Torreao"
+        }
+      ]
     },
     {
       "id": "ds-3",
@@ -27,7 +149,74 @@
       "nome": "Distrito Sanitário III",
       "d": "M256.9,295.7L264.0,293.6L275.3,281.7L280.7,281.8L284.3,284.9L286.0,296.0L289.0,302.4L286.6,314.7L288.2,324.4L294.4,332.1L295.5,341.1L297.3,341.5L302.7,333.9L303.4,324.7L320.1,302.1L334.5,294.1L325.6,286.6L316.5,284.2L315.5,287.6L312.4,287.0L310.2,286.1L311.0,283.5L298.6,278.7L299.2,276.2L296.7,275.7L301.9,266.9L300.8,265.8L304.5,260.8L309.4,258.6L299.7,254.4L283.9,254.0L268.3,248.9L261.5,245.0L262.1,242.1L255.8,240.0L254.8,242.1L236.8,239.9L228.3,234.3L228.3,239.0L223.3,239.0L225.4,236.1L222.1,230.4L217.1,234.7L214.2,234.6L211.6,231.3L214.2,221.2L216.5,219.3L213.4,217.6L206.7,209.1L201.9,184.3L203.8,177.7L198.8,174.0L188.7,171.2L170.1,175.1L156.9,186.3L153.3,194.2L144.5,195.9L145.2,228.0L151.2,241.7L165.4,245.9L170.3,243.8L173.7,240.2L183.7,241.1L189.6,245.9L193.6,246.4L193.1,257.0L196.1,256.3L204.7,249.3L204.2,243.7L216.6,245.4L216.6,250.6L220.1,253.3L222.6,259.0L231.4,270.5L235.0,285.3L252.0,294.9L256.9,295.7Z",
       "x": 263,
-      "y": 256
+      "y": 256,
+      "referencias": ["Casa Amarela", "Gracas"],
+      "bairros": [
+        {
+          "id": "bairro-aflitos",
+          "nome": "Aflitos"
+        },
+        {
+          "id": "bairro-alto-do-mandu",
+          "nome": "Alto do Mandu"
+        },
+        {
+          "id": "bairro-apipucos",
+          "nome": "Apipucos"
+        },
+        {
+          "id": "bairro-casa-amarela",
+          "nome": "Casa Amarela"
+        },
+        {
+          "id": "bairro-casa-forte",
+          "nome": "Casa Forte"
+        },
+        {
+          "id": "bairro-derby",
+          "nome": "Derby"
+        },
+        {
+          "id": "bairro-dois-irmaos",
+          "nome": "Dois Irmaos"
+        },
+        {
+          "id": "bairro-espinheiro",
+          "nome": "Espinheiro"
+        },
+        {
+          "id": "bairro-gracas",
+          "nome": "Gracas"
+        },
+        {
+          "id": "bairro-jaqueira",
+          "nome": "Jaqueira"
+        },
+        {
+          "id": "bairro-monteiro",
+          "nome": "Monteiro"
+        },
+        {
+          "id": "bairro-parnamirim",
+          "nome": "Parnamirim"
+        },
+        {
+          "id": "bairro-poco",
+          "nome": "Poco"
+        },
+        {
+          "id": "bairro-santana",
+          "nome": "Santana"
+        },
+        {
+          "id": "bairro-sitio-dos-pintos",
+          "nome": "Sitio dos Pintos"
+        },
+        {
+          "id": "bairro-tamarineira",
+          "nome": "Tamarineira"
+        }
+      ]
     },
     {
       "id": "ds-4",
@@ -36,7 +225,58 @@
       "nome": "Distrito Sanitário IV",
       "d": "M296.7,353.0L295.0,333.3L288.2,324.4L286.6,314.7L289.0,302.4L286.0,296.0L284.8,286.1L281.8,282.4L278.3,281.1L275.3,281.7L262.0,294.9L252.0,294.9L234.3,284.4L231.4,270.5L222.6,259.0L220.1,253.3L216.6,250.6L216.6,245.4L204.2,243.7L204.7,249.3L196.1,256.3L193.1,257.0L193.6,246.4L189.6,245.9L185.2,241.6L181.2,240.2L173.7,240.2L170.3,243.8L165.4,245.9L132.1,236.5L123.3,246.2L113.4,260.9L107.9,261.7L104.4,266.7L104.5,269.5L88.9,279.5L84.6,277.6L78.4,269.7L75.1,268.7L74.2,266.9L71.2,268.8L69.7,268.1L69.6,270.1L64.1,271.3L64.1,279.9L68.5,285.2L71.4,293.9L67.0,302.5L58.5,309.8L10.0,327.7L22.0,328.7L25.6,335.1L29.5,334.4L31.6,337.9L35.3,336.2L37.5,337.0L43.1,342.8L47.6,344.0L48.8,347.5L55.8,345.6L57.1,343.4L58.7,344.5L61.8,340.4L65.5,338.6L66.7,342.8L71.9,342.1L69.7,346.2L71.5,352.1L75.3,353.3L78.8,358.5L80.9,359.4L80.6,364.1L89.3,364.8L101.1,355.4L102.0,361.4L114.3,356.7L117.0,367.0L126.7,365.7L124.1,356.0L125.9,353.8L129.1,352.9L128.3,351.6L134.3,352.4L146.5,350.8L153.0,336.1L156.2,333.5L163.2,335.6L164.8,329.3L186.1,335.9L189.5,345.4L195.0,353.0L217.7,359.9L224.2,340.9L230.9,338.1L234.8,338.0L246.3,340.8L247.1,342.5L251.4,342.8L255.1,347.8L262.9,351.5L264.9,344.6L278.5,350.1L285.2,356.2L289.7,350.6L293.3,354.0L296.7,353.0Z",
       "x": 178,
-      "y": 302
+      "y": 302,
+      "referencias": ["Madalena", "Varzea"],
+      "bairros": [
+        {
+          "id": "bairro-caxanga",
+          "nome": "Caxanga"
+        },
+        {
+          "id": "bairro-cidade-universitaria",
+          "nome": "Cidade Universitaria"
+        },
+        {
+          "id": "bairro-cordeiro",
+          "nome": "Cordeiro"
+        },
+        {
+          "id": "bairro-engenho-do-meio",
+          "nome": "Engenho do Meio"
+        },
+        {
+          "id": "bairro-ilha-do-retiro",
+          "nome": "Ilha do retiro"
+        },
+        {
+          "id": "bairro-iputinga",
+          "nome": "Iputinga"
+        },
+        {
+          "id": "bairro-madalena",
+          "nome": "Madalena"
+        },
+        {
+          "id": "bairro-prado",
+          "nome": "Prado"
+        },
+        {
+          "id": "bairro-torre",
+          "nome": "Torre"
+        },
+        {
+          "id": "bairro-torroes",
+          "nome": "Torroes"
+        },
+        {
+          "id": "bairro-varzea",
+          "nome": "Varzea"
+        },
+        {
+          "id": "bairro-zumbi",
+          "nome": "Zumbi"
+        }
+      ]
     },
     {
       "id": "ds-5",
@@ -45,7 +285,74 @@
       "nome": "Distrito Sanitário V",
       "d": "M194.1,433.6L200.6,436.7L206.5,446.1L218.4,446.1L227.2,440.6L235.8,440.2L244.4,428.6L248.9,425.2L251.8,408.8L253.6,407.4L265.0,405.9L273.8,393.8L290.0,396.6L295.3,393.3L286.6,369.9L281.2,364.4L281.4,359.5L285.2,356.2L278.5,350.1L264.9,344.6L262.9,351.5L255.1,347.8L251.4,342.8L232.3,337.8L224.2,340.9L217.7,359.9L195.0,353.0L189.5,345.4L186.1,335.9L164.8,329.3L163.2,335.6L156.2,333.5L153.0,336.1L146.5,350.8L134.3,352.4L129.0,351.4L129.1,352.9L124.4,355.0L126.7,365.7L117.0,367.0L114.3,356.7L102.0,361.4L101.1,355.4L88.4,365.2L89.5,366.1L87.9,371.9L90.6,371.6L95.5,375.6L101.7,374.5L104.2,375.6L105.9,380.7L109.5,381.2L109.7,384.1L112.2,385.4L111.4,386.9L114.7,383.6L117.4,383.6L118.3,381.4L123.4,381.7L121.8,384.3L125.4,390.3L124.2,395.4L118.9,400.3L119.6,403.8L123.1,405.9L126.0,404.0L128.4,405.5L128.8,408.5L138.1,415.5L136.7,416.1L138.5,419.6L136.6,420.3L137.6,421.7L142.8,418.3L144.2,419.6L143.5,421.3L140.4,422.0L141.9,424.1L146.4,424.6L148.0,422.7L149.6,424.1L148.6,427.1L146.4,426.9L146.0,437.2L147.8,441.1L146.9,443.9L145.1,444.1L144.9,450.0L143.8,450.5L147.5,458.3L160.2,464.1L164.9,460.9L166.6,462.6L183.8,457.7L179.4,449.6L180.1,441.5L175.9,432.3L176.4,427.5L179.8,421.7L188.1,425.9L194.1,433.6Z",
       "x": 197,
-      "y": 397
+      "y": 397,
+      "referencias": ["Afogados", "Mustardinha"],
+      "bairros": [
+        {
+          "id": "bairro-afogados",
+          "nome": "Afogados"
+        },
+        {
+          "id": "bairro-areias",
+          "nome": "Areias"
+        },
+        {
+          "id": "bairro-barro",
+          "nome": "Barro"
+        },
+        {
+          "id": "bairro-bongi",
+          "nome": "Bongi"
+        },
+        {
+          "id": "bairro-cacote",
+          "nome": "Cacote"
+        },
+        {
+          "id": "bairro-coqueiral",
+          "nome": "Coqueiral"
+        },
+        {
+          "id": "bairro-curado",
+          "nome": "Curado"
+        },
+        {
+          "id": "bairro-estancia",
+          "nome": "Estancia"
+        },
+        {
+          "id": "bairro-jardim-sao-paulo",
+          "nome": "Jardim Sao Paulo"
+        },
+        {
+          "id": "bairro-jiquia",
+          "nome": "Jiquia"
+        },
+        {
+          "id": "bairro-mangueira",
+          "nome": "Mangueira"
+        },
+        {
+          "id": "bairro-mustardinha",
+          "nome": "Mustardinha"
+        },
+        {
+          "id": "bairro-san-martin",
+          "nome": "San Martin"
+        },
+        {
+          "id": "bairro-sancho",
+          "nome": "Sancho"
+        },
+        {
+          "id": "bairro-tejipio",
+          "nome": "Tejipio"
+        },
+        {
+          "id": "bairro-toto",
+          "nome": "Toto"
+        }
+      ]
     },
     {
       "id": "ds-6",
@@ -54,7 +361,30 @@
       "nome": "Distrito Sanitário VI",
       "d": "M339.2,435.6L346.7,413.0L350.2,407.2L370.5,356.9L364.4,355.1L359.0,368.9L328.0,385.7L319.7,395.3L310.5,392.0L295.3,393.3L290.0,396.6L275.0,393.4L273.0,394.2L265.0,405.9L253.6,407.4L251.8,408.8L248.9,425.2L244.4,428.6L235.8,440.2L229.7,440.4L234.4,468.3L246.0,481.7L253.0,487.4L262.0,490.4L253.7,540.3L259.1,543.1L258.5,545.4L260.9,546.4L260.1,548.2L262.6,549.1L261.8,551.2L263.9,551.9L263.2,553.9L269.1,556.2L267.0,562.0L260.1,566.0L267.7,567.6L268.2,565.1L270.1,565.8L269.3,568.0L278.0,570.0L311.5,490.2L339.2,435.6Z",
       "x": 279,
-      "y": 464
+      "y": 464,
+      "referencias": ["Boa Viagem", "Pina"],
+      "bairros": [
+        {
+          "id": "bairro-boa-viagem",
+          "nome": "Boa Viagem"
+        },
+        {
+          "id": "bairro-brasilia-teimosa",
+          "nome": "Brasilia Teimosa"
+        },
+        {
+          "id": "bairro-ipsep",
+          "nome": "IPSEP"
+        },
+        {
+          "id": "bairro-imbiribeira",
+          "nome": "Imbiribeira"
+        },
+        {
+          "id": "bairro-pina",
+          "nome": "Pina"
+        }
+      ]
     },
     {
       "id": "ds-7",
@@ -63,7 +393,62 @@
       "nome": "Distrito Sanitário VII",
       "d": "M299.7,254.4L295.4,245.6L278.6,239.4L275.1,235.4L271.3,235.1L273.2,225.7L272.3,220.5L270.0,221.8L266.2,219.5L272.1,217.3L269.9,208.5L271.8,205.5L267.6,205.3L263.3,202.9L263.1,201.3L258.4,199.3L256.9,196.5L245.9,191.1L239.8,172.0L251.1,162.3L250.4,159.7L256.7,158.6L258.0,155.5L256.6,153.3L262.3,147.2L274.2,53.7L271.1,50.0L271.8,45.9L269.8,43.6L270.8,41.0L267.6,39.4L265.1,35.6L261.1,33.4L259.3,34.1L260.2,32.1L258.1,30.2L256.9,31.4L255.9,30.1L255.8,31.7L251.2,34.7L250.5,32.1L248.6,33.0L246.1,31.1L242.4,31.2L239.9,27.2L237.2,30.1L234.1,29.2L233.1,31.4L228.9,32.2L226.9,30.3L219.9,29.4L214.7,25.1L211.8,25.4L209.5,22.3L205.8,26.8L200.5,21.7L197.5,22.0L196.7,19.1L194.8,22.0L193.3,21.9L193.0,18.4L191.0,18.0L186.7,21.1L184.0,18.2L181.7,20.0L179.7,18.6L179.0,22.4L173.8,24.6L174.6,26.4L172.1,28.0L171.4,32.8L168.2,31.3L166.5,33.6L161.0,31.5L161.3,32.5L159.5,32.1L157.9,34.2L155.7,31.9L153.9,34.2L154.8,37.9L151.8,37.2L150.4,39.5L148.8,38.0L142.1,41.5L142.0,43.9L139.5,42.7L138.8,44.5L137.6,43.7L137.2,46.0L134.0,45.3L129.7,47.3L126.8,43.0L122.8,46.1L117.1,45.3L113.2,39.7L112.4,42.6L110.8,41.6L104.8,47.1L103.0,45.9L101.5,47.1L100.4,46.6L101.0,44.8L98.6,43.1L92.2,41.6L91.0,43.0L91.8,42.3L91.8,44.9L85.7,45.1L84.2,41.1L79.0,40.8L77.0,39.1L77.1,37.2L78.4,37.2L77.2,33.8L75.9,33.8L76.0,30.8L73.2,28.9L73.4,24.9L65.2,26.4L62.6,20.7L55.7,17.7L52.9,15.2L53.7,13.7L50.7,13.1L48.0,10.0L30.4,56.6L40.9,58.8L46.8,62.1L52.7,62.6L44.6,89.2L54.0,101.2L58.4,101.2L60.4,98.4L64.5,98.9L112.2,127.0L130.5,122.5L145.4,127.3L147.0,132.8L145.4,135.5L147.1,145.5L143.0,152.6L141.9,159.3L146.3,166.4L146.5,169.8L144.4,171.0L144.1,174.5L144.5,195.9L153.3,194.2L156.9,186.3L170.1,175.1L188.7,171.2L198.8,174.0L203.8,177.7L201.9,184.3L206.7,209.1L213.4,217.6L216.5,219.3L214.2,221.2L211.6,231.3L214.2,234.6L217.1,234.7L222.1,230.4L225.4,236.1L223.3,239.0L228.3,239.0L228.3,234.3L236.8,239.9L254.8,242.1L255.8,240.0L261.3,241.7L261.5,245.0L266.5,248.1L283.9,254.0L299.7,254.4Z",
       "x": 205,
-      "y": 132
+      "y": 132,
+      "referencias": ["Nova Descoberta", "Macaxeira"],
+      "bairros": [
+        {
+          "id": "bairro-alto-jose-bonifacio",
+          "nome": "Alto Jose Bonifacio"
+        },
+        {
+          "id": "bairro-alto-jose-do-pinho",
+          "nome": "Alto Jose do Pinho"
+        },
+        {
+          "id": "bairro-brejo-da-guabiraba",
+          "nome": "Brejo da Guabiraba"
+        },
+        {
+          "id": "bairro-brejo-de-beberibe",
+          "nome": "Brejo de Beberibe"
+        },
+        {
+          "id": "bairro-corrego-do-jenipapo",
+          "nome": "Corrego do Jenipapo"
+        },
+        {
+          "id": "bairro-guabiraba",
+          "nome": "Guabiraba"
+        },
+        {
+          "id": "bairro-macaxeira",
+          "nome": "Macaxeira"
+        },
+        {
+          "id": "bairro-mangabeira",
+          "nome": "Mangabeira"
+        },
+        {
+          "id": "bairro-morro-da-conceicao",
+          "nome": "Morro da Conceicao"
+        },
+        {
+          "id": "bairro-nova-descoberta",
+          "nome": "Nova Descoberta"
+        },
+        {
+          "id": "bairro-passarinho",
+          "nome": "Passarinho"
+        },
+        {
+          "id": "bairro-pau-ferro",
+          "nome": "Pau Ferro"
+        },
+        {
+          "id": "bairro-vasco-da-gama",
+          "nome": "Vasco da Gama"
+        }
+      ]
     },
     {
       "id": "ds-8",
@@ -72,7 +457,22 @@
       "nome": "Distrito Sanitário VIII",
       "d": "M253.7,540.3L262.0,490.4L253.0,487.4L246.0,481.7L234.4,468.3L229.8,440.5L227.2,440.6L219.1,445.9L206.5,446.1L200.6,436.7L193.7,433.2L188.1,425.9L179.8,421.7L176.4,427.5L175.9,432.3L180.1,441.5L179.4,449.6L183.8,457.7L166.6,462.6L164.9,460.9L160.2,464.1L147.5,458.3L144.3,458.5L142.3,461.0L143.2,488.7L145.4,496.2L150.6,498.0L150.8,502.0L155.1,506.8L156.2,517.4L160.8,525.2L159.7,529.0L166.5,529.5L170.7,528.2L173.9,529.6L177.5,526.1L182.3,526.1L182.3,527.2L207.0,524.7L218.4,537.2L238.4,535.9L245.3,536.5L253.7,540.3Z",
       "x": 194,
-      "y": 481
+      "y": 481,
+      "referencias": ["Ibura", "Cohab"],
+      "bairros": [
+        {
+          "id": "bairro-cohab",
+          "nome": "Cohab"
+        },
+        {
+          "id": "bairro-ibura",
+          "nome": "Ibura"
+        },
+        {
+          "id": "bairro-jordao",
+          "nome": "Jordao"
+        }
+      ]
     }
   ]
 }

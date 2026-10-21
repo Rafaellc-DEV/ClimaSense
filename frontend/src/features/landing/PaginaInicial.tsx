@@ -1,17 +1,18 @@
-import { useEffect } from "react";
-import { BellOff, Megaphone } from "lucide-react";
+import { useEffect, useRef } from "react";
+import { ArrowLeft, ArrowRight, BellOff, Map, Megaphone, Route, Search } from "lucide-react";
+import rios from "@/assets/tracos/rios.svg?raw";
 import { CartaoAviso } from "@/design-system/componentes/CartaoAviso";
 import { ReguaMare } from "@/design-system/componentes/ReguaMare";
 import { SeloNivel } from "@/design-system/componentes/SeloNivel";
 import type { ChaveNivel } from "@/design-system/niveis";
-import { useConsulta } from "@/lib/consultas";
 import { quandoRelativo } from "@/lib/formatos";
 import type { Esquemas } from "@/lib/api";
-import { TIPOS_FONTE } from "@/textos/glossario";
 import { BuscaBairro } from "./BuscaBairro";
-import { CascaPublica, FaixaEmergencia } from "./CascaPublica";
+import { CascaPublica, FaixaEmergencia, Onda } from "./CascaPublica";
 import { MapaAvisos } from "./MapaAvisos";
+import { SecaoSobre } from "./SecaoSobre";
 import { useAvisos, useEstado, type Situacao } from "./useEstado";
+import { useHolofote } from "./useHolofote";
 import estilos from "./PaginaInicial.module.css";
 
 /** Como o nível entra na frase de estado: “Alerta para 2 bairros até amanhã, 18h.” */
@@ -61,11 +62,24 @@ export function frase(s: Situacao): { nivel: ChaveNivel; titulo: string; apoio: 
   };
 }
 
+/** Os rios do herói se desenham uma vez, junto com a subida da água na régua (pathLength normaliza o traço). */
+const riosTracados = rios.replace('<path class="agua"', '<path pathLength="1" class="agua"');
+
+/** Atalhos em círculo logo abaixo do herói: levam às partes da página que respondem às dúvidas mais comuns. */
+const ATALHOS = [
+  { href: "#bairro", rotulo: "Buscar meu bairro", Icone: Search },
+  { href: "#comunicados", rotulo: "Ver comunicados", Icone: Megaphone },
+  { href: "#mapa", rotulo: "Ver o mapa", Icone: Map },
+  { href: "#como-funciona", rotulo: "Entender os avisos", Icone: Route },
+];
+
 /** Landing pública (design §9.1): em 3 segundos, a pessoa sabe se existe aviso e o que fazer. */
 export function PaginaInicial() {
   const situacao = useEstado();
   const avisos = useAvisos();
-  const fontes = useConsulta<Esquemas["FontePublica"][]>("/publico/fontes", { staleTime: 10 * 60_000 });
+  const trilho = useRef<HTMLUListElement>(null);
+  const heroi = useRef<HTMLElement>(null);
+  useHolofote(heroi);
   const f = frase(situacao);
   const niveis = situacao.tipo === "ok" ? situacao.estado.niveis_por_distrito : null;
 
@@ -73,16 +87,23 @@ export function PaginaInicial() {
     document.title = "ClimaSense: avisos de chuva e alagamento no Recife";
   }, []);
 
-  const emUso = fontes.data?.filter((x) => x.status !== "planejada") ?? [];
-  const planejadas = (fontes.data?.length ?? 0) - emUso.length;
+  const rolar = (sentido: 1 | -1) =>
+    trilho.current?.scrollBy({
+      left: sentido * trilho.current.clientWidth * 0.85,
+      behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
+    });
 
   return (
     <CascaPublica inicio>
-      <section className={estilos.heroi} aria-labelledby="estado">
+      <section ref={heroi} className={estilos.heroi} aria-labelledby="estado">
+        <div className={`${estilos.malha} ${estilos.heroiMalha}`} aria-hidden="true" />
+        <div className={`${estilos.malha} ${estilos.heroiHolofote}`} aria-hidden="true" />
+        <div
+          className={estilos.heroiRios}
+          aria-hidden="true"
+          dangerouslySetInnerHTML={{ __html: riosTracados }}
+        />
         <div className={estilos.heroiInterno}>
-          <div className={estilos.heroiRegua}>
-            <ReguaMare nivel={f.nivel} />
-          </div>
           <div className={estilos.heroiTexto}>
             <p className={estilos.sobrescrito}>Avisos de chuva e alagamento no Recife</p>
             <div className={estilos.seloMovel}>
@@ -98,29 +119,76 @@ export function PaginaInicial() {
               </p>
             )}
           </div>
+          <div className={estilos.heroiRegua}>
+            <ReguaMare nivel={f.nivel} />
+          </div>
         </div>
+        <Onda cor="var(--cs-papel)" linha />
       </section>
 
-      <FaixaEmergencia />
-
-      <section className={estilos.secao} aria-labelledby="bairro-h">
-        <div className={estilos.cartaoBusca}>
-          <h2 id="bairro-h" className={estilos.h2}>
-            Há aviso para o seu bairro?
+      <div className={estilos.atalhos}>
+        <FaixaEmergencia />
+        <nav className={estilos.atalhosNav} aria-labelledby="atalhos-h">
+          <h2 id="atalhos-h" className={estilos.etiqueta} data-tom="claro">
+            Quero…
           </h2>
-          <BuscaBairro />
+          <ul className={estilos.circulos}>
+            {ATALHOS.map(({ href, rotulo, Icone }) => (
+              <li key={href}>
+                <a href={href} className={estilos.circulo}>
+                  <span className={estilos.disco} data-tom="claro">
+                    <Icone aria-hidden="true" size={30} strokeWidth={1.8} />
+                  </span>
+                  <span className={estilos.rotuloCirculo}>{rotulo}</span>
+                </a>
+              </li>
+            ))}
+          </ul>
+        </nav>
+      </div>
+
+      <section id="bairro" className={estilos.secaoBusca} aria-labelledby="bairro-h">
+        <h2 id="bairro-h" className={estilos.h2}>
+          Há aviso para o seu bairro?
+        </h2>
+        <BuscaBairro />
+      </section>
+
+      <section id="mapa" className={estilos.secaoMapa} aria-labelledby="mapa-h">
+        <div className={estilos.secao}>
+          <MapaAvisos niveis={niveis} avisos={avisos.data}>
+            <h2 id="mapa-h" className={estilos.h2}>
+              Onde há aviso agora
+            </h2>
+            <p className={estilos.lead}>
+              O Recife é dividido em 8 distritos sanitários. Escolha um para ver os bairros que fazem parte
+              dele.
+            </p>
+          </MapaAvisos>
         </div>
       </section>
 
       <section id="comunicados" className={estilos.secao} aria-labelledby="comunicados-h">
-        <div className={estilos.cabecalhoSecao}>
-          <h2 id="comunicados-h" className={estilos.h2}>
-            <Megaphone aria-hidden="true" /> Comunicados em vigor
-          </h2>
-          <p className={estilos.lead}>
-            Publicados pela Vigilância em Saúde do Recife, com o que fazer e até quando valem. Cada comunicado
-            sai daqui sozinho quando vence.
-          </p>
+        <div className={estilos.cabecalhoTrilho}>
+          <div>
+            <h2 id="comunicados-h" className={estilos.h2}>
+              Comunicados em vigor
+            </h2>
+            <p className={estilos.lead}>
+              Publicados pela Vigilância em Saúde do Recife, com o que fazer e até quando valem. Cada
+              comunicado sai daqui sozinho quando vence.
+            </p>
+          </div>
+          {(avisos.data?.length ?? 0) > 1 && (
+            <div className={estilos.setas}>
+              <button type="button" onClick={() => rolar(-1)} aria-label="Comunicados anteriores">
+                <ArrowLeft aria-hidden="true" size={22} />
+              </button>
+              <button type="button" onClick={() => rolar(1)} aria-label="Próximos comunicados">
+                <ArrowRight aria-hidden="true" size={22} />
+              </button>
+            </div>
+          )}
         </div>
         {avisos.isPending && <p className={estilos.lead}>Carregando os comunicados…</p>}
         {avisos.isError && (
@@ -131,7 +199,7 @@ export function PaginaInicial() {
         )}
         {avisos.data &&
           (avisos.data.length ? (
-            <ul className={estilos.cartoes}>
+            <ul id="avisos" ref={trilho} className={estilos.cartoes} tabIndex={0} aria-label="Comunicados">
               {avisos.data.map((a) => (
                 <li key={a.id}>
                   <CartaoAviso aviso={a} ligarDetalhe />
@@ -152,100 +220,29 @@ export function PaginaInicial() {
           ))}
       </section>
 
-      <section className={estilos.faixaClara} aria-labelledby="mapa-h">
+      <section id="como-funciona" className={estilos.faixaClara} aria-labelledby="como-h">
         <div className={estilos.secao}>
-          <div className={estilos.cabecalhoSecao}>
-            <h2 id="mapa-h" className={estilos.h2}>
-              Onde há aviso agora
-            </h2>
-            <p className={estilos.lead}>O Recife é dividido em 8 distritos sanitários.</p>
-          </div>
-          <MapaAvisos niveis={niveis} />
-        </div>
-      </section>
-
-      <section id="como-funciona" className={estilos.secao} aria-labelledby="como-h">
-        <h2 id="como-h" className={estilos.h2}>
-          Como um aviso chega até você
-        </h2>
-        <ol className={estilos.passos}>
-          <li>
-            <h3>Dados de chuva, maré e território</h3>
-            <p>A chuva prevista, o nível do mar e o mapa oficial dos distritos vêm de fontes públicas.</p>
-          </li>
-          <li>
-            <h3>A equipe avalia</h3>
-            <p>A Vigilância em Saúde analisa os territórios e escreve o aviso em linguagem simples.</p>
-          </li>
-          <li>
-            <h3>Outra pessoa revisa e publica</h3>
-            <p>Só avisos revisados aparecem aqui, sempre com a validade.</p>
-          </li>
-        </ol>
-      </section>
-
-      <section id="sobre" className={estilos.faixaClara} aria-labelledby="sobre-h">
-        <div className={estilos.secao}>
-          <h2 id="sobre-h" className={estilos.h2}>
-            Sobre o ClimaSense
+          <h2 id="como-h" className={estilos.h2}>
+            Como um aviso chega até você
           </h2>
-          <div className={estilos.sobre}>
-            <div>
-              <h3>O que é</h3>
-              <p>
-                Uma ferramenta das equipes de Vigilância em Saúde do Recife para antecipar os efeitos da chuva
-                e da maré na saúde e avisar, com clareza, os bairros que precisam de cuidado.
-              </p>
-            </div>
-            <div>
-              <h3>O que não é</h3>
-              <p>
-                Não é alerta oficial e não substitui a Defesa Civil. Não prevê com certeza onde vai alagar. Na
-                dúvida, siga a Defesa Civil e ligue 199.
-              </p>
-            </div>
-          </div>
-
-          <h3 id="fontes" className={estilos.h3}>
-            De onde vêm os dados
-          </h3>
-          {fontes.data ? (
-            <>
-              <ul className={estilos.fontes}>
-                {emUso.map((x) => (
-                  <li key={x.id} data-status={x.status}>
-                    <span>
-                      <strong>{x.nome}</strong>
-                      <small>
-                        {x.orgao}. {TIPOS_FONTE[x.tipo]}.
-                      </small>
-                    </span>
-                    <span className={estilos.statusFonte}>
-                      {x.status === "atualizada"
-                        ? `Atualizada ${x.ultima_atualizacao ? quandoRelativo(x.ultima_atualizacao) : ""}`
-                        : x.status === "desatualizada"
-                          ? "Desatualizada"
-                          : "Com falha na última carga"}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-              {planejadas > 0 && (
-                <p className={estilos.nota}>
-                  Outras {planejadas} fontes públicas estão planejadas e ainda não geram dados.
-                </p>
-              )}
-            </>
-          ) : (
-            <p className={estilos.lead}>Carregando as fontes…</p>
-          )}
-          <p className={estilos.nota}>
-            Quando um dado falta, o ClimaSense mostra “Dados insuficientes”. Ele nunca preenche lacunas com
-            valores inventados. Feito por estudantes da CESAR School em 2026; os critérios dos níveis ainda
-            serão validados com a Vigilância em Saúde e a Defesa Civil.
-          </p>
+          <ol className={estilos.passos}>
+            <li>
+              <h3>Dados de chuva, maré e território</h3>
+              <p>A chuva prevista, o nível do mar e o mapa oficial dos distritos vêm de fontes públicas.</p>
+            </li>
+            <li>
+              <h3>A equipe avalia</h3>
+              <p>A Vigilância em Saúde analisa os territórios e escreve o aviso em linguagem simples.</p>
+            </li>
+            <li>
+              <h3>Outra pessoa revisa e publica</h3>
+              <p>Só avisos revisados aparecem aqui, sempre com a validade.</p>
+            </li>
+          </ol>
         </div>
       </section>
+
+      <SecaoSobre />
     </CascaPublica>
   );
 }

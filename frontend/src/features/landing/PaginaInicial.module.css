@@ -1,12 +1,17 @@
-/* Landing pública (design §9.1). A régua e a frase de estado são o primeiro elemento percebido (RNF-VIS-03).
-   Uma coluna centrada, texto grande e muito espaço: pensada para quem lê devagar ou enxerga pouco. */
+/* Landing pública (design §9.1). A frase de estado e a régua são o primeiro elemento percebido (RNF-VIS-03).
+   O herói é o Recife visto de cima: azul maré com o traço dos rios, fechado por uma linha d’água. Abaixo dele,
+   atalhos em círculo; depois o mapa dos distritos sobre uma mancha clara, como uma ilha. */
 .pagina {
-  --largura: 1120px;
+  --largura: 1180px;
   --margem: var(--e-6);
+  --altura-onda: clamp(48px, 8vw, 120px);
   min-height: 100vh;
-  background: var(--cs-nevoa);
+  background: var(--cs-papel);
   color: var(--cs-tinta);
   overflow-x: hidden;
+}
+.pagina [id] {
+  scroll-margin-top: 96px;
 }
 .pular {
   position: absolute;
@@ -22,14 +27,20 @@
 .pular:focus {
   top: var(--e-3);
 }
+/* sobre o azul, o foco laranja some: usa o sol */
+.topo :focus-visible,
+.heroi :focus-visible,
+.rodape :focus-visible {
+  outline-color: var(--cs-sol);
+}
 
-/* ---------- topo */
+/* ---------- topo: mesma cor do herói, para os dois parecerem uma peça só */
 .topo {
   position: sticky;
   top: 0;
   z-index: 50;
-  background: var(--cs-papel);
-  border-bottom: var(--borda);
+  background: var(--cs-mare);
+  color: #fff;
 }
 .topoInterno {
   display: flex;
@@ -37,48 +48,51 @@
   justify-content: space-between;
   gap: var(--e-4);
   max-width: var(--largura);
-  min-height: 76px;
+  min-height: 80px;
   margin: 0 auto;
   padding: var(--e-3) var(--margem);
 }
+/* a logo é texto e traço em currentColor: branca sobre a maré */
 .logo {
-  width: 176px;
-  height: auto;
-  display: block;
+  --marca: 30px;
+  display: inline-flex;
+  color: #fff;
+  text-decoration: none;
 }
 .nav {
   display: flex;
   align-items: center;
-  gap: var(--e-3);
+  gap: var(--e-2);
 }
 .linkNav {
   display: inline-flex;
   align-items: center;
   min-height: var(--alvo);
   padding: 0 var(--e-3);
-  border-radius: var(--r-campo);
-  color: var(--cs-tinta);
+  border-radius: var(--r-pilula);
+  color: #fff;
   font-weight: 600;
   text-decoration: none;
 }
 .linkNav:hover {
-  background: var(--cs-nevoa);
+  background: rgba(255, 255, 255, 0.12);
 }
 .botaoComunicados {
   display: inline-flex;
   align-items: center;
   gap: var(--e-2);
   min-height: var(--alvo);
+  margin-left: var(--e-2);
   padding: 0 var(--e-4);
   border-radius: var(--r-pilula);
-  background: var(--cs-mare);
-  color: var(--cs-sobre-mare);
+  background: var(--cs-sol);
+  color: var(--cs-tinta);
   font-weight: 700;
   text-decoration: none;
   white-space: nowrap;
 }
 .botaoComunicados:hover {
-  background: var(--cs-mare-forte);
+  background: #ffc933;
 }
 .contagem {
   min-width: 26px;
@@ -87,8 +101,8 @@
   display: inline-grid;
   place-items: center;
   border-radius: var(--r-pilula);
-  background: var(--cs-sol);
-  color: var(--cs-tinta);
+  background: var(--cs-tinta);
+  color: #fff;
   font-size: var(--t-apoio);
   font-variant-numeric: tabular-nums;
 }
@@ -97,205 +111,321 @@
   align-items: center;
   min-height: var(--alvo);
   padding: 0 var(--e-4);
-  border: 2px solid var(--cs-linha-forte);
+  border: 2px solid rgba(255, 255, 255, 0.55);
   border-radius: var(--r-pilula);
-  color: var(--cs-mare);
+  color: #fff;
   font-weight: 700;
   text-decoration: none;
   white-space: nowrap;
 }
 .entrar:hover {
-  border-color: var(--cs-mare);
+  border-color: #fff;
+  background: rgba(255, 255, 255, 0.1);
 }
 .entrarCurto {
   display: none;
 }
 
-/* ---------- herói: régua + frase de estado */
+/* ---------- rede de pluviômetros: malha de pontos (estações de medição) atrás do conteúdo */
+.malha {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-image: radial-gradient(circle, var(--ponto, var(--cs-ponto)) 0 1.2px, transparent 1.7px);
+  background-size: var(--malha) var(--malha);
+  background-position: calc(var(--malha) / 2) calc(var(--malha) / 2);
+}
+
+/* ---------- herói */
 .heroi {
-  padding: var(--e-8) var(--margem) var(--e-8);
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  background: var(--cs-mare);
+  color: #fff;
+  padding: var(--e-8) var(--margem) calc(var(--altura-onda) + var(--e-7));
+}
+.heroiRios {
+  position: absolute;
+  top: -18%;
+  right: -6%;
+  width: min(62%, 760px);
+  height: 150%;
+  opacity: 0.2;
+  pointer-events: none;
+}
+.heroiRios :global(svg) {
+  width: 100%;
+  height: 100%;
+}
+.heroiRios :global(path) {
+  fill: none;
+  stroke: #fff;
+  stroke-width: 1.2;
+}
+.heroiRios :global(.cidade) {
+  fill: rgba(255, 255, 255, 0.05);
+}
+/* os rios se desenham uma vez ao abrir: o mesmo momento em que a água sobe na régua */
+.heroiRios :global(.agua) {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: tracar var(--mov-traco) 200ms forwards;
+}
+@keyframes tracar {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+/* a malha só existe à direita, longe da frase de estado */
+.heroiMalha {
+  --ponto: var(--cs-ponto-sobre-mare);
+  -webkit-mask: linear-gradient(to right, transparent 38%, #000 68%),
+    radial-gradient(ellipse 70% 80% at 75% 45%, #000 30%, transparent 75%);
+  -webkit-mask-composite: source-in;
+  mask: linear-gradient(to right, transparent 38%, #000 68%),
+    radial-gradient(ellipse 70% 80% at 75% 45%, #000 30%, transparent 75%);
+  mask-composite: intersect;
+}
+/* holofote: a mesma malha, acesa só perto do cursor (useHolofote) */
+.heroiHolofote {
+  --ponto: var(--cs-ponto-aceso);
+  opacity: 0;
+  transition: opacity 300ms ease-out;
+  -webkit-mask: radial-gradient(180px circle at var(--hx, 50%) var(--hy, 50%), #000, transparent 70%),
+    linear-gradient(to right, transparent 45%, #000 70%);
+  -webkit-mask-composite: source-in;
+  mask: radial-gradient(180px circle at var(--hx, 50%) var(--hy, 50%), #000, transparent 70%),
+    linear-gradient(to right, transparent 45%, #000 70%);
+  mask-composite: intersect;
+}
+.heroi[data-holofote="on"] .heroiHolofote {
+  opacity: 1;
 }
 .heroiInterno {
+  position: relative;
+  z-index: 1;
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr) auto;
   gap: var(--e-8);
   align-items: center;
   max-width: var(--largura);
   margin: 0 auto;
 }
 .heroiTexto {
-  max-width: 760px;
+  max-width: 780px;
 }
 .sobrescrito {
   margin-bottom: var(--e-4);
-  font-size: var(--t-apoio);
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--cs-mangue);
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #cfe3ee;
 }
 .seloMovel {
   display: none;
   margin-bottom: var(--e-4);
 }
 .frase {
-  font-size: clamp(2.1rem, 4.4vw, 3.5rem);
-  line-height: 1.1;
+  font-size: clamp(2.4rem, 5vw, 4.5rem);
+  line-height: 1.04;
   font-weight: 800;
-  letter-spacing: -0.02em;
-  color: var(--cs-mare);
-  max-width: 20ch;
+  letter-spacing: -0.025em;
+  color: #fff;
+  max-width: 17ch;
+  text-wrap: balance;
 }
 .apoio {
   margin-top: var(--e-5);
   font-size: 1.25rem;
   line-height: 1.55;
   max-width: 52ch;
+  color: #e6eff5;
 }
 .verificacao {
   margin-top: var(--e-4);
-  color: var(--cs-tinta-2);
+  color: #cfe3ee;
   font-variant-numeric: tabular-nums;
 }
-
-/* ---------- emergência */
-.emergencia {
-  background: var(--cs-mare);
-  color: #fff;
+/* a régua fica numa placa branca, como as réguas presas aos pilares das pontes do Capibaribe */
+.heroiRegua {
+  padding: var(--e-5) var(--e-5) var(--e-4);
+  background: var(--cs-papel);
+  color: var(--cs-tinta);
+  border-radius: 20px;
+  box-shadow: 0 24px 48px rgba(6, 30, 48, 0.35);
 }
-.emergenciaInterna {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--e-3) var(--e-6);
+.onda {
+  position: absolute;
+  left: 0;
+  bottom: -1px;
+  display: block;
+  width: 100%;
+  height: var(--altura-onda);
+}
+
+/* ---------- atalhos: emergência + “Quero…” */
+.atalhos {
+  display: grid;
+  gap: var(--e-5);
+  justify-content: center;
   max-width: var(--largura);
   margin: 0 auto;
-  padding: var(--e-5) var(--margem);
+  padding: var(--e-4) var(--margem) var(--e-7);
 }
-.emergencia h2 {
+.emergencia {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--e-5);
+  max-width: var(--largura);
+  margin: 0 auto;
+  padding: var(--e-6) var(--margem);
+}
+/* as duas linhas usam a mesma régua: etiqueta numa coluna fixa, círculos na outra */
+.atalhos .emergencia,
+.atalhosNav {
+  display: grid;
+  grid-template-columns: 240px minmax(0, 1fr);
+  align-items: start;
+  gap: var(--e-5);
+  margin: 0;
+  padding: 0;
+}
+.atalhos .etiqueta {
+  justify-self: start;
+}
+.etiqueta {
   display: inline-flex;
   align-items: center;
   gap: var(--e-2);
-  font-size: var(--t-4);
+  flex: none;
+  margin-top: 18px;
+  padding: 10px 20px;
+  border-radius: 999px 900px 999px 860px;
+  background: var(--cs-mare);
+  color: #fff;
+  font-size: 1rem;
   font-weight: 700;
+  white-space: nowrap;
 }
-.emergencia ul {
+.etiqueta svg {
+  flex: none;
+  width: 18px;
+  height: 18px;
+}
+.etiqueta[data-tom="claro"] {
+  background: var(--cs-espuma);
+  color: var(--cs-mare-forte);
+}
+.circulos {
   list-style: none;
   margin: 0;
   padding: 0;
   display: flex;
-  flex-wrap: wrap;
-  gap: var(--e-3);
+  gap: var(--e-4);
 }
-.emergencia a {
-  display: inline-flex;
-  align-items: baseline;
-  gap: var(--e-2);
-  min-height: var(--alvo-grande);
-  padding: var(--e-2) var(--e-5);
-  border: 2px solid rgba(255, 255, 255, 0.6);
-  border-radius: var(--r-painel);
-  color: #fff;
-  font-weight: 600;
-  text-decoration: none;
-}
-.emergencia a:hover {
-  background: #fff;
-  color: var(--cs-mare);
-}
-.emergencia a:focus-visible {
-  outline-color: var(--cs-sol);
-}
-.numero {
-  font-size: 1.6rem;
-  font-weight: 800;
-  font-variant-numeric: tabular-nums;
-}
-
-/* ---------- seções */
-.secao {
-  max-width: var(--largura);
-  margin: 0 auto;
-  padding: var(--e-8) var(--margem);
-}
-.faixaClara {
-  background: var(--cs-papel);
-  border-top: var(--borda);
-  border-bottom: var(--borda);
-}
-.cabecalhoSecao {
-  margin-bottom: var(--e-6);
-}
-.h2 {
+.circulo {
   display: flex;
+  flex-direction: column;
   align-items: center;
   gap: var(--e-3);
-  font-size: var(--t-3);
-  line-height: 1.2;
+  width: 104px;
+  color: var(--cs-tinta);
   font-weight: 700;
-  color: var(--cs-mare);
-  margin-bottom: var(--e-3);
+  text-align: center;
+  text-decoration: none;
 }
-.h2 svg {
-  width: 30px;
-  height: 30px;
-  flex: none;
-  color: var(--cs-mangue);
+.disco {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 76px;
+  height: 76px;
+  border-radius: 50%;
+  background: var(--cs-mare);
+  color: #fff;
 }
-.h3 {
-  margin: var(--e-7) 0 var(--e-4);
-  font-size: var(--t-4);
+.disco[data-tom="claro"] {
+  background: var(--cs-mangue);
 }
-.lead {
-  max-width: 62ch;
-  color: var(--cs-tinta-2);
-  font-size: var(--t-corpo);
+/* anel concêntrico em volta do círculo; cresce um pouco quando a pessoa aponta, toca ou foca */
+.disco::after {
+  content: "";
+  position: absolute;
+  inset: -6px;
+  border: 2px solid var(--cs-mangue);
+  border-radius: 50%;
+  transition: transform var(--mov-rapido);
 }
-.nota {
-  margin-top: var(--e-4);
-  max-width: 72ch;
-  color: var(--cs-tinta-2);
+.circulo:hover .disco::after,
+.circulo:focus-visible .disco::after,
+.circulo:active .disco::after {
+  transform: scale(1.08);
+}
+.numero {
+  font-size: 1.625rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+.rotuloCirculo {
+  font-size: var(--t-apoio);
+  line-height: 1.25;
 }
 
 /* ---------- busca do bairro */
-.cartaoBusca {
-  padding: var(--e-6);
-  background: var(--cs-papel);
-  border: var(--borda);
-  border-radius: var(--r-painel);
+.secaoBusca {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: var(--e-6) var(--margem) var(--e-8);
+  text-align: center;
+}
+.secaoBusca .h2 {
+  justify-content: center;
 }
 .busca {
-  max-width: 720px;
+  max-width: 760px;
+  margin: var(--e-5) auto 0;
+  text-align: left;
 }
 .busca label {
   display: block;
+  margin: 0 0 var(--e-2) var(--e-5);
   font-weight: 700;
-  margin-bottom: var(--e-2);
 }
 .buscaLinha {
   display: flex;
-  gap: var(--e-3);
+  gap: var(--e-2);
+  padding: 6px;
+  background: var(--cs-nevoa);
+  border: 2px solid var(--cs-linha);
+  border-radius: var(--r-pilula);
+}
+.buscaLinha:focus-within {
+  border-color: var(--cs-mare);
 }
 .buscaLinha input {
   flex: 1;
   min-width: 0;
-  min-height: var(--alvo-grande);
+  min-height: var(--alvo);
   padding: 0 var(--e-4);
-  border: 2px solid var(--cs-linha-forte);
-  border-radius: var(--r-painel);
-  background: var(--cs-papel);
+  border: 0;
+  border-radius: var(--r-pilula);
+  background: transparent;
   font-size: var(--t-corpo);
+}
+.buscaLinha input:focus-visible {
+  outline-offset: 0;
 }
 .buscaLinha button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: var(--e-2);
-  min-height: var(--alvo-grande);
+  min-height: var(--alvo);
   padding: 0 var(--e-5);
   border: 0;
-  border-radius: var(--r-painel);
+  border-radius: var(--r-pilula);
   background: var(--cs-mare);
   color: var(--cs-sobre-mare);
   font-weight: 700;
@@ -307,7 +437,7 @@
   background: var(--cs-mare-forte);
 }
 .buscaNota {
-  margin-top: var(--e-2);
+  margin: var(--e-2) 0 0 var(--e-5);
   font-size: var(--t-apoio);
   color: var(--cs-tinta-2);
 }
@@ -352,23 +482,441 @@
   padding-left: 1.2em;
 }
 
-/* ---------- comunicados */
-.cartoes {
+/* ---------- seções */
+.secao {
+  max-width: var(--largura);
+  margin: 0 auto;
+  padding: var(--e-8) var(--margem);
+}
+.faixaClara {
+  position: relative;
+  background: var(--cs-nevoa);
+}
+/* uma régua de maré deitada: traço a cada 8 px, traço longo a cada 40 px */
+.faixaClara::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 12px;
+  pointer-events: none;
+  background:
+    repeating-linear-gradient(to right, var(--cs-linha-forte) 0 1px, transparent 1px 40px) 0 0 / 100% 12px
+      no-repeat,
+    repeating-linear-gradient(to right, var(--cs-linha) 0 1px, transparent 1px 8px) 0 0 / 100% 6px no-repeat;
+}
+.cabecalhoSecao {
+  margin-bottom: var(--e-6);
+}
+.h2 {
+  display: flex;
+  align-items: center;
+  gap: var(--e-3);
+  font-size: clamp(1.75rem, 3vw, 2.5rem);
+  line-height: 1.15;
+  font-weight: 800;
+  letter-spacing: -0.015em;
+  color: var(--cs-mare);
+  margin-bottom: var(--e-3);
+}
+.h3 {
+  margin: var(--e-7) 0 var(--e-4);
+  font-size: var(--t-4);
+}
+.lead {
+  max-width: 60ch;
+  color: var(--cs-tinta-2);
+  font-size: var(--t-corpo);
+}
+.nota {
+  margin-top: var(--e-4);
+  max-width: 72ch;
+  color: var(--cs-tinta-2);
+}
+
+/* ---------- mapa dos avisos: o Recife como ilha sobre uma mancha d’água clara. Uma etiqueta só, ligada à bolinha
+   do distrito em foco por uma reta; a legenda à esquerda diz o mesmo em texto. */
+.secaoMapa {
+  position: relative;
+  overflow: hidden;
+}
+/* atrás do mapa: a malha de pontos some nas bordas, e um meridiano e um paralelo tracejados cruzam o Recife.
+   Mais escura que a do resto da página, para o mapa ter um chão firme. */
+.mapaFigura::before,
+.mapaFigura::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: -12% -22%;
+  pointer-events: none;
+}
+.mapaFigura::before {
+  background-image: radial-gradient(circle, var(--cs-ponto-forte) 0 1.4px, transparent 1.9px);
+  background-size: var(--malha) var(--malha);
+  -webkit-mask-image: radial-gradient(ellipse 50% 50% at 50% 50%, #000 35%, transparent 100%);
+  mask-image: radial-gradient(ellipse 50% 50% at 50% 50%, #000 35%, transparent 100%);
+}
+.mapaFigura::after {
+  background:
+    repeating-linear-gradient(to bottom, var(--cs-tinta-2) 0 6px, transparent 6px 12px) 50% 0 / 1px 100%
+      no-repeat,
+    repeating-linear-gradient(to right, var(--cs-tinta-2) 0 6px, transparent 6px 12px) 0 50% / 100% 1px
+      no-repeat;
+  opacity: 0.8;
+  -webkit-mask-image: radial-gradient(ellipse 50% 50% at 50% 50%, #000 40%, transparent 95%);
+  mask-image: radial-gradient(ellipse 50% 50% at 50% 50%, #000 40%, transparent 95%);
+}
+.secaoMapa .secao {
+  position: relative;
+}
+.mapa {
+  display: grid;
+  grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
+  grid-template-areas:
+    "cabecalho figura"
+    "legenda figura";
+  grid-template-rows: auto 1fr;
+  column-gap: var(--e-8);
+}
+.mapaCabecalho {
+  grid-area: cabecalho;
+}
+.legenda {
+  grid-area: legenda;
+}
+.mapaFigura {
+  grid-area: figura;
+  position: relative;
+  isolation: isolate;
+  align-self: center;
+  justify-self: center;
+  width: 100%;
+  max-width: 470px;
+  margin: 0;
+}
+.mapaFigura svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+  filter: drop-shadow(0 22px 28px rgba(15, 76, 117, 0.22));
+}
+.distritoG {
+  cursor: pointer;
+  transform-box: fill-box;
+  transform-origin: center;
+  transition: transform 260ms cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+.distritoG[data-foco="true"] {
+  transform: translateY(-5px);
+}
+.distrito {
+  fill: var(--cs-mare);
+  stroke: #fff;
+  stroke-width: 2;
+  stroke-linejoin: round;
+  transition: fill var(--mov-rapido);
+}
+.distritoG[data-foco="true"] .distrito {
+  fill: var(--cs-mangue);
+}
+.distritoG[data-afetado="true"] .distrito {
+  fill: var(--cor-nivel);
+  stroke: var(--cs-tinta);
+  stroke-width: 2.5;
+  animation: preencher 700ms ease-out;
+}
+@keyframes preencher {
+  from {
+    fill-opacity: 0;
+  }
+}
+.bolinha {
+  pointer-events: none;
+}
+.bolinhaDisco {
+  fill: #fff;
+  stroke: var(--cs-mare);
+  stroke-width: 1.5;
+  transition: fill var(--mov-rapido);
+}
+.bolinha text {
+  font-size: 15px;
+  font-weight: 800;
+  fill: var(--cs-mare);
+}
+.bolinha[data-com-aviso="true"] .bolinhaDisco {
+  stroke: var(--cs-tinta);
+  stroke-width: 2.5;
+}
+.bolinha[data-foco="true"] .bolinhaDisco {
+  fill: var(--cs-sol);
+  stroke: var(--cs-tinta);
+}
+.bolinha[data-foco="true"] text {
+  fill: var(--cs-tinta);
+}
+/* o distrito com aviso emite ondas a partir da bolinha: o único movimento contínuo do mapa, e só quando há aviso */
+.ondulacao {
+  fill: none;
+  stroke: var(--cs-papel);
+  stroke-width: 3;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: ondular 2.4s ease-out 3;
+}
+@keyframes ondular {
+  from {
+    transform: scale(1);
+    opacity: 0.9;
+  }
+  to {
+    transform: scale(2.8);
+    opacity: 0;
+  }
+}
+/* etiqueta do distrito em foco; o ::after é a reta até a bolinha */
+.rotuloFoco {
+  position: absolute;
+  z-index: 2;
+  display: grid;
+  gap: 2px;
+  width: max-content;
+  max-width: 250px;
+  padding: var(--e-3) var(--e-4);
+  background: var(--cs-papel);
+  border-radius: var(--r-painel);
+  box-shadow: var(--sombra-flutuante);
+  font-size: var(--t-apoio);
+  line-height: 1.35;
+  transform: translate(-50%, calc(-100% - 40px));
+  pointer-events: none;
+  animation: surgir 240ms cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+.rotuloFoco::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 100%;
+  width: 2px;
+  height: 24px;
+  background: var(--cs-tinta);
+  transform: translateX(-50%);
+}
+@keyframes surgir {
+  from {
+    opacity: 0;
+    transform: translate(-50%, calc(-100% - 30px));
+  }
+}
+.rotuloFoco strong {
+  color: var(--cs-mare);
+  font-weight: 800;
+}
+.rotuloFoco span {
+  color: var(--cs-tinta-2);
+}
+.rotuloFoco .rotuloFocoSituacao {
+  justify-self: start;
+  margin-top: var(--e-1);
+  font-weight: 700;
+  color: var(--cs-mangue);
+}
+.rotuloFoco .rotuloFocoSituacao[data-com-aviso="true"] {
+  padding: 2px 10px;
+  border-radius: var(--r-pilula);
+  background: var(--fundo-nivel);
+  color: var(--texto-nivel);
+  box-shadow: inset 0 0 0 2px var(--cor-nivel);
+}
+
+/* legenda */
+.notaMapa {
+  margin: var(--e-5) 0 var(--e-3);
+  color: var(--cs-tinta-2);
+}
+.listaDistritos {
   list-style: none;
   margin: 0;
   padding: 0;
+  border-top: var(--borda);
+}
+.listaDistritos > li {
+  border-bottom: var(--borda);
+}
+.listaDistritos button {
+  width: 100%;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 460px), 1fr));
+  grid-template-columns: 30px minmax(0, 1fr) auto 20px;
+  align-items: center;
+  gap: var(--e-3);
+  min-height: 60px;
+  padding: var(--e-2);
+  border: 0;
+  border-radius: var(--r-campo);
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color var(--mov-rapido);
+}
+.listaDistritos > li[data-foco="true"] button {
+  background: var(--cs-mare-suave);
+}
+.marcador {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--cs-mare);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 800;
+  transition:
+    background-color var(--mov-rapido),
+    color var(--mov-rapido);
+}
+.listaDistritos > li[data-afetado="true"] .marcador {
+  background: var(--cs-papel);
+  box-shadow: inset 0 0 0 3px var(--cor-nivel);
+  color: var(--cs-tinta);
+}
+.listaDistritos > li[data-foco="true"] .marcador {
+  background: var(--cs-sol);
+  color: var(--cs-tinta);
+}
+.distritoTexto {
+  display: grid;
+  min-width: 0;
+}
+.nomeDistrito {
+  font-weight: 700;
+}
+.exemplosDistrito {
+  overflow: hidden;
+  font-size: var(--t-apoio);
+  color: var(--cs-tinta-2);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.situacaoDistrito {
+  padding: 2px 10px;
+  border-radius: var(--r-pilula);
+  background: var(--fundo-nivel, var(--n-insuf-bg));
+  color: var(--texto-nivel, var(--cs-tinta));
+  box-shadow: inset 0 0 0 2px var(--cor-nivel, var(--n-insuf));
+  font-size: var(--t-apoio);
+  font-weight: 800;
+  white-space: nowrap;
+}
+.seta {
+  color: var(--cs-mare);
+  transition: transform 200ms ease-out;
+}
+.listaDistritos button[aria-expanded="true"] .seta {
+  transform: rotate(180deg);
+}
+.bairros {
+  margin: 0;
+  padding: var(--e-1) var(--e-2) var(--e-4) calc(30px + var(--e-3) + var(--e-2));
+  font-size: var(--t-apoio);
+  line-height: 1.6;
+  color: var(--cs-tinta-2);
+  animation: abrir 200ms ease-out;
+}
+.bairros strong {
+  color: var(--cs-tinta);
+}
+@keyframes abrir {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+
+/* no computador a etiqueta sai para o lado do distrito, por cima da mancha, sem cobrir as bolinhas vizinhas */
+@media (min-width: 1024px) {
+  .rotuloFoco {
+    animation-name: aparecer;
+  }
+  .rotuloFoco[data-lado="dir"] {
+    transform: translate(40px, -50%);
+  }
+  .rotuloFoco[data-lado="esq"] {
+    transform: translate(calc(-100% - 40px), -50%);
+  }
+  .rotuloFoco[data-lado]::after {
+    top: 50%;
+    width: 24px;
+    height: 2px;
+    transform: translateY(-50%);
+  }
+  .rotuloFoco[data-lado="dir"]::after {
+    left: -24px;
+  }
+  .rotuloFoco[data-lado="esq"]::after {
+    left: auto;
+    right: -24px;
+  }
+}
+@keyframes aparecer {
+  from {
+    opacity: 0;
+  }
+}
+
+/* ---------- comunicados: trilho horizontal com setas */
+.cabecalhoTrilho {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
   gap: var(--e-5);
+  margin-bottom: var(--e-6);
+}
+.setas {
+  display: flex;
+  gap: var(--e-2);
+  flex: none;
+}
+.setas button {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border: 2px solid var(--cs-mare);
+  border-radius: 50%;
+  background: var(--cs-papel);
+  color: var(--cs-mare);
+  cursor: pointer;
+}
+.setas button:hover {
+  background: var(--cs-mare);
+  color: #fff;
+}
+.cartoes {
+  list-style: none;
+  margin: 0;
+  padding: 0 0 var(--e-4);
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: min(100%, 440px);
+  gap: var(--e-5);
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: thin;
+}
+.cartoes > li {
+  scroll-snap-align: start;
+  display: grid;
 }
 .vazio {
   display: flex;
   gap: var(--e-4);
   align-items: flex-start;
   padding: var(--e-6);
-  background: var(--cs-papel);
-  border: 1px dashed var(--cs-linha-forte);
-  border-radius: var(--r-painel);
+  background: var(--cs-nevoa);
+  border-radius: 28px 40px 32px 44px;
   color: var(--cs-tinta-2);
 }
 .vazio svg {
@@ -383,194 +931,125 @@
   color: var(--cs-tinta);
 }
 
-/* ---------- mapa dos avisos */
-.mapa {
-  display: grid;
-  grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
-  gap: var(--e-7);
-  align-items: center;
-}
-.mapa svg {
-  width: 100%;
-  max-width: 420px;
-  height: auto;
-  justify-self: center;
-}
-.distrito {
-  fill: var(--cs-nevoa);
-  stroke: var(--cs-mare);
-  stroke-width: 1.4;
-  stroke-linejoin: round;
-}
-[data-afetado="true"] .distrito {
-  fill: var(--cor-nivel);
-  fill-opacity: 0.9;
-  stroke: var(--cs-tinta);
-  stroke-width: 2;
-  animation: preencher 700ms ease-out;
-}
-@keyframes preencher {
-  from {
-    fill-opacity: 0;
-  }
-}
-.rotuloDistrito {
-  font-size: 15px;
-  font-weight: 800;
-  fill: var(--cs-tinta);
-  paint-order: stroke;
-  stroke: var(--cs-papel);
-  stroke-width: 4px;
-}
-.listaDistritos {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--e-2) var(--e-5);
-}
-.listaDistritos li {
-  display: grid;
-  grid-template-columns: 16px minmax(0, 1fr);
-  gap: 2px var(--e-3);
-  align-items: center;
-  padding: var(--e-3) 0;
-  border-bottom: var(--borda);
-}
-.marcador {
-  width: 16px;
-  height: 16px;
-  border: 2px solid var(--cs-mare);
-  border-radius: 3px;
-}
-.listaDistritos li[data-afetado="true"] .marcador {
-  background: var(--cor-nivel);
-  border-color: var(--cs-tinta);
-}
-.listaDistritos li[data-afetado="true"] {
-  font-weight: 700;
-}
-.situacaoDistrito {
-  grid-column: 2;
-  font-size: var(--t-apoio);
-  color: var(--cs-tinta-2);
-}
-.notaMapa {
-  margin-top: var(--e-4);
-  color: var(--cs-tinta-2);
-}
-
-/* ---------- como funciona */
+/* ---------- como funciona: sequência real, ligada por uma linha */
 .passos {
+  position: relative;
   list-style: none;
   counter-reset: passo;
   margin: var(--e-6) 0 0;
   padding: 0;
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: var(--e-5);
+  gap: var(--e-6);
+}
+/* a linha vai do centro do primeiro número ao centro do último */
+.passos::before {
+  content: "";
+  position: absolute;
+  top: 28px;
+  left: 28px;
+  right: calc((100% - 2 * var(--e-6)) / 3 - 28px);
+  border-top: 2px dashed var(--cs-mangue);
 }
 .passos li {
+  position: relative;
   counter-increment: passo;
-  padding: var(--e-6) var(--e-5);
-  background: var(--cs-papel);
-  border: var(--borda);
-  border-radius: var(--r-painel);
+  display: grid;
+  grid-row: span 3;
+  grid-template-rows: subgrid;
+  row-gap: 0;
 }
-/* sequência real: a numeração carrega informação (design §8.2) */
 .passos li::before {
   content: counter(passo);
   display: grid;
   place-items: center;
-  width: 44px;
-  height: 44px;
+  width: 56px;
+  height: 56px;
   margin-bottom: var(--e-4);
   border-radius: 50%;
-  background: var(--cs-mare-suave);
+  background: var(--cs-mare);
+  box-shadow: 0 0 0 6px var(--cs-nevoa);
   font-size: var(--t-4);
   font-weight: 800;
-  color: var(--cs-mare);
+  color: #fff;
 }
 .passos h3 {
+  align-self: end;
   font-size: var(--t-4);
   line-height: 1.3;
   margin-bottom: var(--e-2);
+  max-width: 22ch;
+  text-wrap: balance;
 }
 .passos p {
   color: var(--cs-tinta-2);
+  max-width: 34ch;
 }
 
-/* ---------- sobre e fontes */
-.sobre {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--e-6);
-  margin-top: var(--e-5);
-}
-.sobre h3 {
-  font-size: var(--t-4);
-  margin-bottom: var(--e-2);
-}
-.fontes {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  border-top: var(--borda);
-}
-.fontes li {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  align-items: baseline;
-  gap: var(--e-1) var(--e-5);
-  padding: var(--e-4) 0;
-  border-bottom: var(--borda);
-}
-.fontes li > span:first-child {
-  display: grid;
-  gap: 2px;
-}
-.fontes small {
-  font-size: var(--t-apoio);
-  color: var(--cs-tinta-2);
-}
-.statusFonte {
-  font-weight: 700;
-  white-space: nowrap;
-}
-
-/* ---------- rodapé */
+/* ---------- rodapé: a onda sobe da página e o contorno do Recife fica à direita */
 .rodape {
-  background: var(--cs-tinta);
+  position: relative;
+  margin-top: var(--altura-onda);
+  background: var(--cs-mare);
   color: #fff;
 }
+.ondaRodape {
+  top: auto;
+  bottom: calc(100% - 1px);
+}
 .rodapeInterno {
+  position: relative;
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.4fr) minmax(0, 1.2fr) 220px;
   gap: var(--e-6);
   align-items: start;
   max-width: var(--largura);
   margin: 0 auto;
-  padding: var(--e-7) var(--margem);
+  padding: var(--e-5) var(--margem) var(--e-7);
 }
-.rodape img {
-  width: 160px;
-  height: auto;
+.rodapeMarca {
+  --marca: 28px;
+}
+.rodapeMarca p {
+  margin-top: var(--e-3);
+  color: #cfe3ee;
+}
+.rodapeTitulo {
+  margin-bottom: var(--e-3);
+  font-size: 1.0625rem;
+  font-weight: 800;
 }
 .rodape p + p {
   margin-top: var(--e-2);
-  opacity: 0.85;
+  color: #cfe3ee;
 }
 .rodape ul {
   list-style: none;
   margin: 0;
   padding: 0;
   display: grid;
-  gap: var(--e-3);
+  gap: var(--e-2);
 }
 .rodape a {
   color: #fff;
+}
+.rodapeCidade {
+  align-self: center;
+  width: 100%;
+  max-width: 220px;
+}
+.rodapeCidade :global(svg) {
+  width: 100%;
+  height: auto;
+}
+.rodapeCidade :global(.cidade) {
+  fill: var(--cs-espuma);
+  stroke: none;
+}
+.rodapeCidade :global(.agua) {
+  fill: none;
+  stroke: var(--cs-mare);
+  stroke-width: 2;
 }
 
 /* ---------- detalhe do aviso */
@@ -591,9 +1070,26 @@
   }
   .mapa {
     grid-template-columns: minmax(0, 1fr);
-    gap: var(--e-5);
+    grid-template-areas:
+      "cabecalho"
+      "figura"
+      "legenda";
+  }
+  .mapaFigura {
+    max-width: 400px;
+    margin-top: var(--e-8);
+  }
+  .mapaFigura::before,
+  .mapaFigura::after {
+    inset: -6% -4%;
   }
   .linkNav {
+    display: none;
+  }
+  .rodapeInterno {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .rodapeCidade {
     display: none;
   }
 }
@@ -607,7 +1103,7 @@
     padding: var(--e-2) var(--margem);
   }
   .logo {
-    width: 128px;
+    --marca: 18px;
   }
   .nav {
     gap: var(--e-2);
@@ -615,6 +1111,7 @@
   .botaoComunicados,
   .entrar {
     min-height: 44px;
+    margin-left: 0;
     padding: 0 var(--e-3);
     font-size: var(--t-apoio);
   }
@@ -629,10 +1126,18 @@
   }
   /* no celular a régua grande vira selo, para os telefones caberem na primeira tela (RF-01.6) */
   .heroi {
-    padding: var(--e-5) var(--margem) var(--e-5);
+    padding: var(--e-5) var(--margem) calc(var(--altura-onda) + var(--e-4));
   }
   .heroiInterno {
     grid-template-columns: minmax(0, 1fr);
+  }
+  .heroiRios {
+    width: 110%;
+    right: -40%;
+  }
+  .heroiMalha,
+  .heroiHolofote {
+    display: none;
   }
   .heroiRegua,
   .sobrescrito {
@@ -653,53 +1158,127 @@
     margin-top: var(--e-2);
     font-size: var(--t-apoio);
   }
-  .emergenciaInterna {
-    padding: var(--e-3) var(--margem) var(--e-4);
-    gap: var(--e-2);
+  .atalhos {
+    padding: 0 var(--margem) var(--e-6);
+    gap: var(--e-5);
   }
-  .emergencia h2 {
-    font-size: var(--t-corpo);
+  .emergencia,
+  .atalhos .emergencia,
+  .atalhosNav {
+    width: 100%;
+    flex-direction: column;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--e-3);
   }
-  .emergencia ul {
+  .etiqueta {
+    margin-top: 0;
+  }
+  .circulos {
     width: 100%;
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--e-3);
+  }
+  .atalhosNav .circulos {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+  .circulo {
+    width: auto;
     gap: var(--e-2);
   }
-  .emergencia a {
-    flex-direction: column;
-    align-items: center;
-    gap: 0;
-    padding: var(--e-2);
+  .disco {
+    width: 60px;
+    height: 60px;
+  }
+  .disco svg {
+    width: 24px;
+    height: 24px;
+  }
+  .numero {
+    font-size: 1.375rem;
+  }
+  .rotuloCirculo {
     font-size: 15px;
   }
   .secao {
     padding: var(--e-7) var(--margem);
   }
-  .cartaoBusca {
-    padding: var(--e-5) var(--e-4);
+  .secaoBusca {
+    padding: var(--e-5) var(--margem) var(--e-7);
   }
   .buscaLinha {
     flex-direction: column;
+    border-radius: 28px;
+  }
+  .buscaLinha button {
+    width: 100%;
+  }
+  .cabecalhoTrilho {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .cartoes {
+    grid-auto-columns: 88%;
   }
   .vazio {
     padding: var(--e-5) var(--e-4);
   }
-  .listaDistritos,
+  .exemplosDistrito {
+    white-space: normal;
+  }
   .passos,
-  .sobre {
-    grid-template-columns: minmax(0, 1fr);
-  }
-  .listaDistritos {
-    gap: 0;
-  }
   .rodapeInterno {
     grid-template-columns: minmax(0, 1fr);
-    padding: var(--e-6) var(--margem);
+  }
+  .passos::before {
+    top: 28px;
+    bottom: 28px;
+    left: 27px;
+    right: auto;
+    border-top: 0;
+    border-left: 2px dashed var(--cs-mangue);
+  }
+  .passos li {
+    display: block;
+    padding-left: 76px;
+  }
+  .passos li::before {
+    position: absolute;
+    left: 0;
+    top: 0;
+  }
+  .rodapeInterno {
+    padding: var(--e-4) var(--margem) var(--e-6);
   }
 }
 @media (max-width: 360px) {
   .botaoComunicados span:not(.contagem) {
     font-size: 15px;
+  }
+  .rotuloCirculo {
+    font-size: 14px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .disco::after {
+    transition: none;
+  }
+  .heroiRios :global(.agua),
+  .ondulacao,
+  .rotuloFoco,
+  .bairros,
+  .distritoG[data-afetado="true"] .distrito {
+    animation: none;
+  }
+  .ondulacao,
+  .heroiHolofote {
+    display: none;
+  }
+  .heroiRios :global(.agua) {
+    stroke-dashoffset: 0;
+  }
+  .distritoG,
+  .seta {
+    transition: none;
   }
 }
