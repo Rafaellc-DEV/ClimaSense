@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import { Marca } from "@/design-system/componentes/Marca";
 import rios from "@/assets/tracos/rios.svg?raw";
 import { useEstado } from "./useEstado";
+import { useRolagemSuave } from "./useRolagemSuave";
 import estilos from "./PaginaInicial.module.css";
 
 export const TELEFONES = [
@@ -97,6 +98,7 @@ function BotaoComunicados({ inicio }: { inicio: boolean }) {
 
 export function CascaPublica({ children, inicio = false }: { children: ReactNode; inicio?: boolean }) {
   const ancora = (id: string) => (inicio ? `#${id}` : `/#${id}`);
+  useRolagemSuave(inicio);
   return (
     <div className={estilos.pagina}>
       <a href="#conteudo" className={estilos.pular}>

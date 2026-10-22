@@ -105,16 +105,15 @@ test("sem aviso: diz “Nenhum aviso ativo publicado pela equipe.”, nunca “s
   expect(autenticadas).toEqual([]);
 });
 
-test("com alerta: a régua chega ao nível 3 e só o distrito afetado é pintado (T9.1, T9.4)", async ({
+test("com alerta: o medidor chega ao nível 3 e só o distrito afetado é pintado (T9.1, T9.4)", async ({
   page,
-}, info) => {
+}) => {
   await simular(page, [AVISO_ALERTA, AVISO_ATENCAO], { "ds-5": "alerta" });
   await page.goto("/");
   await expect(page.getByRole("heading", { level: 1 })).toContainText("Alerta para 2 bairros até amanhã");
   await expect(page.getByText(/E mais 1 aviso em vigor/)).toBeVisible();
-  if (info.project.name === "desktop")
-    await expect(page.locator('figure[data-nivel="alerta"]')).toBeVisible();
-  else await expect(page.locator('span[data-nivel="alerta"]').first()).toBeVisible();
+  // desktop mostra o medidor; celular, a faixa com marcador — os dois são a mesma figura com o nível
+  await expect(page.locator('figure[data-nivel="alerta"]:visible')).toHaveCount(1);
   const pintados = page.locator('svg g[data-afetado="true"]');
   await expect(pintados).toHaveCount(1);
   await expect(

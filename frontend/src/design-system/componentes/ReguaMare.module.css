@@ -1,120 +1,283 @@
-/* Régua de maré — o elemento memorável da identidade (design §8.1). */
+/* Medidor de nível — o elemento memorável da identidade (design §8.1).
+   O nível em vigor é a manchete; o medidor de meia-volta mostra onde ele fica na escala de 1 a 4. */
 .regua {
   display: grid;
-  grid-template-columns: 96px auto;
-  column-gap: var(--e-4);
-  align-items: stretch;
+  gap: var(--e-2);
   margin: 0;
+  color: var(--cs-tinta);
 }
-.corpo {
-  position: relative;
-  height: 360px;
-  background: #fff;
-  border: 2px solid var(--n-texto, #0e2433);
+
+/* ---------- cabeçalho: a pergunta pequena, a resposta grande */
+.titulo {
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1.35;
+  color: var(--cs-tinta-2);
+}
+.titulo strong {
+  display: block;
+  margin-top: var(--e-1);
+  font-family: "Outfit Variable", var(--fonte);
+  font-size: var(--t-3);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  line-height: 1.1;
+  color: var(--cs-tinta);
+  text-wrap: balance;
+  animation: surgir 450ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+/* nome do nível, frase de ação e o "?" de sem dados aparecem suavemente quando o estado muda */
+@keyframes surgir {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+.titulo strong::first-letter {
+  text-transform: uppercase;
+}
+.acao {
+  animation: surgir 450ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  max-width: 32ch;
+  font-size: 0.9375rem;
+  line-height: 1.45;
+  color: var(--cs-tinta-2);
+}
+
+/* ---------- o medidor */
+.medidor {
+  display: grid;
+  justify-items: center;
+  margin-top: var(--e-3);
+}
+.medidor svg {
+  display: block;
+  width: 100%;
+  max-width: 280px;
+  height: auto;
+  overflow: visible;
+}
+/* arco de cada nível: tom claro da cor do nível; cheio até o nível vigente */
+.arco {
+  fill: none;
+  stroke: color-mix(in srgb, var(--cor) 18%, var(--cs-papel));
+  stroke-width: 22;
+  transition: stroke var(--mov-agua);
+}
+.arco[data-cheio="true"] {
+  stroke: var(--cor);
+}
+.numeral {
+  font-family: "Outfit Variable", var(--fonte);
+  font-size: 15px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  text-anchor: middle;
+  fill: var(--cs-tinta-2);
+}
+.numeral[data-ativo="true"] {
+  font-size: 18px;
+  fill: var(--cs-tinta);
+}
+.ponteiro {
+  fill: var(--cs-tinta);
+  transform: rotate(var(--angulo, 3deg));
+  transform-box: view-box;
+  transform-origin: 140px 140px;
+  transition: transform 900ms cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+.eixo {
+  fill: var(--cs-tinta);
+}
+.eixoMiolo {
+  fill: var(--cs-sol);
+}
+.extremos {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  max-width: 290px;
+  margin-top: var(--e-1);
+  font-size: 0.8125rem;
+  color: var(--cs-tinta-2);
+}
+
+/* ---------- dados insuficientes: arcos neutros, sem ponteiro, um "?" no eixo */
+.insuficiente .arco {
+  stroke: var(--n-insuf-bg);
+}
+.insuficiente .titulo strong {
+  color: var(--n-insuf);
+}
+.interrogacao {
+  font-family: "Outfit Variable", var(--fonte);
+  font-size: 40px;
+  font-weight: 800;
+  text-anchor: middle;
+  fill: var(--n-insuf);
+  animation: surgirSvg 450ms ease-out both;
+}
+@keyframes surgirSvg {
+  from {
+    opacity: 0;
+  }
+}
+
+/* ---------- carregando: arcos neutros e o ponteiro varrendo a escala, ida e volta */
+.carregando .titulo strong {
+  color: var(--cs-tinta-2);
+}
+.carregando .arco {
+  stroke: var(--cs-nevoa);
+}
+
+/* ---------- formato faixa: segmentos lado a lado e um marcador "Agora" sobre o nível (telas estreitas) */
+/* a faixa aparece onde o título do herói já diz o nível e o que fazer: a legenda fica só para o leitor de tela */
+.emFaixa .titulo {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
   overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+}
+.faixa {
+  padding-top: 34px;
+}
+/* sem marcador (sem aviso, sem dados), não há o que reservar acima da faixa */
+.faixa:not(:has(.cursor)) {
+  padding-top: var(--e-1);
+}
+.trilho {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
 }
 .segmento {
+  height: 16px;
+  background: color-mix(in srgb, var(--cor) 18%, var(--cs-papel));
+  transition: background-color var(--mov-agua);
+}
+.segmento:first-of-type {
+  border-radius: var(--r-pilula) 0 0 var(--r-pilula);
+}
+.segmento:last-of-type {
+  border-radius: 0 var(--r-pilula) var(--r-pilula) 0;
+}
+.segmento[data-cheio="true"] {
+  background: var(--cor);
+}
+/* o cursor tem a largura do trilho: translateX em % anda sobre a faixa inteira */
+.cursor {
   position: absolute;
   left: 0;
   right: 0;
-  height: 25%;
-  border-top: 2px solid #0e2433;
-  z-index: 2;
+  bottom: calc(100% + 8px);
+  transform: translateX(var(--posicao, 0%));
+  transition: transform 900ms cubic-bezier(0.2, 0.7, 0.2, 1);
 }
-.segmento:first-child {
-  border-top: 0;
-}
-.segmento::before,
-.segmento::after {
-  content: "";
+.pino {
   position: absolute;
   left: 0;
-  height: 2px;
-  width: 30%;
-  background: #0e2433;
-}
-.segmento::before {
-  top: calc(25% - 1px);
-}
-.segmento::after {
-  top: calc(75% - 1px);
-}
-.numero {
-  position: absolute;
-  right: 10px;
-  top: 50%;
-  transform: translateY(-50%);
-  font-weight: 800;
-  font-size: 1.5rem;
-  line-height: 1;
-  color: #0e2433;
-  background: #fff;
-  padding: 2px 5px;
-  border-radius: 2px;
-}
-.agua {
-  position: absolute;
-  left: 0;
-  right: 0;
   bottom: 0;
-  height: var(--altura-agua, 4%);
-  background: var(--cor-agua);
-  transition: height var(--mov-agua);
-  z-index: 1;
+  transform: translateX(-50%);
+  padding: 5px 10px;
+  border-radius: var(--r-pilula);
+  background: var(--cs-tinta);
+  color: var(--cs-papel);
+  font-family: "Outfit Variable", var(--fonte);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
 }
-.agua::before {
+.pino::after {
   content: "";
   position: absolute;
-  inset: 0 0 auto;
-  height: 4px;
-  background: var(--cs-sol);
+  left: 50%;
+  top: 100%;
+  margin-left: -6px;
+  border: 6px solid transparent;
+  border-top-color: var(--cs-tinta);
 }
-.agua::after {
-  content: "";
-  position: absolute;
-  inset: 4px 0 0;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.18), transparent 40%);
-}
-.insuficiente .corpo {
-  border-style: dashed;
-  background: repeating-linear-gradient(45deg, var(--n-insuf-bg) 0 8px, #e1e6ea 8px 10px);
-}
-.legenda {
+.rotulos {
   display: grid;
-  grid-template-rows: repeat(4, 1fr);
-  height: 360px;
-  margin: 0;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 4px;
+  margin: var(--e-2) 0 0;
   padding: 0;
   list-style: none;
 }
-.legenda li {
-  display: flex;
-  align-items: center;
+.rotulos li {
+  font-size: 0.8125rem;
+  line-height: 1.25;
   color: var(--cs-tinta-2);
-  font-size: 1.0625rem;
+  overflow-wrap: anywhere;
 }
-.legenda li[data-ativo="true"] {
-  color: var(--cs-tinta);
+.rotulos li[data-ativo="true"] {
   font-weight: 700;
+  color: var(--cs-tinta);
 }
-.titulo {
-  grid-column: 1 / -1;
-  margin-top: var(--e-3);
-  color: var(--cs-tinta-2);
-  font-size: var(--t-apoio);
+.rotulos b {
+  display: block;
+  margin-bottom: 2px;
+  font-family: "Outfit Variable", var(--fonte);
+  font-size: 1rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--cs-tinta);
 }
-.compacta .corpo,
-.compacta .legenda {
-  height: 220px;
+.insuficiente .segmento {
+  background: var(--n-insuf-bg);
 }
-.compacta {
-  grid-template-columns: 64px auto;
+.carregando .segmento {
+  background: var(--cs-nevoa);
 }
-.compacta .numero {
-  font-size: 1.125rem;
+
+/* ---------- compacta */
+.compacta .titulo strong {
+  font-size: var(--t-4);
 }
+.compacta .medidor svg {
+  max-width: 200px;
+}
+.compacta .extremos {
+  max-width: 210px;
+  font-size: 0.75rem;
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .agua {
+  .ponteiro,
+  .arco,
+  .cursor,
+  .segmento {
     transition: none;
+  }
+  .titulo strong,
+  .acao,
+  .interrogacao {
+    animation: none;
+  }
+}
+@media (forced-colors: active) {
+  .arco {
+    stroke: GrayText;
+  }
+  .arco[data-cheio="true"] {
+    stroke: Highlight;
+  }
+  .ponteiro,
+  .eixo {
+    fill: CanvasText;
+  }
+  .segmento {
+    background: GrayText;
+  }
+  .segmento[data-cheio="true"] {
+    background: Highlight;
+  }
+  .pino {
+    border: 1px solid CanvasText;
   }
 }

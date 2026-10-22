@@ -1,9 +1,18 @@
 import { useEffect, useRef } from "react";
-import { ArrowLeft, ArrowRight, BellOff, CloudRain, Map, Megaphone, Route, Search } from "lucide-react";
+import {
+  ArrowLeft,
+  ArrowRight,
+  BellOff,
+  CloudRain,
+  Map,
+  Megaphone,
+  RefreshCw,
+  Route,
+  Search,
+} from "lucide-react";
 import rios from "@/assets/tracos/rios.svg?raw";
 import { CartaoAviso } from "@/design-system/componentes/CartaoAviso";
 import { ReguaMare } from "@/design-system/componentes/ReguaMare";
-import { SeloNivel } from "@/design-system/componentes/SeloNivel";
 import type { ChaveNivel } from "@/design-system/niveis";
 import { quandoRelativo } from "@/lib/formatos";
 import type { Esquemas } from "@/lib/api";
@@ -38,7 +47,13 @@ function onde(t: Esquemas["TerritorioRef"][]): string {
 
 export function frase(s: Situacao): { nivel: ChaveNivel; titulo: string; apoio: string } {
   if (s.tipo === "carregando")
-    return { nivel: "insuficiente", titulo: "Verificando os avisos…", apoio: "Um instante." };
+    return {
+      nivel: "insuficiente",
+      titulo: "Verificando os avisos…",
+      apoio: s.tentandoDeNovo
+        ? "A primeira tentativa não respondeu. Tentando de novo…"
+        : "Consultando os avisos da equipe e as estações de chuva…",
+    };
   if (s.tipo === "erro")
     return {
       nivel: "insuficiente",
@@ -109,21 +124,32 @@ export function PaginaInicial() {
               <CloudRain aria-hidden="true" size={18} />
               Avisos de chuva e alagamento no Recife
             </p>
-            <div className={estilos.seloMovel}>
-              <SeloNivel nivel={f.nivel} grande />
-            </div>
+            {/* o h1 fica (é a região viva); só o texto troca, com uma entrada suave em vez de um corte seco */}
             <h1 id="estado" className={estilos.frase} aria-live="polite">
-              {f.titulo}
+              <span key={f.titulo} className={estilos.entrada}>
+                {f.titulo}
+              </span>
             </h1>
-            <p className={estilos.apoio}>{f.apoio}</p>
+            <p className={estilos.apoio}>
+              {situacao.tipo === "carregando" && (
+                <RefreshCw aria-hidden="true" size={18} className={estilos.girando} />
+              )}
+              <span key={f.apoio} className={estilos.entrada}>
+                {f.apoio}
+              </span>
+            </p>
             {situacao.tipo === "ok" && (
-              <p className={estilos.verificacao}>
+              <p className={`${estilos.verificacao} ${estilos.entrada}`}>
                 Última verificação: {quandoRelativo(situacao.estado.atualizado_em)}.
               </p>
             )}
           </div>
           <div className={estilos.heroiRegua}>
-            <ReguaMare nivel={f.nivel} />
+            <ReguaMare nivel={f.nivel} carregando={situacao.tipo === "carregando"} />
+          </div>
+          {/* no celular, o medidor dá lugar à faixa com marcador, que cabe na largura da tela */}
+          <div className={estilos.heroiFaixa}>
+            <ReguaMare nivel={f.nivel} carregando={situacao.tipo === "carregando"} formato="faixa" />
           </div>
         </div>
         <Onda cor="var(--cs-papel)" linha />

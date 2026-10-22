@@ -50,14 +50,14 @@ describe("ReguaMare", () => {
     expect(screen.getByRole("figure")).toHaveTextContent(`Nível do aviso mais alto em vigor: ${esperado}`);
   });
 
-  test("sem animação, a água já começa na altura do nível", () => {
+  test("sem animação, o ponteiro já começa no meio do arco do nível", () => {
     render(<ReguaMare nivel="alerta" animar={false} />);
-    expect(screen.getByTestId("agua").style.getPropertyValue("--altura-agua")).toBe("75%");
+    expect(screen.getByTestId("ponteiro").style.getPropertyValue("--angulo")).toBe("112.5deg");
   });
 
-  test("dados insuficientes não desenham água (não é nível baixo)", () => {
+  test("dados insuficientes não desenham ponteiro (não é nível baixo)", () => {
     render(<ReguaMare nivel="insuficiente" animar={false} />);
-    expect(screen.queryByTestId("agua")).toBeNull();
+    expect(screen.queryByTestId("ponteiro")).toBeNull();
   });
 });
 

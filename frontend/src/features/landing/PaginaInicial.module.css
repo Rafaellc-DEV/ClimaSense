@@ -231,10 +231,6 @@
   flex: none;
   color: var(--cs-sol);
 }
-.seloMovel {
-  display: none;
-  margin-bottom: var(--e-4);
-}
 /* a frase de estado na mesma família geométrica da logo, em caixa alta e peso pesado (o leitor de tela lê o
    texto como foi escrito; a caixa alta é só visual) */
 .frase {
@@ -255,18 +251,61 @@
   max-width: 52ch;
   color: rgba(255, 255, 255, 0.86);
 }
+/* troca de estado no herói: o texto novo sobe 6px e aparece, em vez de substituir o anterior de uma vez */
+.entrada {
+  display: inline-block;
+  animation: entrar 450ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+@keyframes entrar {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+/* setas girando enquanto a página consulta os avisos */
+.girando {
+  margin-right: var(--e-2);
+  vertical-align: -3px;
+  color: var(--cs-sol);
+  animation: girar 1s linear infinite;
+}
+@keyframes girar {
+  to {
+    transform: rotate(360deg);
+  }
+}
 .verificacao {
   margin-top: var(--e-4);
   color: #cfe3ee;
   font-variant-numeric: tabular-nums;
 }
-/* a régua fica numa placa branca, como as réguas presas aos pilares das pontes do Capibaribe */
+/* a régua fica num cartão branco sobre a maré: papel firme, sombra em camadas (um contato curto e uma
+   sombra longa que afunda no azul) e uma faixa de sol na borda de cima */
 .heroiRegua {
-  padding: var(--e-5) var(--e-5) var(--e-4);
-  background: var(--cs-papel);
+  position: relative;
+  width: 336px;
+  padding: var(--e-6) var(--e-5) var(--e-5);
   color: var(--cs-tinta);
-  border-radius: 20px;
-  box-shadow: 0 24px 48px rgba(6, 30, 48, 0.35);
+  border-radius: var(--r-painel);
+  background: var(--cs-papel);
+  box-shadow:
+    0 0 0 1px rgba(3, 20, 34, 0.06),
+    0 2px 4px rgba(3, 20, 34, 0.12),
+    0 14px 28px -10px rgba(3, 20, 34, 0.35),
+    0 40px 70px -30px rgba(3, 20, 34, 0.6);
+}
+.heroiRegua::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: var(--e-5);
+  width: 56px;
+  height: 4px;
+  border-radius: 0 0 4px 4px;
+  background: var(--cs-sol);
+}
+.heroiFaixa {
+  display: none;
 }
 .onda {
   position: absolute;
@@ -1137,7 +1176,8 @@
   .entrarCurto {
     display: inline;
   }
-  /* no celular a régua grande vira selo, para os telefones caberem na primeira tela (RF-01.6) */
+  /* no celular o medidor vira a faixa com marcador, mais baixa, para os telefones caberem na primeira tela
+     (RF-01.6) */
   .heroi {
     padding: var(--e-5) var(--margem) calc(var(--altura-onda) + var(--e-4));
   }
@@ -1155,9 +1195,15 @@
   .sobrescrito {
     display: none;
   }
-  .seloMovel {
+  .heroiFaixa {
     display: block;
-    margin-bottom: var(--e-3);
+    padding: var(--e-4);
+    border-radius: var(--r-painel);
+    background: var(--cs-papel);
+    color: var(--cs-tinta);
+    box-shadow:
+      0 2px 4px rgba(3, 20, 34, 0.12),
+      0 14px 28px -10px rgba(3, 20, 34, 0.35);
   }
   .frase {
     font-size: 1.7rem;
@@ -1274,6 +1320,10 @@
 @media (prefers-reduced-motion: reduce) {
   .disco::after {
     transition: none;
+  }
+  .entrada,
+  .girando {
+    animation: none;
   }
   .heroiRios :global(.agua),
   .ondulacao,
