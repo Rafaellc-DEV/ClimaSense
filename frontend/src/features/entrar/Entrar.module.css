@@ -1,63 +1,58 @@
+/* Acesso da equipe: tudo num cartão só, no centro — logo, título, formulário e o aviso de senha esquecida.
+   O fundo é o papel com a malha de pontos da landing, bem clara, para a tela parecer do mesmo site.
+   O link de volta fica no alto, à esquerda, fora do cartão. */
 .tela {
+  position: relative;
   min-height: 100vh;
   display: grid;
-  grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
-  background: var(--cs-papel);
-}
-.lado {
-  position: relative;
-  overflow: hidden;
-  background: var(--cs-mare);
-  color: #fff;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
-  padding: var(--e-8);
-  border-right: 6px solid var(--cs-sol);
-}
-.lado img {
-  width: 260px;
-  height: auto;
-  position: relative;
-}
-.lado p {
-  position: relative;
-  font-size: var(--t-3);
-  font-weight: 700;
-  line-height: 1.2;
-  max-width: 16ch;
-  margin: var(--e-6) 0 0;
-}
-.rios {
-  position: absolute;
-  inset: -5%;
-  opacity: 0.18;
-}
-.rios :global(svg) {
-  width: 100%;
-  height: 100%;
-}
-.rios :global(path) {
-  fill: none;
-  stroke: #fff;
-  stroke-width: 1.3;
+  /* a coluna nunca passa da largura da tela (sem isso, a largura natural dos campos estoura telas de 320 px) */
+  grid-template-columns: minmax(0, 1fr);
+  justify-items: center;
+  align-content: start;
+  padding: calc(var(--malha) * 3 + var(--alvo-lista) / 2 + var(--e-5)) var(--e-5) var(--e-7);
+  background-color: var(--cs-nevoa);
+  background-image: radial-gradient(circle, var(--cs-ponto) 0 1px, transparent 1.5px);
+  background-size: var(--malha) var(--malha);
 }
 .principal {
-  padding: var(--e-8) var(--e-6);
-  max-width: 520px;
   width: 100%;
-  margin: 0 auto;
+  max-width: 440px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  padding: var(--e-6) var(--e-6) var(--e-5);
+  border-radius: 16px;
+  background: var(--cs-papel);
+  box-shadow:
+    0 0 0 1px var(--cs-linha),
+    0 2px 6px rgba(3, 20, 34, 0.06),
+    0 30px 60px -28px rgba(3, 20, 34, 0.35);
+}
+.logo {
+  --marca: 24px;
   align-self: center;
+  display: inline-flex;
+  margin-bottom: var(--e-4);
+  color: var(--cs-mare);
+  text-decoration: none;
+  border-radius: var(--r-campo);
 }
 .principal h1 {
-  font-size: var(--t-2);
-  color: var(--cs-mare);
-  margin: var(--e-6) 0 var(--e-3);
+  font-family: "Outfit Variable", var(--fonte);
+  font-size: 1.625rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--cs-tinta);
+  margin: 0 0 var(--e-5);
   line-height: 1.15;
+  text-align: center;
 }
 .apoio {
   color: var(--cs-tinta-2);
-  margin: 0 0 var(--e-6);
+  font-size: var(--t-apoio);
+  text-align: center;
+  text-wrap: balance;
+  margin: calc(-1 * var(--e-3)) 0 var(--e-5);
 }
 .form {
   display: flex;
@@ -89,27 +84,42 @@
   color: var(--n-texto);
   border-radius: var(--r-campo);
 }
+/* o olho fica dentro do campo, à direita; o texto da senha não passa por baixo dele */
 .senha {
+  position: relative;
   display: flex;
-  gap: var(--e-2);
 }
 .senha input {
   flex: 1;
   min-width: 0;
+  padding-right: calc(var(--alvo) + var(--e-1));
+}
+/* o Edge desenha um olho próprio no campo de senha: fica só o nosso */
+.senha input::-ms-reveal,
+.senha input::-ms-clear {
+  display: none;
 }
 .mostrar {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--e-2);
-  min-height: var(--alvo);
-  padding: 0 var(--e-3);
-  background: var(--cs-papel);
-  border: 2px solid var(--cs-linha-forte);
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  bottom: 2px;
+  width: calc(var(--alvo) - 4px);
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
   border-radius: var(--r-campo);
-  color: var(--cs-mare);
-  font-weight: 700;
-  white-space: nowrap;
+  background: transparent;
+  color: var(--cs-tinta-2);
   cursor: pointer;
+  transition:
+    color var(--mov-rapido),
+    background-color var(--mov-rapido);
+}
+.mostrar:hover {
+  color: var(--cs-mare);
+  background: var(--cs-mare-suave);
 }
 .contaGrade {
   display: grid;
@@ -131,32 +141,81 @@
   margin: 0;
   overflow-wrap: anywhere;
 }
-.voltar {
-  color: var(--cs-mangue);
-  font-weight: 600;
-}
 .nota {
   color: var(--cs-tinta-2);
-  font-size: var(--t-apoio);
-  margin-top: var(--e-6);
+  font-size: 0.875rem;
+  text-align: center;
+  text-wrap: balance;
+  margin: var(--e-5) 0 0;
 }
-.logoMovel {
-  display: none;
-  width: 200px;
-  height: auto;
-  margin-top: var(--e-5);
+/* volta para a página inicial: no alto, à esquerda, com respiro das bordas; letra fina e discreta.
+   O meio do link cai no vão entre duas fileiras de pontos da malha (as fileiras ficam em 11, 33, 55, 77 px…),
+   para os pontos não passarem por cima das letras. */
+.voltar {
+  position: absolute;
+  top: calc(var(--malha) * 3 - var(--alvo-lista) / 2);
+  left: clamp(var(--e-5), 4vw, var(--e-8));
+  display: inline-flex;
+  align-items: center;
+  gap: var(--e-2);
+  min-height: var(--alvo-lista);
+  color: var(--cs-tinta-2);
+  font-family: "Outfit Variable", var(--fonte);
+  font-size: 0.9375rem;
+  font-weight: 300;
+  white-space: nowrap;
+  text-decoration: none;
+  transition: color var(--mov-rapido);
 }
-@media (max-width: 860px) {
+.voltar svg {
+  flex: none;
+}
+.voltar:hover {
+  color: var(--cs-mare);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+/* celular: o cartão no meio da tela e, no canto, só a seta num botão redondo (o texto fica para leitor de tela) */
+@media (max-width: 600px) {
   .tela {
-    grid-template-columns: 1fr;
-  }
-  .lado {
-    display: none;
-  }
-  .logoMovel {
-    display: block;
+    min-height: 100dvh;
+    align-content: center;
+    padding: calc(var(--e-4) + var(--alvo-lista) + var(--e-3)) var(--e-4) var(--e-6);
   }
   .principal {
-    padding: var(--e-6) var(--e-5);
+    padding: var(--e-5) var(--e-5) var(--e-4);
+  }
+  .voltar {
+    top: var(--e-4);
+    left: var(--e-4);
+    justify-content: center;
+    width: var(--alvo-lista);
+    height: var(--alvo-lista);
+    border-radius: 50%;
+    background: var(--cs-papel);
+    color: var(--cs-tinta);
+    box-shadow:
+      0 0 0 1px var(--cs-linha),
+      0 2px 6px rgba(3, 20, 34, 0.08);
+  }
+  .voltar svg {
+    width: 20px;
+    height: 20px;
+    stroke-width: 2;
+  }
+  .voltarTexto {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mostrar,
+  .voltar {
+    transition: none;
   }
 }

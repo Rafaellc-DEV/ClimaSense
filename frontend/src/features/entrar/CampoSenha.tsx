@@ -3,7 +3,8 @@ import { Eye, EyeOff } from "lucide-react";
 import campo from "@/design-system/componentes/Campo.module.css";
 import estilos from "./Entrar.module.css";
 
-/** Senha com botão “Mostrar senha” rotulado em texto (RF-02.4). */
+/** Senha com o botão de olho dentro do campo; o nome “Mostrar senha”/“Ocultar senha” vai para leitor de tela e
+   dica do cursor (RF-02.4). */
 export function CampoSenha({
   rotulo,
   ...resto
@@ -20,12 +21,12 @@ export function CampoSenha({
         <button
           type="button"
           className={estilos.mostrar}
-          aria-pressed={visivel}
+          aria-label={visivel ? "Ocultar senha" : "Mostrar senha"}
+          title={visivel ? "Ocultar senha" : "Mostrar senha"}
           aria-controls={id}
           onClick={() => setVisivel((v) => !v)}
         >
           {visivel ? <EyeOff aria-hidden="true" size={20} /> : <Eye aria-hidden="true" size={20} />}
-          {visivel ? "Ocultar senha" : "Mostrar senha"}
         </button>
       </div>
     </div>

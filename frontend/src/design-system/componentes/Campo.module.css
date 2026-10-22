@@ -6,6 +6,83 @@
 .rotulo {
   font-weight: 700;
 }
+/* rótulo com o (i) ao lado; o balão abre acima do ícone ao passar o mouse, focar ou tocar */
+.rotuloComDica {
+  display: flex;
+  align-items: center;
+  gap: var(--e-1);
+}
+.dica {
+  position: relative;
+  display: inline-flex;
+}
+.dicaBotao {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  margin: -4px 0;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--cs-tinta-2);
+  cursor: help;
+  transition:
+    color var(--mov-rapido),
+    background-color var(--mov-rapido);
+}
+.dicaBotao:hover,
+.dica[data-aberta="true"] .dicaBotao {
+  color: var(--cs-mare);
+  background: var(--cs-mare-suave);
+}
+.dicaTexto {
+  position: absolute;
+  z-index: 10;
+  bottom: calc(100% + 8px);
+  /* abre do ícone para a direita: o rótulo fica perto da margem esquerda e o balão não sai da tela */
+  left: -8px;
+  width: max-content;
+  max-width: min(260px, 70vw);
+  padding: var(--e-2) var(--e-3);
+  border-radius: var(--r-campo);
+  background: var(--cs-tinta);
+  color: var(--cs-papel);
+  font-size: 0.875rem;
+  font-weight: 400;
+  line-height: 1.4;
+  box-shadow: var(--sombra-flutuante);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(4px);
+  transition:
+    opacity var(--mov-rapido),
+    transform var(--mov-rapido),
+    visibility var(--mov-rapido);
+  pointer-events: none;
+}
+.dicaTexto::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 16px;
+  border: 6px solid transparent;
+  border-top-color: var(--cs-tinta);
+}
+.dica:hover .dicaTexto,
+.dicaBotao:focus-visible + .dicaTexto,
+.dica[data-aberta="true"] .dicaTexto {
+  opacity: 1;
+  visibility: visible;
+  transform: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .dicaBotao,
+  .dicaTexto {
+    transition: none;
+  }
+}
 .ajuda {
   font-size: var(--t-apoio);
   color: var(--cs-tinta-2);

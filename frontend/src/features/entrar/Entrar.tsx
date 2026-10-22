@@ -1,11 +1,11 @@
 import { useEffect, useState, type FormEvent } from "react";
-import { CircleAlert } from "lucide-react";
+import { ArrowLeft, CircleAlert } from "lucide-react";
 import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { Botao } from "@/design-system/componentes/Botao";
 import { Campo } from "@/design-system/componentes/Campo";
+import { Marca } from "@/design-system/componentes/Marca";
 import { enviar } from "@/lib/api";
 import { useSessao } from "@/lib/sessao";
-import rios from "@/assets/tracos/rios.svg?raw";
 import { CampoSenha } from "./CampoSenha";
 import estilos from "./Entrar.module.css";
 
@@ -53,22 +53,21 @@ export function Entrar() {
 
   return (
     <div className={estilos.tela}>
-      <aside className={estilos.lado} aria-hidden="true">
-        <div className={estilos.rios} dangerouslySetInnerHTML={{ __html: rios }} />
-        <img src="/brand/logo-negativo.png" srcSet="/brand/logo-negativo@2x.png 2x" alt="" />
-        <p>Antecipar riscos. Orientar decisões. Cuidar do território.</p>
-      </aside>
+      <Link to="/" className={estilos.voltar}>
+        <ArrowLeft aria-hidden="true" size={16} strokeWidth={1.5} />
+        <span className={estilos.voltarTexto}>Voltar à página inicial</span>
+      </Link>
       <main className={estilos.principal}>
-        <Link to="/" className={estilos.voltar}>
-          Voltar à página inicial
+        <Link to="/" aria-label="ClimaSense, página inicial" className={estilos.logo}>
+          <Marca decorativa />
         </Link>
-        <img src="/brand/logo.png" alt="ClimaSense" className={estilos.logoMovel} />
         <h1>{trocar ? "Crie uma senha nova" : "Acesso da equipe"}</h1>
-        <p className={estilos.apoio}>
-          {trocar
-            ? "É o seu primeiro acesso. Escolha uma senha com pelo menos 10 caracteres; uma frase curta funciona bem."
-            : "Use o e-mail e a senha que o administrador enviou para você."}
-        </p>
+        {trocar && (
+          <p className={estilos.apoio}>
+            É o seu primeiro acesso. Escolha uma senha com pelo menos 10 caracteres; uma frase curta funciona
+            bem.
+          </p>
+        )}
         {motivoSaida && !trocar && (
           <p className={estilos.motivo} role="status">
             {motivoSaida}
@@ -88,7 +87,15 @@ export function Entrar() {
             </>
           ) : (
             <>
-              <Campo rotulo="E-mail" name="email" type="email" autoComplete="username" required autoFocus />
+              <Campo
+                rotulo="E-mail"
+                dica="Use o e-mail e a senha que o administrador enviou para você."
+                name="email"
+                type="email"
+                autoComplete="username"
+                required
+                autoFocus
+              />
               <CampoSenha rotulo="Senha" name="senha" autoComplete="current-password" />
             </>
           )}
