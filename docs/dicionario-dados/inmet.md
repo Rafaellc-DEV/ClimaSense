@@ -12,4 +12,5 @@
 
 ## Perguntas em aberto
 
-- Obter o token institucional.
+- Verificado em 24/10/2026: `GET /estacoes/T` responde (A301 Recife, operante, lat -8,0189 / lon -34,9442), mas `GET /estacao/{ini}/{fim}/A301` devolve **204 sem conteúdo** para qualquer período (inclusive A001) e a conexão é reiniciada sem `User-Agent`. Sem token não há dado observado: continua planejada.
+- Obter o token institucional do INMET.

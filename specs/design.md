@@ -85,7 +85,7 @@ Regra de dependência: `api → servicos → dominio ← infra`. O domínio não
 | Fontes e qualidade | `dominio/qualidade.py` (status, desatualização, lacunas) | `servicos/fontes.py` | `/fontes`, `/etl` |
 | Séries | `dominio/estatistica.py` (porte das Atividades 3 e 4), `dominio/series.py` | `servicos/series.py` | `/series` |
 | Cenários | `dominio/cenario.py`, `modelos/estimador.py` | `servicos/cenarios.py` | `/cenarios` |
-| Saúde agregada | `dominio/saude.py` (supressão < 5, amostra) | `servicos/saude.py` | `/saude` |
+| Saúde ligada a desastres (RF-15, PODE, pendente de fonte) | supressão < 5, amostra (RN-10, RN-13) | (a criar) | (a criar) |
 | Avaliações | `dominio/fluxo_revisao.py` (máquina de estados) | `servicos/avaliacoes.py` | `/avaliacoes` |
 | Comunicados | `dominio/fluxo_revisao.py`, `dominio/comunicado.py` | `servicos/comunicados.py` | `/comunicados`, `/publico` |
 | Painel | — | `servicos/painel.py` | `/painel` |
@@ -167,7 +167,7 @@ ClimaSense/
 │   │   ├── servicos/       (um por módulo da seção 2.3)
 │   │   ├── infra/          mongo.py, postgres.py, modelos_sql.py, repositorios/
 │   │   ├── etl/            extract.py, transform.py, load.py   ← preservados
-│   │   │                   conectores/ (base.py, vacinacao.py, open_meteo.py, recife_alagamento.py,
+│   │   │                   conectores/ (base.py, open_meteo.py, recife_alagamento.py,
 │   │   │                                ana.py*, apac.py*, inmet.py*, cemaden.py*,
 │   │   │                                recife_alagamento.py*, mare.py*)   *esqueleto
 │   │   │                   execucao.py, cli.py
@@ -200,9 +200,9 @@ ClimaSense/
 |---|---|---|
 | `Projeto-ETL_AVD/src/extract.py` | `backend/climasense/etl/extract.py` | Mesma classe `Extract`. Parâmetros vêm do conector. `ler_bronze` filtra pela última execução. |
 | `Projeto-ETL_AVD/src/transformer.py` | `backend/climasense/etl/transform.py` | Mesma classe `Transform` e os mesmos métodos. Adiciona a contagem de descartes por motivo. |
-| `Projeto-ETL_AVD/src/load.py` | `backend/climasense/etl/load.py` | `salvar_bronze` passa a acrescentar (RN-09). `salvar_silver` grava em `silver.vacinados` e mantém a view `public.silver_vacinados`. |
-| `Projeto-ETL_AVD/src/config.py` | `backend/climasense/config.py` + `etl/conectores/vacinacao.py` | URLs e IDs no conector. Segredos no `.env`. |
-| `Projeto-ETL_AVD/run_etl.py` | `backend/climasense/etl/cli.py` | `python -m climasense.etl run vacinacao [--limite N] [--etapa bronze|silver|gold]` |
+| `Projeto-ETL_AVD/src/load.py` | `backend/climasense/etl/load.py` | `salvar_bronze` passa a acrescentar (RN-09). `salvar_silver` grava na tabela silver de cada conector. |
+| `Projeto-ETL_AVD/src/config.py` | `backend/climasense/config.py` + `etl/conectores/*.py` | URLs e IDs no conector. Segredos no `.env`. |
+| `Projeto-ETL_AVD/run_etl.py` | `backend/climasense/etl/cli.py` | `python -m climasense.etl run <fonte> [--limite N] [--etapa bronze|silver|gold]` |
 | `Desktop/AVD/load_mongo.py` | `backend/climasense/territorio/carga.py` + `geometria.py` | Mesmas funções (`baixar_dados`, `carregar_arquivos`, `area_km2`, `corrigir_vinculos`, `enriquecer_distritos`, `salvar_atlas`, `ler_atlas`). Grava também as faixas hídricas no Atlas. |
 | `Desktop/AVD/gerar_mapa.py` + `mapa_assets/` | `backend/climasense/territorio/mapa_portatil.py` + `assets/` | Mesmo HTML portátil (modos Atlas e `--local`). Exposto em `GET /territorios/mapa-portatil` (RF-07.12). |
 | `Desktop/AVD/mapa_assets/model.js` | `frontend/src/map/model.ts` | Porte 1:1 para TS. `tests/model.test.cjs` vira `model.test.ts`. |
@@ -235,7 +235,7 @@ flowchart LR
 |---|---|---|
 | `Recife.DistritosSanitarios` | 8 features GeoJSON enriquecidas (bairros, área, auditoria). Upsert por `properties.cdistscodi`. | Preservado (`load_mongo.py`) |
 | `Recife.FaixasHidricas` | 81 features das faixas marginais, com a geometria original e uma versão `geometry_web` simplificada (tolerância de cerca de 5 m). | Novo. O arquivo original tem 3,4 MB, e a versão simplificada reduz o tráfego da tela (RNF-DES-03). |
-| `vacinacao.bronze_vacinados` | Registros originais da API + `_fonte`, `_execucao_id`, `_data_carga`. **Acumulativa.** | Preservado (nome mantido), com a mudança da RN-09 |
+| `vacinacao.bronze_vacinados` | Bronze do ETL antigo (vacinação COVID-19). | **Legado:** o ClimaSense não lê nem grava mais (vacinação removida em 04/11); fica no Atlas até decisão de apagar. |
 | `bronze.<fonte>` | Uma coleção por conector futuro (ex.: `bronze.open_meteo_historico`, `bronze.recife_alagamento`) | Novo |
 
 Índices: `{_execucao_id: 1}` nas coleções bronze e `{"properties.cdistscodi": 1}` (único) nos distritos.
@@ -246,7 +246,7 @@ flowchart LR
 
 | Tabela | Colunas principais |
 |---|---|
-| `silver.vacinados` | as colunas atuais do `Transform` + `execucao_id`. A view `public.silver_vacinados` mantém a compatibilidade. |
+| `silver.vacinados` | **Legado** (vacinação removida em 04/11, migração 0009): o ClimaSense não lê nem grava. Fica só porque a view `public.silver_vacinados` do projeto antigo lê dela; perdeu a chave para `app.etl_execucoes`. |
 | `silver.estacoes` | `id`, `fonte_id`, `codigo_fonte`, `nome`, `lat`, `lon`, `territorio_id`, `ativa` |
 | `silver.observacoes` | `id`, `fonte_id`, `estacao_id` (nulo se for por área), `territorio_id`, `variavel` (`chuva_mm`, `nivel_m`, `mare_m`, `temp_c`), `valor` (**nulo ≠ 0**, RN-02), `unidade`, `tipo` (`observada`, `prevista`, `derivada`), `observado_em` (UTC), `emitido_em`, `horizonte_h`, `coletado_em`, `qualidade` (`ok`, `suspeito`, `ausente`), `execucao_id` |
 | `silver.ocorrencias` | `id`, `fonte_id`, `territorio_id`, `ocorrido_em`, `registrado_em`, `tipo`, `confirmada` (bool/nulo), `precisao_espacial` |
@@ -256,7 +256,6 @@ flowchart LR
 
 | Tabela | Grão |
 |---|---|
-| `gold.vacinacao_distrito_mes` | distrito × mês: `doses`, `amostra_n`, `total_fonte`, `suprimido` (RN-13), `execucao_id` |
 | `gold.chuva_diaria` | território × dia: `acumulado_mm`, `n_observacoes`, `cobertura_pct`, `tipo` |
 | `gold.chuva_mensal` | território × mês: idem |
 | `gold.referencia_mensal` | território × mês do ano: `media`, `mediana`, `anos_usados`, `cobertura_pct` |
@@ -286,7 +285,7 @@ Convenções: horários em `timestamptz` (UTC), exibidos em `America/Recife` (RN
 # POO, como no ETL da disciplina: as classes Extract, Transform e Load são preservadas,
 # e cada fonte é uma subclasse de Conector que as combina.
 class Conector(ABC):
-    id: str                       # "vacinacao", "open-meteo-historico", "recife-alagamento"
+    id: str                       # "open-meteo-historico", "recife-alagamento"
     fonte: FonteInfo              # nome, órgão, url, licença, tipo (observada | prevista | derivada)
 
     def __init__(self, extract: Extract, transform: Transform, load: Load): ...
@@ -303,13 +302,11 @@ class Conector(ABC):
         self.load.salvar_silver(df, ctx)
         ...
 
-class ConectorVacinacao(Conector): ...          # porte direto do Projeto-ETL_AVD
 class ConectorOpenMeteoHistorico(Conector): ...
 ```
 
 | Conector | Estado no MVP | Notas |
 |---|---|---|
-| `vacinacao` | **Implementado** (porte do ETL existente) | API CKAN, paginação de 500, limite configurável. A gold traz `amostra_n`. |
 | `territorio-oficial` | **Implementado** (porte do `load_mongo.py`) | Distritos, bairros e faixas hídricas. |
 | `open-meteo-historico` · `open-meteo-previsao` · `open-meteo-mare` | **Implementado no MVP** | Open-Meteo (sem cadastro): chuva horária e diária por ponto representativo de cada distrito (reanálise ERA5, `tipo = derivada`), previsão de chuva até 72 h e nível do mar previsto, que inclui a maré (`tipo = prevista`). Termos de uso para projeto acadêmico a confirmar na tarefa. A execução acontece no computador da equipe. |
 | `recife-alagamento` | **Implementado no MVP** | Dados Abertos do Recife (conjuntos com a tag alagamento / Defesa Civil). Ocorrências entram como **não confirmadas** por padrão (contexto §14.2). |
@@ -392,7 +389,6 @@ Papéis: **P** público · **A** analista · **R** revisor · **C** coordenaçã
 | `GET /series/sazonalidade?...` | A | Matriz ano × mês | RF-08.5 |
 | `GET /series/estatisticas?...` | A | Estatística descritiva com classificação em texto | RF-08.6, RF-08.7 |
 | `GET /cenarios?territorio_id=&horizonte_h=` | A | Observação, previsão, estimativa e prioridade, com `experimental: true` | RF-09 |
-| `GET /saude/vacinacao?territorio_id=&inicio=&fim=` | A | Agregado por distrito e mês, com `amostra` e `suprimido` | RF-15 |
 | `GET /avaliacoes` · `POST /avaliacoes` | A | Lista com filtros · cria rascunho | RF-10 |
 | `GET /avaliacoes/{id}` · `PUT /avaliacoes/{id}` | A | Detalhe com versões · nova versão (só em Rascunho ou Devolvida) | RF-10, RN-03 |
 | `POST /avaliacoes/{id}/enviar` | A | Rascunho → Em revisão | RF-10.2 |
@@ -580,7 +576,7 @@ Paleta categórica com ordem fixa, validada com o verificador de daltonismo (pro
 - **Referência histórica:** sempre cinza tracejado `#6B7A85`, nunca uma cor de série.
 - **Faixa de incerteza:** a cor da série com 18% de opacidade.
 - **Sequencial (mapa e calendário de chuva, uma só matiz azul, do claro ao escuro):** `#E3EEF7 #B9D4EA #86B3D9 #4F8CC2 #1F6FB2 #17558A #0E3A60`. Para as 5 classes do mapa (ordinal), os passos começam em `#86B3D9`, para a classe mais baixa não sumir no fundo.
-- **Sequencial de saúde (vacinação):** rampa verde-mangue `#A7DCC6 → #044D36`, outra matiz para não confundir com a chuva.
+- **Sequencial de saúde (indicadores ligados a desastres, RF-15):** rampa verde-mangue `#A7DCC6 → #044D36`, outra matiz para não confundir com a chuva.
 - **Sem dado:** hachura cinza 45° (nunca a cor do zero).
 - **Regras:** um eixo por gráfico (chuva e maré em **dois gráficos alinhados**, como no protótipo 03); legenda sempre com 2+ séries e rótulo direto em até 4; textos e valores na cor da tinta, nunca na cor da série; “Ver como tabela” em todo gráfico; texturas (`decal`) ativáveis.
 
@@ -737,7 +733,7 @@ Responde “o que precisa de mim agora?” em 4 blocos, sem gráfico protagonist
 ┌ Busca e camadas (300px) ─┬─ Mapa (Leaflet) ────────────────────┬─ Detalhe (360px) ───────┐
 │ Distrito ou bairro [___] │ [Enquadrar]                          │ Conheça o território    │
 │ Colorir por [Bairros ▾]  │                                      │ (ou o distrito selecion.)│
-│   bairros · área · vacinação · ocorrências* · prioridade*         │ bairros · área · lista  │
+│   bairros · área · ocorrências* · prioridade*                     │ bairros · área · lista  │
 │ Camadas                  │       polígonos + rótulos            │ Fatores (se houver)     │
 │  ☑ Distritos  ☑ Faixas   │       faixas hídricas                │ Qualidade dos dados     │
 │ Intensidade [====] 72%   │                       ┌ Legenda ─────┐ │ Compare os distritos    │
@@ -826,7 +822,6 @@ AMBIENTE=desenvolvimento
 # MongoDB Atlas (bronze + território) — mesma variável do ETL e do mapa atuais
 MONGO_URI=mongodb+srv://USUARIO:SENHA@SEU-CLUSTER.mongodb.net/?appName=ClimaSense
 MONGO_DB_TERRITORIO=Recife
-MONGO_DB_BRONZE_VACINACAO=vacinacao
 
 # Postgres / Neon (silver + gold + aplicação). NEON_URL também é aceito.
 DATABASE_URL=postgresql://USUARIO:SENHA@SEU-HOST.neon.tech/climasense?sslmode=require
@@ -841,7 +836,6 @@ ADMIN_EMAIL=
 ADMIN_SENHA_INICIAL=
 
 # ETL
-ETL_LIMITE_VACINACAO=5000
 SUPRESSAO_MINIMA=5
 
 # Mapa
@@ -912,7 +906,7 @@ Cabeçalhos: `Content-Security-Policy` (permitindo os tiles configurados), `X-Co
 | RF-10/11 Avaliações e comunicados | 5.3 app, 7.1, 9.8, 9.9 |
 | RF-12/13 ETL e território | 4.1, 5.1–5.4 |
 | RF-14 Auditoria | 5.3 `app.auditoria` |
-| RF-15 Saúde agregada | 5.3 `gold.vacinacao_distrito_mes`, 10.2 |
+| RF-15 Saúde ligada a desastres (PODE, pendente de fonte) | 10.2 |
 | RF-16 Administração | 6.2 `/admin`, 9.11 |
 | RNF-ACE / RNF-VIS | 8, 9 |
 | RNF-SEG | 7.4, 10 |

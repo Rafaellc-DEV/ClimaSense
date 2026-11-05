@@ -50,7 +50,7 @@ Levantamento feito na leitura das pastas originais. Essas pastas **não serão a
 
 | Origem | Conteúdo | Situação verificada | Destino no ClimaSense |
 |---|---|---|---|
-| `Desktop/Projeto-ETL_AVD/` | ETL em classes `Extract`, `Transform` e `Load`. Lê a API CKAN da Prefeitura (vacinação COVID-19) paginada em 500 registros, até 5.000. Grava a **bronze no Atlas** (`vacinacao.bronze_vacinados`), limpa e grava a **silver no NeonDB/Postgres** (`silver_vacinados`). | Código funcional. A etapa API→bronze está comentada em `run_etl.py`. A bronze é substituída a cada carga (`delete_many`). O arquivo `src/_init_.py` está com nome incorreto. | **Preservar e generalizar** como módulo de ingestão de várias fontes (RF-12). O dado de vacinação vira o primeiro indicador de saúde agregado por distrito (RF-15). |
+| `Desktop/Projeto-ETL_AVD/` | ETL em classes `Extract`, `Transform` e `Load`. Lê a API CKAN da Prefeitura (vacinação COVID-19) paginada em 500 registros, até 5.000. Grava a **bronze no Atlas** (`vacinacao.bronze_vacinados`), limpa e grava a **silver no NeonDB/Postgres** (`silver_vacinados`). | Código funcional. A etapa API→bronze está comentada em `run_etl.py`. A bronze é substituída a cada carga (`delete_many`). O arquivo `src/_init_.py` está com nome incorreto. | **Preservar e generalizar** como módulo de ingestão de várias fontes (RF-12). A vacinação em si **não entra no produto** (decisão de 04/11: não foi pedida pela gestão; o foco é desastre natural). A tabela antiga no Neon fica como legado. |
 | `Desktop/AVD/` (Aula 07) | Visão territorial completa. `load_mongo.py` baixa os dados oficiais, corrige os vínculos de bairros dos DS VII e VIII, calcula a área geodésica e faz upsert em `Recife.DistritosSanitarios`. `gerar_mapa.py` lê o Atlas e gera um HTML portátil com Leaflet. Interface em `mapa_assets/` e testes Python, Node e Playwright. | Versão mais completa e testada. **Referência canônica** da visualização territorial. | **Preservar todas as funcionalidades** no novo módulo Território (RF-07, RF-13). |
 | `Projetos/AVD/Atividade5-Atlas/` | Primeira versão da carga e do mapa: Folium, `delete_many` e variáveis `MONGODB_URI`, `MONGODB_USERNAME` e `MONGODB_PASSWORD`. | Superada pela versão do `Desktop/AVD`. O host do cluster está fixo no código. | Usada só como referência histórica. As variáveis passam a ser unificadas em `MONGO_URI`. |
 | `Projetos/AVD/Atividade1–4/`, `Desktop/AVD/main.py`, `notebook.ipynb`, `aula05.html`, `v2/` | Exercícios com a API do IBGE (PNAD, desocupação): média, mediana, moda, variância, desvio padrão, amplitude, assimetria, curtose e um painel em Chart.js. | Exercícios acadêmicos, sem relação direta com o clima. | **Reaproveitar os métodos estatísticos** como serviço de estatística descritiva das séries (RF-08). Os dados da PNAD não entram no produto. |
@@ -62,8 +62,8 @@ Levantamento feito na leitura das pastas originais. Essas pastas **não serão a
 
 | # | Achado | Tratamento exigido |
 |---|---|---|
-| A1 | A bronze da vacinação é **apagada e regravada** a cada execução (`delete_many`). Perde-se o histórico do que estava disponível em cada momento. | RN-09: a bronze passa a ser acumulativa e versionada por execução. |
-| A2 | O ETL limita a extração a **5.000 de cerca de 1,4 milhão** de registros. | RN-10: um indicador calculado sobre uma extração parcial DEVE ser rotulado como **amostra**. |
+| A1 | A bronze do ETL antigo (vacinação) era **apagada e regravada** a cada execução (`delete_many`). Perde-se o histórico do que estava disponível em cada momento. | RN-09: a bronze passa a ser acumulativa e versionada por execução. |
+| A2 | O ETL antigo limitava a extração a **5.000 de cerca de 1,4 milhão** de registros. | RN-10: um indicador calculado sobre uma extração parcial DEVE ser rotulado como **amostra**. |
 | A3 | Existem três nomes de variável para a conexão com o Atlas, e o host do cluster aparece fixo em `Atividade5-Atlas/main.py`. | RNF-SEG-01: uma única variável `MONGO_URI`, apenas no `.env`. |
 | A4 | O CSV oficial de bairros diverge da Secretaria de Saúde nos DS VII e VIII. Há 15 correções documentadas em `correcoes-bairros.json`. | RN-12: manter as correções e a auditoria, e exibir a nota na interface. |
 | A5 | O mapa atual é uma **fotografia estática** gerada em HTML. Não há conexão contínua com o banco. | RF-07 passa a ler os dados pela API. A exportação portátil continua disponível (RF-07.12). |
@@ -225,7 +225,7 @@ Todas as funcionalidades do mapa atual (`Desktop/AVD`, Aula 07) DEVEM continuar 
 | ID | Critério de aceite |
 |---|---|
 | RF-07.1 | Exibir os **8 distritos sanitários** com seus **94 bairros**, vinculados pelo código oficial (`cdistscodi` ↔ `distrito_sanitario`). |
-| RF-07.2 | Colorir os distritos por indicador. São mantidas “Quantidade de bairros” e “Área (km²)”, e entram os novos indicadores do ClimaSense (ex.: vacinação agregada, ocorrências e prioridade). |
+| RF-07.2 | Colorir os distritos por indicador. São mantidas “Quantidade de bairros” e “Área (km²)”, e entram os novos indicadores do ClimaSense (ex.: ocorrências e prioridade). |
 | RF-07.3 | Usar **5 classes de intervalos iguais** calculadas sobre todos os distritos. Busca e filtro **não alteram** a escala. Valores constantes viram uma classe só, sem divisão por zero. |
 | RF-07.4 | Busca de distrito ou bairro **sem diferenciar acentos nem maiúsculas**, que filtra a lista e o mapa. Com Enter e um único resultado, seleciona esse resultado. |
 | RF-07.5 | Ao selecionar um distrito, enquadrar o mapa nele e mostrar o painel de detalhes (código, quantidade de bairros, área e lista de bairros). |
@@ -297,14 +297,14 @@ Todas as funcionalidades do mapa atual (`Desktop/AVD`, Aula 07) DEVEM continuar 
 |---|---|
 | RF-12.1 | Manter a estrutura **Extract / Transform / Load** e as camadas **bronze → silver** do projeto `Projeto-ETL_AVD`. |
 | RF-12.2 | Manter a extração **paginada** da API CKAN da Prefeitura (`datastore_search`, 500 registros por página, limite configurável). |
-| RF-12.3 | Manter todas as transformações atuais da vacinação: texto sem espaços e em maiúsculas, vazio vira nulo, conversão de idade, dose e data, derivação de `vacina`, `distrito_sanitario` e `unidade_saude`, e remoção de inválidos e duplicados. |
-| RF-12.4 | Generalizar para **várias fontes**, todas **reais**. Cada fonte é uma classe conector (POO) com configuração própria. No MVP: vacinação, distritos e bairros, faixas hídricas (existentes) + `open-meteo-historico` (chuva horária e diária por distrito, reanálise ERA5), `open-meteo-previsao` (chuva prevista até 72 h), `open-meteo-mare` (nível do mar previsto, que inclui a maré) e `recife-alagamento` (Dados Abertos do Recife, ocorrências **não confirmadas** por padrão). Ficam especificados para a sequência: **ANA** (HidroWebService, exige cadastro), APAC, INMET, Cemaden e a tábua de maré da Marinha. Esses conectores alimentam o futuro modelo de ML. |
+| RF-12.3 | Manter as transformações genéricas do ETL antigo em todas as fontes: texto sem espaços e em maiúsculas, vazio vira nulo, conversão de tipos e remoção de inválidos e duplicados. |
+| RF-12.4 | Generalizar para **várias fontes**, todas **reais**. Cada fonte é uma classe conector (POO) com configuração própria. No MVP: distritos e bairros, faixas hídricas (existentes) + `open-meteo-historico` (chuva horária e diária por distrito, reanálise ERA5), `open-meteo-previsao` (chuva prevista até 72 h), `open-meteo-mare` (nível do mar previsto, que inclui a maré) e `recife-alagamento` (Dados Abertos do Recife, ocorrências **não confirmadas** por padrão). Ficam especificados para a sequência: **ANA** (HidroWebService, exige cadastro), APAC, INMET, Cemaden e a tábua de maré da Marinha. Esses conectores alimentam o futuro modelo de ML. |
 | RF-12.10 | **Somente dados reais.** O produto não contém dados simulados, sintéticos ou inventados. Quando uma fonte ainda não está integrada ou não respondeu, a tela mostra **“Dados insuficientes”** e diz qual fonte falta (RN-01, RN-19). |
 | RF-12.5 | Cada execução DEVE registrar: fonte, início, fim, status, registros lidos, gravados e descartados, motivo dos descartes e mensagem de erro (sem segredos). |
-| RF-12.6 | Executar por linha de comando (ex.: `python -m climasense.etl run vacinacao`) e, para o administrador, pela interface (RF-16). |
+| RF-12.6 | Executar por linha de comando (ex.: `python -m climasense.etl run open-meteo-previsao`) e, para o administrador, pela interface (RF-16). |
 | RF-12.7 | A bronze DEVE guardar o dado **original**, com metadados técnicos (`_data_carga`, `_execucao_id`, `_fonte`). |
 | RF-12.8 | SE a fonte externa falhar, ENTÃO a execução DEVE terminar com status “Com falha”, manter os dados anteriores intactos e refletir o status em RF-06. |
-| RF-12.9 | A camada **gold** (agregados prontos para os painéis, ex.: vacinação por distrito e mês) DEVE ser gerada a partir da silver, de forma reprodutível (CA-04). |
+| RF-12.9 | A camada **gold** (agregados prontos para os painéis, ex.: chuva diária e mensal por distrito) DEVE ser gerada a partir da silver, de forma reprodutível (CA-04). |
 
 ### RF-13 — Base territorial no Atlas · **DEVE**. Preserva o `load_mongo.py`.
 
@@ -325,11 +325,13 @@ Todas as funcionalidades do mapa atual (`Desktop/AVD`, Aula 07) DEVEM continuar 
 | RF-14.2 | O registro de auditoria só aceita inclusões: não pode ser editado nem apagado pela interface. |
 | RF-14.3 | O administrador DEVE poder consultar a auditoria com filtros por usuário, ação e período. |
 
-### RF-15 — Indicadores de saúde agregados · **DEVE** para vacinação (dado já disponível) · **PODE** para os demais
+### RF-15 — Indicadores de saúde ligados a desastres · **PODE** · pendente de fonte
+
+Leptospirose, acidentes por animais peçonhentos e registro de atendimentos nos abrigos. Nenhum tem fonte integrada ainda; até lá a tela mostra “Dados insuficientes” (RN-01). A vacinação COVID-19 do ETL antigo **não** é indicador do produto (decisão de 04/11).
 
 | ID | Critério de aceite |
 |---|---|
-| RF-15.1 | Disponibilizar o indicador **vacinação agregada por distrito sanitário e período**, derivado do ETL existente, como camada do mapa e como série. |
+| RF-15.1 | Disponibilizar indicadores de saúde ligados a desastres (**leptospirose**, **acidentes por animais peçonhentos**, **registro nos abrigos**) por distrito sanitário e período, como camada do mapa e como série, quando houver fonte real identificada. |
 | RF-15.2 | Só usar **dados agregados**, sem registros individuais na interface ou na API (RN-13). |
 | RF-15.3 | SE o agregado for calculado sobre uma extração parcial, ENTÃO DEVE ser rotulado “Amostra de N registros, não representa o total” (RN-10). |
 | RF-15.4 | Incorporar o SAMU-192 (bairro × horário, do planejamento CRISP-DM) PODE vir na evolução. |
@@ -360,7 +362,7 @@ Todas as funcionalidades do mapa atual (`Desktop/AVD`, Aula 07) DEVEM continuar 
 | **RN-10** | **Amostra rotulada.** Um indicador calculado sobre uma extração parcial é sempre rotulado como amostra, com o N usado. |
 | **RN-11** | **Experimental até validar.** Estimativas de alagamento levam o selo experimental até haver uma validação temporal documentada (contexto §21.3). |
 | **RN-12** | **Correções documentadas.** Toda correção de dado oficial fica num arquivo versionado, com fonte, data e motivo, e o bruto é preservado. |
-| **RN-13** | **Privacidade (LGPD).** Nenhum dado pessoal de pacientes ou vacinados é exibido. Agregados com contagem muito pequena (limite configurável, proposta: menos de 5) são suprimidos. |
+| **RN-13** | **Privacidade (LGPD).** Nenhum dado pessoal de pacientes ou pessoas atendidas é exibido. Agregados com contagem muito pequena (limite configurável, proposta: menos de 5) são suprimidos. |
 | **RN-14** | **Validade obrigatória.** Todo comunicado publicado tem fim de validade e sai sozinho da landing quando ela vence. |
 | **RN-15** | **Acúmulo de papéis permitido**, respeitando a RN-05. |
 | **RN-16** | **Fuso e formatos.** Horários exibidos em `America/Recife`, datas no formato dd/mm/aaaa, números no padrão pt-BR (vírgula decimal). O armazenamento é em UTC. |
@@ -497,7 +499,7 @@ Herdados do contexto §20.2 e tornados verificáveis:
 | CA-08 | Autor não aprova a própria versão. | Teste de API (RN-05). |
 | CA-09 | A landing mostra só avisos publicados e vigentes, com o estado acima da dobra. | Teste E2E em desktop e em 375 px. |
 | CA-10 | Todas as funcionalidades do mapa existente continuam presentes. | Checklist RF-07.1 a RF-07.14 e testes migrados verdes. |
-| CA-11 | O ETL da vacinação produz bronze (Atlas) → silver → gold com registro de execução. | Execução de ponta a ponta com um limite pequeno, mais testes. |
+| CA-11 | O ETL das fontes climáticas produz bronze (Atlas) → silver → gold com registro de execução. | Execução de ponta a ponta com um limite pequeno, mais testes. |
 | CA-12 | Nenhum segredo no repositório. | Varredura de segredos no CI. Só existe `.env.example`. |
 | CA-13 | Acessibilidade AA nas telas do MVP. | axe sem violações sérias, mais checklist manual. |
 | CA-14 | Usuários do piloto concluem as tarefas guiadas (contexto §21.1). | Teste de usabilidade. Registro de tempo, erros e dúvidas. |
@@ -531,7 +533,7 @@ O template marca a combinação de **camadas + MVC + microsserviços**. O `desig
 | **P1** ✅ | Logo e telas de protótipo. | Identidade visual. | **Resolvido (15/10):** logo anexada e acesso liberado a `Documents/Codex/2026-09-10/ger/outputs/`. |
 | **P2** ✅ | Onde fica a silver. | Arquitetura de dados. | **Decidido (15/10):** Atlas para a bronze e o território. **Postgres/Neon** para a silver, a gold e os dados da aplicação (usuários, comunicados, auditoria). O ETL é preservado como está. |
 | **P3** ✅ | Fontes climáticas do MVP. | RF-08, RF-09. | **Decidido (15/10) e revisado (15/10, 19h50):** o objetivo é ter **todas as telas prontas e o backend existente unido e completo**, usando **somente dados reais** (sem dados simulados). Fontes climáticas reais do MVP: `open-meteo-historico` (chuva horária e diária por distrito, reanálise ERA5), `open-meteo-previsao` (chuva prevista até 72 h), `open-meteo-mare` (nível do mar previsto, que inclui a maré) e `recife-alagamento` (Dados Abertos do Recife, ocorrências **não confirmadas** por padrão). ANA (com credenciais), APAC, INMET, Cemaden e a tábua da Marinha vêm em seguida. O ETL segue POO (classes `Extract`, `Transform`, `Load` e `Conector`), como ensinado na disciplina. O modelo de ML fica para uma etapa posterior. Os termos de uso e a disponibilidade de cada API serão verificados na tarefa do conector. |
-| **P4** | Limite de 5.000 registros da vacinação. | RF-15, RN-10. | Manter configurável e rotular como amostra. Avaliar uma carga completa com agregação na fonte. |
+| **P4** ✅ | Limite de 5.000 registros da vacinação. | RF-15, RN-10. | **Encerrada (04/11):** a vacinação saiu do produto. Fonte de saúde ligada a desastres (leptospirose, peçonhentos, abrigos) segue pendente em RF-15; RN-10 continua valendo para qualquer extração parcial. |
 | **P5** | Nomes e critérios dos níveis de aviso. | RF-01, RF-11. | Validar a seção 6.1 com a Vigilância e a Defesa Civil. |
 | **P6** | Composição da equipe (Grupo 1 × Grupo 3). | Landing (“Sobre”), documentação. | Confirmar a lista. |
 | **P7** | Dados de teste dos exercícios do IBGE (PNAD). | Escopo. | Não entram no produto. Só os métodos estatísticos são reaproveitados. |
@@ -552,7 +554,7 @@ O template marca a combinação de **camadas + MVC + microsserviços**. O `desig
 | RF08 Estimativa de alagamento | RF-09 |
 | RF09 Comparação metropolitana | RF-08.9 |
 | RF10 Canais de envio | RF-11.9 |
-| RF11 Saúde agregada | RF-15 |
+| RF11 Saúde agregada | RF-15 (redefinido: saúde ligada a desastres) |
 | §11 Jornada principal | J3 a J7 |
 | §19 Governança | RF-11, RN-03, RN-04, RN-05 |
 | §20.2 Critérios de aceite | Seção 10 |

@@ -89,7 +89,6 @@ As regras que mais importam ao produto (ausência de dado ≠ risco baixo, ningu
 | Fontes e qualidade | `qualidade.py` | `etl/execucao.py` | `/fontes`, `/etl` | M5 ✅ |
 | Séries | `estatistica.py`, `series.py` | `series.py` | `/series/*` | M6 |
 | Cenários | `cenario.py` | `cenarios.py` | `/cenarios` | M6 |
-| Saúde agregada | `saude.py` | `saude.py` | `/saude/*` | M6 |
 | Avaliações e comunicados | `fluxo_revisao.py` | `avaliacoes.py`, `comunicados.py` | `/avaliacoes`, `/comunicados`, `/publico` | M7 |
 
 ## 4. ETL orientado a objetos
@@ -120,7 +119,6 @@ classDiagram
   Conector o-- Extract
   Conector o-- Transform
   Conector o-- Load
-  Conector <|-- ConectorVacinacao
   Conector <|-- ConectorOpenMeteoHistorico
   Conector <|-- ConectorOpenMeteoPrevisao
   Conector <|-- ConectorOpenMeteoMare
