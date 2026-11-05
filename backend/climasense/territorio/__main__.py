@@ -43,8 +43,10 @@ def main(argv: list[str] | None = None) -> int:
                     carga.preparar_hidrografia(carga.carregar_hidrografia()),
                     config.mongo_db_territorio,
                 )
+                # silver/app a partir do que foi LIDO de volta do Atlas (padrão bronze -> leitura -> silver)
+                geo_atlas = carga.ler_atlas(cliente, config.mongo_db_territorio)
             with fabrica_sessoes(engine)() as db:
-                t = carga.sincronizar_territorios(db, geo)
+                t = carga.sincronizar_territorios(db, geo_atlas)
             execucao.concluir(engine, execucao_id, lidos=n + h, gravados=n + h)
             print(
                 f"{n} distritos e {h} faixas hídricas gravados em {config.mongo_db_territorio}. {t} territórios sincronizados."

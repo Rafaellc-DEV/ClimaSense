@@ -1,6 +1,5 @@
-"""Load — porte da classe do Projeto-ETL_AVD. Mudança exigida pela RN-09: a bronze passa a ser ACUMULATIVA
-(cada carga leva _execucao_id; nada é apagado). A silver grava em silver.vacinados (a view
-public.silver_vacinados mantém o nome antigo)."""
+"""Load — porte da classe do Projeto-ETL_AVD. Mudança exigida pela RN-09: a bronze é ACUMULATIVA
+(cada carga leva _execucao_id; nada é apagado). A silver grava no Postgres (Neon em produção)."""
 
 from __future__ import annotations
 
@@ -10,23 +9,6 @@ import pandas as pd
 from sqlalchemy import Engine
 
 LOTE_BRONZE = 5000
-
-COLUNAS_SILVER_VACINADOS = [
-    "faixa_etaria",
-    "idade",
-    "sexo",
-    "raca_cor",
-    "municipio",
-    "grupo",
-    "categoria",
-    "lote",
-    "vacina",
-    "dose",
-    "data_vacinacao",
-    "distrito_sanitario",
-    "unidade_saude",
-    "sistema_origem",
-]
 
 
 class Load:

@@ -1,72 +1,13 @@
-"""Registros no formato da API CKAN do conjunto “perfil das pessoas vacinadas — COVID-19” (Dados Abertos do Recife).
-Os valores seguem os exemplos documentados no próprio ETL original (Projeto-ETL_AVD/src/transformer.py)."""
+"""Registros reais no formato da API CKAN (datastore_search) do conjunto “abrigos-temporarios-disponiveis”
+(Dados Abertos do Recife), gravados em 04/11/2026 em `fixtures/`, e um dublê HTTP com paginação por offset."""
 
-REGISTROS = [
-    {
-        "_id": 1,
-        "faixa_etaria": " 60 a 69 anos ",
-        "idade": "64",
-        "sexo": "feminino",
-        "raca_cor": "PARDA",
-        "municipio": "RECIFE",
-        "grupo": "IDOSOS",
-        "categoria": "Faixa Etária",
-        "lote": "fp8743",
-        "vacina_fabricante": "3 - COMIRNATY (PFIZER)",
-        "descricao_dose": "3",
-        "cnes": "DS 4: CNES: 0000639 - UBS JOAQUIM CAVALCANTE",
-        "sistema_origem": "conecta recife",
-        "data_vacinacao": "2022-03-15",
-    },
-    {
-        "_id": 2,
-        "faixa_etaria": "30 a 39 anos",
-        "idade": "",
-        "sexo": "MASCULINO",
-        "raca_cor": "",
-        "municipio": "RECIFE",
-        "grupo": "",
-        "categoria": "",
-        "lote": "",
-        "vacina_fabricante": "3 - COMIRNATY (PFIZER)",
-        "descricao_dose": "1",
-        "cnes": "DS 4: CNES: 0000639 - UBS JOAQUIM CAVALCANTE",
-        "sistema_origem": "conecta recife",
-        "data_vacinacao": "2022-03-15",
-    },
-    {
-        "_id": 3,
-        "faixa_etaria": " 60 a 69 anos ",
-        "idade": "64",
-        "sexo": "feminino",
-        "raca_cor": "PARDA",
-        "municipio": "RECIFE",
-        "grupo": "IDOSOS",
-        "categoria": "Faixa Etária",
-        "lote": "fp8743",
-        "vacina_fabricante": "3 - COMIRNATY (PFIZER)",
-        "descricao_dose": "3",
-        "cnes": "DS 4: CNES: 0000639 - UBS JOAQUIM CAVALCANTE",
-        "sistema_origem": "conecta recife",
-        "data_vacinacao": "2022-03-15",
-    },
-    {
-        "_id": 4,
-        "faixa_etaria": "18 a 29 anos",
-        "idade": "25",
-        "sexo": "MASCULINO",
-        "raca_cor": "PRETA",
-        "municipio": "RECIFE",
-        "grupo": "ADULTOS",
-        "categoria": "Faixa Etária",
-        "lote": "ab1234",
-        "vacina_fabricante": "3 - COMIRNATY (PFIZER)",
-        "descricao_dose": "2",
-        "cnes": "DS 4: CNES: 0000639 - UBS JOAQUIM CAVALCANTE",
-        "sistema_origem": "conecta recife",
-        "data_vacinacao": "data inválida",
-    },
-]
+import json
+from pathlib import Path
+
+FIXTURES = Path(__file__).parent / "fixtures"
+REGISTROS = json.loads((FIXTURES / "ckan_abrigos_datastore_2026-11-04.json").read_text(encoding="utf-8"))[
+    "result"
+]["records"]
 
 
 class HttpCkan:

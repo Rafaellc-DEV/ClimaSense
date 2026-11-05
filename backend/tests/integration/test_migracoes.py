@@ -22,9 +22,37 @@ TABELAS = {
         "comunicado_versoes",
         "revisoes",
         "auditoria",
+        "estagio_parametros",
+        "estagio_declaracoes",
+        "abrigos",
+        "abrigo_atualizacoes",
+        "acoes_resposta",
+        "acao_eventos",
     },
-    "silver": {"vacinados", "estacoes", "observacoes", "ocorrencias", "previsoes_emitidas"},
-    "gold": {"vacinacao_distrito_mes", "chuva_diaria", "chuva_mensal", "referencia_mensal"},
+    "silver": {
+        "vacinados",
+        "estacoes",
+        "observacoes",
+        "ocorrencias",
+        "previsoes_emitidas",
+        "apac_chuva_leituras",
+        "apac_chuva_diaria",
+        "alertas_oficiais",
+        "infodengue_semanal",
+        "leptospirose_semanal",
+        "arboviroses_bairro_ano",
+    },
+    "gold": {
+        "chuva_diaria",
+        "chuva_mensal",
+        "referencia_mensal",
+        "chuva_apac_agora",
+        "chuva_apac_diaria",
+        "alagamento_bairro_dia",
+        "ocorrencias_bairro",
+        "saude_semanal",
+        "arboviroses_bairro_ano",
+    },
 }
 
 
@@ -169,22 +197,6 @@ def test_previsao_sem_horario_de_emissao_e_recusada(sessao):
                 "insert into silver.observacoes (fonte_id,variavel,valor,unidade,tipo,observado_em,coletado_em,execucao_id) "
                 "values ('prev','chuva_mm',1,'mm','prevista',now(),now(),:e)"
             ),
-            {"e": ex},
-        )
-
-
-def test_supressao_nao_guarda_valor(sessao):
-    sessao.execute(
-        text(
-            "insert into app.fontes (id,nome,orgao,url,tipo,conector) values ('vac','F','O','https://x','observada','x')"
-        )
-    )
-    ex = sessao.execute(
-        text("insert into app.etl_execucoes (fonte_id,status) values ('vac','sucesso') returning id")
-    ).scalar_one()
-    with pytest.raises(IntegrityError):
-        sessao.execute(
-            text("insert into gold.vacinacao_distrito_mes values (5,'2026-09-01',3,3,null,true,:e)"),
             {"e": ex},
         )
 

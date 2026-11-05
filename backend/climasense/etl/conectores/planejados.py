@@ -31,32 +31,24 @@ class ConectorAnaTelemetria(_Planejado):
     motivo = "Conector planejado: exige cadastro na ANA (ANA_USUARIO e ANA_SENHA no .env)."
 
 
-class ConectorApacChuva(_Planejado):
-    id = "apac-chuva"
-    fonte = FonteInfo(
-        "Chuva acumulada em 24 h", "APAC", "https://www.apac.pe.gov.br/monitoramento", "observada"
-    )
-
-
 class ConectorInmet(_Planejado):
     id = "inmet"
     fonte = FonteInfo("Estação automática Recife (A301)", "INMET", "https://portal.inmet.gov.br", "observada")
+    motivo = (
+        "Conector planejado: em 24/10/2026 a API pública apitempo.inmet.gov.br lista a estação A301 (operante), "
+        "mas responde 204 (sem conteúdo) a toda consulta de dados sem token e reinicia a conexão sem User-Agent. "
+        "Depende do token institucional do INMET."
+    )
 
 
 class ConectorCemaden(_Planejado):
     id = "cemaden"
     fonte = FonteInfo("Pluviômetros automáticos", "Cemaden", "https://www.gov.br/cemaden", "observada")
-
-
-class ConectorRecifeAlagamento(_Planejado):
-    id = "recife-alagamento"
-    fonte = FonteInfo(
-        "Ocorrências de alagamento (Defesa Civil)",
-        "Prefeitura do Recife (Dados Abertos)",
-        "https://dados.recife.pe.gov.br/dataset?tags=alagamento",
-        "observada",
+    motivo = (
+        "Conector planejado: os pluviômetros do Cemaden no Recife já entram pelo `apac-chuva` (a API da APAC "
+        "republica as estações [CEMADEN]) e os alertas do Cemaden pelo `alertas-oficiais`. A série própria "
+        "do Cemaden exige cadastro."
     )
-    motivo = "Conector planejado: o conjunto exato e o formato dos registros ainda precisam ser confirmados no catálogo."
 
 
 class ConectorMareMarinha(_Planejado):

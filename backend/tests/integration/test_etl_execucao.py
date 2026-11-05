@@ -10,11 +10,8 @@ from climasense.etl.conectores.open_meteo import (
     ConectorOpenMeteoMare,
     ConectorOpenMeteoPrevisao,
 )
-from climasense.etl.conectores.vacinacao import ConectorVacinacao
-from climasense.etl.extract import Extract
 from climasense.territorio import carga
 from tests.conftest import configuracao_teste, precisa_postgres
-from tests.unit.etl.registros_ckan import REGISTROS, HttpCkan
 
 pytestmark = [precisa_postgres, pytest.mark.integracao]
 
@@ -40,8 +37,10 @@ def base(engine_teste):
     with engine_teste.begin() as c:
         c.execute(
             text(
-                "truncate silver.observacoes, silver.vacinados, gold.vacinacao_distrito_mes, gold.chuva_diaria, "
-                "gold.chuva_mensal, gold.referencia_mensal, app.etl_execucoes cascade"
+                "truncate silver.observacoes, silver.apac_chuva_leituras, silver.apac_chuva_diaria, "
+                "silver.alertas_oficiais, silver.ocorrencias, gold.chuva_diaria, gold.chuva_mensal, "
+                "gold.referencia_mensal, gold.chuva_apac_agora, gold.chuva_apac_diaria, gold.alagamento_bairro_dia, "
+                "silver.estacoes, app.etl_execucoes cascade"
             )
         )
     from sqlalchemy.orm import Session
@@ -49,25 +48,6 @@ def base(engine_teste):
     with Session(engine_teste) as s:
         carga.sincronizar_territorios(s, carga.geo_local())
     return engine_teste, mongomock.MongoClient(), configuracao_teste(supressao_minima=2)
-
-
-def test_vacinacao_de_ponta_a_ponta_com_registro_da_execucao(base):
-    engine, mongo, config = base
-    ex = execucao.iniciar(engine, "vacinacao")
-    conector = ConectorVacinacao(
-        extract=Extract("u", "r", 100, http=HttpCkan(REGISTROS * 3, total=1_400_000))
-    )
-    r = execucao.executar(engine, mongo, config, "vacinacao", ex, conector=conector)
-    assert r["status"] == "sucesso" and r["lidos"] == 12 and r["gravados"] == 1
-    with engine.connect() as c:
-        assert c.execute(text("select count(*) from public.silver_vacinados")).scalar() == 1
-        linha = c.execute(text("select * from gold.vacinacao_distrito_mes")).mappings().one()
-        assert (linha["distrito_codigo"], linha["amostra_n"], linha["total_fonte"]) == (4, 1, 1_400_000)
-        assert linha["suprimido"] is True and linha["doses"] is None  # 1 < supressão 2 (RN-13)
-        ex_db = c.execute(
-            text("select status, lidos, gravados, descartados, motivos_descarte from app.etl_execucoes")
-        ).one()
-        assert ex_db[:4] == ("sucesso", 12, 1, 11)
 
 
 def test_falha_registra_mensagem_sem_segredo_e_nao_apaga_nada(base):
@@ -79,14 +59,9 @@ def test_falha_registra_mensagem_sem_segredo_e_nao_apaga_nada(base):
 
             raise requests.ConnectionError("mongodb+srv://u:senha-real@x.invalid recusou")
 
-    ex = execucao.iniciar(engine, "vacinacao")
+    conector = ConectorOpenMeteoPrevisao(http=HttpQuebrado())
     r = execucao.executar(
-        engine,
-        mongo,
-        config,
-        "vacinacao",
-        ex,
-        conector=ConectorVacinacao(extract=Extract("u", "r", 10, http=HttpQuebrado())),
+        engine, mongo, config, conector.id, execucao.iniciar(engine, conector.id), conector=conector
     )
     assert r["status"] == "falha" and "senha-real" not in r["erro"] and "não respondeu" in r["erro"]
     assert (
@@ -124,11 +99,7 @@ def test_open_meteo_historico_nulo_nao_vira_zero_e_gold_e_reproduzivel(base):
             (0.0, 100.0),
             (18.0, 50.0),
         ]  # 0 mm medido ≠ sem dado; dia incompleto mostra a cobertura
-        assert gold.verificar(c) == {
-            "gold.chuva_diaria": 0,
-            "gold.chuva_mensal": 0,
-            "gold.referencia_mensal": 0,
-        }
+        assert gold.verificar(c) == {t: 0 for t in gold.VERIFICADAS}
 
 
 def test_previsao_e_mare_guardam_emissao_e_horizonte(base):

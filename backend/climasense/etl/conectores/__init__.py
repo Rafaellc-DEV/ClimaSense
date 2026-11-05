@@ -1,5 +1,12 @@
 """Registro de conectores: um por fonte real."""
 
+from climasense.etl.conectores.abrigos import ConectorRecifeAbrigos
+from climasense.etl.conectores.alagamento import ConectorRecifeAlagamento
+from climasense.etl.conectores.alertas import ConectorAlertasOficiais
+from climasense.etl.conectores.apac import ConectorApacChuva
+from climasense.etl.conectores.arboviroses import ConectorRecifeArboviroses
+from climasense.etl.conectores.infodengue import ConectorInfoDengue
+from climasense.etl.conectores.leptospirose import ConectorSinanLeptospirose
 from climasense.etl.conectores.open_meteo import (
     ConectorOpenMeteoHistorico,
     ConectorOpenMeteoMare,
@@ -7,27 +14,41 @@ from climasense.etl.conectores.open_meteo import (
 )
 from climasense.etl.conectores.planejados import (
     ConectorAnaTelemetria,
-    ConectorApacChuva,
     ConectorCemaden,
     ConectorInmet,
     ConectorMareMarinha,
-    ConectorRecifeAlagamento,
 )
-from climasense.etl.conectores.vacinacao import ConectorVacinacao
 
 CONECTORES = {
     c.id: c
     for c in (
-        ConectorVacinacao,
         ConectorOpenMeteoHistorico,
         ConectorOpenMeteoPrevisao,
         ConectorOpenMeteoMare,
-        ConectorAnaTelemetria,
         ConectorApacChuva,
+        ConectorAlertasOficiais,
+        ConectorRecifeAlagamento,
+        ConectorRecifeAbrigos,
+        ConectorInfoDengue,
+        ConectorSinanLeptospirose,
+        ConectorRecifeArboviroses,
+        ConectorAnaTelemetria,
         ConectorInmet,
         ConectorCemaden,
-        ConectorRecifeAlagamento,
         ConectorMareMarinha,
     )
 }
-IMPLEMENTADOS = {"vacinacao", "open-meteo-historico", "open-meteo-previsao", "open-meteo-mare"}
+IMPLEMENTADOS = {
+    "open-meteo-historico",
+    "open-meteo-previsao",
+    "open-meteo-mare",
+    "apac-chuva",
+    "alertas-oficiais",
+    "recife-alagamento",
+    "recife-abrigos",
+    "infodengue",
+    "sinan-leptospirose",
+    "recife-arboviroses",
+}
+# Modos aceitos por `etl run <fonte> --modo`
+MODOS = {"apac-chuva": ("tempo-real", "historico"), "recife-abrigos": ("cadastro", "ativos")}

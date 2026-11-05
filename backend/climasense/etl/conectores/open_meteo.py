@@ -14,6 +14,7 @@ from datetime import UTC, date, datetime, timedelta
 
 import pandas as pd
 import requests
+from sqlalchemy import text
 
 from climasense.etl import gold
 from climasense.etl.conectores.base import Conector, ExecucaoCtx, FonteInfo
@@ -105,7 +106,30 @@ class _OpenMeteo(Conector):
             "coletado_em",
             "qualidade",
         ]
+        if self.fonte.tipo != "prevista":
+            df = self._sem_repetidas(df, ctx)
+        if df.empty:
+            return 0
         return self.load.salvar_silver(df, ctx.engine, "observacoes", "silver", ctx.execucao_id, colunas)
+
+    def _sem_repetidas(self, df: pd.DataFrame, ctx: ExecucaoCtx) -> pd.DataFrame:
+        """Observada/derivada não muda entre cargas: só entra na silver o que ainda não está lá com o mesmo
+        valor (a janela de uma atualização se sobrepõe à anterior). A bronze continua guardando tudo."""
+        with ctx.engine.connect() as c:
+            existentes = pd.read_sql(
+                text(
+                    "select territorio_id, observado_em, valor from silver.observacoes "
+                    "where fonte_id = :f and observado_em between :a and :b"
+                ),
+                c,
+                params={"f": self.id, "a": df["observado_em"].min(), "b": df["observado_em"].max()},
+            )
+        if existentes.empty:
+            return df
+        chave = ["territorio_id", "observado_em", "valor"]
+        existentes["observado_em"] = pd.to_datetime(existentes["observado_em"], utc=True)
+        marcado = df.merge(existentes.drop_duplicates().assign(_ja=True), on=chave, how="left")
+        return df[marcado["_ja"].isna().to_numpy()]
 
 
 class ConectorOpenMeteoHistorico(_OpenMeteo):
@@ -143,7 +167,9 @@ class ConectorOpenMeteoPrevisao(_OpenMeteo):
     )
     url = "https://api.open-meteo.com/v1/forecast"
     variavel_api, variavel, unidade = "precipitation", "chuva_mm", "mm"
-    parametros_extra = {"forecast_days": 3}
+    # past_days: as horas já passadas do modelo cobrem os ~7 dias em que a ERA5 ainda não chegou (fallback da
+    # chuva recente, depois da APAC observada). Cada emissão é acumulativa na silver (nada é sobrescrito).
+    parametros_extra = {"forecast_days": 3, "past_days": 7}
 
 
 class ConectorOpenMeteoMare(_OpenMeteo):

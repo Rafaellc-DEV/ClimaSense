@@ -32,7 +32,6 @@ class Configuracao(BaseSettings):
 
     mongo_uri: SecretStr | None = None
     mongo_db_territorio: str = "Recife"
-    mongo_db_bronze_vacinacao: str = "vacinacao"
 
     database_url: SecretStr | None = Field(
         default=None, validation_alias=AliasChoices("DATABASE_URL", "NEON_URL")
@@ -45,7 +44,6 @@ class Configuracao(BaseSettings):
     admin_email: str | None = None
     admin_senha_inicial: SecretStr | None = None
 
-    etl_limite_vacinacao: int = Field(default=5000, ge=1)
     supressao_minima: int = Field(default=5, ge=1)
     map_tiles_url: str = "https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}"
 

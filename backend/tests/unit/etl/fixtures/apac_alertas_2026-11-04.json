@@ -1,0 +1,339 @@
+[
+ {
+  "id": 119,
+  "tipo": "UMIDADE",
+  "nivel_aviso": "VERMELHO",
+  "numero_aviso_meteorologico": "91/2026",
+  "data_validade_aviso": "2026-11-09 12:00:00",
+  "texto_aviso": "A previsão do tempo da APAC indica temperatura acima de 39ºC e umidade abaixo de 12% nas seguintes regiões:",
+  "url_aviso": "http://dados.apac.pe.gov.br:41120/sirh-portal/tela-portal/testeAlerta.html?aviso=91-2026",
+  "data_envio": "2026-11-04 09:54:53",
+  "renovacao": false,
+  "regioes_afetadas": [
+   {
+    "tipo": "MESOREGIAO",
+    "id": 2,
+    "nome": "São Francisco Pernambucano"
+   },
+   {
+    "tipo": "MESOREGIAO",
+    "id": 4,
+    "nome": "Sertão Pernambucano"
+   }
+  ]
+ },
+ {
+  "id": 118,
+  "tipo": "UMIDADE",
+  "nivel_aviso": "LARANJA",
+  "numero_aviso_meteorologico": "90/2026",
+  "data_validade_aviso": "2026-11-04 09:05:16",
+  "texto_aviso": "A previsão do tempo da APAC indica temperatura acima de 37ºC e umidade entre 12% a 20% nas seguintes regiões:",
+  "url_aviso": "http://dados.apac.pe.gov.br:41120/sirh-portal/tela-portal/testeAlerta.html?aviso=90-2026",
+  "data_envio": "2026-10-31 09:05:16",
+  "renovacao": false,
+  "regioes_afetadas": [
+   {
+    "tipo": "MESOREGIAO",
+    "id": 1,
+    "nome": "Agreste Pernambucano"
+   },
+   {
+    "tipo": "MESOREGIAO",
+    "id": 2,
+    "nome": "São Francisco Pernambucano"
+   },
+   {
+    "tipo": "MESOREGIAO",
+    "id": 4,
+    "nome": "Sertão Pernambucano"
+   }
+  ]
+ },
+ {
+  "id": 117,
+  "tipo": "CHUVA",
+  "nivel_aviso": "AMARELO",
+  "numero_aviso_meteorologico": "89/2026",
+  "data_validade_aviso": "2026-10-28 06:00:00",
+  "texto_aviso": "Áreas de instabilidade devido ao calor e à umidade, proveniente de uma frente fria na Bahia, devem ocasionar pancadas de chuvas isoladas de intensidade moderada no Sertão do São Francisco, acompanhadas de rajadas de vento e trovoadas.",
+  "url_aviso": "http://dados.apac.pe.gov.br:41120/sirh-portal/tela-portal/testeAlerta.html?aviso=89-2026",
+  "data_envio": "2026-10-27 16:30:30",
+  "renovacao": false,
+  "regioes_afetadas": [
+   {
+    "tipo": "MESOREGIAO",
+    "id": 2,
+    "nome": "São Francisco Pernambucano"
+   }
+  ]
+ },
+ {
+  "id": 116,
+  "tipo": "UMIDADE",
+  "nivel_aviso": "VERMELHO",
+  "numero_aviso_meteorologico": "88/2026",
+  "data_validade_aviso": "2026-10-28 12:35:31",
+  "texto_aviso": "Devido aos altos valores de temperatura previstos para o Sertão (40°C) e para o Agreste (38°C), a umidade relativa do ar deve atingir valores abaixo de  20% no Agreste e abaixo de 15% no Sertão, em muitas localidades, no período de 24/10/26 a 28/10/26, nas seguintes regiões:",
+  "url_aviso": "http://dados.apac.pe.gov.br:41120/sirh-portal/tela-portal/testeAlerta.html?aviso=88-2026",
+  "data_envio": "2026-10-24 12:35:31",
+  "renovacao": false,
+  "regioes_afetadas": [
+   {
+    "tipo": "MESOREGIAO",
+    "id": 1,
+    "nome": "Agreste Pernambucano"
+   },
+   {
+    "tipo": "MESOREGIAO",
+    "id": 2,
+    "nome": "São Francisco Pernambucano"
+   },
+   {
+    "tipo": "MESOREGIAO",
+    "id": 4,
+    "nome": "Sertão Pernambucano"
+   }
+  ]
+ },
+ {
+  "id": 113,
+  "tipo": "CHUVA",
+  "nivel_aviso": "AMARELO",
+  "numero_aviso_meteorologico": "87/2026",
+  "data_validade_aviso": "2026-10-19 17:00:00",
+  "texto_aviso": "Áreas de instabilidades, geradas pelo calor e a umidade proveniente da Zona de Convergência do Atlântico Sul (ZCAS), estão causando aumento da nebulosidade no oeste de Pernambuco e podem ocasionar pancadas de chuvas com trovoadas e rajadas de ventos",
+  "url_aviso": "http://dados.apac.pe.gov.br:41120/sirh-portal/tela-portal/testeAlerta.html?aviso=87-2026",
+  "data_envio": "2026-10-18 17:00:00",
+  "renovacao": false,
+  "regioes_afetadas": [
+   {
+    "tipo": "MESOREGIAO",
+    "id": 2,
+    "nome": "São Francisco Pernambucano"
+   }
+  ]
+ },
+ {
+  "id": 112,
+  "tipo": "UMIDADE",
+  "nivel_aviso": "LARANJA",
+  "numero_aviso_meteorologico": "86/2026",
+  "data_validade_aviso": "2026-10-16 10:42:43",
+  "texto_aviso": "Devido aos altos valores de temperatura previstos para o Sertão (37°C a 39°C) e para o Agreste (35°C a 37°C), a umidade relativa do ar deve atingir valores entre 12% e 20%, no período de 13/10/26 a 16/10/26,  nas seguintes regiões:",
+  "url_aviso": "http://dados.apac.pe.gov.br:41120/sirh-portal/tela-portal/testeAlerta.html?aviso=86-2026",
+  "data_envio": "2026-10-13 10:42:43",
+  "renovacao": false,
+  "regioes_afetadas": [
+   {
+    "tipo": "MESOREGIAO",
+    "id": 1,
+    "nome": "Agreste Pernambucano"
+   },
+   {
+    "tipo": "MESOREGIAO",
+    "id": 2,
+    "nome": "São Francisco Pernambucano"
+   },
+   {
+    "tipo": "MESOREGIAO",
+    "id": 4,
+    "nome": "Sertão Pernambucano"
+   }
+  ]
+ },
+ {
+  "id": 107,
+  "tipo": "UMIDADE",
+  "nivel_aviso": "LARANJA",
+  "numero_aviso_meteorologico": "85/2026",
+  "data_validade_aviso": "2026-10-14 12:00:00",
+  "texto_aviso": "A tendência de temperatura e umidade, previstas pela APAC, indica valores de umidade relativa do ar entre 15% e 20%, no período de 07/10 a 14/10, nas seguintes regiões:",
+  "url_aviso": "http://dados.apac.pe.gov.br:41120/sirh-portal/tela-portal/testeAlerta.html?aviso=85-2026",
+  "data_envio": "2026-10-07 09:14:57",
+  "renovacao": false,
+  "regioes_afetadas": [
+   {
+    "tipo": "MESOREGIAO",
+    "id": 2,
+    "nome": "São Francisco Pernambucano"
+   },
+   {
+    "tipo": "MESOREGIAO",
+    "id": 4,
+    "nome": "Sertão Pernambucano"
+   }
+  ]
+ },
+ {
+  "id": 106,
+  "tipo": "UMIDADE",
+  "nivel_aviso": "LARANJA",
+  "numero_aviso_meteorologico": "84/2026",
+  "data_validade_aviso": "2026-10-06 17:00:00",
+  "texto_aviso": "A previsão do tempo da APAC indica valores de umidade relativa do ar entre 15% e 20%, no período de 03/10 a 06/10, nas seguintes regiões:",
+  "url_aviso": "http://dados.apac.pe.gov.br:41120/sirh-portal/tela-portal/testeAlerta.html?aviso=84-2026",
+  "data_envio": "2026-10-03 11:23:14",
+  "renovacao": false,
+  "regioes_afetadas": [
+   {
+    "tipo": "MESOREGIAO",
+    "id": 2,
+    "nome": "São Francisco Pernambucano"
+   },
+   {
+    "tipo": "MESOREGIAO",
+    "id": 4,
+    "nome": "Sertão Pernambucano"
+   }
+  ]
+ },
+ {
+  "id": 92,
+  "tipo": "UMIDADE",
+  "nivel_aviso": "AMARELO",
+  "numero_aviso_meteorologico": "83/2026",
+  "data_validade_aviso": "2026-09-26 23:59:00",
+  "texto_aviso": "A previsão da APAC indica valores de umidade relativa do ar abaixo de 25%, entre os dias 24/09 e 26/09, nas seguintes regiões:",
+  "url_aviso": "http://dados.apac.pe.gov.br:41120/sirh-portal/tela-portal/testeAlerta.html?aviso=83-2026",
+  "data_envio": "2026-09-24 12:00:00",
+  "renovacao": false,
+  "regioes_afetadas": [
+   {
+    "tipo": "MESOREGIAO",
+    "id": 2,
+    "nome": "São Francisco Pernambucano"
+   },
+   {
+    "tipo": "MESOREGIAO",
+    "id": 4,
+    "nome": "Sertão Pernambucano"
+   }
+  ]
+ },
+ {
+  "id": 91,
+  "tipo": "UMIDADE",
+  "nivel_aviso": "AMARELO",
+  "numero_aviso_meteorologico": "82/2026",
+  "data_validade_aviso": "2026-09-23 23:59:59",
+  "texto_aviso": "A previsão da APAC indica valores de umidade relativa do ar abaixo de 25%, entre os dias 22/09 e 23/09, nas seguintes regiões:",
+  "url_aviso": "http://dados.apac.pe.gov.br:41120/sirh-portal/tela-portal/testeAlerta.html?aviso=82-2026",
+  "data_envio": "2026-09-21 16:16:17",
+  "renovacao": false,
+  "regioes_afetadas": [
+   {
+    "tipo": "MESOREGIAO",
+    "id": 1,
+    "nome": "Agreste Pernambucano"
+   },
+   {
+    "tipo": "MESOREGIAO",
+    "id": 2,
+    "nome": "São Francisco Pernambucano"
+   },
+   {
+    "tipo": "MESOREGIAO",
+    "id": 4,
+    "nome": "Sertão Pernambucano"
+   }
+  ]
+ },
+ {
+  "id": 81,
+  "tipo": "UMIDADE",
+  "nivel_aviso": "LARANJA",
+  "numero_aviso_meteorologico": "81/2026",
+  "data_validade_aviso": "2026-09-17 23:59:59",
+  "texto_aviso": "A previsão da Apac indica que a umidade relativa do ar pode atingir valores abaixo de 20%, a partir de hoje, segunda-feira (14/09) se estendendo até a quinta-feira (17/09), nas seguintes regiões:",
+  "url_aviso": "http://dados.apac.pe.gov.br:41120/sirh-portal/tela-portal/testeAlerta.html?aviso=81-2026",
+  "data_envio": "2026-09-14 15:30:00",
+  "renovacao": false,
+  "regioes_afetadas": [
+   {
+    "tipo": "MESOREGIAO",
+    "id": 2,
+    "nome": "São Francisco Pernambucano"
+   },
+   {
+    "tipo": "MESOREGIAO",
+    "id": 4,
+    "nome": "Sertão Pernambucano"
+   }
+  ]
+ },
+ {
+  "id": 80,
+  "tipo": "UMIDADE",
+  "nivel_aviso": "LARANJA",
+  "numero_aviso_meteorologico": "80/2026",
+  "data_validade_aviso": "2026-09-13 23:59:59",
+  "texto_aviso": "A previsão da Apac indica que a umidade relativa do ar deve atingir valores abaixo de 20%, a partir de hoje, sexta-feira (11/09) se estendendo até domingo (13/09)",
+  "url_aviso": "http://dados.apac.pe.gov.br:41120/sirh-portal/tela-portal/testeAlerta.html?aviso=80-2026",
+  "data_envio": "2026-09-10 16:00:00",
+  "renovacao": false,
+  "regioes_afetadas": [
+   {
+    "tipo": "MESOREGIAO",
+    "id": 2,
+    "nome": "São Francisco Pernambucano"
+   },
+   {
+    "tipo": "MESOREGIAO",
+    "id": 4,
+    "nome": "Sertão Pernambucano"
+   }
+  ]
+ },
+ {
+  "id": 28,
+  "tipo": "CHUVA",
+  "nivel_aviso": "LARANJA",
+  "numero_aviso_meteorologico": "28/2026",
+  "data_validade_aviso": "2026-08-28 11:25:11",
+  "texto_aviso": "A previsão do tempo da Apac indica pancadas de chuva com intensidade moderada a forte ao longo do dia 27 e 28/08/2026, nas seguintes regiões:",
+  "url_aviso": "http://dados.apac.pe.gov.br:41120/sirh-portal/tela-portal/testeAlerta.html?aviso=28-2026",
+  "data_envio": "2026-08-27 11:25:11",
+  "renovacao": false,
+  "regioes_afetadas": [
+   {
+    "tipo": "MESOREGIAO",
+    "id": 6,
+    "nome": "Mata Norte"
+   },
+   {
+    "tipo": "MESOREGIAO",
+    "id": 7,
+    "nome": "Mata Sul"
+   },
+   {
+    "tipo": "MESOREGIAO",
+    "id": 3,
+    "nome": "Metropolitana de Recife"
+   }
+  ]
+ },
+ {
+  "id": 26,
+  "tipo": "CHUVA",
+  "nivel_aviso": "LARANJA",
+  "numero_aviso_meteorologico": "26/2026",
+  "data_validade_aviso": "2026-08-13 14:23:24",
+  "texto_aviso": "O movimento subsidente do ar está inibindo a formação de nuvens,  causando aumento da temperatura e diminuição da umidade relativa do ar no Sertão de Pernambuco.",
+  "url_aviso": "http://dados.apac.pe.gov.br:41120/sirh-portal/tela-portal/testeAlerta.html?aviso=26-2026",
+  "data_envio": "2026-08-12 14:23:24",
+  "renovacao": true,
+  "regioes_afetadas": [
+   {
+    "tipo": "MESOREGIAO",
+    "id": 3,
+    "nome": "Metropolitana de Recife"
+   },
+   {
+    "tipo": "MESOREGIAO",
+    "id": 1,
+    "nome": "Agreste Pernambucano"
+   }
+  ]
+ }
+]

@@ -34,6 +34,7 @@ class ExecucaoCtx:
     engine: Engine
     agora: datetime
     limite: int | None = None
+    modo: str | None = None  # ex.: apac-chuva em modo "historico"
 
 
 @dataclass
@@ -42,6 +43,11 @@ class ResultadoExecucao:
     gravados: int = 0
     descartados: int = 0
     motivos: dict[str, int] = field(default_factory=dict)
+
+
+class FonteSemDados(RuntimeError):
+    """A fonte respondeu, mas sem dados utilizáveis (ex.: APAC devolve {"erro": ...} com HTTP 200).
+    A mensagem é da própria fonte (sem segredos) e vai para app.etl_execucoes."""
 
 
 class ConectorPlanejado(NotImplementedError):

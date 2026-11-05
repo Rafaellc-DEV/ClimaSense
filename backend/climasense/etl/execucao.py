@@ -12,7 +12,7 @@ from sqlalchemy import Engine, text
 
 from climasense.config import Configuracao
 from climasense.etl.conectores import CONECTORES
-from climasense.etl.conectores.base import ConectorPlanejado, ExecucaoCtx
+from climasense.etl.conectores.base import ConectorPlanejado, ExecucaoCtx, FonteSemDados
 
 MENSAGENS = {
     "ConnectionError": "A fonte não respondeu. Confira a internet e tente de novo.",
@@ -65,6 +65,7 @@ def executar(
     execucao_id: str,
     limite: int | None = None,
     conector=None,
+    modo: str | None = None,
 ) -> dict:
     conector = conector or CONECTORES[fonte_id]()
     ctx = ExecucaoCtx(
@@ -74,11 +75,12 @@ def executar(
         engine=engine,
         agora=datetime.now(UTC),
         limite=limite,
+        modo=modo,
     )
     try:
         r = conector.executar(ctx)
         status, erro, dados = "sucesso", None, (r.lidos, r.gravados, r.descartados, r.motivos)
-    except ConectorPlanejado as e:
+    except (ConectorPlanejado, FonteSemDados) as e:
         status, erro, dados = "falha", str(e), (0, 0, 0, {})
     except Exception as e:  # noqa: BLE001 — só o tipo e uma mensagem amigável; nunca a string de conexão
         log.warning("Execução %s de %s falhou: %s", execucao_id, fonte_id, type(e).__name__)
