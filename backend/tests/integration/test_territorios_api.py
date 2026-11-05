@@ -47,8 +47,7 @@ def test_indicadores_reais_e_dados_insuficientes(c):
     r = c.get("/api/v1/territorios/indicadores", params={"indicador": "quantidade_bairros"}).json()
     assert [d["valor"] for d in r["dados"]] == [11, 18, 16, 12, 16, 5, 13, 3]
     assert r["meta"]["dados_insuficientes"] is False
-    vac = c.get("/api/v1/territorios/indicadores", params={"indicador": "vacinacao"}).json()
-    assert vac["meta"]["dados_insuficientes"] is True and all(d["valor"] is None for d in vac["dados"])
+    assert c.get("/api/v1/territorios/indicadores", params={"indicador": "vacinacao"}).status_code == 400
     oc = c.get("/api/v1/territorios/indicadores", params={"indicador": "ocorrencias"}).json()
     assert oc["meta"]["dados_insuficientes"] is True and all(d["valor"] is None for d in oc["dados"])
     assert c.get("/api/v1/territorios/indicadores", params={"indicador": "risco"}).status_code == 400

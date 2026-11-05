@@ -13,17 +13,22 @@ from fastapi.middleware.cors import CORSMiddleware
 from climasense import __version__
 from climasense.api.erros import registrar_tratadores
 from climasense.api.routers import (
+    abrigos,
+    acoes,
     admin_sistema,
     admin_usuarios,
     auth,
     avaliacoes,
+    boletim,
     cenarios,
     comunicados,
+    estagios,
     fontes,
     painel,
     publico,
+    risco_alagamento,
     saude,
-    saude_agregada,
+    saude_agravos,
     series,
     territorios,
 )
@@ -42,11 +47,17 @@ ROTEADORES = [
     fontes.router,
     series.router,
     cenarios.router,
-    saude_agregada.router,
     avaliacoes.router,
     comunicados.router,
     painel.router,
     admin_sistema.router,
+    estagios.router,
+    abrigos.router,
+    acoes.router,
+    boletim.router,
+    risco_alagamento.router,
+    saude_agravos.router,
+    saude_agravos.ocorrencias,
 ]
 log = logging.getLogger("climasense.api")
 

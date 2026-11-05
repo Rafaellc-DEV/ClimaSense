@@ -28,7 +28,7 @@ def acao_auditoria(alvo: str, acao: Acao) -> str:
     return f"{alvo}_{participio[:-1] + 'a' if alvo == 'avaliacao' else participio}"
 
 
-TIPOS_EVIDENCIA = {"mapa", "serie", "cenario", "fonte", "vacinacao"}
+TIPOS_EVIDENCIA = {"mapa", "serie", "cenario", "fonte"}
 
 
 def validar_evidencias(db: Session, evidencias: list[dict]) -> list[dict]:

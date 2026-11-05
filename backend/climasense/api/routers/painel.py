@@ -5,16 +5,22 @@ from __future__ import annotations
 import uuid
 from datetime import datetime, timedelta
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from climasense.api.autorizacao import Contexto, exige, relogio
+from climasense.api.envelope import Meta, RecorteMeta, RespostaDados
+from climasense.api.esquemas_decisao import AcoesAgora, SituacaoAgora
 from climasense.api.routers.publico import AvisoPublico, vigentes
 from climasense.dominio.papeis import Permissao, pode
+from climasense.dominio.recorte import granularidade
 from climasense.infra.postgres import obter_sessao
+from climasense.servicos import abrigos as servico_abrigos
+from climasense.servicos import decisao
 from climasense.servicos import fontes as servico_fontes
+from climasense.servicos.territorio import no_maximo_distrito
 
 router = APIRouter(prefix="/painel", tags=["Painel"])
 consultar = exige(Permissao.CONSULTAR)
@@ -49,8 +55,18 @@ class Contadores(BaseModel):
     comunicados: int
 
 
+class TotaisAbrigos(BaseModel):
+    """Primeiras métricas no pico do evento (F3): só o que a equipe registrou; null = ninguém informou."""
+
+    abrigos_abertos: int
+    pessoas_abrigadas: int | None
+    desabrigados: int | None
+    atualizado_em: datetime | None
+
+
 class ResumoPainel(BaseModel):
     avisos: list[AvisoPublico]
+    abrigos: TotaisAbrigos
     pode_revisar: bool
     aguardando_revisao: list[ItemRevisao]
     territorios_em_atencao: list[TerritorioAtencao]
@@ -134,6 +150,7 @@ def resumo(
     aguardando = _aguardando(db, ctx.usuario.id) if revisa else []
     return ResumoPainel(
         avisos=avisos,
+        abrigos=TotaisAbrigos(**servico_abrigos.totais_recife(db)),
         pode_revisar=revisa,
         aguardando_revisao=aguardando,
         territorios_em_atencao=_em_atencao(db, avisos, agora),
@@ -145,4 +162,70 @@ def resumo(
             avaliacoes=sum(1 for i in aguardando if i.tipo == "avaliacao"),
             comunicados=sum(1 for i in aguardando if i.tipo == "comunicado"),
         ),
+    )
+
+
+@router.get(
+    "/situacao",
+    response_model=RespostaDados[SituacaoAgora],
+    summary="Situação agora: chuva recente, pico previsto, maré, risco e frescor",
+)
+def situacao_agora(
+    territorio_id: str = Query(default="recife", description="recife, ds-1 a ds-8 (bairro vira o distrito)"),
+    _: Contexto = Depends(consultar),
+    db: Session = Depends(obter_sessao),
+    agora: datetime = Depends(relogio),
+) -> RespostaDados[SituacaoAgora]:
+    t = no_maximo_distrito(db, territorio_id)
+    d = decisao.situacao(db, t.usado, agora)
+    dados = SituacaoAgora(territorio_id=t.usado, territorio_nome=t.nome, gerado_em=agora, **d)
+    sem = [
+        n
+        for n, ok in (
+            ("a chuva das últimas 24 h", d["chuva_24h"]["status"] == "ok"),
+            ("a chuva das últimas 72 h", d["chuva_72h"]["status"] == "ok"),
+            ("a previsão de chuva", d["pico"]["status"] == "ok"),
+            ("a previsão de maré", d["mare"]["status"] == "ok"),
+        )
+        if not ok
+    ]
+    avisos = [*t.avisos, "Experimental: o risco é uma indicação para avaliar, não uma chance de alagar."]
+    if sem:
+        avisos.append("Sem dado suficiente para: " + ", ".join(sem) + ".")
+    ids = ("open-meteo-historico", "open-meteo-previsao", "open-meteo-mare")
+    return RespostaDados(
+        dados=dados,
+        meta=Meta(
+            fontes=[servico_fontes.meta(db, f, agora) for f in ids],
+            recorte=RecorteMeta(territorio_id=t.usado, granularidade=granularidade(t.usado)),
+            avisos=avisos,
+            dados_insuficientes=d["risco"]["prioridade"] == "dados_insuficientes"
+            and d["pico"]["status"] != "ok"
+            and d["chuva_72h"]["status"] != "ok",
+        ),
+    )
+
+
+@router.get(
+    "/acoes",
+    response_model=AcoesAgora,
+    summary="O que fazer agora: fila curta por urgência (revisões, publicações, avisos, fontes, territórios)",
+)
+def acoes_agora(
+    ctx: Contexto = Depends(consultar),
+    db: Session = Depends(obter_sessao),
+    agora: datetime = Depends(relogio),
+) -> AcoesAgora:
+    avisos = vigentes(db, agora)
+    revisa = pode(ctx.usuario.papeis, Permissao.REVISAR)
+    publica = pode(ctx.usuario.papeis, Permissao.PUBLICAR)
+    itens = decisao.acoes(
+        db, ctx.usuario, revisa, publica, agora, avisos, _aguardando(db, ctx.usuario.id) if revisa else []
+    )
+    return AcoesAgora(
+        gerado_em=agora,
+        itens=itens,
+        nota=None
+        if itens
+        else "Nada pendente agora. A lista considera revisões, publicações, avisos, fontes e territórios.",
     )

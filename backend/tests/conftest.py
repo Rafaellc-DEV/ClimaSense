@@ -91,3 +91,12 @@ def sessao(engine_teste):
         s.close()
         transacao.rollback()
         conexao.close()
+
+
+@pytest.fixture(autouse=True)
+def _sem_cache_de_insumos(monkeypatch):
+    """O cache de 60 s dos insumos de estágio faria um teste enxergar o dado do anterior: desligado por padrão."""
+    from climasense.servicos import estagios
+
+    estagios.limpar_cache_insumos()
+    monkeypatch.setattr(estagios, "CACHE_INSUMOS_S", 0.0)

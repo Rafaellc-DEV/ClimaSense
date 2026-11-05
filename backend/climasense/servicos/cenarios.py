@@ -94,8 +94,8 @@ def ocorrencias(db: Session, territorio_id: str) -> int | None:
         return None
     return db.execute(
         text(
-            "select count(*) from silver.ocorrencias where territorio_id = :t or territorio_id in "
-            "(select id from app.territorios where pai_id = :t)"
+            "select count(*) from silver.ocorrencias where tipo = 'alagamento' and (territorio_id = :t "
+            "or territorio_id in (select id from app.territorios where pai_id = :t))"
         ),
         {"t": territorio_id},
     ).scalar()
@@ -119,7 +119,10 @@ def emitir(
     horizonte_h: int,
     agora: datetime,
     estimador: EstimadorAlagamento | None = None,
+    registrar: bool = True,
 ) -> dict:
+    """`registrar=False` calcula sem gravar em silver.previsoes_emitidas (usado por rankings e painéis, que
+    consultam vários territórios de uma vez; só o cenário exibido ao usuário vira registro, RF-09.8)."""
     estimador = estimador or EstimadorReferencia()
     inicio_hora = agora.replace(minute=0, second=0, microsecond=0)
     por_emissao = previsao_por_emissao(db, territorio_id, inicio_hora)
@@ -149,6 +152,9 @@ def emitir(
         "dias_historico": len(historico),
         "estimativa": est,
     }
+    if not registrar:
+        resultado["registro_id"] = None
+        return resultado
     saida = {
         "prioridade": est.prioridade,
         "qualidade": est.qualidade,

@@ -95,7 +95,10 @@ def test_jornada_rascunho_revisao_publicacao_e_expiracao(equipe):
     estado = publico.get(f"{API}/publico/estado").json()
     assert estado["avisos_ativos"] == 1 and estado["distritos_afetados"] == ["ds-5"]
     assert estado["niveis_por_distrito"] == {"ds-5": "alerta"}
-    assert {f["id"] for f in publico.get(f"{API}/publico/fontes").json()} >= {"vacinacao", "ana-telemetria"}
+    assert {f["id"] for f in publico.get(f"{API}/publico/fontes").json()} >= {
+        "open-meteo-previsao",
+        "ana-telemetria",
+    }
     assert publico.get(f"{API}/publico/avisos", params={"bairro": "afogados"}).json()[0]["id"] == cid
     assert publico.get(f"{API}/publico/avisos", params={"bairro": "boa viagem"}).json() == []
 

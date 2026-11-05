@@ -5,7 +5,7 @@ from __future__ import annotations
 import uuid
 from datetime import date, datetime
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
@@ -25,7 +25,7 @@ publicar = exige(Permissao.PUBLICAR)
 
 
 class Evidencia(BaseModel):
-    tipo: str = Field(description="mapa | serie | cenario | fonte | vacinacao")
+    tipo: str = Field(description="mapa | serie | cenario | fonte")
     descricao: str = Field(max_length=300)
     fonte_id: str
     capturada_em: datetime
@@ -156,6 +156,8 @@ def listar(
     territorio_id: str | None = None,
     inicio: date | None = None,
     fim: date | None = None,
+    pagina: int | None = Query(default=None, ge=1, description="Opcional: sem ela, devolve tudo"),
+    por_pagina: int = Query(default=20, ge=1, le=200),
     _: Contexto = Depends(consultar),
     db: Session = Depends(obter_sessao),
 ) -> ListaAvaliacoes:
@@ -164,7 +166,10 @@ def listar(
     contagens: dict[str, int] = {}
     for a in todas:
         contagens[a["estado"]] = contagens.get(a["estado"], 0) + 1
-    itens = [ResumoAvaliacao(**a) for a in todas if estado is None or a["estado"] == estado]
+    filtradas = [a for a in todas if estado is None or a["estado"] == estado]
+    if pagina is not None:
+        filtradas = filtradas[(pagina - 1) * por_pagina : pagina * por_pagina]
+    itens = [ResumoAvaliacao(**a) for a in filtradas]
     return ListaAvaliacoes(itens=itens, contagens=contagens, total=len(todas))
 
 

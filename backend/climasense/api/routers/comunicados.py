@@ -6,7 +6,7 @@ from __future__ import annotations
 import uuid
 from datetime import datetime
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
@@ -156,6 +156,8 @@ def _detalhe(db: Session, comunicado_id: uuid.UUID, ctx: Contexto, agora: dateti
 def listar(
     estado: str | None = None,
     territorio_id: str | None = None,
+    pagina: int | None = Query(default=None, ge=1, description="Opcional: sem ela, devolve tudo"),
+    por_pagina: int = Query(default=20, ge=1, le=200),
     _: Contexto = Depends(consultar),
     db: Session = Depends(obter_sessao),
 ) -> ListaComunicados:
@@ -163,8 +165,11 @@ def listar(
     contagens: dict[str, int] = {}
     for c in todos:
         contagens[c["estado"]] = contagens.get(c["estado"], 0) + 1
+    filtrados = [c for c in todos if estado is None or c["estado"] == estado]
+    if pagina is not None:
+        filtrados = filtrados[(pagina - 1) * por_pagina : pagina * por_pagina]
     return ListaComunicados(
-        itens=[ResumoComunicado(**c) for c in todos if estado is None or c["estado"] == estado],
+        itens=[ResumoComunicado(**c) for c in filtrados],
         contagens=contagens,
         total=len(todos),
     )

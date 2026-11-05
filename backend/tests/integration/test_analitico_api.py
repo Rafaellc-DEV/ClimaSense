@@ -1,4 +1,4 @@
-"""T6.2–T6.5: séries com lacunas, referência, sazonalidade, estatística, cenários e vacinação agregada."""
+"""T6.2–T6.5: séries com lacunas, referência, sazonalidade, estatística, cenários."""
 
 from __future__ import annotations
 
@@ -120,18 +120,3 @@ def test_cenario_sem_mare_e_insuficiente_e_fica_registrado(c, sessao):
         text("select count(*) from silver.previsoes_emitidas where territorio_id = 'ds-3'")
     ).scalar()
     assert n == 1  # cada chamada fica registrada (RF-09.8)
-
-
-def test_vacinacao_agregada_com_amostra_e_supressao(c, sessao):
-    ex = _execucao(sessao, "vacinacao")
-    sessao.execute(
-        text(
-            "insert into gold.vacinacao_distrito_mes values (4, '2021-03-01', 120, 120, 1400000, false, :e), "
-            "(4, '2021-04-01', null, 3, 1400000, true, :e)"
-        ),
-        {"e": ex},
-    )
-    r = c.get(f"{API}/saude/vacinacao", params={"territorio_id": "ds-4"}).json()
-    assert r["meta"]["amostra"] == {"n": 123, "total_fonte": 1400000}
-    assert [x["doses"] for x in r["dados"]] == [120, None] and r["dados"][1]["suprimido"] is True
-    assert any("Amostra de 123 registros" in a for a in r["meta"]["avisos"])

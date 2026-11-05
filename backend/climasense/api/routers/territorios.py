@@ -4,7 +4,9 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 from datetime import date, datetime
+from typing import Literal
 
 from fastapi import APIRouter, Depends, Query, Request, Response
 from pydantic import BaseModel
@@ -13,13 +15,15 @@ from sqlalchemy.orm import Session
 
 from climasense.api.autorizacao import Contexto, exige, relogio
 from climasense.api.deps import configuracao, mongo
-from climasense.api.envelope import Amostra, FonteMeta, Meta, RecorteMeta, RespostaDados
+from climasense.api.envelope import FonteMeta, Meta, RecorteMeta, RespostaDados
 from climasense.api.erros import ErroClimaSense
+from climasense.api.esquemas_decisao import Prioridades
+from climasense.api.routers.publico import vigentes
 from climasense.config import Configuracao
 from climasense.dominio.papeis import Permissao
 from climasense.dominio.territorio import normalizar_busca
 from climasense.infra.postgres import obter_sessao
-from climasense.servicos import cenarios
+from climasense.servicos import cenarios, decisao
 from climasense.servicos import fontes as servico_fontes
 from climasense.territorio import carga, mapa_portatil
 
@@ -33,7 +37,7 @@ FONTE_TERRITORIO = FonteMeta(
     tipo="observada",
     status="atualizada",
 )
-INDICADORES = {"quantidade_bairros", "area_km2", "vacinacao", "ocorrencias", "prioridade"}
+INDICADORES = {"quantidade_bairros", "area_km2", "ocorrencias", "prioridade"}
 
 
 class Territorio(BaseModel):
@@ -101,9 +105,7 @@ def hidrografia(
     summary="Valor por distrito para colorir o mapa",
 )
 def indicadores(
-    indicador: str = Query(
-        ..., description="quantidade_bairros | area_km2 | vacinacao | ocorrencias | prioridade"
-    ),
+    indicador: str = Query(..., description="quantidade_bairros | area_km2 | ocorrencias | prioridade"),
     inicio: date | None = None,
     fim: date | None = None,
     _: Contexto = Depends(consultar),
@@ -126,45 +128,6 @@ def indicadores(
             for f in geo["features"]
         ]
         return RespostaDados(dados=dados, meta=Meta(fontes=[FONTE_TERRITORIO], recorte=recorte))
-    if indicador == "vacinacao":
-        linhas = (
-            db.execute(
-                text(
-                    "select distrito_codigo, case when bool_or(suprimido) then null else sum(doses) end as doses, "
-                    "sum(amostra_n) as n, max(total_fonte) as total from gold.vacinacao_distrito_mes "
-                    "where (cast(:i as date) is null or mes >= :i) and (cast(:f as date) is null or mes <= :f) "
-                    "group by distrito_codigo"
-                ),
-                {"i": inicio, "f": fim},
-            )
-            .mappings()
-            .all()
-        )
-        por_ds = {r["distrito_codigo"]: r for r in linhas}
-        dados = [
-            ValorDistrito(territorio_id=f"ds-{c}", valor=por_ds[c]["doses"] if c in por_ds else None)
-            for c in range(1, 9)
-        ]
-        n = sum(r["n"] for r in linhas)
-        total = max((r["total"] or 0 for r in linhas), default=0) or None
-        fonte = FonteMeta(
-            id="vacinacao",
-            nome="Dados Abertos do Recife, vacinação COVID-19",
-            tipo="observada",
-            status="atualizada" if linhas else "planejada",
-        )
-        return RespostaDados(
-            dados=dados,
-            meta=Meta(
-                fontes=[fonte],
-                recorte=recorte,
-                dados_insuficientes=not linhas,
-                amostra=Amostra(n=n, total_fonte=total) if linhas else None,
-                avisos=["Amostra parcial da base: não representa o total de vacinados."]
-                if linhas and total and n < total
-                else [],
-            ),
-        )
     if indicador == "prioridade":
         # cenário experimental de 72 h por distrito: 0 sem indicação, 1 atenção, 2 alerta, 3 crítico
         escala = {"sem_indicacao": 0, "atencao": 1, "alerta": 2, "critico": 3}
@@ -196,6 +159,69 @@ def indicadores(
             recorte=recorte,
             dados_insuficientes=True,
             avisos=["Fonte ainda não integrada. Nenhum valor é exibido no lugar."],
+        ),
+    )
+
+
+@router.get(
+    "/prioridades",
+    response_model=RespostaDados[Prioridades],
+    summary="Quais territórios pedem atenção primeiro, por quê e com que confiança",
+)
+def prioridades(
+    nivel: Literal["distrito", "bairro"] = Query(
+        default="distrito", description="distrito (padrão) ou bairro"
+    ),
+    horizonte_h: int = Query(default=72, description="24, 48 ou 72 horas"),
+    distrito_id: str | None = Query(default=None, description="Restringe a um distrito (ds-1 a ds-8)"),
+    limite: int = Query(default=20, ge=1, le=100, description="Máximo de itens (bairros)"),
+    _: Contexto = Depends(consultar),
+    db: Session = Depends(obter_sessao),
+    agora: datetime = Depends(relogio),
+) -> RespostaDados[Prioridades]:
+    if horizonte_h not in (24, 48, 72):
+        raise ErroClimaSense(422, "Escolha um horizonte de 24, 48 ou 72 horas.")
+    if distrito_id is not None and not re.fullmatch(r"ds-[1-8]", distrito_id):
+        raise ErroClimaSense(422, "Distrito inválido. Use ds-1 a ds-8.")
+    avisos_vigentes = vigentes(db, agora)
+    itens = decisao.prioridades(db, nivel, horizonte_h, agora, avisos_vigentes, distrito_id)
+    if nivel == "bairro":
+        itens = itens[:limite]
+    com_indicacao = sum(1 for i in itens if i["nivel"] in ("atencao", "alerta", "critico"))
+    insuficientes = sum(1 for i in itens if i["nivel"] == "dados_insuficientes")
+    if insuficientes == len(itens) and itens:
+        resumo = "Não há dados suficientes para ordenar os territórios. Veja os motivos em cada item."
+    elif com_indicacao == 0:
+        resumo = "Nenhum território com indicação de atenção no horizonte escolhido."
+    else:
+        resumo = f"{com_indicacao} território(s) com indicação de atenção; o primeiro da lista pede avaliação antes."
+    if insuficientes and insuficientes != len(itens):
+        resumo += f" {insuficientes} sem dados suficientes."
+    avisos = [
+        "Experimental: não validado para uso operacional.",
+        "Prioridade é uma indicação para avaliar, não uma chance de alagar.",
+    ]
+    if nivel == "bairro":
+        avisos.append(
+            "A previsão existe só por distrito: os bairros herdam a do distrito e se diferenciam pelo histórico."
+        )
+    return RespostaDados(
+        dados=Prioridades(
+            nivel_territorial=nivel,
+            horizonte_h=horizonte_h,
+            gerado_em=agora,
+            total=len(itens),
+            resumo=resumo,
+            itens=itens,
+        ),
+        meta=Meta(
+            fontes=[
+                servico_fontes.meta(db, f, agora)
+                for f in ("open-meteo-previsao", "open-meteo-mare", "open-meteo-historico")
+            ],
+            recorte=RecorteMeta(territorio_id=distrito_id or "recife", granularidade=nivel),
+            avisos=avisos,
+            dados_insuficientes=bool(itens) and insuficientes == len(itens),
         ),
     )
 

@@ -121,7 +121,10 @@ def test_envelope_exige_ao_menos_uma_fonte_e_marca_dados_insuficientes():
         meta=Meta(
             fontes=[
                 FonteMeta(
-                    id="vacinacao", nome="Dados Abertos do Recife", tipo="observada", status="atualizada"
+                    id="territorio-oficial",
+                    nome="Dados Abertos do Recife",
+                    tipo="observada",
+                    status="atualizada",
                 )
             ],
             recorte=RecorteMeta(territorio_id="ds-4", granularidade="distrito"),

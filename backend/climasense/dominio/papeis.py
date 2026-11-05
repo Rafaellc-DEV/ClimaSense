@@ -25,13 +25,14 @@ class Permissao(StrEnum):
     PUBLICAR = "publicar"  # publicar e encerrar comunicados aprovados
     ADMINISTRAR = "administrar"  # usuários, papéis, auditoria, fontes
     EXECUTAR_ETL = "executar_etl"
+    PARAMETRIZAR = "parametrizar"  # limiares do estágio operacional (F1)
 
 
 _BASE = {Permissao.CONSULTAR, Permissao.EDITAR}
 PERMISSOES: dict[Papel, frozenset[Permissao]] = {
     Papel.ANALISTA: frozenset(_BASE),
     Papel.REVISOR: frozenset(_BASE | {Permissao.REVISAR}),
-    Papel.COORDENACAO: frozenset(_BASE | {Permissao.REVISAR, Permissao.PUBLICAR}),
+    Papel.COORDENACAO: frozenset(_BASE | {Permissao.REVISAR, Permissao.PUBLICAR, Permissao.PARAMETRIZAR}),
     Papel.ADMINISTRADOR: frozenset(Permissao),
 }
 
