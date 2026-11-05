@@ -1,19 +1,28 @@
 .estado {
   display: flex;
   gap: var(--e-3);
-  align-items: flex-start;
-  padding: var(--e-4);
-  border-radius: var(--r-campo);
-  border: 1px solid var(--cs-linha);
-  border-left: 6px solid var(--cor);
+  align-items: center;
+  padding: var(--e-4) var(--e-5);
+  border-radius: var(--r-painel);
   background: var(--cs-papel);
+  box-shadow: var(--sombra-cartao);
 }
-.estado svg {
+/* o ícone mora num disco no tom do estado; o título diz o estado em palavras */
+.estado > svg {
   flex: none;
+  box-sizing: content-box;
+  width: 22px;
+  height: 22px;
+  padding: 9px;
+  border-radius: 50%;
+  background: var(--cs-nevoa);
   color: var(--cor);
-  margin-top: 2px;
+}
+.acao {
+  margin-left: auto;
 }
 .titulo {
+  font-family: var(--fonte-titulo);
   font-weight: 700;
 }
 .texto {

@@ -1,8 +1,8 @@
 .moldura {
   overflow-x: auto;
-  border: var(--borda);
   border-radius: var(--r-painel);
   background: var(--cs-papel);
+  box-shadow: var(--sombra-cartao);
 }
 .tabela {
   width: 100%;
@@ -11,20 +11,34 @@
 }
 .legenda {
   text-align: left;
-  padding: var(--e-4) var(--e-4) var(--e-2);
+  padding: var(--e-4) var(--e-5) var(--e-2);
+  font-family: var(--fonte-titulo);
   font-weight: 700;
 }
 .tabela th,
 .tabela td {
   text-align: left;
-  padding: var(--e-3) var(--e-4);
+  padding: var(--e-3) var(--e-5);
   border-top: var(--borda);
-  vertical-align: top;
+  vertical-align: middle;
+}
+.compacta th,
+.compacta td {
+  padding: var(--e-2) var(--e-4);
 }
 .tabela thead th {
+  font-family: var(--fonte-titulo);
   font-size: var(--t-apoio);
   color: var(--cs-tinta-2);
+  font-weight: 600;
+  background: var(--cs-mare-suave);
+  border-top: 0;
+  white-space: nowrap;
+}
+.tabela tbody th {
   font-weight: 700;
+}
+.tabela tbody tr:hover {
   background: var(--cs-nevoa);
 }
 .numero {
@@ -35,4 +49,12 @@
 .vazio {
   color: var(--cs-tinta-2);
   font-style: italic;
+}
+.vazioTabela {
+  padding: var(--e-5);
+  border-radius: var(--r-painel);
+  background: var(--cs-papel);
+  box-shadow: var(--sombra-cartao);
+  color: var(--cs-tinta-2);
+  font-weight: 600;
 }

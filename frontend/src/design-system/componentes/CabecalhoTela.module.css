@@ -1,0 +1,71 @@
+.cabecalho {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--e-3) var(--e-4);
+  margin-bottom: var(--e-6);
+}
+/* o texto cresce; a ação primária fica sempre no canto de cima à direita (e embaixo do título no celular) */
+.texto {
+  flex: 1 1 30rem;
+  min-width: 0;
+}
+.titulo {
+  font-family: var(--fonte-titulo);
+  font-size: var(--t-3);
+  line-height: 1.15;
+  font-weight: 800;
+  letter-spacing: -0.015em;
+  color: var(--cs-mare);
+  text-wrap: balance;
+}
+/* uma frase visível, em linguagem simples: o que a tela responde */
+.proposito {
+  margin-top: var(--e-1);
+  max-width: 68ch;
+  font-size: var(--t-corpo);
+  line-height: 1.5;
+  color: var(--cs-tinta-2);
+  text-wrap: pretty;
+}
+.estado {
+  margin-top: var(--e-3);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--e-2);
+}
+/* link de retorno: fino e discreto, como o “voltar” do login */
+.voltar {
+  margin-bottom: var(--e-1);
+  font-family: var(--fonte-titulo);
+  font-size: var(--t-apoio);
+  font-weight: 300;
+}
+.voltar a {
+  color: var(--cs-tinta-2);
+  text-decoration: none;
+}
+.voltar a:hover {
+  color: var(--cs-mare);
+  text-decoration: underline;
+}
+.acoes {
+  /* não encolhe à toa no computador, mas quebra linha no celular em vez de criar rolagem lateral */
+  flex: 0 1 auto;
+  max-width: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--e-3);
+}
+@media (max-width: 640px) {
+  .titulo {
+    font-size: var(--t-4);
+  }
+}
+/* pílulas de estado quebram linha no celular em vez de serem cortadas */
+.cabecalho .estado > * {
+  max-width: 100%;
+  white-space: normal;
+}

@@ -1,0 +1,232 @@
+.lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--e-3);
+}
+.item {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-areas:
+    "pos nome nivel"
+    "pos motivos conf";
+  align-items: center;
+  gap: var(--e-2) var(--e-4);
+  padding: var(--e-4) var(--e-5) var(--e-4) var(--e-5);
+  border-radius: var(--r-painel);
+  background: var(--cs-papel);
+  box-shadow: var(--sombra-cartao);
+  transition: box-shadow var(--mov-rapido);
+}
+/* faixa lateral no tom do nível; o nome do nível está na pílula */
+.item::before {
+  content: "";
+  position: absolute;
+  inset: 12px auto 12px 0;
+  width: 5px;
+  border-radius: 0 4px 4px 0;
+  background: var(--cor-nivel);
+}
+.item:hover,
+.item:focus-within {
+  box-shadow: var(--sombra-cartao-alta);
+}
+.item[data-selecionado="true"] {
+  box-shadow:
+    0 0 0 2px var(--cs-mare),
+    var(--sombra-cartao-alta);
+}
+.item[data-selecionado="true"] .posicao {
+  background: var(--cs-mare);
+  color: var(--cs-sobre-mare);
+}
+.posicao {
+  grid-area: pos;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--cs-mare-suave);
+  color: var(--cs-mare);
+  font-family: var(--fonte-titulo);
+  font-size: var(--t-4);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+.identidade {
+  grid-area: nome;
+  min-width: 0;
+}
+.alvo {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  min-height: var(--alvo-lista);
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  text-align: left;
+  text-decoration: none;
+}
+a.alvo,
+button.alvo {
+  cursor: pointer;
+}
+/* o cartão inteiro é a área de clique */
+a.alvo::after,
+button.alvo::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: var(--r-painel);
+}
+a.alvo:focus-visible,
+button.alvo:focus-visible {
+  outline: none;
+}
+a.alvo:focus-visible::after,
+button.alvo:focus-visible::after {
+  outline: 3px solid var(--cs-foco);
+  outline-offset: 3px;
+}
+.nome {
+  font-family: var(--fonte-titulo);
+  font-size: var(--t-corpo);
+  font-weight: 700;
+  line-height: 1.25;
+  color: var(--cs-tinta);
+}
+.contexto {
+  font-size: var(--t-apoio);
+  color: var(--cs-tinta-2);
+}
+.nivel {
+  grid-area: nivel;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--e-2);
+  justify-self: end;
+}
+.seta {
+  color: var(--cs-tinta-2);
+}
+.motivos {
+  grid-area: motivos;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--e-2);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+}
+/* chip longo quebra linha em vez de vazar do cartão */
+.motivos > li {
+  max-width: 100%;
+}
+.motivos > li > * {
+  white-space: normal;
+  text-align: left;
+}
+.confianca {
+  grid-area: conf;
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--e-2);
+  justify-self: end;
+  font-size: var(--t-apoio);
+  font-weight: 600;
+  color: var(--cs-tinta-2);
+  white-space: nowrap;
+}
+.barras {
+  display: inline-flex;
+  align-items: flex-end;
+  gap: 2px;
+}
+.barras i {
+  display: block;
+  width: 5px;
+  border-radius: 2px;
+  background: var(--cs-linha);
+}
+.barras i:nth-child(1) {
+  height: 8px;
+}
+.barras i:nth-child(2) {
+  height: 12px;
+}
+.barras i:nth-child(3) {
+  height: 16px;
+}
+.barras i[data-cheio="true"] {
+  background: var(--cs-mare);
+}
+/* celular, ou coluna estreita (`compacto`, em Cenários): posição à esquerda e o resto empilhado */
+@media (max-width: 720px) {
+  .item {
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-areas:
+      "pos nome"
+      "pos nivel"
+      "pos motivos"
+      "pos conf";
+    justify-items: start;
+  }
+  .nivel,
+  .confianca {
+    justify-self: start;
+  }
+  .motivos {
+    justify-self: stretch;
+  }
+  .item {
+    padding: var(--e-4) var(--e-4) var(--e-4) var(--e-5);
+    gap: var(--e-2) var(--e-3);
+  }
+  .posicao {
+    width: 32px;
+    height: 32px;
+    font-size: var(--t-corpo);
+  }
+  .seta {
+    display: none;
+  }
+}
+
+.compacto .item {
+  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-areas:
+    "pos nome"
+    "pos nivel"
+    "pos motivos"
+    "pos conf";
+  justify-items: start;
+}
+.compacto .nivel,
+.compacto .confianca {
+  justify-self: start;
+}
+.compacto .motivos {
+  justify-self: stretch;
+}
+.compacto .item {
+  padding: var(--e-4) var(--e-4) var(--e-4) var(--e-5);
+  gap: var(--e-2) var(--e-3);
+}
+.compacto .posicao {
+  width: 32px;
+  height: 32px;
+  font-size: var(--t-corpo);
+}
+.compacto .seta {
+  display: none;
+}

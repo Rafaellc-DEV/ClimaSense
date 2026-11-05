@@ -19,10 +19,14 @@ export function EstadoDados({
   tipo,
   titulo,
   children,
+  acao,
 }: {
   tipo: TipoEstadoDados;
   titulo?: string;
+  /** Uma frase: o que aconteceu e o que fazer. */
   children?: ReactNode;
+  /** Botão de saída, ex.: “Tentar de novo”. */
+  acao?: ReactNode;
 }) {
   const p = PADRAO[tipo];
   return (
@@ -32,6 +36,7 @@ export function EstadoDados({
         <p className={estilos.titulo}>{titulo ?? p.titulo}</p>
         {children && <p className={estilos.texto}>{children}</p>}
       </div>
+      {acao && <div className={estilos.acao}>{acao}</div>}
     </div>
   );
 }

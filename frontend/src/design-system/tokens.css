@@ -1,16 +1,16 @@
 /* ClimaSense — tokens do design system (design.md §8.3–8.6).
-   Fonte única da verdade para cores, tipografia, espaço e forma. Não use hex soltos nos componentes. */
+   Fonte única da verdade para cores, tipografia, espaço e forma. Não use hex soltos nos componentes.
+   Grupos, nesta ordem: 1 marca · 2 neutros · 3 superfície de marca (menu lateral, que NÃO inverte no escuro)
+   4 níveis de aviso · 5 gráficos · 6 tipografia · 7 espaço · 8 forma e elevação · 9 movimento · 10 tema escuro. */
 :root {
   color-scheme: light;
 
-  /* Marca */
+  /* ============ 1. MARCA ============ */
   --cs-mare: #0f4c75;
   --cs-mare-forte: #0a3a5c;
   --cs-mare-suave: rgba(15, 76, 117, 0.08);
   --cs-mangue: #0b6f6c;
   --cs-sol: #edb105;
-  --cs-papel: #ffffff;
-  --cs-nevoa: #f2f6f8;
   /* Espuma: o azul-água claro de etiquetas e selos da landing */
   --cs-espuma: #dcefee;
   /* Rede de pluviômetros: a malha de pontos e linhas finas que fica atrás do conteúdo da landing */
@@ -19,14 +19,30 @@
   --cs-ponto-sobre-mare: rgba(255, 255, 255, 0.14);
   --cs-ponto-aceso: rgba(255, 255, 255, 0.55);
   --malha: 22px;
+  --cs-foco: #b35c00;
+  --cs-sobre-mare: #ffffff;
+
+  /* ============ 2. NEUTROS ============ */
+  --cs-papel: #ffffff;
+  --cs-nevoa: #f2f6f8;
   --cs-tinta: #0e2433;
   --cs-tinta-2: #44596a;
   --cs-linha: #d5e0e7;
   --cs-linha-forte: #7a8e9c;
-  --cs-foco: #b35c00;
-  --cs-sobre-mare: #ffffff;
 
-  /* Níveis de aviso: cor da marca/borda, fundo do selo, texto do selo */
+  /* ============ 3. SUPERFÍCIE DE MARCA ============
+     O azul profundo do menu lateral da gestão e do herói. Os --cs-mare/--cs-sobre-mare mudam no tema escuro;
+     estes não: o menu é azul profundo com texto branco nos dois temas. */
+  --sup-mare: #0f4c75;
+  --sup-mare-forte: #0a3a5c;
+  --sup-sobre: #ffffff;
+  --sup-sobre-2: #d3e4f1;
+  --sup-linha: rgba(255, 255, 255, 0.16);
+  --sup-hover: rgba(255, 255, 255, 0.1);
+  --sup-ativo: rgba(255, 255, 255, 0.16);
+  --sup-sol: #edb105;
+
+  /* ============ 4. NÍVEIS DE AVISO ============ cor da marca/borda, fundo do selo, texto do selo. Reservados. */
   --n-sem: #0b6f6c;
   --n-sem-bg: #e3f3f1;
   --n-info: #1f6fb2;
@@ -42,7 +58,7 @@
   --n-insuf-bg: #eef1f3;
   --n-texto: #0e2433;
 
-  /* Gráficos — ordem fixa validada (CVD e contraste); referência sempre cinza tracejado */
+  /* ============ 5. GRÁFICOS ============ ordem fixa validada (CVD e contraste); referência sempre cinza tracejado */
   --g-1: #1f6fb2;
   --g-2: #c4612b;
   --g-3: #0a8f63;
@@ -62,7 +78,8 @@
   --g-saude-1: #a7dcc6;
   --g-saude-6: #044d36;
 
-  /* Tipografia */
+  /* ============ 6. TIPOGRAFIA ============ */
+  --fonte-titulo: "Outfit Variable", var(--fonte);
   --fonte: "Atkinson Hyperlegible Next Variable", "Atkinson Hyperlegible Next", "Atkinson Hyperlegible",
     system-ui, sans-serif;
   --t-estado: clamp(2.5rem, 6vw, 4.5rem);
@@ -74,7 +91,7 @@
   --t-apoio: 1rem;
   --altura-corpo: 1.55;
 
-  /* Espaço (base 8) */
+  /* ============ 7. ESPAÇO (base 8) ============ */
   --e-1: 4px;
   --e-2: 8px;
   --e-3: 12px;
@@ -84,12 +101,21 @@
   --e-7: 48px;
   --e-8: 64px;
   --e-9: 96px;
+  /* Ritmo vertical da landing: entre blocos grandes e dentro de um bloco */
+  --secao-y: clamp(4rem, 9vw, 7.5rem);
+  --bloco-y: clamp(1.5rem, 3vw, 2.5rem);
 
-  /* Forma: raios por função */
+  /* ============ 8. FORMA E ELEVAÇÃO ============ raios por função: campo 4 · ícone 10 · painel 14 · pílula */
   --r-campo: 4px;
+  --r-icone: 10px;
   --r-painel: 14px;
   --r-pilula: 999px;
   --borda: 1px solid var(--cs-linha);
+  /* cartão em repouso: sombras suaves em camadas (a landing e o login usam o mesmo desenho) */
+  --sombra-cartao: 0 0 0 1px var(--cs-linha), 0 1px 2px rgba(14, 36, 51, 0.05),
+    0 8px 24px -12px rgba(14, 36, 51, 0.18);
+  --sombra-cartao-alta: 0 0 0 1px var(--cs-linha), 0 2px 6px rgba(14, 36, 51, 0.07),
+    0 18px 36px -16px rgba(14, 36, 51, 0.28);
   --sombra-flutuante: 0 12px 32px rgba(14, 36, 51, 0.18), 0 2px 6px rgba(14, 36, 51, 0.08);
 
   /* Largura máxima do conteúdo (centrado em telas largas) */
@@ -108,13 +134,18 @@
   --alvo-grande: 56px;
   --alvo-lista: 44px;
 
-  /* Movimento */
+  /* ============ 9. MOVIMENTO ============ */
   --mov-agua: 700ms cubic-bezier(0.2, 0.7, 0.2, 1);
   --mov-rapido: 150ms ease-out;
   --mov-traco: 1600ms cubic-bezier(0.2, 0.7, 0.2, 1);
 }
 
-/* Modo escuro — área da equipe (RNF-VIS-04). Ativado por data-tema="escuro" ou pela preferência do sistema. */
+/* Área de gestão: botões em pílula, como na landing (o login e a landing continuam com o raio de campo). */
+:root[data-area="gestao"] {
+  --r-botao: var(--r-pilula);
+}
+
+/* ============ 10. TEMA ESCURO ============ área da equipe (RNF-VIS-04). Ativado por data-tema="escuro". */
 :root[data-tema="escuro"] {
   color-scheme: dark;
   --cs-mare: #7fb6e0;
@@ -130,6 +161,11 @@
   --cs-linha-forte: #6b8494;
   --cs-foco: #ffb45c;
   --cs-sobre-mare: #0c1820;
+  /* a superfície de marca fica azul profundo: só um tom mais escuro, para se separar da página escura */
+  --sup-mare: #0c3f62;
+  --sup-mare-forte: #082d47;
+  --sombra-cartao: 0 0 0 1px var(--cs-linha), 0 10px 28px -14px rgba(0, 0, 0, 0.7);
+  --sombra-cartao-alta: 0 0 0 1px var(--cs-linha), 0 18px 36px -16px rgba(0, 0, 0, 0.8);
   --n-sem-bg: #123a38;
   --n-info-bg: #14324e;
   --n-atencao-bg: #3d2f08;

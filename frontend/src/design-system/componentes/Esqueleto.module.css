@@ -1,0 +1,39 @@
+.esqueleto {
+  display: block;
+  width: var(--larg, 100%);
+  height: var(--alt, 1em);
+  border-radius: var(--r-campo);
+  background: linear-gradient(90deg, var(--cs-linha) 0%, var(--cs-nevoa) 50%, var(--cs-linha) 100%);
+  background-size: 200% 100%;
+  animation: brilho 1.4s ease-in-out infinite;
+}
+.bloco {
+  border-radius: var(--r-icone);
+}
+.circulo {
+  width: var(--larg, var(--alt, 2.5rem));
+  height: var(--alt, 2.5rem);
+  border-radius: 50%;
+}
+.indicador {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e-3);
+  padding: var(--e-5);
+  border-radius: var(--r-painel);
+  background: var(--cs-papel);
+  box-shadow: var(--sombra-cartao);
+}
+.lista {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e-3);
+}
+@keyframes brilho {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: -100% 0;
+  }
+}

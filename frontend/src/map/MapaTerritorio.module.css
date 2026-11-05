@@ -6,50 +6,85 @@
 .mapa {
   position: absolute;
   inset: 0;
-  border-radius: var(--r-painel);
-  background: #e9eff3;
+  border-radius: inherit;
+  background: var(--cs-nevoa);
 }
 .mapa :global(.leaflet-container) {
   font-family: var(--fonte);
+  border-radius: inherit;
+  background: var(--cs-nevoa);
 }
 .mapa :global(.leaflet-tooltip) {
+  padding: var(--e-2) var(--e-3);
+  border: 0;
+  border-radius: var(--r-icone);
+  background: var(--cs-papel);
+  box-shadow: var(--sombra-flutuante);
   font-size: 15px;
   line-height: 1.4;
   color: var(--cs-tinta);
+}
+.mapa :global(.leaflet-tooltip::before) {
+  display: none;
+}
+/* controles de zoom na linguagem da plataforma: pílula branca com sombra suave */
+.mapa :global(.leaflet-bar) {
+  border: 0;
+  border-radius: var(--r-painel);
+  box-shadow: var(--sombra-flutuante);
+  overflow: hidden;
 }
 .mapa :global(.leaflet-bar a) {
   width: 40px;
   height: 40px;
   line-height: 40px;
   font-size: 22px;
+  background: var(--cs-papel);
+  color: var(--cs-mare);
+  border-bottom: 1px solid var(--cs-linha);
+}
+.mapa :global(.leaflet-bar a:hover) {
+  background: var(--cs-mare-suave);
+}
+.mapa :global(.leaflet-bar a:last-child) {
+  border-bottom: 0;
+}
+.mapa :global(.leaflet-control-attribution),
+.mapa :global(.leaflet-control-scale-line) {
+  font-size: 12px;
+  background: color-mix(in srgb, var(--cs-papel) 82%, transparent);
+  color: var(--cs-tinta-2);
 }
 .rotulo {
   background: none !important;
   border: 0 !important;
   display: grid !important;
   place-items: center;
-  font-size: 13px;
-  font-weight: 800;
-  color: var(--cs-tinta);
-  text-shadow:
-    0 0 3px #fff,
-    0 0 3px #fff,
-    0 0 6px #fff;
-  white-space: nowrap;
   pointer-events: none;
+}
+.rotulo span {
+  padding: 2px 9px;
+  border-radius: var(--r-pilula);
+  background: color-mix(in srgb, var(--cs-papel) 88%, transparent);
+  box-shadow: 0 1px 3px rgba(14, 36, 51, 0.25);
+  font-family: var(--fonte-titulo);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--cs-mare-forte);
+  white-space: nowrap;
 }
 .avisoTiles {
   position: absolute;
-  left: 12px;
   right: 12px;
-  top: 12px;
+  bottom: 140px;
   z-index: 800;
-  max-width: 460px;
-  padding: var(--e-3) var(--e-4);
+  max-width: min(300px, calc(100% - 24px));
+  margin: 0;
+  padding: var(--e-2) var(--e-3);
   background: var(--n-atencao-bg);
-  border: 1px solid var(--n-atencao);
-  border-radius: var(--r-campo);
+  border-radius: var(--r-icone);
   color: var(--n-texto);
-  font-size: var(--t-apoio);
+  font-size: 0.9375rem;
+  line-height: 1.35;
   box-shadow: var(--sombra-flutuante);
 }

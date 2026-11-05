@@ -1,13 +1,18 @@
 import type { ReactNode } from "react";
+import { Dica } from "./Dica";
 import { EstadoDados } from "./EstadoDados";
 import estilos from "./Painel.module.css";
 
-/** Bloco da área da equipe: borda de 1 px, sem sombra (design §8.6). O título é obrigatório e vira o nome da região. */
+/**
+ * Cartão de seção da gestão: fundo branco, raio de 14 px e sombra suave em camadas. O título é obrigatório e vira o
+ * nome da região; `dica` guarda a explicação atrás de um (i), em vez de um parágrafo solto.
+ */
 export function Painel({
   titulo,
   id,
   children,
   acoes,
+  dica,
   largo,
   className,
 }: {
@@ -15,6 +20,8 @@ export function Painel({
   id: string;
   children: ReactNode;
   acoes?: ReactNode;
+  /** Para que serve este bloco ou como ler os dados, atrás do (i) ao lado do título. */
+  dica?: ReactNode;
   largo?: boolean;
   className?: string;
 }) {
@@ -24,7 +31,10 @@ export function Painel({
       aria-labelledby={id}
     >
       <div className={estilos.topo}>
-        <h2 id={id}>{titulo}</h2>
+        <h2>
+          <span id={id}>{titulo}</span>
+          {dica && <Dica texto={dica} rotulo={`Sobre ${titulo}`} lado="abaixo" />}
+        </h2>
         {acoes}
       </div>
       {children}

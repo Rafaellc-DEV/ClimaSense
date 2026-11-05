@@ -1,7 +1,8 @@
 import type { ButtonHTMLAttributes, ReactNode } from "react";
 import estilos from "./Botao.module.css";
 
-export type VarianteBotao = "principal" | "secundario" | "discreto" | "perigo";
+/** "claro" e "contornoClaro" são para faixas de azul profundo (FaixaMare). */
+export type VarianteBotao = "principal" | "secundario" | "discreto" | "perigo" | "claro" | "contornoClaro";
 
 export interface BotaoProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variante?: VarianteBotao;

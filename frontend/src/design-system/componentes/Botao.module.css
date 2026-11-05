@@ -6,7 +6,7 @@
   min-height: var(--alvo);
   padding: 0 var(--e-5);
   border: 2px solid transparent;
-  border-radius: var(--r-campo);
+  border-radius: var(--r-botao, var(--r-campo));
   font-weight: 700;
   font-size: var(--t-corpo);
   line-height: 1.2;
@@ -58,4 +58,25 @@
 .perigo {
   background: var(--n-critico);
   color: var(--n-critico-texto);
+}
+/* sobre a faixa azul (FaixaMare): botão branco cheio e botão de contorno branco */
+.claro {
+  background: var(--sup-sobre);
+  color: var(--sup-mare);
+}
+.claro:hover:not(:disabled) {
+  background: var(--cs-espuma);
+}
+.contornoClaro {
+  background: transparent;
+  color: var(--sup-sobre);
+  border-color: rgba(255, 255, 255, 0.6);
+}
+.contornoClaro:hover:not(:disabled) {
+  background: var(--sup-hover);
+  border-color: var(--sup-sobre);
+}
+.claro:focus-visible,
+.contornoClaro:focus-visible {
+  outline-color: var(--sup-sol);
 }

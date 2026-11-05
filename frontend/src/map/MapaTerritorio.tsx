@@ -1,6 +1,7 @@
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import { token } from "@/charts/tema";
 import estilos from "./MapaTerritorio.module.css";
 
 export interface PropsDistrito {
@@ -62,9 +63,10 @@ export const MapaTerritorio = forwardRef<ControleMapa, Props>(function MapaTerri
     const c = p.cor(f);
     return {
       fillColor: c === "hachura" ? `url(#${HACHURA})` : c,
-      fillOpacity: c === "hachura" ? 1 : p.opacidade,
-      color: sel ? "#0e2433" : "#ffffff",
-      weight: sel ? 3.5 : 2,
+      // com um distrito escolhido, os demais recuam: o foco é o território em análise
+      fillOpacity: c === "hachura" ? 1 : p.selecionado && !sel ? p.opacidade * 0.5 : p.opacidade,
+      color: sel ? token("--cs-tinta") : token("--cs-papel"),
+      weight: sel ? 4 : 2,
       opacity: 0.95,
     };
   }
@@ -92,7 +94,7 @@ export const MapaTerritorio = forwardRef<ControleMapa, Props>(function MapaTerri
     });
     mapa.current = m;
     m.setView([-8.05, -34.92], 12); // o renderizador SVG só cria o contêiner depois que há uma vista
-    m.zoomControl.setPosition("topright");
+    m.zoomControl.setPosition("bottomright");
     L.control.scale({ imperial: false, position: "bottomright" }).addTo(m);
     m.createPane("hidrografia").style.zIndex = "420";
     const tiles = L.tileLayer(atuais.current.tilesUrl, {
@@ -113,7 +115,9 @@ export const MapaTerritorio = forwardRef<ControleMapa, Props>(function MapaTerri
     const svg = (renderizador as unknown as { _container: SVGSVGElement })._container;
     const ns = "http://www.w3.org/2000/svg";
     const defs = document.createElementNS(ns, "defs");
-    defs.innerHTML = `<pattern id="${HACHURA}" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="8" height="8" fill="#eef1f3"/><line x1="0" y1="0" x2="0" y2="8" stroke="#8fa0ab" stroke-width="3"/></pattern>`;
+    defs.innerHTML = `<pattern id="${HACHURA}" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="8" height="8" fill="${token(
+      "--n-insuf-bg",
+    )}"/><line x1="0" y1="0" x2="0" y2="8" stroke="${token("--g-eixo")}" stroke-width="3"/></pattern>`;
     svg.prepend(defs);
 
     const grupo = L.geoJSON(atuais.current.distritos, {
@@ -129,7 +133,7 @@ export const MapaTerritorio = forwardRef<ControleMapa, Props>(function MapaTerri
         caminho.on("mouseover", () =>
           caminho.setStyle({
             weight: 3,
-            color: "#0e2433",
+            color: token("--cs-tinta"),
             fillOpacity: Math.min(1, atuais.current.opacidade + 0.13),
           }),
         );
@@ -143,9 +147,9 @@ export const MapaTerritorio = forwardRef<ControleMapa, Props>(function MapaTerri
             keyboard: false,
             icon: L.divIcon({
               className: estilos.rotulo,
-              html: escapar(feature.properties.nome_distrito),
-              iconSize: [52, 18],
-              iconAnchor: [26, 9],
+              html: `<span>${escapar(feature.properties.nome_distrito)}</span>`,
+              iconSize: [56, 24],
+              iconAnchor: [28, 12],
             }),
           }),
         );

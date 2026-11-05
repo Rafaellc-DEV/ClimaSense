@@ -1,3 +1,4 @@
+import { useSyncExternalStore } from "react";
 import type { MarkAreaComponentOption } from "echarts";
 
 /**
@@ -19,12 +20,36 @@ const PADRAO: Record<string, string> = {
   "--cs-papel": "#ffffff",
   "--cs-linha": "#d5e0e7",
   "--n-insuf-bg": "#eef1f3",
+  "--n-sem": "#0b6f6c",
+  "--n-atencao": "#c98a00",
+  "--n-alerta": "#d2581f",
+  "--n-critico": "#a41f15",
+  "--g-calor-1": "#fed976",
+  "--g-calor-2": "#fd9a3c",
+  "--g-calor-3": "#f0592a",
+  "--g-calor-4": "#c81e1e",
+  "--g-calor-5": "#7f0a1a",
 };
 
 export function token(nome: string): string {
   if (typeof window === "undefined") return PADRAO[nome];
   const v = getComputedStyle(document.documentElement).getPropertyValue(nome).trim();
   return v || PADRAO[nome];
+}
+
+function assinar(aviso: () => void) {
+  const obs = new MutationObserver(aviso);
+  obs.observe(document.documentElement, { attributes: true, attributeFilter: ["data-tema"] });
+  return () => obs.disconnect();
+}
+
+/** Tema atual ("claro" ou "escuro"). Faz o componente redesenhar quando a pessoa troca, para os tokens valerem. */
+export function useTemaAtual(): string {
+  return useSyncExternalStore(
+    assinar,
+    () => document.documentElement.dataset.tema ?? "claro",
+    () => "claro",
+  );
 }
 
 export const SERIES = ["--g-1", "--g-2", "--g-3", "--g-4", "--g-5", "--g-6"];
@@ -81,9 +106,13 @@ export function areaSemDado(inicio: string | number, fim: string | number): Mark
   return {
     silent: true,
     itemStyle: {
-      color: {
-        image: hachura() as HTMLCanvasElement,
-        repeat: "repeat",
+      color: token("--n-insuf-bg"),
+      decal: {
+        symbol: "rect",
+        dashArrayX: [1, 0],
+        dashArrayY: [2, 4],
+        rotation: Math.PI / 4,
+        color: token("--g-eixo"),
       },
     },
     label: {
@@ -95,21 +124,4 @@ export function areaSemDado(inicio: string | number, fim: string | number): Mark
     },
     data: [[{ xAxis: inicio }, { xAxis: fim }]] as MarkAreaComponentOption["data"],
   };
-}
-
-function hachura(): HTMLCanvasElement | undefined {
-  if (typeof document === "undefined") return undefined;
-  const c = document.createElement("canvas");
-  c.width = c.height = 8;
-  const ctx = c.getContext("2d");
-  if (!ctx) return undefined;
-  ctx.fillStyle = token("--n-insuf-bg");
-  ctx.fillRect(0, 0, 8, 8);
-  ctx.strokeStyle = "#9aa8b2";
-  ctx.lineWidth = 2;
-  ctx.beginPath();
-  ctx.moveTo(0, 8);
-  ctx.lineTo(8, 0);
-  ctx.stroke();
-  return c;
 }
