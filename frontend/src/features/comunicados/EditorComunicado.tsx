@@ -1,5 +1,5 @@
-import { useMemo, useState, type FormEvent } from "react";
-import { GitCompare, Pencil, Plus, Save, X } from "lucide-react";
+import { useMemo, useState, type FormEvent, type ReactNode } from "react";
+import { GitCompare, Pencil, Plus, Save, TriangleAlert, X } from "lucide-react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { CabecalhoTela } from "@/app/AppShell";
@@ -10,8 +10,11 @@ import { BotoesNivel, OPCOES_NIVEL_AVISO } from "@/design-system/componentes/Bot
 import { CartaoAviso, type DadosAviso } from "@/design-system/componentes/CartaoAviso";
 import { AreaTexto, Campo } from "@/design-system/componentes/Campo";
 import { Dialogo } from "@/design-system/componentes/Dialogo";
-import { EtapasFluxo, LinhaDoTempo } from "@/design-system/componentes/Fluxo";
-import { Carregando, FalhaCarga, Painel } from "@/design-system/componentes/Painel";
+import { Dica } from "@/design-system/componentes/Dica";
+import { CarregandoLista } from "@/design-system/componentes/Esqueleto";
+import { LinhaDoTempo } from "@/design-system/componentes/Fluxo";
+import { FalhaCarga, Painel } from "@/design-system/componentes/Painel";
+import { Pilula } from "@/design-system/componentes/Pilula";
 import { Selecao } from "@/design-system/componentes/Selecao";
 import { api, enviar, type Esquemas } from "@/lib/api";
 import { useConsulta } from "@/lib/consultas";
@@ -20,8 +23,8 @@ import { normalize } from "@/map/model";
 import { PUBLICOS } from "@/textos/glossario";
 import { RETORNO } from "@/textos/mensagens";
 import { AcoesFluxo, ListaEvidencias, type EvidenciaForm } from "@/features/fluxo/AcoesFluxo";
-import { SeloEstado } from "@/features/fluxo/Estado";
-import fluxo from "@/features/fluxo/Fluxo.module.css";
+import { EtapasFinas, SeloEstado } from "@/features/fluxo/Estado";
+import { Bloco, CartaoDecisao, Contador, Fato, Fatos, Recolher, SecaoForm } from "@/features/fluxo/Pecas";
 import estilos from "./Editor.module.css";
 
 type Detalhe = Esquemas["DetalheComunicado"];
@@ -64,6 +67,25 @@ export function frasesLongas(texto: string) {
     .filter((f) => f.palavras > PALAVRAS);
 }
 
+/** Aviso de leitura difícil: uma frase curta, com ícone e texto. */
+function AvisoLeitura({
+  frases,
+  papel,
+}: {
+  frases: { frase: number; palavras: number }[];
+  papel?: "status";
+}) {
+  return (
+    <p className={estilos.longa} role={papel}>
+      <TriangleAlert aria-hidden="true" size={20} />
+      <span>
+        {frases.map((l) => `A frase ${l.frase} tem ${l.palavras} palavras`).join("; ")}. Divida em frases de
+        até {PALAVRAS}.
+      </span>
+    </p>
+  );
+}
+
 function EscolhaTerritorios({ valor, aoMudar }: { valor: string[]; aoMudar: (v: string[]) => void }) {
   const territorios = useTerritorios();
   const [aberto, setAberto] = useState(false);
@@ -93,7 +115,7 @@ function EscolhaTerritorios({ valor, aoMudar }: { valor: string[]; aoMudar: (v: 
           </li>
         ))}
         <li>
-          <Botao variante="discreto" icone={<Plus />} onClick={() => setAberto(true)}>
+          <Botao variante="secundario" icone={<Plus />} onClick={() => setAberto(true)}>
             Adicionar território
           </Botao>
         </li>
@@ -145,7 +167,7 @@ function Formulario({
   rotuloSalvar: string;
   aviso?: string;
   aoSalvar: (v: Valores) => Promise<void>;
-  rodapeExtra?: React.ReactNode;
+  rodapeExtra?: ReactNode;
   aoMudar: (v: Valores) => void;
 }) {
   const [v, setV] = useState(inicial);
@@ -179,110 +201,115 @@ function Formulario({
   }
 
   return (
-    <form className={fluxo.form} onSubmit={salvar} noValidate>
-      {avisoVersao && <p className={fluxo.dica}>{avisoVersao}</p>}
-      <EscolhaTerritorios valor={v.territorios} aoMudar={(t) => mudar({ territorios: t })} />
-      <Selecao
-        rotulo="Público"
-        valor={v.publico}
-        aoMudar={(p) => mudar({ publico: p })}
-        opcoes={Object.entries(PUBLICOS).map(([valor, rotulo]) => ({ valor, rotulo }))}
-      />
-      <BotoesNivel
-        nome="nivel"
-        legenda="Nível do aviso"
-        opcoes={OPCOES_NIVEL_AVISO}
-        valor={v.nivel}
-        aoMudar={(n) => mudar({ nivel: n })}
-      />
-      <Campo
-        rotulo="Título"
-        value={v.titulo}
-        maxLength={MAX_TITULO}
-        onChange={(e) => mudar({ titulo: e.target.value })}
-        ajuda={
-          <span className={fluxo.contador} data-excedeu={v.titulo.length >= MAX_TITULO}>
-            {v.titulo.length} de {MAX_TITULO} caracteres. Diga o quê e onde, em linguagem simples.
-          </span>
-        }
-      />
-      <AreaTexto
-        rotulo="Texto"
-        value={v.texto}
-        maxLength={MAX_TEXTO}
-        rows={6}
-        onChange={(e) => mudar({ texto: e.target.value })}
-        ajuda={
-          <span className={fluxo.contador} data-excedeu={v.texto.length >= MAX_TEXTO}>
-            {v.texto.length} de {MAX_TEXTO} caracteres.
-          </span>
-        }
-      />
-      {longas.length > 0 && (
-        <p className={estilos.longa} role="status">
-          {longas.map((l) => `A frase ${l.frase} tem ${l.palavras} palavras.`).join(" ")} Frases com mais de{" "}
-          {PALAVRAS} palavras são difíceis para quem lê com dificuldade. Tente dividir.
-        </p>
-      )}
-      <fieldset className={estilos.orientacoes}>
-        <legend>O que fazer (até {MAX_ORIENTACOES} orientações)</legend>
-        {v.orientacoes.map((o, i) => (
-          <div key={i} className={estilos.orientacao}>
-            <Campo
-              rotulo={`Orientação ${i + 1}`}
-              value={o}
-              maxLength={300}
-              onChange={(e) =>
-                mudar({ orientacoes: v.orientacoes.map((x, j) => (j === i ? e.target.value : x)) })
-              }
-            />
+    <form className={estilos.form} onSubmit={salvar} noValidate>
+      {avisoVersao && <p className={estilos.versao}>{avisoVersao}</p>}
+      <SecaoForm titulo="Onde e para quem">
+        <EscolhaTerritorios valor={v.territorios} aoMudar={(t) => mudar({ territorios: t })} />
+        <Selecao
+          rotulo="Público"
+          valor={v.publico}
+          aoMudar={(p) => mudar({ publico: p })}
+          opcoes={Object.entries(PUBLICOS).map(([valor, rotulo]) => ({ valor, rotulo }))}
+        />
+      </SecaoForm>
+      <SecaoForm titulo="Nível do aviso">
+        <BotoesNivel
+          nome="nivel"
+          legenda="Nível do aviso"
+          opcoes={OPCOES_NIVEL_AVISO}
+          valor={v.nivel}
+          aoMudar={(n) => mudar({ nivel: n })}
+        />
+      </SecaoForm>
+      <SecaoForm
+        titulo="Mensagem"
+        dica="Diga o quê e onde, em linguagem simples. Frases curtas são mais fáceis de ler."
+      >
+        <Campo
+          rotulo="Título"
+          value={v.titulo}
+          maxLength={MAX_TITULO}
+          onChange={(e) => mudar({ titulo: e.target.value })}
+          ajuda={<Contador atual={v.titulo.length} max={MAX_TITULO} />}
+        />
+        <AreaTexto
+          rotulo="Texto"
+          value={v.texto}
+          maxLength={MAX_TEXTO}
+          rows={6}
+          onChange={(e) => mudar({ texto: e.target.value })}
+          ajuda={<Contador atual={v.texto.length} max={MAX_TEXTO} />}
+        />
+        {longas.length > 0 && <AvisoLeitura frases={longas} papel="status" />}
+      </SecaoForm>
+      <SecaoForm titulo="O que fazer">
+        <fieldset className={estilos.orientacoes}>
+          <legend>
+            Orientações
+            <span className={estilos.limite}>
+              {v.orientacoes.length} de {MAX_ORIENTACOES}
+            </span>
+          </legend>
+          {v.orientacoes.map((o, i) => (
+            <div key={i} className={estilos.orientacao}>
+              <Campo
+                rotulo={`Orientação ${i + 1}`}
+                value={o}
+                maxLength={300}
+                onChange={(e) =>
+                  mudar({ orientacoes: v.orientacoes.map((x, j) => (j === i ? e.target.value : x)) })
+                }
+              />
+              <Botao
+                variante="discreto"
+                icone={<X />}
+                onClick={() => mudar({ orientacoes: v.orientacoes.filter((_, j) => j !== i) })}
+              >
+                Remover<span className="so-leitor"> orientação {i + 1}</span>
+              </Botao>
+            </div>
+          ))}
+          {v.orientacoes.length < MAX_ORIENTACOES && (
             <Botao
-              variante="discreto"
-              onClick={() => mudar({ orientacoes: v.orientacoes.filter((_, j) => j !== i) })}
+              variante="secundario"
+              icone={<Plus />}
+              onClick={() => mudar({ orientacoes: [...v.orientacoes, ""] })}
             >
-              Remover
+              Adicionar orientação
             </Botao>
-          </div>
-        ))}
-        {v.orientacoes.length < MAX_ORIENTACOES && (
-          <Botao
-            variante="secundario"
-            icone={<Plus />}
-            onClick={() => mudar({ orientacoes: [...v.orientacoes, ""] })}
-          >
-            Adicionar orientação
-          </Botao>
-        )}
-      </fieldset>
-      <div className={fluxo.linha}>
-        <Campo
-          rotulo="Vale a partir de"
-          type="datetime-local"
-          value={v.validade_inicio}
-          onChange={(e) => mudar({ validade_inicio: e.target.value })}
-          ajuda="Horário do Recife."
-        />
-        <Campo
-          rotulo="Vale até"
-          type="datetime-local"
-          value={v.validade_fim}
-          onChange={(e) => mudar({ validade_fim: e.target.value })}
-          ajuda="Depois disso, o aviso sai sozinho da página inicial."
-        />
-      </div>
-      <div>
-        <h3 className={fluxo.dica}>Evidências vinculadas</h3>
+          )}
+        </fieldset>
+      </SecaoForm>
+      <SecaoForm titulo="Validade">
+        <div className={estilos.linha}>
+          <Campo
+            rotulo="Vale a partir de"
+            type="datetime-local"
+            value={v.validade_inicio}
+            onChange={(e) => mudar({ validade_inicio: e.target.value })}
+            dica="Horário do Recife."
+          />
+          <Campo
+            rotulo="Vale até"
+            type="datetime-local"
+            value={v.validade_fim}
+            onChange={(e) => mudar({ validade_fim: e.target.value })}
+            dica="Depois disso, o aviso sai sozinho da página inicial."
+          />
+        </div>
+      </SecaoForm>
+      <SecaoForm titulo="Evidências vinculadas">
         <ListaEvidencias
           evidencias={v.evidencias}
           aoRemover={(i) => mudar({ evidencias: v.evidencias.filter((_, j) => j !== i) })}
         />
-      </div>
+      </SecaoForm>
       {erro && (
         <p role="alert" className={estilos.erro}>
           {erro}
         </p>
       )}
-      <div className={fluxo.rodape}>
+      <div className={estilos.rodape}>
         <Botao type="submit" disabled={ocupado} icone={<Save />}>
           {rotuloSalvar}
         </Botao>
@@ -355,12 +382,10 @@ export function NovoComunicado() {
   const [atual, setAtual] = useState(inicial);
   return (
     <>
-      <p className={fluxo.voltar}>
-        <Link to="/app/comunicados">Todos os comunicados</Link>
-      </p>
       <CabecalhoTela
         titulo="Escrever comunicado"
         proposito="À direita, a prévia mostra exatamente o que a população verá na página inicial."
+        voltar={<Link to="/app/comunicados">Todos os comunicados</Link>}
       />
       <div className={estilos.editor}>
         <Painel titulo="Comunicado" id="co-form">
@@ -381,11 +406,19 @@ export function NovoComunicado() {
   );
 }
 
-function Previa({ aviso, rodape }: { aviso: DadosAviso; rodape?: React.ReactNode }) {
+/** Prévia ao vivo: o MESMO cartão da página inicial (design §9.9, RF-11.3). */
+function Previa({ aviso, rodape }: { aviso: DadosAviso; rodape?: ReactNode }) {
   return (
     <aside className={estilos.previa} aria-labelledby="titulo-previa">
-      <h2 id="titulo-previa">Prévia para a população</h2>
-      <p className={fluxo.dica}>Exatamente como aparecerá na página inicial.</p>
+      <h2 id="titulo-previa">
+        Prévia para a população
+        <Dica
+          texto="Exatamente como aparecerá na página inicial."
+          rotulo="Sobre a prévia"
+          alinhar="fim"
+          lado="abaixo"
+        />
+      </h2>
       <CartaoAviso aviso={aviso} previa />
       {rodape}
     </aside>
@@ -414,8 +447,12 @@ function Diferencas({ id, versoes }: { id: string; versoes: Esquemas["VersaoResu
       <ol className={estilos.versoes}>
         {[...versoes].reverse().map((v) => (
           <li key={v.numero}>
-            <span>
-              <strong>Versão {v.numero}</strong>, de {v.autor_nome}, {formatarDataHora(v.criado_em)}
+            <span className={estilos.versaoNumero}>{v.numero}</span>
+            <span className={estilos.versaoTexto}>
+              <strong>Versão {v.numero}</strong>
+              <small>
+                {v.autor_nome}, {formatarDataHora(v.criado_em)}
+              </small>
             </span>
             {v.numero > 1 && (
               <Botao
@@ -423,7 +460,7 @@ function Diferencas({ id, versoes }: { id: string; versoes: Esquemas["VersaoResu
                 icone={<GitCompare />}
                 onClick={() => comparar(v.numero - 1, v.numero)}
               >
-                O que mudou
+                O que mudou<span className="so-leitor"> na versão {v.numero}</span>
               </Botao>
             )}
           </li>
@@ -435,11 +472,15 @@ function Diferencas({ id, versoes }: { id: string; versoes: Esquemas["VersaoResu
         titulo={par ? `O que mudou da versão ${par[0]} para a ${par[1]}` : ""}
       >
         {!d ? (
-          <Carregando />
+          <CarregandoLista linhas={2} altura="3rem" />
         ) : !d.alterados.length ? (
           <p>Nenhuma diferença no conteúdo.</p>
         ) : (
           <div className={estilos.diferenca}>
+            <p className={estilos.legenda}>
+              <ins>Entrou</ins>
+              <del>Saiu</del>
+            </p>
             {d.alterados.map((campo) =>
               d.campos[campo] ? (
                 <div key={campo}>
@@ -466,7 +507,6 @@ function Diferencas({ id, versoes }: { id: string; versoes: Esquemas["VersaoResu
                 </div>
               ),
             )}
-            <p className={fluxo.dica}>Trechos sublinhados entraram; riscados saíram.</p>
           </div>
         )}
       </Dialogo>
@@ -476,6 +516,24 @@ function Diferencas({ id, versoes }: { id: string; versoes: Esquemas["VersaoResu
 
 function formatarMetadado(campo: string, valor: string) {
   return campo.startsWith("validade") ? formatarDataHora(valor) : valor;
+}
+
+/** O que a pessoa deve fazer agora, em uma frase. */
+function passo(c: Detalhe, salvarAntes: boolean) {
+  if (c.acoes.includes("aprovar"))
+    return `Você revisa a versão ${c.versao_atual}, de ${c.autor_nome}. Confira a prévia: é ela que vai para a população.`;
+  if (c.acoes.includes("publicar")) return "Aprovado. Publique para o aviso aparecer na página inicial.";
+  if (c.acoes.includes("enviar"))
+    return salvarAntes
+      ? "Salve as mudanças antes de enviar para revisão."
+      : c.estado === "devolvido"
+        ? "Ajuste o que foi pedido e envie de novo para revisão."
+        : "Quando estiver pronto, envie para revisão.";
+  if (c.estado === "publicado") return `No ar até ${quandoRelativo(c.previa.validade_fim)}.`;
+  if (c.estado === "aprovado") return "Aprovado. Aguardando a coordenação publicar.";
+  if (c.estado === "em_revisao") return "Aguardando a revisão de outra pessoa. Quem escreveu não aprova.";
+  if (c.estado === "encerrado") return "Encerrado. Fica no histórico.";
+  return "Nada a fazer agora.";
 }
 
 /** Editor do comunicado (design §9.9): edição, prévia ao vivo, decisão do revisor, publicação e histórico. */
@@ -494,7 +552,14 @@ export function EditorComunicado() {
     setEditando(false);
     setRascunho(null);
   };
-  if (r.isPending) return <Carregando />;
+  const voltar = <Link to="/app/comunicados">Todos os comunicados</Link>;
+  if (r.isPending)
+    return (
+      <>
+        <CabecalhoTela titulo="Comunicado" voltar={voltar} />
+        <CarregandoLista linhas={3} altura="6rem" />
+      </>
+    );
   if (r.isError) return <FalhaCarga erro={r.error} aoTentar={() => r.refetch()} />;
   const c = r.data;
   const p = c.previa;
@@ -514,95 +579,27 @@ export function EditorComunicado() {
   };
   const previa: DadosAviso = rascunho ? comoAviso(rascunho, nomes, c.id) : p;
   const decide = c.acoes.includes("aprovar");
+  const salvarAntes = formAberto && !!rascunho && c.acoes.includes("enviar");
+  const temAcao = c.acoes.some((x) => x !== "editar");
 
   return (
     <>
-      <p className={fluxo.voltar}>
-        <Link to="/app/comunicados">Todos os comunicados</Link>
-      </p>
-      <CabecalhoTela
-        titulo={p.titulo}
-        proposito={`Versão ${c.versao_atual}, de ${c.autor_nome}.${
-          c.versao_aprovada ? ` Versão aprovada: ${c.versao_aprovada}.` : ""
-        }${c.publicado_em ? ` Publicado ${quandoRelativo(c.publicado_em)}.` : ""}`}
-        acoes={<SeloEstado estado={c.estado} />}
-      />
-      <Painel titulo="Etapas do fluxo" id="co-etapas" className={estilos.etapas}>
-        <EtapasFluxo estado={c.estado} />
-      </Painel>
-      <div className={estilos.editor}>
-        <Painel
-          titulo={formAberto ? "Editar comunicado" : decide ? "Revisar esta versão" : "Conteúdo"}
-          id="co-conteudo"
+      <CabecalhoTela titulo={p.titulo} acoes={<SeloEstado estado={c.estado} />} voltar={voltar} />
+      <div className={estilos.pilha}>
+        <Fatos>
+          <Fato rotulo="Versão atual">{c.versao_atual}</Fato>
+          {c.versao_aprovada && <Fato rotulo="Versão aprovada">{c.versao_aprovada}</Fato>}
+          <Fato rotulo="Autor">{c.autor_nome}</Fato>
+          <Fato rotulo="Vale até">{quandoRelativo(p.validade_fim)}</Fato>
+          {c.publicado_em && <Fato rotulo="Publicado">{quandoRelativo(c.publicado_em)}</Fato>}
+        </Fatos>
+        <div className={estilos.etapas}>
+          <EtapasFinas estado={c.estado} />
+        </div>
+        <CartaoDecisao
+          titulo={decide ? "Sua decisão" : "Próximo passo"}
+          tom={temAcao ? "agir" : "espera"}
           acoes={
-            podeEditar &&
-            !formAberto && (
-              <Botao variante="secundario" icone={<Pencil />} onClick={() => setEditando(true)}>
-                Editar (cria nova versão)
-              </Botao>
-            )
-          }
-        >
-          {formAberto ? (
-            <Formulario
-              key={c.versao_atual}
-              inicial={inicial}
-              rotuloSalvar={
-                c.estado === "rascunho" || c.estado === "devolvido" ? "Salvar rascunho" : "Salvar nova versão"
-              }
-              aviso={
-                c.estado === "aprovado" || c.estado === "publicado" || c.estado === "em_revisao"
-                  ? `Salvar cria a versão ${c.versao_atual + 1}, que volta para revisão${
-                      c.estado === "publicado" ? " e sai da página inicial até ser aprovada de novo" : ""
-                    }. A versão ${c.versao_atual} fica guardada.`
-                  : undefined
-              }
-              aoMudar={setRascunho}
-              aoSalvar={async (v) => {
-                const d = await enviar<Detalhe>(`/comunicados/${id}`, corpo(v), "PUT");
-                aviso({ titulo: c.estado === "rascunho" ? RETORNO.salvar : "Nova versão salva." });
-                atualizar(d);
-              }}
-              rodapeExtra={
-                editando && (
-                  <Botao variante="discreto" onClick={() => (setEditando(false), setRascunho(null))}>
-                    Cancelar edição
-                  </Botao>
-                )
-              }
-            />
-          ) : (
-            <div className={fluxo.leitura}>
-              {decide && (
-                <p className={fluxo.dica}>
-                  Você está revisando a versão {c.versao_atual}, de {c.autor_nome}. Confira a prévia ao lado:
-                  é ela que vai para a população. Aprove ou devolva explicando o que ajustar.
-                </p>
-              )}
-              {c.frases_longas.length > 0 && (
-                <p className={estilos.longa}>
-                  Atenção à leitura:{" "}
-                  {c.frases_longas.map((f) => `a frase ${f.frase} tem ${f.palavras} palavras`).join("; ")}.
-                </p>
-              )}
-              <div>
-                <h3>Público</h3>
-                <p>{PUBLICOS[c.publico] ?? c.publico}</p>
-              </div>
-              <div>
-                <h3>Evidências</h3>
-                <ListaEvidencias evidencias={c.evidencias as unknown as EvidenciaForm[]} />
-              </div>
-              {c.avaliacao_id && (
-                <p>
-                  <Link to={`/app/avaliacoes/${c.avaliacao_id}`}>
-                    Ver a avaliação que originou este comunicado
-                  </Link>
-                </p>
-              )}
-            </div>
-          )}
-          <div className={estilos.acoesFluxo}>
             <AcoesFluxo<Detalhe>
               base={`/comunicados/${id}`}
               acoes={c.acoes}
@@ -621,26 +618,100 @@ export function EditorComunicado() {
                     : "Encerrar arquiva este comunicado. Ele fica no histórico e não pode mais ser editado.",
               }}
             />
-            {formAberto && rascunho && c.acoes.includes("enviar") && (
-              <p className={fluxo.dica}>Salve as mudanças antes de enviar para revisão.</p>
-            )}
-          </div>
-        </Painel>
-        <Previa
-          aviso={previa}
-          rodape={
-            <>
-              <p className={estilos.hash}>
-                Identificador do conteúdo: <code>{c.hash_conteudo.slice(0, 12)}</code>. A publicação só
-                acontece se ele for igual ao da versão aprovada.
-              </p>
-              <h3 className={estilos.subtitulo}>Histórico</h3>
-              <LinhaDoTempo eventos={c.linha_do_tempo} />
-              <h3 className={estilos.subtitulo}>Versões</h3>
-              <Diferencas id={id} versoes={c.versoes} />
-            </>
           }
-        />
+        >
+          {passo(c, salvarAntes)}
+        </CartaoDecisao>
+        <div className={estilos.editor}>
+          <Painel
+            titulo={formAberto ? "Editar comunicado" : decide ? "Revisar esta versão" : "Conteúdo"}
+            id="co-conteudo"
+            acoes={
+              podeEditar &&
+              !formAberto && (
+                <Botao variante="secundario" icone={<Pencil />} onClick={() => setEditando(true)}>
+                  Editar (cria nova versão)
+                </Botao>
+              )
+            }
+          >
+            {formAberto ? (
+              <Formulario
+                key={c.versao_atual}
+                inicial={inicial}
+                rotuloSalvar={
+                  c.estado === "rascunho" || c.estado === "devolvido"
+                    ? "Salvar rascunho"
+                    : "Salvar nova versão"
+                }
+                aviso={
+                  c.estado === "aprovado" || c.estado === "publicado" || c.estado === "em_revisao"
+                    ? `Salvar cria a versão ${c.versao_atual + 1}, que volta para revisão${
+                        c.estado === "publicado" ? " e sai da página inicial até ser aprovada de novo" : ""
+                      }. A versão ${c.versao_atual} fica guardada.`
+                    : undefined
+                }
+                aoMudar={setRascunho}
+                aoSalvar={async (v) => {
+                  const d = await enviar<Detalhe>(`/comunicados/${id}`, corpo(v), "PUT");
+                  aviso({ titulo: c.estado === "rascunho" ? RETORNO.salvar : "Nova versão salva." });
+                  atualizar(d);
+                }}
+                rodapeExtra={
+                  editando && (
+                    <Botao variante="discreto" onClick={() => (setEditando(false), setRascunho(null))}>
+                      Cancelar edição
+                    </Botao>
+                  )
+                }
+              />
+            ) : (
+              <div className={estilos.leitura}>
+                {c.frases_longas.length > 0 && <AvisoLeitura frases={c.frases_longas} />}
+                <Bloco titulo="Público">
+                  <p>{PUBLICOS[c.publico] ?? c.publico}</p>
+                </Bloco>
+                <Bloco titulo="Evidências">
+                  <ListaEvidencias evidencias={c.evidencias as unknown as EvidenciaForm[]} />
+                </Bloco>
+                {c.avaliacao_id && (
+                  <p>
+                    <Link to={`/app/avaliacoes/${c.avaliacao_id}`}>
+                      Ver a avaliação que originou este comunicado
+                    </Link>
+                  </p>
+                )}
+              </div>
+            )}
+          </Painel>
+          <Previa
+            aviso={previa}
+            rodape={
+              <>
+                <p className={estilos.hash}>
+                  <Pilula tom="neutro" pequena semMarca>
+                    Conteúdo {c.hash_conteudo.slice(0, 12)}
+                  </Pilula>
+                  <Dica
+                    texto="Identificador do conteúdo. A publicação só acontece se ele for igual ao da versão aprovada."
+                    rotulo="Sobre o identificador do conteúdo"
+                    alinhar="fim"
+                  />
+                </p>
+                <Recolher
+                  titulo="Histórico"
+                  contagem={c.linha_do_tempo.length}
+                  aberto={c.estado === "devolvido"}
+                >
+                  <LinhaDoTempo eventos={c.linha_do_tempo} />
+                </Recolher>
+                <Recolher titulo="Versões" contagem={c.versoes.length}>
+                  <Diferencas id={id} versoes={c.versoes} />
+                </Recolher>
+              </>
+            }
+          />
+        </div>
       </div>
     </>
   );

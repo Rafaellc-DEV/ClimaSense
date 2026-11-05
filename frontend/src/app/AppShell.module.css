@@ -1,4 +1,5 @@
-/* Área da equipe (design §9.3): menu claro de 296 px; o item ativo é marcado por fundo, barra e peso, não só cor. */
+/* Área da gestão (design §9.3). Menu lateral em azul profundo com a logo branca, igual ao herói da landing.
+   Os tokens --sup-* não invertem no tema escuro: o menu é azul com texto branco nos dois temas. */
 .casca {
   min-height: 100vh;
   background: var(--cs-nevoa);
@@ -14,7 +15,7 @@
   padding: var(--e-3) var(--e-4);
   background: var(--cs-papel);
   border: 2px solid var(--cs-mare);
-  border-radius: var(--r-campo);
+  border-radius: var(--r-pilula);
   font-weight: 700;
 }
 .pular:focus {
@@ -22,33 +23,78 @@
 }
 .grade {
   display: grid;
-  grid-template-columns: 296px minmax(0, 1fr);
+  grid-template-columns: 272px minmax(0, 1fr);
   min-height: 100vh;
 }
 
 /* ---------- menu lateral */
 .lateral {
+  --marca: 26px;
   position: sticky;
   top: 0;
+  isolation: isolate;
   height: 100vh;
   display: flex;
   flex-direction: column;
   gap: var(--e-5);
   padding: var(--e-5) var(--e-3) var(--e-4);
-  background: var(--cs-papel);
-  border-right: var(--borda);
+  background-color: var(--sup-mare);
+  color: var(--sup-sobre);
   overflow-y: auto;
+}
+/* a malha de pontos da landing, bem fraca, atrás do menu */
+.lateral::before,
+.gaveta::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-image: radial-gradient(circle, var(--sup-linha) 0 1.2px, transparent 1.7px);
+  background-size: var(--malha) var(--malha);
+  background-position: calc(var(--malha) / 2) calc(var(--malha) / 2);
+  -webkit-mask-image: linear-gradient(to bottom, #000, transparent 85%);
+  mask-image: linear-gradient(to bottom, #000, transparent 85%);
+}
+/* os rios do Recife, em traço fino, no pé do menu */
+.rios {
+  position: absolute;
+  z-index: -1;
+  right: -30%;
+  bottom: -8%;
+  width: 150%;
+  height: 46%;
+  opacity: 0.1;
+  pointer-events: none;
+}
+.rios :global(svg) {
+  width: 100%;
+  height: 100%;
+}
+.rios :global(path) {
+  fill: none;
+  stroke: #fff;
+  stroke-width: 1.2;
+}
+.rios :global(.cidade) {
+  fill: rgba(255, 255, 255, 0.05);
+}
+.lateral :focus-visible,
+.gaveta :focus-visible {
+  outline-color: var(--sup-sol);
 }
 .marca {
   display: inline-flex;
   padding: var(--e-2) var(--e-3);
-  border-radius: var(--r-campo);
+  border-radius: var(--r-pilula);
+  color: var(--sup-sobre);
+  text-decoration: none;
 }
-.marca img {
-  width: 176px;
-  height: auto;
+.nav {
+  display: flex;
+  flex-direction: column;
 }
-.nav ul {
+.grupo {
   list-style: none;
   margin: 0;
   padding: 0;
@@ -56,44 +102,67 @@
   flex-direction: column;
   gap: 2px;
 }
+/* separador mínimo entre os grupos: só um fio */
+.bloco + .bloco {
+  margin-top: var(--e-3);
+  padding-top: var(--e-3);
+  border-top: 1px solid var(--sup-linha);
+}
+/* rodapé do menu: Fontes e Administração, menores e afastados do dia a dia */
+.blocoRodape {
+  margin-top: var(--e-5) !important;
+}
+.grupoRodape a {
+  min-height: 44px;
+  font-size: var(--t-apoio);
+}
+.grupoRodape .icone svg {
+  width: 18px;
+  height: 18px;
+}
 .nav a {
   position: relative;
   display: flex;
   align-items: center;
   gap: var(--e-3);
-  min-height: 52px;
+  min-height: 48px;
   padding: 0 var(--e-3) 0 var(--e-4);
-  border-radius: var(--r-campo);
-  color: var(--cs-tinta);
+  border-radius: var(--r-pilula);
+  color: var(--sup-sobre-2);
   font-size: var(--t-corpo);
   font-weight: 500;
   text-decoration: none;
+  transition:
+    background-color var(--mov-rapido),
+    color var(--mov-rapido);
 }
 .nav a:hover {
-  background: var(--cs-nevoa);
+  background: var(--sup-hover);
+  color: var(--sup-sobre);
 }
+/* item ativo: pílula clara e um traço sol à esquerda (não depende só de cor: o peso também muda) */
 .nav a:global(.active) {
-  background: var(--cs-mare-suave);
-  color: var(--cs-mare);
+  background: var(--sup-ativo);
+  color: var(--sup-sobre);
   font-weight: 700;
 }
 .nav a:global(.active)::before {
   content: "";
   position: absolute;
-  left: 0;
-  top: 8px;
-  bottom: 8px;
+  left: 6px;
+  top: 12px;
+  bottom: 12px;
   width: 4px;
-  border-radius: 0 2px 2px 0;
-  background: var(--cs-mangue);
+  border-radius: var(--r-pilula);
+  background: var(--sup-sol);
 }
 .icone {
   display: inline-flex;
   flex: none;
-  color: var(--cs-tinta-2);
+  color: inherit;
 }
 .nav a:global(.active) .icone {
-  color: var(--cs-mare);
+  color: var(--sup-sol);
 }
 .icone svg {
   width: 22px;
@@ -110,54 +179,99 @@
   display: inline-grid;
   place-items: center;
   border-radius: var(--r-pilula);
-  background: var(--cs-mare);
-  color: var(--cs-sobre-mare);
+  background: var(--sup-sol);
+  color: #0e2433;
   font-size: var(--t-apoio);
-  font-weight: 700;
+  font-weight: 800;
   font-variant-numeric: tabular-nums;
 }
 .conta {
   margin-top: auto;
-  padding: var(--e-4) var(--e-3) 0;
-  border-top: var(--borda);
+  display: flex;
+  flex-direction: column;
+  gap: var(--e-3);
+  padding-top: var(--e-4);
+  border-top: 1px solid var(--sup-linha);
+}
+.pessoa {
+  display: flex;
+  align-items: center;
+  gap: var(--e-3);
+  padding: var(--e-2) var(--e-3);
+  border-radius: var(--r-pilula);
+  color: var(--sup-sobre);
+  text-decoration: none;
+}
+.pessoa:hover {
+  background: var(--sup-hover);
+}
+.avatar {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--sup-sobre);
+  color: var(--sup-mare);
+  font-family: var(--fonte-titulo);
+  font-size: var(--t-corpo);
+  font-weight: 800;
+}
+.pessoaTextos {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
 }
 .nome {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   font-weight: 700;
+  line-height: 1.25;
 }
 .papeis {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   font-size: var(--t-apoio);
-  color: var(--cs-tinta-2);
+  color: var(--sup-sobre-2);
+  line-height: 1.25;
 }
 .sair {
-  margin-top: var(--e-3);
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: var(--e-2);
   min-height: var(--alvo);
   padding: 0 var(--e-4);
-  background: var(--cs-papel);
-  border: 2px solid var(--cs-linha-forte);
-  border-radius: var(--r-campo);
+  background: transparent;
+  border: 2px solid rgba(255, 255, 255, 0.5);
+  border-radius: var(--r-pilula);
+  color: var(--sup-sobre);
   font-weight: 700;
   cursor: pointer;
+  transition: background-color var(--mov-rapido);
 }
 .sair:hover {
-  border-color: var(--cs-mare);
-  color: var(--cs-mare);
+  border-color: var(--sup-sobre);
+  background: var(--sup-hover);
 }
+
 /* ---------- coluna de conteúdo */
 .coluna {
   min-width: 0;
   display: flex;
   flex-direction: column;
 }
-/* O conteúdo tem largura máxima e fica centrado: em monitores ultrawide ele não gruda na esquerda. */
 .topo {
   position: sticky;
   top: 0;
   z-index: 30;
   background: var(--cs-papel);
-  border-bottom: var(--borda);
+  box-shadow:
+    0 1px 0 var(--cs-linha),
+    0 8px 20px -16px rgba(14, 36, 51, 0.3);
 }
 .topoInterno {
   display: flex;
@@ -165,77 +279,75 @@
   gap: var(--e-4);
   width: 100%;
   max-width: var(--largura-conteudo);
-  min-height: 72px;
+  min-height: 68px;
   margin-inline: auto;
-  padding: var(--e-3) var(--e-6);
+  padding: var(--e-2) var(--e-6);
+  justify-content: flex-end;
+}
+.demo {
+  padding: 4px 12px;
+  border-radius: var(--r-pilula);
+  background: var(--cs-sol);
+  color: #0e2433;
+  font-size: var(--t-apoio);
+  font-weight: 700;
+  white-space: nowrap;
+}
+.botaoMenu,
+.marcaTopo {
+  display: none;
+}
+/* no computador, sem filtro nem aviso o topo some; o título da página já diz onde você está */
+.topo[data-vazio="true"] {
+  display: none;
 }
 .botaoMenu {
-  display: none;
-  align-items: center;
-  gap: var(--e-2);
-  min-height: var(--alvo);
-  padding: 0 var(--e-4);
-  background: var(--cs-papel);
-  border: 2px solid var(--cs-mare);
-  border-radius: var(--r-campo);
-  color: var(--cs-mare);
-  font-weight: 700;
+  place-items: center;
+  width: var(--alvo);
+  height: var(--alvo);
+  padding: 0;
+  background: transparent;
+  border: 0;
+  border-radius: 50%;
+  color: inherit;
   cursor: pointer;
+}
+.botaoMenu:hover {
+  background: var(--sup-hover);
 }
 .conteudo {
   width: 100%;
   max-width: var(--largura-conteudo);
   margin-inline: auto;
-  padding: var(--e-7) var(--e-6) var(--e-9);
+  padding: var(--e-6) var(--e-6) var(--e-9);
 }
 .conteudo:focus {
   outline: none;
-}
-.cabecalhoTela {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: var(--e-4);
-  margin-bottom: var(--e-7);
-}
-.cabecalhoTela h1 {
-  font-size: var(--t-2);
-  line-height: 1.15;
-  font-weight: 700;
-  color: var(--cs-mare);
-  letter-spacing: -0.01em;
-}
-.cabecalhoTela p {
-  margin-top: var(--e-2);
-  max-width: 68ch;
-  color: var(--cs-tinta-2);
-}
-.acoesTela {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--e-3);
 }
 
 /* ---------- gaveta (< 1024 px) */
 .veu {
   position: fixed;
   inset: 0;
-  background: rgba(14, 36, 51, 0.45);
+  background: rgba(8, 29, 46, 0.55);
   z-index: 40;
 }
 .gaveta {
+  --marca: 26px;
   position: fixed;
   inset: 0 auto 0 0;
+  isolation: isolate;
   width: min(320px, 88vw);
   z-index: 41;
   display: flex;
   flex-direction: column;
   gap: var(--e-4);
   padding: var(--e-4) var(--e-3);
-  background: var(--cs-papel);
+  background-color: var(--sup-mare);
+  color: var(--sup-sobre);
   box-shadow: var(--sombra-flutuante);
   overflow-y: auto;
+  overscroll-behavior: contain;
   animation: entrar 180ms ease-out;
 }
 .gavetaTopo {
@@ -245,15 +357,19 @@
   gap: var(--e-2);
 }
 .fecharGaveta {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--e-1);
-  min-height: var(--alvo);
-  padding: 0 var(--e-3);
+  display: grid;
+  place-items: center;
+  width: var(--alvo);
+  height: var(--alvo);
+  padding: 0;
   background: transparent;
   border: 0;
-  font-weight: 700;
+  border-radius: 50%;
+  color: var(--sup-sobre);
   cursor: pointer;
+}
+.fecharGaveta:hover {
+  background: var(--sup-hover);
 }
 @keyframes entrar {
   from {
@@ -269,20 +385,57 @@
   .lateral {
     display: none;
   }
-  .botaoMenu {
-    display: inline-flex;
-  }
+  /* no celular o topo é azul, como na landing: menu, logo branca e a seção */
   .topo {
-    position: static;
+    position: sticky;
+    background: var(--sup-mare);
+    color: var(--sup-sobre);
+    box-shadow: none;
+  }
+  .topo :focus-visible {
+    outline-color: var(--sup-sol);
   }
   .topoInterno {
+    --marca: 22px;
     flex-wrap: wrap;
-    padding: var(--e-3) var(--e-4);
+    row-gap: var(--e-2);
+    padding: var(--e-2) var(--e-4) var(--e-3);
+  }
+  .topo[data-vazio="true"] {
+    display: block;
+  }
+  .topoInterno {
+    justify-content: flex-start;
+  }
+  .botaoMenu {
+    display: grid;
+    margin-left: calc(-1 * var(--e-2));
+  }
+  .marcaTopo {
+    display: inline-flex;
+    margin-right: auto;
+  }
+  .marcaTopo .marca {
+    padding: 0;
   }
   .conteudo {
     padding: var(--e-5) var(--e-4) var(--e-8);
   }
-  .cabecalhoTela h1 {
-    font-size: var(--t-3);
+}
+
+/* impressão (boletim): só o conteúdo, sem menu, topo nem avisos */
+@media print {
+  .lateral,
+  .topo,
+  .pular {
+    display: none !important;
+  }
+  .grade,
+  .coluna,
+  .conteudo {
+    display: block;
+    padding: 0;
+    margin: 0;
+    background: #fff;
   }
 }

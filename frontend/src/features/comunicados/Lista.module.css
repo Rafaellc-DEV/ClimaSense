@@ -1,0 +1,20 @@
+.estado {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+}
+.autor {
+  display: inline-flex;
+  flex-direction: column;
+}
+.autor small {
+  color: var(--cs-tinta-2);
+  font-size: 0.9375rem;
+}
+@media (max-width: 719px) {
+  .estado,
+  .autor {
+    align-items: flex-end;
+  }
+}

@@ -1,20 +1,21 @@
 import { useMemo } from "react";
 import type { EChartsOption } from "echarts";
 import { QuadroGrafico } from "@/charts/QuadroGrafico";
+import { token, useTemaAtual } from "@/charts/tema";
+import { Pilula } from "@/design-system/componentes/Pilula";
 import type { Esquemas } from "@/lib/api";
 import { formatarMm, nomeMes } from "@/lib/formatos";
+import estilos from "./Chuva.module.css";
 
-const RAMPA = ["#fff3c4", "#fed976", "#fdae4b", "#fd7e33", "#e8481f", "#b71c1c", "#7f0a1a"];
+const RAMPA = ["--g-calor-1", "--g-calor-2", "--g-calor-3", "--g-calor-4", "--g-calor-5"];
 
-/** Calendário ano × mês em mapa de calor (RF-08.5): rampa de calor (amarelo → vermelho); mês sem dado completo fica vazio e hachurado. */
-export function Calendario({
-  dados,
-  fontes,
-}: {
-  dados: Esquemas["Sazonalidade"];
-  fontes: Esquemas["FonteMeta"][];
-}) {
-  const { opcao, tabela, resumo } = useMemo(() => {
+/**
+ * Calendário ano × mês em mapa de calor (RF-08.5). A rampa vem dos tokens `--g-calor-*` (amarelo → vermelho escuro);
+ * mês sem dado completo fica hachurado e com a legenda “Sem dado completo”, nunca na cor do zero (RN-02).
+ */
+export function Calendario({ dados }: { dados: Esquemas["Sazonalidade"] }) {
+  const modo = useTemaAtual();
+  const { opcao, tabela, resumo, pico, max } = useMemo(() => {
     const anos = dados.anos.map(String);
     const meses = Array.from({ length: 12 }, (_, i) => nomeMes(i + 1, true));
     const porCelula = new Map(dados.celulas.map((c) => [`${c.ano}-${c.mes}`, c]));
@@ -26,8 +27,9 @@ export function Calendario({
       return v.length ? v.reduce((s, x) => s + x, 0) / v.length : null;
     });
     const mesTopo = mediaPorMes.indexOf(Math.max(...mediaPorMes.map((v) => v ?? -1)));
+    const papel = token("--cs-papel");
     const o: EChartsOption = {
-      grid: { left: 56, right: 16, top: 8, bottom: 72, containLabel: true },
+      grid: { left: 8, right: 8, top: 8, bottom: 8, containLabel: true },
       tooltip: {
         trigger: "item",
         formatter: (p) => {
@@ -38,22 +40,18 @@ export function Calendario({
           }</strong>`;
         },
       },
-      xAxis: { type: "category", data: meses, splitArea: { show: false } },
-      yAxis: { type: "category", data: anos, inverse: true },
+      xAxis: { type: "category", data: meses, splitArea: { show: false }, splitLine: { show: false } },
+      yAxis: { type: "category", data: anos, inverse: true, splitLine: { show: false } },
+      // a legenda é um bloco de HTML abaixo do gráfico (rampa + “Sem dado completo”); aqui só mapeia valor → cor
       visualMap: [
         {
+          show: false,
           min: 0,
           max,
-          calculable: false,
-          orient: "horizontal",
-          left: "center",
-          bottom: 0,
-          itemHeight: 160,
-          text: [formatarMm(max, 0), "0 mm"],
-          inRange: { color: RAMPA },
+          inRange: { color: RAMPA.map(token) },
           seriesIndex: 0,
         },
-        { show: false, seriesIndex: 1, min: -1, max: -1, inRange: { color: ["#eef1f3"] } },
+        { show: false, seriesIndex: 1, min: -1, max: -1, inRange: { color: [token("--n-insuf-bg")] } },
       ],
       series: [
         {
@@ -64,8 +62,8 @@ export function Calendario({
               return c && c.valor !== null ? [m, a, c.valor] : null;
             }).filter(Boolean),
           ) as [number, number, number][],
-          itemStyle: { borderColor: "#ffffff", borderWidth: 2, borderRadius: 4 },
-          emphasis: { itemStyle: { borderColor: "#0e2433", borderWidth: 2 } },
+          itemStyle: { borderColor: papel, borderWidth: 2, borderRadius: 4 },
+          emphasis: { itemStyle: { borderColor: token("--cs-tinta"), borderWidth: 2 } },
         },
         {
           // meses sem dado completo: hachura cinza, nunca a cor do zero (RN-02)
@@ -77,15 +75,16 @@ export function Calendario({
             }).filter(Boolean),
           ) as [number, number, number][],
           itemStyle: {
-            color: "#eef1f3",
-            borderColor: "#ffffff",
+            color: token("--n-insuf-bg"),
+            borderColor: papel,
             borderWidth: 2,
+            borderRadius: 4,
             decal: {
               symbol: "rect",
               dashArrayX: [1, 0],
               dashArrayY: [2, 4],
               rotation: Math.PI / 4,
-              color: "#9aa8b2",
+              color: token("--g-eixo"),
             },
           },
         },
@@ -99,22 +98,41 @@ export function Calendario({
       ]),
     };
     const r = maisChuvoso
-      ? `${nomeMes(mesTopo + 1).replace(/^./, (x) =>
-          x.toUpperCase(),
-        )} é, em média, o mês mais chuvoso. O mês com mais chuva do período foi ${nomeMes(
-          maisChuvoso.mes,
-        )} de ${maisChuvoso.ano}, com ${formatarMm(maisChuvoso.valor, 0)}.`
+      ? `${nomeMes(mesTopo + 1).replace(/^./, (x) => x.toUpperCase())} é, em média, o mês mais chuvoso.`
       : "Não há meses completos para comparar.";
-    return { opcao: o, tabela: t, resumo: r };
-  }, [dados]);
+    const p = maisChuvoso
+      ? `${nomeMes(maisChuvoso.mes)} de ${maisChuvoso.ano}, ${formatarMm(maisChuvoso.valor, 0)}`
+      : null;
+    return { opcao: o, tabela: t, resumo: r, pico: p, max };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dados, modo]);
   return (
     <QuadroGrafico
-      titulo="Chuva por mês e ano"
+      titulo="Em que meses choveu mais?"
       resumo={resumo}
       opcao={opcao}
       tabela={tabela}
-      fontes={fontes.map((f) => ({ nome: f.nome, atualizadoEm: f.atualizado_em }))}
-      altura={Math.max(240, dados.anos.length * 40 + 110)}
+      altura={Math.max(220, dados.anos.length * 44 + 40)}
+      selos={
+        pico && (
+          <Pilula tom="marca" semMarca>
+            Maior mês: {pico}
+          </Pilula>
+        )
+      }
+      legenda={
+        <div className={estilos.legendaCalor} role="group" aria-label="Legenda de cores do calendário">
+          <span className={estilos.legendaRotulo}>Chuva no mês</span>
+          <span className={estilos.rampa}>
+            <span>0 mm</span>
+            <i aria-hidden="true" />
+            <span>{formatarMm(max, 0)}</span>
+          </span>
+          <span className={estilos.legendaSem}>
+            <i aria-hidden="true" /> Sem dado completo
+          </span>
+        </div>
+      }
     />
   );
 }

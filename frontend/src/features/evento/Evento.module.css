@@ -1,0 +1,68 @@
+/* Peças comuns do evento de chuva: lembrete oficial (F7), origem do dado e mensagem de WhatsApp (F2). */
+.confira {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--e-2);
+  font-size: var(--t-apoio);
+  line-height: 1.4;
+  color: var(--cs-tinta-2);
+}
+.confira svg {
+  flex: none;
+  margin-top: 1px;
+  color: var(--cs-mangue);
+}
+.confira a {
+  font-weight: 700;
+  color: var(--cs-mangue);
+}
+.sobreMare,
+.sobreMare a,
+.sobreMare svg {
+  color: var(--sup-sobre);
+}
+.sobreMare a:focus-visible {
+  outline: 3px solid var(--cs-sol);
+  outline-offset: 2px;
+}
+
+.origem {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--e-1) var(--e-4);
+  font-size: var(--t-apoio);
+  line-height: 1.4;
+  color: var(--cs-tinta-2);
+}
+.origem b {
+  font-weight: 700;
+  color: var(--cs-tinta);
+}
+
+.mensagem {
+  display: grid;
+  gap: var(--e-3);
+}
+.rotuloMensagem {
+  font-weight: 700;
+}
+.textoMensagem {
+  width: 100%;
+  padding: var(--e-3);
+  border: 1px solid var(--cs-linha-forte);
+  border-radius: var(--r-campo);
+  background: var(--cs-nevoa);
+  color: var(--cs-tinta);
+  font: inherit;
+  line-height: 1.45;
+  resize: vertical;
+}
+.botoesMensagem {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--e-3);
+}
+.nota {
+  font-size: var(--t-apoio);
+  color: var(--cs-tinta-2);
+}

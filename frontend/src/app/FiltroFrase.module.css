@@ -1,23 +1,30 @@
 .frase {
   display: flex;
   flex-wrap: wrap;
-  align-items: baseline;
-  gap: 4px 8px;
-  font-size: var(--t-corpo);
-  color: var(--cs-tinta-2);
+  align-items: center;
+  gap: var(--e-2);
 }
 .parte {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--e-2);
   min-height: 44px;
-  padding: 4px 14px;
-  border: 2px solid var(--cs-linha);
+  padding: 4px 16px 4px 12px;
+  border: 1px solid var(--cs-linha);
   border-radius: var(--r-pilula);
   background: var(--cs-papel);
   color: var(--cs-mare);
+  font-size: var(--t-apoio);
   font-weight: 700;
+  white-space: nowrap;
   cursor: pointer;
+  box-shadow: var(--sombra-cartao);
+  transition: background-color var(--mov-rapido);
+}
+.parte svg {
+  flex: none;
 }
 .parte:hover {
-  border-color: var(--cs-mare);
   background: var(--cs-mare-suave);
 }
 .lista {
@@ -101,11 +108,11 @@
 @media (max-width: 640px) {
   .frase {
     width: 100%;
-    gap: 6px;
-    font-size: var(--t-apoio);
   }
   .parte {
     min-height: 40px;
-    padding: 2px 12px;
+    gap: 6px;
+    padding: 2px 10px 2px 8px;
+    font-size: 0.9375rem;
   }
 }

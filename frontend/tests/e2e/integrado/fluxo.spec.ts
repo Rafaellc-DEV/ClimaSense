@@ -90,7 +90,7 @@ test("jornada do comunicado: rascunho → revisão → publicação → landing 
 
   // 2. revisor aprova a versão
   await entrar(page, "revisor");
-  await expect(page.getByRole("region", { name: "Aguardando sua revisão" })).toContainText(titulo);
+  await expect(page.getByRole("region", { name: "O que fazer agora" })).toContainText(titulo);
   await page.goto(endereco);
   await page.getByRole("button", { name: "Aprovar esta versão" }).click();
   await expect(page.getByText("Versão aprovada.")).toBeVisible();
@@ -113,6 +113,7 @@ test("jornada do comunicado: rascunho → revisão → publicação → landing 
   // 4. aparece na landing e no mapa vivo (DS V é o distrito de Afogados)
   await page.goto("/");
   await expect(page.locator("#avisos article", { hasText: titulo })).toBeVisible();
+  await page.getByRole("tab", { name: "Mapa" }).click();
   await expect(page.locator('svg g[data-afetado="true"]').first()).toBeVisible();
   await expect(
     page.locator("li", { hasText: "Distrito Sanitário 5" }).filter({ hasText: "Alerta" }).first(),

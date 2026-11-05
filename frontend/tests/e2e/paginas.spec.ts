@@ -90,30 +90,35 @@ async function semViolacoes(page: Page) {
   expect(graves.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(" ")).join(", ")}`)).toEqual([]);
 }
 
-test("sem aviso: diz “Nenhum aviso ativo publicado pela equipe.”, nunca “sem risco” (T9.1)", async ({
+test("sem aviso: diz “Nenhum comunicado em vigor agora.” e que isso não significa ausência de risco (T9.1)", async ({
   page,
 }) => {
   const autenticadas = await simular(page, []);
   await page.goto("/");
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText(
-    "Nenhum aviso ativo publicado pela equipe.",
-  );
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Há aviso no meu bairro?");
+  await expect(page.getByText("Nenhum comunicado em vigor agora.")).toBeVisible();
+  await expect(page.getByText(/Isso não significa ausência de risco/)).toBeVisible();
+  await expect(page.getByText("Recife agora")).toHaveCount(0);
   await expect(page.getByText(/sem risco|tudo seguro/i)).toHaveCount(0);
+  await page.getByRole("tab", { name: "Mapa" }).click();
   await expect(page.locator("p", { hasText: "Nenhum distrito com aviso publicado." })).toBeVisible();
   // RF-01.11 / T9.6: a landing nunca chama rota autenticada
   await page.waitForLoadState("networkidle");
   expect(autenticadas).toEqual([]);
 });
 
-test("com alerta: o medidor chega ao nível 3 e só o distrito afetado é pintado (T9.1, T9.4)", async ({
+test("com alerta: o banner do herói mostra o nível 3 e só o distrito afetado é pintado (T9.1, T9.4)", async ({
   page,
 }) => {
   await simular(page, [AVISO_ALERTA, AVISO_ATENCAO], { "ds-5": "alerta" });
   await page.goto("/");
-  await expect(page.getByRole("heading", { level: 1 })).toContainText("Alerta para 2 bairros até amanhã");
+  await expect(page.getByText(/Alerta para 2 bairros até amanhã/)).toBeVisible();
   await expect(page.getByText(/E mais 1 aviso em vigor/)).toBeVisible();
-  // desktop mostra o medidor; celular, a faixa com marcador — os dois são a mesma figura com o nível
-  await expect(page.locator('figure[data-nivel="alerta"]:visible')).toHaveCount(1);
+  // com aviso, um banner fino no topo do herói (uma só região de status), com o nível e o link do comunicado
+  const banner = page.locator('[role="status"] [data-nivel="alerta"]');
+  await expect(banner).toHaveCount(1);
+  await expect(banner.getByRole("link", { name: "Ler o comunicado completo" })).toBeVisible();
+  await page.getByRole("tab", { name: "Mapa" }).click();
   const pintados = page.locator('svg g[data-afetado="true"]');
   await expect(pintados).toHaveCount(1);
   await expect(
@@ -169,6 +174,12 @@ for (const caminho of ["/", "/entrar", `/avisos/${AVISO_ALERTA.id}`]) {
     await page.goto(caminho);
     await page.waitForLoadState("networkidle");
     await page.waitForTimeout(800); // a água da régua termina de subir
+    // entradas e trocas de aba terminam de aparecer (axe mede contraste com a opacidade já em 1)
+    await page.waitForFunction(() =>
+      document
+        .getAnimations()
+        .every((an) => an.playState !== "running" || an.effect?.getTiming().iterations === Infinity),
+    );
     await semViolacoes(page);
   });
 }

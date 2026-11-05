@@ -7,14 +7,12 @@ test("o analista não vê Administração; em 800 px o menu vira gaveta com o bo
 }) => {
   await entrar(page, "analista");
   const menu = page.getByRole("navigation", { name: "Menu principal" });
-  await expect(menu.getByRole("link", { name: "Mapa do território" })).toBeVisible();
+  await expect(menu.getByRole("link", { name: "Territórios" })).toBeVisible();
   await expect(menu.getByRole("link", { name: "Administração" })).toHaveCount(0);
   await page.setViewportSize({ width: 800, height: 900 });
   await expect(page.getByRole("navigation", { name: "Menu principal" })).toHaveCount(0);
   await page.getByRole("button", { name: "Menu" }).click();
-  await expect(
-    page.getByRole("dialog").getByRole("link", { name: "Painel inicial", exact: true }),
-  ).toBeVisible();
+  await expect(page.getByRole("dialog").getByRole("link", { name: "Painel", exact: true })).toBeVisible();
 });
 
 test("a coordenação com papel de administrador vê Administração (RF-03.3)", async ({ page }) => {
@@ -33,18 +31,18 @@ test("escolher o DS IV, trocar de tela e recarregar mantém o recorte (T8.3, CA-
   await page.getByRole("button", { name: "Últimos 30 dias" }).click();
   await page
     .getByRole("navigation", { name: "Menu principal" })
-    .getByRole("link", { name: "Séries e sazonalidade" })
+    .getByRole("link", { name: "Séries" })
     .click();
   await expect(page).toHaveURL(/\/app\/series\?.*territorio=ds-4/);
   await page.reload();
   await expect(page.getByRole("button", { name: /Território:/ })).toHaveText(/Distrito Sanitário IV/);
   await expect(
-    page.getByRole("heading", { name: /Chuva ao longo do tempo: Distrito Sanitário IV/ }),
+    page.getByRole("heading", { name: /Quanto choveu em Distrito Sanitário IV/ }),
   ).toBeVisible();
   // o mapa reflete o mesmo recorte: o DS IV aparece selecionado
   await page
     .getByRole("navigation", { name: "Menu principal" })
-    .getByRole("link", { name: "Mapa do território" })
+    .getByRole("link", { name: "Territórios" })
     .click();
   await expect(page.getByRole("heading", { level: 2, name: /Distrito Sanitário IV/ })).toBeVisible();
 });
@@ -71,13 +69,13 @@ test("sem resposta ao aviso, a interface sai e explica o motivo (RF-02.5)", asyn
   await expect(page.getByText("Sua sessão terminou por inatividade. Entre novamente.")).toBeVisible();
 });
 
-test("painel por papel: o revisor vê a fila; a analista vê a explicação (T10.1)", async ({ page }) => {
+test("painel por papel: o revisor e a analista veem a fila “O que fazer agora” (T10.1)", async ({ page }) => {
   await entrar(page, "revisor");
-  await expect(page.getByRole("region", { name: "Aguardando sua revisão" })).toBeVisible();
+  await expect(page.getByRole("region", { name: "O que fazer agora" })).toBeVisible();
   await expect(page.getByRole("region", { name: "Saúde das fontes" })).toContainText("Atualizada");
   await page.getByRole("button", { name: "Sair" }).first().click();
   await entrar(page, "analista");
-  await expect(page.getByText("Quem revisa é outra pessoa da equipe")).toBeVisible();
+  await expect(page.getByRole("region", { name: "O que fazer agora" })).toBeVisible();
 });
 
 test("fontes: o administrador atualiza uma fonte e vê o status; a analista não vê o botão (T12.1)", async ({

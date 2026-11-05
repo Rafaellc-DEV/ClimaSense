@@ -17,6 +17,7 @@ import { formatarNumero } from "@/lib/formatos";
 import distritos from "@/assets/tracos/distritos.json";
 import rios from "@/assets/tracos/rios.svg?raw";
 import { DISTRITOS_REAIS, FONTE_DISTRITOS, type DistritoReal } from "./dadosReais";
+import { VitrineGestao } from "./VitrineGestao";
 import estilos from "./Vitrine.module.css";
 
 const CORES = [
@@ -382,6 +383,7 @@ export function Vitrine() {
           </figure>
         </div>
       </section>
+      <VitrineGestao />
     </main>
   );
 }

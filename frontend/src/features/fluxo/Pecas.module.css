@@ -1,0 +1,203 @@
+/* ===== fatos ===== */
+.fatos {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: var(--e-3);
+  margin: 0;
+}
+.fatos[data-colunas="duas"] {
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+}
+.fato {
+  display: grid;
+  align-content: start;
+  gap: 2px;
+  min-width: 0;
+  padding: var(--e-3) var(--e-4);
+  border-radius: var(--r-icone);
+  background: var(--cs-nevoa);
+  box-shadow: inset 0 0 0 1px var(--cs-linha);
+}
+.fato dt {
+  display: flex;
+  align-items: center;
+  gap: var(--e-1);
+  color: var(--cs-tinta-2);
+  font-size: 0.9375rem;
+  font-weight: 600;
+}
+.fato dd {
+  margin: 0;
+  min-width: 0;
+  font-family: var(--fonte-titulo);
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--cs-tinta);
+  overflow-wrap: anywhere;
+}
+
+/* ===== próximo passo ===== */
+.decisao {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--e-3) var(--e-4);
+  padding: var(--e-4) var(--e-5) var(--e-4) calc(var(--e-5) + 6px);
+  border-radius: var(--r-painel);
+  background: var(--cs-papel);
+  box-shadow: var(--sombra-cartao);
+  overflow: hidden;
+}
+.decisao::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 6px;
+  background: var(--cs-sol);
+}
+.decisao[data-tom="espera"]::before {
+  background: var(--cs-linha-forte);
+}
+.disco {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--r-icone);
+  background: var(--cs-mare-suave);
+  color: var(--cs-mare);
+}
+.decisaoTexto {
+  flex: 1 1 240px;
+  min-width: 0;
+}
+.decisaoTexto h2 {
+  font-family: var(--fonte-titulo);
+  font-size: var(--t-4);
+  line-height: 1.25;
+  font-weight: 700;
+  color: var(--cs-mare);
+}
+.decisaoTexto p {
+  color: var(--cs-tinta-2);
+  max-width: 62ch;
+}
+.decisaoAcoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--e-3);
+}
+@media (max-width: 640px) {
+  .decisao {
+    padding: var(--e-4) var(--e-4) var(--e-4) calc(var(--e-4) + 6px);
+  }
+  .decisaoAcoes,
+  .decisaoAcoes > * {
+    width: 100%;
+  }
+}
+
+/* ===== recolher ===== */
+.recolher {
+  border-radius: var(--r-icone);
+  box-shadow: inset 0 0 0 1px var(--cs-linha);
+  background: var(--cs-papel);
+}
+.recolher summary {
+  display: flex;
+  align-items: center;
+  gap: var(--e-2);
+  min-height: var(--alvo);
+  padding: 0 var(--e-4);
+  border-radius: var(--r-icone);
+  font-family: var(--fonte-titulo);
+  font-weight: 700;
+  cursor: pointer;
+  list-style: none;
+}
+.recolher summary::-webkit-details-marker {
+  display: none;
+}
+.recolher summary > :first-child {
+  flex: 1;
+}
+.recolher summary svg {
+  color: var(--cs-tinta-2);
+  transition: transform var(--mov-rapido);
+}
+.recolher[open] summary svg {
+  transform: rotate(180deg);
+}
+.recolher summary:hover {
+  background: var(--cs-mare-suave);
+}
+.contagem {
+  display: inline-grid;
+  place-items: center;
+  min-width: 26px;
+  height: 26px;
+  padding: 0 var(--e-2);
+  border-radius: var(--r-pilula);
+  background: var(--cs-mare-suave);
+  color: var(--cs-mare);
+  font-size: 0.9375rem;
+  font-variant-numeric: tabular-nums;
+}
+.recolherCorpo {
+  padding: var(--e-2) var(--e-4) var(--e-4);
+}
+
+/* ===== blocos ===== */
+.bloco {
+  display: grid;
+  gap: var(--e-1);
+}
+.bloco h3 {
+  color: var(--cs-tinta-2);
+  font-family: var(--fonte-titulo);
+  font-size: 0.9375rem;
+  font-weight: 600;
+}
+.bloco p {
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+.secao {
+  display: grid;
+  gap: var(--e-4);
+  padding-top: var(--e-5);
+  border-top: 1px solid var(--cs-linha);
+}
+.secao:first-child {
+  padding-top: 0;
+  border-top: 0;
+}
+.secao h3 {
+  display: flex;
+  align-items: center;
+  gap: var(--e-2);
+  font-family: var(--fonte-titulo);
+  font-size: var(--t-corpo);
+  font-weight: 700;
+  color: var(--cs-mare);
+}
+.contador {
+  display: inline-block;
+  font-size: 0.9375rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--cs-tinta-2);
+}
+.contador[data-cheio="true"] {
+  color: var(--n-critico);
+  font-weight: 700;
+}
+@media (prefers-reduced-motion: reduce) {
+  .recolher summary svg {
+    transition: none;
+  }
+}
+:global(:root[data-tema="escuro"]) .contador[data-cheio="true"] {
+  color: var(--n-alerta);
+}

@@ -12,9 +12,13 @@ test("mapa do território: checklist RF-07 da Aula 07", async ({ page }) => {
   const erros: string[] = [];
   page.on("pageerror", (e) => erros.push(e.message));
   await entrar(page, "analista", "/app/mapa");
-  const lista = page.getByRole("complementary", { name: "Busca e camadas" }).locator("ul li button");
+  // a fila “Atenção primeiro” mostra 3 distritos; “Ver todos” abre os 8
+  const lista = page.locator('ol[aria-label="Distritos que pedem atenção primeiro"] > li');
+  await expect(lista).toHaveCount(3);
+  await page.getByRole("button", { name: "Ver todos os 8" }).click();
   await expect(lista).toHaveCount(8);
-  await expect(page.getByText(/8 distritos sanitários, 94 bairros e 81 faixas hídricas/)).toBeVisible();
+  // os totais ficam atrás do (i) do cabeçalho
+  await expect(page.getByText(/8 distritos sanitários, 94 bairros e 81 faixas hídricas/)).toBeAttached();
   await expect(page.locator(".leaflet-overlay-pane path")).toHaveCount(8);
   await expect(page.locator(".leaflet-hidrografia-pane path")).toHaveCount(81);
 
@@ -22,12 +26,12 @@ test("mapa do território: checklist RF-07 da Aula 07", async ({ page }) => {
   await page.getByLabel("Distrito ou bairro").fill("boa viagem");
   await expect(lista).toHaveCount(1);
   await expect(page.locator(".leaflet-overlay-pane path")).toHaveCount(1);
-  await lista.first().click();
+  await lista.first().getByRole("button").first().click();
   await expect(page).toHaveURL(/territorio=ds-6/);
   const detalhe = page.getByRole("complementary", { name: "Detalhes do distrito" });
   await expect(detalhe.getByRole("heading", { level: 2 })).toHaveText(/Distrito Sanitário VI/);
   await expect(detalhe).toContainText("Boa Viagem");
-  await expect(detalhe.locator("dd").first()).toHaveText("5");
+  await expect(detalhe.getByRole("group", { name: "Bairros" })).toContainText("5");
 
   // CSV do resultado filtrado: BOM, “;”, vírgula decimal (RF-07.10)
   const download = page.waitForEvent("download");
@@ -43,10 +47,11 @@ test("mapa do território: checklist RF-07 da Aula 07", async ({ page }) => {
   await expect(page.getByText("Nenhum distrito encontrado.")).toBeVisible();
   await expect(page.locator(".leaflet-overlay-pane path")).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Exportar CSV" })).toBeDisabled();
-  await page.getByRole("button", { name: "Limpar filtros e ver todos" }).click();
+  await page.getByRole("button", { name: "Limpar busca", exact: true }).click();
   await expect(lista).toHaveCount(8);
 
-  // camadas (RF-07.7)
+  // camadas (RF-07.7): ficam no menu “Camadas”, sobre o mapa
+  await page.getByRole("button", { name: "Camadas" }).click();
   await page.getByRole("switch", { name: "Faixas marginais dos recursos hídricos" }).uncheck();
   await expect(page.locator(".leaflet-hidrografia-pane path")).toHaveCount(0);
   await page.getByRole("switch", { name: "Faixas marginais dos recursos hídricos" }).check();
@@ -61,10 +66,11 @@ test("mapa do território: checklist RF-07 da Aula 07", async ({ page }) => {
   await page.getByRole("slider").fill("85");
 
   // colorir por área: a legenda muda (RF-07.2, 07.9)
-  await page.getByRole("combobox", { name: "Colorir por" }).click();
-  await page.getByRole("option", { name: "Área do distrito (km²)" }).click();
+  await page.getByRole("radio", { name: "Área" }).check({ force: true });
   await expect(page.getByLabel("Legenda do mapa")).toContainText("km²");
-  await expect(page.getByText(/não representa população/)).toBeVisible();
+  await expect(
+    page.locator('[role="tooltip"]').filter({ hasText: /não representa população/ }),
+  ).toBeAttached();
 
   // zoom e teclado (RF-07.14)
   const antes = await page.locator(".leaflet-overlay-pane path").first().getAttribute("d");
@@ -108,8 +114,7 @@ test("falha dos tiles mostra o aviso e mantém os polígonos (RF-07.11)", async 
 
 test("indicador sem fonte integrada mostra Dados insuficientes, nunca zero (RF-07.15)", async ({ page }) => {
   await entrar(page, "analista", "/app/mapa");
-  await page.getByRole("combobox", { name: "Colorir por" }).click();
-  await page.getByRole("option", { name: "Ocorrências de alagamento" }).click();
+  await page.getByRole("radio", { name: "Ocorrências" }).check({ force: true });
   await expect(page.getByText("Dados insuficientes para este indicador")).toBeVisible();
   await expect(page.getByLabel("Legenda do mapa")).toContainText("Sem dado");
 });

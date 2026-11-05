@@ -15,13 +15,12 @@ const Vitrine = carregar(() => import("@/features/vitrine/Vitrine"), "Vitrine");
 const Entrar = carregar(() => import("@/features/entrar/Entrar"), "Entrar");
 const DetalheAvisoPublico = carregar(() => import("@/features/landing/DetalheAviso"), "DetalheAviso");
 const AppShell = carregar(() => import("./AppShell"), "AppShell");
-const Painel = carregar(() => import("@/features/painel/Painel"), "Painel");
-const Mapa = carregar(() => import("@/features/territorio/TelaMapa"), "TelaMapa");
-const Series = carregar(() => import("@/features/series/TelaSeries"), "TelaSeries");
-const Cenarios = carregar(() => import("@/features/cenarios/TelaCenarios"), "TelaCenarios");
-const Avaliacoes = carregar(() => import("@/features/avaliacoes/ListaAvaliacoes"), "ListaAvaliacoes");
-const Avaliacao = carregar(() => import("@/features/avaliacoes/DetalheAvaliacao"), "DetalheAvaliacao");
-const NovaAvaliacao = carregar(() => import("@/features/avaliacoes/DetalheAvaliacao"), "NovaAvaliacao");
+const Situacao = carregar(() => import("@/features/situacao/TelaSituacao"), "TelaSituacao");
+const Chuva = carregar(() => import("@/features/chuva/TelaChuva"), "TelaChuva");
+const Registro = carregar(() => import("@/features/registro/TelaRegistro"), "TelaRegistro");
+const Abrigos = carregar(() => import("@/features/abrigos/TelaAbrigos"), "TelaAbrigos");
+const Saude = carregar(() => import("@/features/saude/TelaSaude"), "TelaSaude");
+const Boletim = carregar(() => import("@/features/boletim/TelaBoletim"), "TelaBoletim");
 const Comunicados = carregar(() => import("@/features/comunicados/ListaComunicados"), "ListaComunicados");
 const Comunicado = carregar(() => import("@/features/comunicados/EditorComunicado"), "EditorComunicado");
 const NovoComunicado = carregar(() => import("@/features/comunicados/EditorComunicado"), "NovoComunicado");
@@ -36,6 +35,21 @@ function RedirecionarEquipe() {
   return <Navigate to={l.pathname.replace(/^\/equipe/, "/app") + l.search} replace />;
 }
 
+/**
+ * Telas que saíram do menu levam para a tela nova que ficou com o conteúdo delas, sem 404. Endereço desconhecido
+ * dentro de /app volta para a Situação.
+ */
+const ANTIGAS: [string, string][] = [
+  ["painel", "/app"],
+  ["estagios", "/app"],
+  ["mapa", "/app"],
+  ["avaliacoes/*", "/app"],
+  ["avaliacoes", "/app"],
+  ["cenarios", "/app/chuva"],
+  ["series", "/app/chuva?aba=historico"],
+  ["acoes", "/app/registro"],
+];
+
 export function App() {
   return (
     <QueryClientProvider client={clienteConsultas}>
@@ -48,13 +62,15 @@ export function App() {
                 <Route path="/avisos/:id" element={<DetalheAvisoPublico />} />
                 <Route path="/entrar" element={<Entrar />} />
                 <Route path="/app" element={<AppShell />}>
-                  <Route index element={<Painel />} />
-                  <Route path="mapa" element={<Mapa />} />
-                  <Route path="series" element={<Series />} />
-                  <Route path="cenarios" element={<Cenarios />} />
-                  <Route path="avaliacoes" element={<Avaliacoes />} />
-                  <Route path="avaliacoes/nova" element={<NovaAvaliacao />} />
-                  <Route path="avaliacoes/:id" element={<Avaliacao />} />
+                  <Route index element={<Situacao />} />
+                  <Route path="chuva" element={<Chuva />} />
+                  <Route path="registro" element={<Registro />} />
+                  <Route path="abrigos" element={<Abrigos />} />
+                  <Route path="saude" element={<Saude />} />
+                  <Route path="boletim" element={<Boletim />} />
+                  {ANTIGAS.map(([de, para]) => (
+                    <Route key={de} path={de} element={<Navigate to={para} replace />} />
+                  ))}
                   <Route path="comunicados" element={<Comunicados />} />
                   <Route path="comunicados/novo" element={<NovoComunicado />} />
                   <Route path="comunicados/:id" element={<Comunicado />} />
@@ -62,6 +78,7 @@ export function App() {
                   <Route path="fontes/:id" element={<Fonte />} />
                   <Route path="admin/*" element={<Admin />} />
                   <Route path="conta" element={<Conta />} />
+                  <Route path="*" element={<Navigate to="/app" replace />} />
                 </Route>
                 <Route path="/equipe/*" element={<RedirecionarEquipe />} />
                 {VITRINE_ATIVA && <Route path="/_vitrine" element={<Vitrine />} />}

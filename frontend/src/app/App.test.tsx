@@ -1,4 +1,5 @@
 import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { clienteConsultas } from "@/lib/api";
 import { App } from "./App";
 
@@ -56,13 +57,11 @@ test("a página inicial mostra o estado real dos avisos e os telefones de emerg�
   });
   window.history.pushState({}, "", "/");
   render(<App />);
-  expect(
-    await screen.findByRole("heading", { level: 1, name: /^Alerta para 2 bairros até/ }),
-  ).toBeInTheDocument();
+  expect(await screen.findByText(/^Alerta para 2 bairros até/)).toBeInTheDocument();
   expect(await screen.findByText(/E mais 1 aviso em vigor/)).toBeInTheDocument();
   expect(screen.getAllByRole("link", { name: /Defesa Civil, 199/ })[0]).toHaveAttribute("href", "tel:199");
-  // o distrito afetado aparece em texto, não só em cor (RN-17)
-  // o nome aparece também na chamada do mapa; a linha da legenda é a que fica num <li>
+  // o distrito afetado aparece em texto, não só em cor (RN-17); o mapa fica na aba “Mapa”
+  await userEvent.setup().click(screen.getByRole("tab", { name: "Mapa" }));
   const linha = (await screen.findAllByText("Distrito Sanitário 5"))
     .map((e) => e.closest("li"))
     .find(Boolean);
@@ -89,9 +88,8 @@ test("sem aviso, a página nunca diz “sem risco”", async () => {
   });
   window.history.pushState({}, "", "/");
   render(<App />);
-  expect(
-    await screen.findByRole("heading", { level: 1, name: "Nenhum aviso ativo publicado pela equipe." }),
-  ).toBeInTheDocument();
+  expect(await screen.findByText("Nenhum comunicado em vigor agora.")).toBeInTheDocument();
+  expect(screen.getByText(/Isso não significa ausência de risco/)).toBeInTheDocument();
   expect(screen.queryByText(/sem risco|tudo seguro/i)).not.toBeInTheDocument();
 });
 
@@ -100,7 +98,7 @@ test("se a API falha, a página diz que não foi possível verificar — nunca �
   window.history.pushState({}, "", "/");
   render(<App />);
   expect(
-    await screen.findByRole("heading", { level: 1, name: /Não foi possível verificar/ }, { timeout: 4000 }),
+    await screen.findByText(/Não foi possível verificar os avisos agora/, {}, { timeout: 4000 }),
   ).toBeInTheDocument();
   expect(screen.queryByText(/Nenhum aviso ativo publicado/)).not.toBeInTheDocument();
 });

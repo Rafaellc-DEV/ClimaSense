@@ -1,10 +1,11 @@
 import { useMemo, useState, type FormEvent } from "react";
+import { CalendarRange, MapPin } from "lucide-react";
 import { Botao } from "@/design-system/componentes/Botao";
 import { Campo } from "@/design-system/componentes/Campo";
 import { Dialogo } from "@/design-system/componentes/Dialogo";
 import type { Esquemas } from "@/lib/api";
 import { useConsulta } from "@/lib/consultas";
-import { dataPorExtenso, diaNoRecife } from "@/lib/formatos";
+import { diaNoRecife } from "@/lib/formatos";
 import { normalize } from "@/map/model";
 import { PREDEFINICOES, useRecorte } from "@/lib/recorte";
 import estilos from "./FiltroFrase.module.css";
@@ -20,8 +21,21 @@ export function nomeTerritorio(lista: Territorio[] | undefined, id: string): str
   return lista?.find((t) => t.id === id)?.nome_exibicao ?? id;
 }
 
+/** "1 jan" ou "15 out 2026", sem passar por fuso. */
+function diaCurto(dia: string, comAno: boolean): string {
+  const data = new Date(`${dia}T00:00:00Z`);
+  const t = new Intl.DateTimeFormat("pt-BR", {
+    day: "numeric",
+    month: "short",
+    ...(comAno ? { year: "numeric" } : {}),
+    timeZone: "UTC",
+  }).format(data);
+  return t.replace(/\./g, "").replace(/ de /g, " ");
+}
+
 /**
- * Filtro global como frase (design §8.2, RF-05.3): “Mostrando Recife inteiro, de 1º de janeiro a 15 de outubro
+ * Filtro global compacto: dois botões em pílula, território e período. O estado fica na URL (RF-05.3).
+ * Antes era a frase (design §8.2, RF-05.3): “Mostrando Recife inteiro, de 1º de janeiro a 15 de outubro
  * de 2026.” Cada parte em destaque é um botão grande que abre a escolha. O estado fica na URL.
  */
 export function FiltroFrase() {
@@ -32,22 +46,16 @@ export function FiltroFrase() {
 
   return (
     <div className={estilos.frase} role="group" aria-label="Recorte de território e período">
-      <span>Mostrando</span>
       <button type="button" className={estilos.parte} onClick={() => setAberto("territorio")}>
+        <MapPin aria-hidden="true" size={18} />
         <span className="so-leitor">Território: </span>
         {nomeTerritorio(territorios.data, recorte.territorio)}
       </button>
-      <span>, de</span>
       <button type="button" className={estilos.parte} onClick={() => setAberto("periodo")}>
-        <span className="so-leitor">Início do período: </span>
-        {dataPorExtenso(recorte.inicio, !mesmoAno)}
+        <CalendarRange aria-hidden="true" size={18} />
+        <span className="so-leitor">Período: </span>
+        {diaCurto(recorte.inicio, !mesmoAno)} a {diaCurto(recorte.fim, true)}
       </button>
-      <span>a</span>
-      <button type="button" className={estilos.parte} onClick={() => setAberto("periodo")}>
-        <span className="so-leitor">Fim do período: </span>
-        {dataPorExtenso(recorte.fim)}
-      </button>
-      <span>.</span>
 
       <EscolhaTerritorio
         aberto={aberto === "territorio"}

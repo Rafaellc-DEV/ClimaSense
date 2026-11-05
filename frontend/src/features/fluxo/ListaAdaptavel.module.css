@@ -1,0 +1,121 @@
+.moldura {
+  overflow-x: auto;
+  border-radius: var(--r-painel);
+  box-shadow: inset 0 0 0 1px var(--cs-linha);
+  background: var(--cs-papel);
+}
+.tabela {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 1rem;
+}
+.tabela th,
+.tabela td {
+  text-align: left;
+  padding: var(--e-3) var(--e-4);
+  border-top: 1px solid var(--cs-linha);
+  vertical-align: middle;
+}
+.tabela thead th {
+  border-top: 0;
+  background: var(--cs-mare-suave);
+  color: var(--cs-tinta-2);
+  font-family: var(--fonte-titulo);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.tabela tbody th {
+  font-weight: 700;
+}
+.tabela tbody tr {
+  transition: background-color var(--mov-rapido);
+}
+.tabela tbody tr:hover {
+  background: var(--cs-mare-suave);
+}
+.tabela a {
+  font-weight: 700;
+  color: var(--cs-mare);
+  text-decoration-thickness: 1.5px;
+}
+.semQuebra {
+  white-space: nowrap;
+}
+.numero {
+  text-align: right !important;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* celular: cada linha vira um cartão; o primeiro dado é o título e os outros ganham o rótulo da coluna */
+@media (max-width: 719px) {
+  .moldura {
+    overflow: visible;
+    background: transparent;
+    box-shadow: none;
+  }
+  .tabela,
+  .tabela tbody {
+    display: block;
+  }
+  .tabela thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+  }
+  .tabela tbody {
+    display: grid;
+    gap: var(--e-3);
+  }
+  .tabela tbody tr {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--e-2);
+    padding: var(--e-4);
+    border-radius: var(--r-painel);
+    background: var(--cs-papel);
+    box-shadow: var(--sombra-cartao);
+  }
+  .tabela tbody tr:hover {
+    background: var(--cs-papel);
+  }
+  .tabela th,
+  .tabela td {
+    display: block;
+    min-width: 0;
+    padding: 0;
+    border: 0;
+  }
+  .tabela tbody th {
+    font-size: 1.125rem;
+    font-family: var(--fonte-titulo);
+  }
+  .tabela td {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--e-3);
+    min-height: 32px;
+    text-align: right;
+  }
+  .tabela td[data-rotulo]::before {
+    content: attr(data-rotulo);
+    flex: none;
+    color: var(--cs-tinta-2);
+    font-size: 0.9375rem;
+    text-align: left;
+  }
+  .numero {
+    text-align: right !important;
+  }
+  .semQuebra {
+    white-space: normal;
+  }
+  .soDesktop {
+    display: none !important;
+  }
+}

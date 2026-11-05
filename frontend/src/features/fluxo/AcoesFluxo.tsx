@@ -65,7 +65,7 @@ export function AcoesFluxo<T>({
       {visiveis.map((a) => (
         <Botao
           key={a}
-          variante={a === "encerrar" ? "secundario" : a === "devolver" ? "secundario" : "principal"}
+          variante={a === "encerrar" || a === "devolver" ? "secundario" : "principal"}
           icone={ICONES[a]}
           disabled={ocupado}
           onClick={() => {
@@ -96,7 +96,7 @@ export function AcoesFluxo<T>({
         aberto={devolver}
         aoMudar={setDevolver}
         titulo="Devolver com justificativa"
-        descricao="Explique o que precisa mudar. Quem escreveu vê o motivo na linha do tempo."
+        descricao="Quem escreveu vê o motivo no histórico."
         acoes={
           <>
             <Botao variante="secundario" onClick={() => setDevolver(false)}>
@@ -132,59 +132,4 @@ export function AcoesFluxo<T>({
   );
 }
 
-export interface EvidenciaForm {
-  tipo: string;
-  descricao: string;
-  fonte_id: string;
-  capturada_em: string;
-  valor?: string | null;
-  endereco?: string | null;
-}
-
-/** Evidências vinculadas: cada uma aponta para uma fonte real e diz quando foi capturada (RN-19). */
-export function ListaEvidencias({
-  evidencias,
-  aoRemover,
-}: {
-  evidencias: EvidenciaForm[];
-  aoRemover?: (i: number) => void;
-}) {
-  if (!evidencias.length)
-    return (
-      <p className={estilos.semEvidencia}>
-        Nenhuma evidência vinculada. Use “Registrar avaliação” no mapa ou “Encaminhar para avaliação” nos
-        cenários para trazer valores com fonte e horário.
-      </p>
-    );
-  return (
-    <ul className={estilos.evidencias}>
-      {evidencias.map((e, i) => (
-        <li key={i}>
-          <div>
-            <strong>{e.descricao}</strong>
-            {e.valor && <span>{e.valor}</span>}
-            <small>
-              Fonte {e.fonte_id}, capturada em{" "}
-              {new Intl.DateTimeFormat("pt-BR", {
-                dateStyle: "short",
-                timeStyle: "short",
-                timeZone: "America/Recife",
-              }).format(new Date(e.capturada_em))}
-              .{" "}
-              {e.endereco && (
-                <a href={e.endereco} target="_blank" rel="noreferrer">
-                  Abrir o recorte
-                </a>
-              )}
-            </small>
-          </div>
-          {aoRemover && (
-            <Botao variante="discreto" onClick={() => aoRemover(i)}>
-              Remover
-            </Botao>
-          )}
-        </li>
-      ))}
-    </ul>
-  );
-}
+export { ListaEvidencias, type EvidenciaForm } from "./Evidencias";

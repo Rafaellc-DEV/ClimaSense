@@ -1,0 +1,360 @@
+/* Situação: a frase do topo, a tabela dos 8 distritos, o mapa e os abrigos abertos. */
+.pagina {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--e-5);
+}
+
+/* ---------- a frase do que fazer agora: a tipografia é a imagem da tela */
+.frase {
+  max-width: 30ch;
+  margin: 0;
+  font-family: var(--fonte-titulo);
+  font-size: clamp(1.5rem, 1.1rem + 1.6vw, 2.25rem);
+  font-weight: 750;
+  line-height: 1.18;
+  letter-spacing: -0.01em;
+  text-wrap: balance;
+  color: var(--sup-sobre);
+}
+.esqueletoAzul {
+  display: grid;
+  gap: var(--e-2);
+  width: 100%;
+}
+
+/* ---------- motivo comum, dito uma vez */
+.comum {
+  margin: 0 0 var(--e-3);
+  padding: var(--e-3) var(--e-4);
+  border-left: 4px solid var(--cs-mare);
+  border-radius: 0 var(--r-icone) var(--r-icone) 0;
+  background: var(--cs-nevoa);
+  font-size: var(--t-apoio);
+  line-height: 1.45;
+}
+
+/* ---------- tabela */
+.tabela {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--t-apoio);
+}
+.tabela thead th {
+  padding: var(--e-2) var(--e-3);
+  border-bottom: 2px solid var(--cs-linha-forte);
+  font-family: var(--fonte-titulo);
+  font-weight: 700;
+  text-align: left;
+  color: var(--cs-tinta-2);
+}
+.tabela td,
+.tabela tbody th {
+  padding: var(--e-3);
+  border-bottom: var(--borda);
+  text-align: left;
+  vertical-align: middle;
+}
+.linha[data-pede="true"] > * {
+  background: color-mix(in srgb, var(--n-atencao-bg) 70%, transparent);
+}
+.linha[data-pede="true"] > th {
+  box-shadow: inset 4px 0 0 var(--n-atencao);
+}
+.celulaNome {
+  min-width: 9rem;
+}
+.nome {
+  display: block;
+  font-family: var(--fonte-titulo);
+  font-size: var(--t-corpo);
+  font-weight: 700;
+  color: var(--cs-tinta);
+}
+.expandir {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 36px;
+  margin-left: -6px;
+  padding: 0 var(--e-2);
+  border: 0;
+  border-radius: var(--r-pilula);
+  background: transparent;
+  color: var(--cs-mangue);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+.expandir:hover {
+  background: var(--cs-mare-suave);
+}
+.expandir svg {
+  transition: transform var(--mov-rapido);
+}
+.expandir[aria-expanded="true"] svg {
+  transform: rotate(180deg);
+}
+.celulaSelo {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px var(--e-2);
+}
+.celulaSelo small {
+  color: var(--cs-tinta-2);
+}
+.acima {
+  font-weight: 700;
+  color: var(--cs-tinta) !important;
+}
+.motivo {
+  max-width: 34ch;
+  line-height: 1.4;
+}
+.apagado {
+  color: var(--cs-tinta-2);
+}
+.acoes {
+  white-space: nowrap;
+  text-align: right !important;
+}
+.acoes > * + * {
+  margin-left: var(--e-1);
+}
+.linhaBairros > td {
+  padding: var(--e-3) var(--e-3) var(--e-4) !important;
+  background: var(--cs-nevoa);
+}
+.bairros {
+  display: grid;
+  gap: var(--e-3);
+}
+.gradeBairros {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+  gap: var(--e-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.gradeBairros li {
+  display: grid;
+  gap: 4px;
+  align-content: start;
+  justify-items: start;
+  padding: var(--e-2) var(--e-3);
+  border-radius: var(--r-icone);
+  background: var(--cs-papel);
+  box-shadow: inset 0 0 0 1px var(--cs-linha);
+}
+.gradeBairros li[data-pede="true"] {
+  box-shadow: inset 0 0 0 2px var(--n-atencao);
+}
+.nomeBairro {
+  font-weight: 700;
+}
+.detalhe {
+  margin: 0;
+  font-size: var(--t-apoio);
+  line-height: 1.45;
+  color: var(--cs-tinta-2);
+}
+
+/* ---------- como o sistema sugere (recolhido) */
+.comoSugere {
+  margin-top: var(--e-4);
+}
+.comoSugere > summary {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--alvo-lista);
+  cursor: pointer;
+  font-family: var(--fonte-titulo);
+  font-weight: 700;
+  color: var(--cs-mangue);
+}
+.comoSugere[open] > summary {
+  margin-bottom: var(--e-3);
+}
+.parametros {
+  display: grid;
+  gap: var(--e-3);
+  justify-items: start;
+}
+
+/* ---------- mapa e abrigos */
+.duas {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  gap: var(--e-5);
+  align-items: start;
+}
+.numeroAbrigos {
+  margin: 0;
+  font-size: var(--t-corpo);
+}
+.numeroAbrigos b {
+  font-family: var(--fonte-titulo);
+  font-size: var(--t-2);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: var(--cs-mare);
+}
+.listaAbrigos {
+  display: grid;
+  gap: var(--e-1);
+  margin: var(--e-2) 0;
+  padding-left: var(--e-5);
+}
+.listaAbrigos small {
+  color: var(--cs-tinta-2);
+}
+.verTodos {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 700;
+  color: var(--cs-mangue);
+}
+.rodape {
+  margin: 0;
+  font-size: var(--t-apoio);
+  color: var(--cs-tinta-2);
+}
+
+/* ---------- formulários dos diálogos */
+.form {
+  display: grid;
+  gap: var(--e-4);
+}
+.rotulo {
+  font-family: var(--fonte-titulo);
+  font-size: var(--t-apoio);
+  font-weight: 700;
+  color: var(--cs-tinta-2);
+}
+.escolhidos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--e-2);
+  list-style: none;
+  margin: var(--e-2) 0 0;
+  padding: 0;
+}
+.escolhidos li {
+  padding: 4px 12px;
+  border-radius: var(--r-pilula);
+  background: var(--cs-nevoa);
+  font-weight: 700;
+}
+.escolhidos small {
+  font-weight: 400;
+  color: var(--cs-tinta-2);
+}
+.limiares {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: var(--e-3) var(--e-5);
+  width: 100%;
+  margin: 0;
+}
+.limiares dt {
+  font-size: var(--t-apoio);
+  color: var(--cs-tinta-2);
+}
+.limiares dd {
+  margin: 0;
+  font-family: var(--fonte-titulo);
+  font-size: var(--t-4);
+  font-weight: 700;
+  color: var(--cs-mare);
+}
+.camposLimiares {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: var(--e-4);
+}
+.botoesForm {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--e-3);
+}
+.erro {
+  font-weight: 700;
+  color: var(--n-critico);
+}
+
+@media (max-width: 1100px) {
+  .duas {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+/* no celular a tabela vira uma pilha de cartões: sem rolagem horizontal */
+@media (max-width: 860px) {
+  .tabela thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+  }
+  .tabela,
+  .tabela tbody,
+  .tabela tr,
+  .tabela td,
+  .tabela tbody th {
+    display: block;
+    width: 100%;
+  }
+  .linha {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    margin-top: var(--e-3);
+    border-radius: var(--r-icone);
+    box-shadow: inset 0 0 0 1px var(--cs-linha);
+    overflow: hidden;
+  }
+  .tabela td,
+  .tabela tbody th {
+    padding: var(--e-2) var(--e-3);
+    border-bottom: 0;
+  }
+  .celulaNome,
+  .motivo,
+  .acoes {
+    grid-column: 1 / -1;
+  }
+  .motivo[data-vazio="true"] {
+    display: none !important;
+  }
+  .celulaNome {
+    display: flex !important;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--e-2);
+  }
+  .tabela td[data-rotulo]::before {
+    content: attr(data-rotulo);
+    display: block;
+    font-family: var(--fonte-titulo);
+    font-size: 0.875rem;
+    font-weight: 700;
+    color: var(--cs-tinta-2);
+  }
+  .motivo {
+    max-width: none;
+  }
+  .acoes {
+    display: flex !important;
+    flex-wrap: wrap;
+    gap: var(--e-2);
+    white-space: normal;
+    text-align: left !important;
+  }
+  .acoes > * + * {
+    margin-left: 0;
+  }
+}

@@ -1,0 +1,146 @@
+/* Saúde depois da chuva: aviso da janela de leptospirose, três números, o gráfico semanal e o ranking. */
+.pagina {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--e-5);
+}
+.janela {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: var(--e-4);
+  padding: var(--e-5);
+  border-radius: var(--r-painel);
+  background: var(--n-atencao-bg);
+  box-shadow: inset 0 0 0 2px var(--n-atencao);
+  color: var(--n-texto);
+}
+.janelaIcone {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--cs-papel);
+  color: var(--cs-mare);
+}
+.janelaCorpo {
+  display: grid;
+  gap: var(--e-3);
+  min-width: 0;
+}
+.janelaTitulo {
+  margin: 0;
+  font-family: var(--fonte-titulo);
+  font-size: var(--t-4);
+  font-weight: 750;
+  line-height: 1.25;
+  text-wrap: balance;
+}
+.apoio {
+  margin: 0;
+  font-size: var(--t-apoio);
+  line-height: 1.45;
+}
+.apoio a {
+  font-weight: 700;
+  color: inherit;
+}
+.checklist {
+  display: grid;
+  gap: var(--e-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.checklist li {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr);
+  gap: var(--e-2);
+  line-height: 1.4;
+}
+.checklist svg {
+  margin-top: 2px;
+  color: var(--cs-mare);
+}
+.kpis {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--e-4);
+}
+.bloco {
+  display: grid;
+  gap: var(--e-3);
+}
+.topoBloco,
+.filtros {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--e-3);
+}
+.filtros {
+  justify-content: flex-end;
+}
+.tituloBloco {
+  margin: 0;
+  font-family: var(--fonte-titulo);
+  font-weight: 700;
+  font-size: var(--t-4);
+}
+.barras {
+  display: grid;
+  gap: var(--e-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.barras li {
+  display: grid;
+  grid-template-columns: minmax(7rem, 12rem) minmax(0, 1fr) 6ch;
+  align-items: center;
+  gap: var(--e-3);
+  font-size: var(--t-apoio);
+}
+.barra {
+  height: 14px;
+  border-radius: 0 4px 4px 0;
+  background: var(--g-2);
+}
+.valorBarra {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+.limites {
+  margin: 0;
+  padding: var(--e-3) var(--e-4);
+  border-radius: var(--r-icone);
+  background: var(--cs-nevoa);
+  font-size: var(--t-apoio);
+}
+.rodape {
+  margin: 0;
+  font-size: var(--t-apoio);
+  line-height: 1.45;
+  color: var(--cs-tinta-2);
+}
+
+@media (max-width: 900px) {
+  .kpis {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media (max-width: 560px) {
+  .janela {
+    grid-template-columns: minmax(0, 1fr);
+    padding: var(--e-4);
+  }
+  .barras li {
+    grid-template-columns: minmax(6rem, 8rem) minmax(0, 1fr) 5ch;
+    gap: var(--e-2);
+  }
+  .filtros {
+    justify-content: flex-start;
+  }
+}

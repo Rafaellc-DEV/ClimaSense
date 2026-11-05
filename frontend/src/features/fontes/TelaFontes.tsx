@@ -5,14 +5,20 @@ import { useQueryClient } from "@tanstack/react-query";
 import { CabecalhoTela } from "@/app/AppShell";
 import { useAviso } from "@/design-system/componentes/Aviso";
 import { Botao } from "@/design-system/componentes/Botao";
-import { Carregando, FalhaCarga, Painel } from "@/design-system/componentes/Painel";
-import { Tabela } from "@/design-system/componentes/Tabela";
+import { CarregandoLista } from "@/design-system/componentes/Esqueleto";
+import { Dica } from "@/design-system/componentes/Dica";
+import { Indicador } from "@/design-system/componentes/Indicador";
+import { FalhaCarga, Painel } from "@/design-system/componentes/Painel";
+import { Pilula } from "@/design-system/componentes/Pilula";
+import { VazioConvidativo } from "@/design-system/componentes/VazioConvidativo";
+import { ListaAdaptavel } from "@/features/fluxo/ListaAdaptavel";
 import { api, enviar, type Esquemas } from "@/lib/api";
 import { useConsulta } from "@/lib/consultas";
+import { noProduto } from "@/lib/fontes";
 import { formatarDataHora, formatarNumero } from "@/lib/formatos";
 import { useSessao } from "@/lib/sessao";
 import { TIPOS_FONTE } from "@/textos/glossario";
-import { StatusFonte } from "./StatusFonte";
+import { Frescor, StatusFonte } from "./StatusFonte";
 import estilos from "./Fontes.module.css";
 
 type Fonte = Esquemas["Fonte"];
@@ -112,26 +118,54 @@ function useBuscarRecentes(ativas: Fonte[], aoVerificar: () => Promise<unknown>)
 
 export function TelaFontes() {
   const f = useConsulta<Fonte[]>("/fontes", { refetchInterval: false });
-  const ativas = f.data?.filter((x) => x.status !== "planejada") ?? [];
-  const planejadas = f.data?.filter((x) => x.status === "planejada") ?? [];
+  const todas = f.data?.filter(noProduto) ?? [];
+  const ativas = todas.filter((x) => x.status !== "planejada");
+  const planejadas = todas.filter((x) => x.status === "planejada");
   const { botao } = useBuscarRecentes(ativas, () => f.refetch());
+  const conta = (s: string) => ativas.filter((x) => x.status === s).length;
   return (
     <>
       <CabecalhoTela
         titulo="Fontes de dados"
-        proposito="De onde vem cada dado do ClimaSense, quando foi atualizado e se está em dia. Todas as fontes são reais."
+        proposito="De onde vem cada dado e se está em dia. Dado atrasado aparece como atrasado, nunca como zero."
         acoes={f.data && botao}
       />
-      {f.isPending && <Carregando />}
       {f.isError && <FalhaCarga erro={f.error} aoTentar={() => f.refetch()} />}
-      {f.data && (
+      {!f.isError && (
         <div className={estilos.pilha}>
+          <div className={estilos.resumo}>
+            <Indicador
+              rotulo="Atualizadas"
+              valor={f.data ? conta("atualizada") : null}
+              unidade="fontes"
+              carregando={f.isPending}
+            />
+            <Indicador
+              rotulo="Desatualizadas"
+              valor={f.data ? conta("desatualizada") : null}
+              unidade="fontes"
+              carregando={f.isPending}
+            />
+            <Indicador
+              rotulo="Com falha"
+              valor={f.data ? conta("com_falha") : null}
+              unidade="fontes"
+              carregando={f.isPending}
+            />
+            <Indicador
+              rotulo="Planejadas"
+              valor={f.data ? planejadas.length : null}
+              unidade="fontes"
+              carregando={f.isPending}
+            />
+          </div>
           <Painel titulo="Em uso" id="f-uso">
-            <Tabela
+            <ListaAdaptavel
               legenda="Fontes em uso, com status e última atualização"
-              legendaVisivel={false}
+              carregando={f.isPending}
               linhas={ativas}
               chaveLinha={(x) => x.id}
+              vazio={<VazioConvidativo titulo="Nenhuma fonte em uso." />}
               colunas={[
                 {
                   chave: "nome",
@@ -143,50 +177,71 @@ export function TelaFontes() {
                     </span>
                   ),
                 },
-                { chave: "tipo", titulo: "Tipo", celula: (x) => TIPOS_FONTE[x.tipo] ?? x.tipo },
                 { chave: "status", titulo: "Status", celula: (x) => <StatusFonte status={x.status} /> },
                 {
+                  chave: "frescor",
+                  titulo: "Frescor",
+                  celula: (x) => (
+                    <Frescor
+                      ultima={x.ultima_atualizacao}
+                      limiteH={x.limite_desatualizacao_h}
+                      status={x.status}
+                    />
+                  ),
+                },
+                {
                   chave: "quando",
+                  semQuebra: true,
                   titulo: "Última atualização",
                   celula: (x) =>
                     x.ultima_atualizacao ? formatarDataHora(x.ultima_atualizacao) : "Nunca carregada",
                 },
                 {
-                  chave: "limite",
-                  titulo: "Fica desatualizada após",
-                  numerica: true,
-                  celula: (x) => limiteTexto(x.limite_desatualizacao_h),
+                  chave: "tipo",
+                  titulo: "Tipo",
+                  celula: (x) => (
+                    <Pilula tom="neutro" semMarca pequena>
+                      {TIPOS_FONTE[x.tipo] ?? x.tipo}
+                    </Pilula>
+                  ),
                 },
               ]}
             />
           </Painel>
-          <Painel titulo="Planejadas" id="f-planejadas">
-            <p className={estilos.explicacao}>
-              Estas fontes já foram escolhidas, mas ainda não têm conector. Enquanto isso, elas não geram
-              nenhum dado, e as telas que dependem delas mostram “Dados insuficientes”.
-            </p>
-            <ul className={estilos.planejadas}>
-              {planejadas.map((x) => (
-                <li key={x.id}>
-                  <div>
-                    <h3>
-                      <Link to={`/app/fontes/${x.id}`}>{x.nome}</Link>
-                    </h3>
-                    <p>{PLANOS[x.id] ?? x.orgao}</p>
-                  </div>
-                  <StatusFonte status="planejada" />
-                </li>
-              ))}
-            </ul>
+          <Painel
+            titulo="Planejadas"
+            id="f-planejadas"
+            className={estilos.planejadasPainel}
+            dica="Estas fontes já foram escolhidas, mas ainda não têm conector. Enquanto isso, elas não geram nenhum dado, e as telas que dependem delas mostram “Dados insuficientes”."
+          >
+            {f.isPending ? (
+              <CarregandoLista linhas={2} altura="5rem" />
+            ) : (
+              <ul className={estilos.planejadas}>
+                {planejadas.map((x) => (
+                  <li key={x.id}>
+                    <div className={estilos.planejadaTopo}>
+                      <h3>
+                        <Link to={`/app/fontes/${x.id}`}>{x.nome}</Link>
+                      </h3>
+                      <StatusFonte status="planejada" />
+                    </div>
+                    <p className={estilos.plano}>
+                      <span>{PLANOS[x.id] ?? x.orgao}</span>
+                      <Dica
+                        texto={PLANOS[x.id] ?? x.orgao}
+                        rotulo={`O que traz: ${x.nome}`}
+                        lado="acima"
+                        alinhar="fim"
+                      />
+                    </p>
+                  </li>
+                ))}
+              </ul>
+            )}
           </Painel>
         </div>
       )}
     </>
   );
-}
-
-export function limiteTexto(horas: number) {
-  if (horas % (24 * 365) === 0) return `${horas / (24 * 365)} ano${horas > 24 * 365 ? "s" : ""}`;
-  if (horas % 24 === 0) return `${horas / 24} dia${horas > 24 ? "s" : ""}`;
-  return `${horas} h`;
 }

@@ -1,0 +1,79 @@
+.vazia {
+  display: flex;
+  align-items: center;
+  gap: var(--e-1);
+  color: var(--cs-tinta-2);
+  font-weight: 600;
+}
+.lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));
+  gap: var(--e-3);
+}
+.cartao {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  gap: var(--e-3);
+  padding: var(--e-4);
+  border-radius: var(--r-icone);
+  background: var(--cs-papel);
+  box-shadow: var(--sombra-cartao);
+}
+.cartao > button {
+  grid-column: 1 / -1;
+  justify-self: end;
+  min-height: var(--alvo-lista);
+}
+.disco {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--r-icone);
+  background: var(--cs-mare-suave);
+  color: var(--cs-mare);
+}
+.disco svg {
+  width: 22px;
+  height: 22px;
+}
+.corpo {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+.tipo {
+  color: var(--cs-tinta-2);
+  font-size: 0.9375rem;
+  font-weight: 600;
+}
+.descricao {
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+.valor {
+  font-family: var(--fonte-titulo);
+  font-size: var(--t-4);
+  font-weight: 800;
+  line-height: 1.2;
+  color: var(--cs-mare);
+  overflow-wrap: anywhere;
+}
+.meta {
+  display: grid;
+  margin-top: var(--e-1);
+  color: var(--cs-tinta-2);
+  font-size: 0.9375rem;
+  overflow-wrap: anywhere;
+}
+.abrir {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--e-1);
+  margin-top: var(--e-1);
+  font-weight: 700;
+}

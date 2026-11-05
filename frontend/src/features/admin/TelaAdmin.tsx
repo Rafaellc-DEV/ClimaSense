@@ -1,5 +1,17 @@
 import { useState, type FormEvent } from "react";
-import { KeyRound, UserCheck, UserPlus, UserX, Pencil } from "lucide-react";
+import {
+  Copy,
+  Hourglass,
+  KeyRound,
+  Pencil,
+  ShieldCheck,
+  UserCheck,
+  UserPlus,
+  UserX,
+  CircleCheck,
+  Loader,
+  TriangleAlert,
+} from "lucide-react";
 import { Navigate, NavLink, Route, Routes } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { CabecalhoTela } from "@/app/AppShell";
@@ -7,15 +19,19 @@ import { useAviso } from "@/design-system/componentes/Aviso";
 import { Botao } from "@/design-system/componentes/Botao";
 import { Campo } from "@/design-system/componentes/Campo";
 import { Confirmacao, Dialogo } from "@/design-system/componentes/Dialogo";
-import { Carregando, FalhaCarga, Painel } from "@/design-system/componentes/Painel";
+import { Dica } from "@/design-system/componentes/Dica";
+import { FalhaCarga, Painel } from "@/design-system/componentes/Painel";
+import { Pilula, type TomPilula } from "@/design-system/componentes/Pilula";
 import { Selecao } from "@/design-system/componentes/Selecao";
-import { semDado, Tabela } from "@/design-system/componentes/Tabela";
+import { semDado } from "@/design-system/componentes/Tabela";
 import { VazioConvidativo } from "@/design-system/componentes/VazioConvidativo";
+import { ListaAdaptavel } from "@/features/fluxo/ListaAdaptavel";
 import { consulta, enviar, type Esquemas } from "@/lib/api";
 import { useConsulta } from "@/lib/consultas";
 import { formatarDataHora, formatarNumero } from "@/lib/formatos";
 import { useSessao } from "@/lib/sessao";
 import { PAPEIS } from "@/textos/glossario";
+import { ICONE_PAPEL, iniciais, PapelPilula } from "./Papeis";
 import estilos from "./Admin.module.css";
 
 type Conta = Esquemas["Conta"];
@@ -55,6 +71,15 @@ function SenhaMostrada({
   email: string;
   aoFechar: () => void;
 }) {
+  const aviso = useAviso();
+  async function copiar() {
+    try {
+      await navigator.clipboard.writeText(senha ?? "");
+      aviso({ titulo: "Senha copiada." });
+    } catch {
+      aviso({ tipo: "erro", titulo: "Não foi possível copiar.", texto: "Selecione a senha e copie à mão." });
+    }
+  }
   return (
     <Dialogo
       aberto={!!senha}
@@ -62,7 +87,14 @@ function SenhaMostrada({
       modalEstrito
       titulo="Senha temporária"
       descricao={`Entregue esta senha a ${email} por um canal seguro. Ela aparece só agora; no primeiro acesso a pessoa cria a própria.`}
-      acoes={<Botao onClick={aoFechar}>Já anotei</Botao>}
+      acoes={
+        <>
+          <Botao variante="secundario" icone={<Copy />} onClick={copiar}>
+            Copiar senha
+          </Botao>
+          <Botao onClick={aoFechar}>Já anotei</Botao>
+        </>
+      }
     >
       <p className={estilos.senha}>
         <code>{senha}</code>
@@ -71,11 +103,19 @@ function SenhaMostrada({
   );
 }
 
+/** Papéis em cartões marcáveis; cada um diz, em palavras simples, o que a pessoa pode fazer. */
 function EscolhaPapeis({ valor, aoMudar }: { valor: string[]; aoMudar: (v: string[]) => void }) {
   const papeis = useConsulta<Esquemas["PapelDescrito"][]>("/admin/usuarios/papeis", { staleTime: Infinity });
   return (
     <fieldset className={estilos.papeis}>
-      <legend>Papéis</legend>
+      <legend>
+        Papéis
+        <Dica
+          texto="Os papéis se somam: quem é revisor também faz tudo o que o analista faz."
+          rotulo="Como os papéis se somam"
+          lado="abaixo"
+        />
+      </legend>
       {papeis.data?.map((p) => (
         <label key={p.papel}>
           <input
@@ -85,13 +125,36 @@ function EscolhaPapeis({ valor, aoMudar }: { valor: string[]; aoMudar: (v: strin
               aoMudar(e.target.checked ? [...valor, p.papel] : valor.filter((x) => x !== p.papel))
             }
           />
-          <span>
+          <span className={estilos.papelIcone} aria-hidden="true">
+            {ICONE_PAPEL[p.papel] ?? <ShieldCheck />}
+          </span>
+          <span className={estilos.papelTexto}>
             <strong>{PAPEIS[p.papel] ?? p.papel}</strong>
             <span>{p.descricao}</span>
           </span>
         </label>
       ))}
     </fieldset>
+  );
+}
+
+function SituacaoConta({ conta }: { conta: Conta }) {
+  if (!conta.ativo)
+    return (
+      <Pilula tom="neutro" icone={<UserX />}>
+        Desativada
+      </Pilula>
+    );
+  if (conta.troca_senha_obrigatoria)
+    return (
+      <Pilula tom="info" icone={<Hourglass />}>
+        Ativa, aguardando o 1º acesso
+      </Pilula>
+    );
+  return (
+    <Pilula tom="sucesso" icone={<CircleCheck />}>
+      Ativa
+    </Pilula>
   );
 }
 
@@ -155,69 +218,77 @@ function Usuarios() {
     <Painel
       titulo="Usuários"
       id="adm-usuarios"
+      dica="Contas não são apagadas, só desativadas, para preservar a auditoria."
       acoes={
         <Botao icone={<UserPlus />} onClick={() => setNova(true)}>
           Criar conta
         </Botao>
       }
     >
-      {contas.isPending && <Carregando />}
-      {contas.isError && <FalhaCarga erro={contas.error} />}
-      {contas.data && (
-        <Tabela
+      {contas.isError && <FalhaCarga erro={contas.error} aoTentar={() => contas.refetch()} />}
+      {!contas.isError && (
+        <ListaAdaptavel
           legenda="Contas da equipe. Contas não são apagadas, só desativadas, para preservar a auditoria."
-          linhas={contas.data}
+          carregando={contas.isPending}
+          linhas={contas.data ?? []}
           chaveLinha={(c) => c.id}
+          vazio={<VazioConvidativo titulo="Nenhuma conta ainda." />}
           colunas={[
             {
               chave: "nome",
               titulo: "Pessoa",
               celula: (c) => (
                 <span className={estilos.pessoa}>
-                  {c.nome}
-                  <span>{c.email}</span>
+                  <span className={estilos.avatar} aria-hidden="true">
+                    {iniciais(c.nome)}
+                  </span>
+                  <span className={estilos.pessoaTexto}>
+                    {c.nome}
+                    <span>{c.email}</span>
+                  </span>
                 </span>
               ),
             },
             {
               chave: "papeis",
               titulo: "Papéis",
-              celula: (c) => c.papeis.map((p) => PAPEIS[p] ?? p).join(", "),
-            },
-            {
-              chave: "situacao",
-              titulo: "Situação",
               celula: (c) => (
-                <span className={estilos.situacao} data-ativo={c.ativo}>
-                  {c.ativo
-                    ? c.troca_senha_obrigatoria
-                      ? "Ativa, aguardando o 1º acesso"
-                      : "Ativa"
-                    : "Desativada"}
+                <span className={estilos.chips}>
+                  {c.papeis.map((p) => (
+                    <PapelPilula key={p} papel={p} />
+                  ))}
                 </span>
               ),
             },
             {
+              chave: "situacao",
+              titulo: "Situação",
+              celula: (c) => <SituacaoConta conta={c} />,
+            },
+            {
               chave: "acoes",
+              semRotulo: true,
               titulo: "Ações",
               celula: (c) => (
                 <span className={estilos.acoes}>
                   <Botao
                     variante="discreto"
+                    aria-label={`Editar papéis de ${c.nome}`}
                     icone={<Pencil />}
                     onClick={() => {
                       setEditar(c);
                       setPapeisEdicao(c.papeis);
                     }}
                   >
-                    Papéis<span className="so-leitor"> de {c.nome}</span>
+                    Papéis
                   </Botao>
                   <Botao
                     variante="discreto"
+                    aria-label={`Redefinir senha de ${c.nome}`}
                     icone={<KeyRound />}
                     onClick={() => setConfirmar({ conta: c, acao: "senha" })}
                   >
-                    Redefinir senha<span className="so-leitor"> de {c.nome}</span>
+                    Senha
                   </Botao>
                   {c.id !== usuario?.id && (
                     <Botao
@@ -244,7 +315,7 @@ function Usuarios() {
       >
         <form className={estilos.form} onSubmit={criar}>
           <Campo rotulo="Nome" name="nome" required minLength={2} maxLength={120} autoComplete="off" />
-          <Campo rotulo="E-mail" name="email" type="email" required autoComplete="off" />
+          <Campo rotulo="E-mail" name="email" type="email" required autoComplete="off" spellCheck={false} />
           <EscolhaPapeis valor={papeisNovos} aoMudar={setPapeisNovos} />
           {erroNova && (
             <p role="alert" className={estilos.erro}>
@@ -323,63 +394,67 @@ function Usuarios() {
   );
 }
 
-const STATUS: Record<string, string> = {
-  em_andamento: "Em andamento",
-  sucesso: "Concluída",
-  falha: "Com falha",
+const STATUS: Record<string, { rotulo: string; tom: TomPilula; icone: JSX.Element }> = {
+  em_andamento: { rotulo: "Em andamento", tom: "info", icone: <Loader /> },
+  sucesso: { rotulo: "Concluída", tom: "sucesso", icone: <CircleCheck /> },
+  falha: { rotulo: "Com falha", tom: "alerta", icone: <TriangleAlert /> },
 };
 
 function Execucoes() {
   const r = useConsulta<Esquemas["ExecucaoAdmin"][]>("/admin/etl/execucoes");
   return (
-    <Painel titulo="Execuções do ETL" id="adm-execucoes">
-      {r.isPending && <Carregando />}
-      {r.isError && <FalhaCarga erro={r.error} />}
-      {r.data &&
-        (r.data.length ? (
-          <Tabela
-            legenda="Últimas 100 execuções, de todas as fontes"
-            legendaVisivel={false}
-            linhas={r.data}
-            chaveLinha={(e) => e.id}
-            colunas={[
-              { chave: "inicio", titulo: "Início", celula: (e) => formatarDataHora(e.inicio) },
-              { chave: "fonte", titulo: "Fonte", celula: (e) => e.fonte_nome },
-              {
-                chave: "status",
-                titulo: "Resultado",
-                celula: (e) => (
-                  <span className={estilos.execucao} data-status={e.status}>
-                    {STATUS[e.status] ?? e.status}
+    <Painel
+      titulo="Execuções do ETL"
+      id="adm-execucoes"
+      dica="As últimas 100 buscas de dados novas, de todas as fontes. Inicie uma carga na tela de cada fonte, em Fontes de dados."
+    >
+      {r.isError && <FalhaCarga erro={r.error} aoTentar={() => r.refetch()} />}
+      {!r.isError && (
+        <ListaAdaptavel
+          legenda="Últimas 100 execuções, de todas as fontes"
+          carregando={r.isPending}
+          linhas={r.data ?? []}
+          chaveLinha={(e) => e.id}
+          vazio={<VazioConvidativo titulo="Nenhuma execução ainda." />}
+          colunas={[
+            { chave: "inicio", semQuebra: true, titulo: "Início", celula: (e) => formatarDataHora(e.inicio) },
+            { chave: "fonte", titulo: "Fonte", celula: (e) => e.fonte_nome },
+            {
+              chave: "status",
+              titulo: "Resultado",
+              celula: (e) => {
+                const s = STATUS[e.status] ?? STATUS.em_andamento;
+                return (
+                  <span className={estilos.execucao}>
+                    <Pilula tom={s.tom} icone={s.icone}>
+                      {STATUS[e.status]?.rotulo ?? e.status}
+                    </Pilula>
                     {e.erro && <small>{e.erro}</small>}
                   </span>
-                ),
+                );
               },
-              {
-                chave: "gravados",
-                titulo: "Gravados",
-                numerica: true,
-                celula: (e) => semDado(e.gravados, formatarNumero),
-              },
-              {
-                chave: "descartados",
-                titulo: "Descartados",
-                numerica: true,
-                celula: (e) => semDado(e.descartados, formatarNumero),
-              },
-              {
-                chave: "quem",
-                titulo: "Disparada por",
-                celula: (e) => e.disparado_por_nome ?? "Linha de comando",
-              },
-            ]}
-          />
-        ) : (
-          <VazioConvidativo
-            titulo="Nenhuma execução ainda."
-            texto="Inicie uma carga na tela de cada fonte, em Fontes de dados."
-          />
-        ))}
+            },
+            {
+              chave: "gravados",
+              titulo: "Gravados",
+              numerica: true,
+              celula: (e) => semDado(e.gravados, formatarNumero),
+            },
+            {
+              chave: "descartados",
+              titulo: "Descartados",
+              numerica: true,
+              celula: (e) => semDado(e.descartados, formatarNumero),
+            },
+            {
+              chave: "quem",
+              semQuebra: true,
+              titulo: "Disparada por",
+              celula: (e) => e.disparado_por_nome ?? "Linha de comando",
+            },
+          ]}
+        />
+      )}
     </Painel>
   );
 }
@@ -401,11 +476,26 @@ function Auditoria() {
     setFiltro((f) => ({ ...f, ...p }));
     setPagina(1);
   };
+  const filtrando = Object.values(filtro).some(Boolean);
   return (
-    <Painel titulo="Auditoria" id="adm-auditoria">
-      <p className={estilos.explicacao}>
-        Registro somente de inclusão: nada aqui pode ser editado nem apagado, nem pelo administrador.
-      </p>
+    <Painel
+      titulo="Auditoria"
+      id="adm-auditoria"
+      dica="Registro somente de inclusão: nada aqui pode ser editado nem apagado, nem pelo administrador."
+      acoes={
+        filtrando && (
+          <Botao
+            variante="discreto"
+            onClick={() => {
+              setFiltro({ acao: "", inicio: "", fim: "", usuario_id: "" });
+              setPagina(1);
+            }}
+          >
+            Limpar filtros
+          </Botao>
+        )
+      }
+    >
       <div className={estilos.filtros}>
         <Selecao
           rotulo="Pessoa"
@@ -436,36 +526,41 @@ function Auditoria() {
         />
         <Campo rotulo="Até" type="date" value={filtro.fim} onChange={(e) => mudar({ fim: e.target.value })} />
       </div>
-      {r.isPending && <Carregando />}
-      {r.isError && <FalhaCarga erro={r.error} />}
-      {r.data &&
-        (r.data.itens.length ? (
-          <>
-            <Tabela
-              legenda="Registros de auditoria, do mais recente para o mais antigo"
-              legendaVisivel={false}
-              linhas={r.data.itens}
-              chaveLinha={(x) => String(x.id)}
-              colunas={[
-                { chave: "em", titulo: "Quando", celula: (x) => formatarDataHora(x.em) },
-                { chave: "quem", titulo: "Pessoa", celula: (x) => x.usuario_nome ?? "Sistema" },
-                {
-                  chave: "acao",
-                  titulo: "Ação",
-                  celula: (x) => ROTULOS_ACAO[x.acao] ?? x.acao.replace(/_/g, " "),
-                },
-                {
-                  chave: "alvo",
-                  titulo: "Sobre",
-                  celula: (x) => (x.alvo_tipo ? `${x.alvo_tipo} ${x.alvo_id?.slice(0, 8) ?? ""}` : "—"),
-                },
-                {
-                  chave: "detalhes",
-                  titulo: "Detalhes",
-                  celula: (x) => <code className={estilos.detalhes}>{resumoDetalhes(x.detalhes)}</code>,
-                },
-              ]}
-            />
+      {r.isError && <FalhaCarga erro={r.error} aoTentar={() => r.refetch()} />}
+      {!r.isError && (
+        <>
+          <ListaAdaptavel
+            legenda="Registros de auditoria, do mais recente para o mais antigo"
+            carregando={r.isPending}
+            linhas={r.data?.itens ?? []}
+            chaveLinha={(x) => String(x.id)}
+            vazio={<VazioConvidativo titulo="Nenhum registro com esses filtros." />}
+            colunas={[
+              { chave: "em", semQuebra: true, titulo: "Quando", celula: (x) => formatarDataHora(x.em) },
+              {
+                chave: "quem",
+                semQuebra: true,
+                titulo: "Pessoa",
+                celula: (x) => x.usuario_nome ?? "Sistema",
+              },
+              {
+                chave: "acao",
+                titulo: "Ação",
+                celula: (x) => ROTULOS_ACAO[x.acao] ?? x.acao.replace(/_/g, " "),
+              },
+              {
+                chave: "alvo",
+                titulo: "Sobre",
+                celula: (x) => (x.alvo_tipo ? `${x.alvo_tipo} ${x.alvo_id?.slice(0, 8) ?? ""}` : "—"),
+              },
+              {
+                chave: "detalhes",
+                titulo: "Detalhes",
+                celula: (x) => <code className={estilos.detalhes}>{resumoDetalhes(x.detalhes)}</code>,
+              },
+            ]}
+          />
+          {r.data && r.data.itens.length > 0 && (
             <div className={estilos.paginas}>
               <Botao variante="secundario" disabled={pagina === 1} onClick={() => setPagina((p) => p - 1)}>
                 Página anterior
@@ -479,13 +574,9 @@ function Auditoria() {
                 Próxima página
               </Botao>
             </div>
-          </>
-        ) : (
-          <VazioConvidativo
-            titulo="Nenhum registro com esses filtros."
-            texto="Amplie o período ou escolha outra ação."
-          />
-        ))}
+          )}
+        </>
+      )}
     </Painel>
   );
 }

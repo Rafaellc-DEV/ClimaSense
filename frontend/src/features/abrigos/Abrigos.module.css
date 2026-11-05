@@ -1,0 +1,120 @@
+.pagina {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--e-5);
+}
+.totais {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: var(--e-4);
+}
+.abrigo {
+  display: grid;
+  gap: 2px;
+}
+/* no computador a tabela cabe no cartão: sem rolagem lateral escondendo a coluna "Ações". O nome e o endereço
+   ganham largura sem exagero, os cabeçalhos quebram em duas linhas e o respiro lateral das células é menor.
+   Em telas mais estreitas (menu lateral + tabela) o resto rola, mas "Ações" fica fixa na borda direita. */
+@media (min-width: 720px) {
+  .pagina table th,
+  .pagina table td {
+    padding-left: var(--e-2);
+    padding-right: var(--e-2);
+  }
+  .pagina table th:first-child,
+  .pagina table td:first-child {
+    padding-left: var(--e-3);
+  }
+  .pagina table thead th {
+    white-space: normal;
+    vertical-align: bottom;
+    line-height: 1.25;
+  }
+  td:first-child .abrigo,
+  th:first-child .abrigo {
+    min-width: 10.5rem;
+  }
+  /* a coluna de ações ocupa só o que os botões pedem, um embaixo do outro, e não sai da vista */
+  .pagina table td:last-child,
+  .pagina table thead th:last-child {
+    position: sticky;
+    right: 0;
+    width: 1%;
+    padding-left: var(--e-3);
+    padding-right: var(--e-3);
+    white-space: nowrap;
+    background: var(--cs-papel);
+    box-shadow: -10px 0 10px -10px rgba(3, 20, 34, 0.18);
+  }
+  /* fundo opaco (a cor suave é translúcida): o texto da coluna vizinha não pode aparecer por baixo */
+  .pagina table thead th:last-child,
+  .pagina table tbody tr:hover td:last-child {
+    background: linear-gradient(var(--cs-mare-suave), var(--cs-mare-suave)), var(--cs-papel);
+  }
+  .pagina table td:last-child .botoes {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--e-1);
+  }
+}
+.abrigo small {
+  font-size: var(--t-apoio);
+  font-weight: 400;
+  color: var(--cs-tinta-2);
+}
+.botoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--e-2);
+}
+.form {
+  display: grid;
+  gap: var(--e-4);
+}
+.numeros {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: var(--e-4);
+}
+.numeros input {
+  font-size: var(--t-4);
+  font-weight: 700;
+}
+.erro {
+  font-weight: 700;
+  color: var(--n-critico);
+}
+.historico {
+  display: grid;
+  gap: var(--e-3);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.historico li {
+  padding-bottom: var(--e-3);
+  border-bottom: var(--borda);
+}
+.mudancas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--e-1) var(--e-3);
+  margin-top: var(--e-1);
+}
+@media (max-width: 640px) {
+  .totais {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--e-3);
+  }
+}
+.filtros {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
+  gap: var(--e-3) var(--e-4);
+  margin-bottom: var(--e-3);
+}
+.contagem {
+  margin-bottom: var(--e-3);
+  font-weight: 600;
+  color: var(--cs-tinta-2);
+}

@@ -1,12 +1,14 @@
 import { useEffect, useState } from "react";
-import { RefreshCw } from "lucide-react";
+import { CircleCheck, Loader, RefreshCw, TriangleAlert } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { CabecalhoTela } from "@/app/AppShell";
 import { useAviso } from "@/design-system/componentes/Aviso";
 import { Botao } from "@/design-system/componentes/Botao";
-import { Carregando, FalhaCarga, Painel } from "@/design-system/componentes/Painel";
-import { semDado, Tabela } from "@/design-system/componentes/Tabela";
+import { CarregandoLista } from "@/design-system/componentes/Esqueleto";
+import { FalhaCarga, Painel } from "@/design-system/componentes/Painel";
+import { Pilula, type TomPilula } from "@/design-system/componentes/Pilula";
+import { semDado } from "@/design-system/componentes/Tabela";
 import { VazioConvidativo } from "@/design-system/componentes/VazioConvidativo";
 import { enviar, type Esquemas } from "@/lib/api";
 import { useConsulta } from "@/lib/consultas";
@@ -14,15 +16,17 @@ import { formatarDataHora, formatarNumero } from "@/lib/formatos";
 import { useSessao } from "@/lib/sessao";
 import { RETORNO } from "@/textos/mensagens";
 import { GLOSSARIO, TIPOS_FONTE } from "@/textos/glossario";
-import { StatusFonte } from "./StatusFonte";
-import { limiteTexto, PLANOS } from "./TelaFontes";
+import { Fato, Fatos } from "@/features/fluxo/Pecas";
+import { ListaAdaptavel } from "@/features/fluxo/ListaAdaptavel";
+import { Frescor, limiteTexto, StatusFonte } from "./StatusFonte";
+import { PLANOS } from "./TelaFontes";
 import estilos from "./Fontes.module.css";
 
 type Execucao = Esquemas["Execucao"];
-const STATUS_EXECUCAO: Record<string, string> = {
-  em_andamento: "Em andamento",
-  sucesso: "Concluída",
-  falha: "Com falha",
+const STATUS_EXECUCAO: Record<string, { rotulo: string; tom: TomPilula; icone: JSX.Element }> = {
+  em_andamento: { rotulo: "Em andamento", tom: "info", icone: <Loader /> },
+  sucesso: { rotulo: "Concluída", tom: "sucesso", icone: <CircleCheck /> },
+  falha: { rotulo: "Com falha", tom: "alerta", icone: <TriangleAlert /> },
 };
 const SEM_CONECTOR_MANUAL = new Set(["territorio-oficial"]);
 
@@ -65,19 +69,24 @@ export function DetalheFonte() {
     }
   }
 
-  if (fonte.isPending) return <Carregando />;
-  if (fonte.isError) return <FalhaCarga erro={fonte.error} />;
+  const voltar = <Link to="/app/fontes">Todas as fontes</Link>;
+  if (fonte.isPending)
+    return (
+      <>
+        <CabecalhoTela titulo="Fonte" voltar={voltar} />
+        <CarregandoLista linhas={3} altura="5rem" />
+      </>
+    );
+  if (fonte.isError) return <FalhaCarga erro={fonte.error} aoTentar={() => fonte.refetch()} />;
   const f = fonte.data;
   const podeAtualizar = pode("executar_etl") && f.status !== "planejada" && !SEM_CONECTOR_MANUAL.has(f.id);
 
   return (
     <>
-      <p className={estilos.voltar}>
-        <Link to="/app/fontes">Todas as fontes</Link>
-      </p>
       <CabecalhoTela
         titulo={f.nome}
         proposito={f.status === "planejada" ? PLANOS[f.id] ?? f.orgao : f.orgao}
+        voltar={voltar}
         acoes={
           podeAtualizar && (
             <Botao onClick={atualizar} disabled={!!acompanhando} icone={<RefreshCw />}>
@@ -86,82 +95,102 @@ export function DetalheFonte() {
           )
         }
       />
-      <div className={estilos.detalhe}>
+      <div className={estilos.pilhaDetalhe}>
         <Painel titulo="Sobre a fonte" id="f-sobre">
-          <dl className={estilos.metadados}>
-            <dt>Status</dt>
-            <dd>
+          <Fatos colunas="duas">
+            <Fato rotulo="Status">
               <StatusFonte status={f.status} />
-            </dd>
-            <dt>Tipo de dado</dt>
-            <dd>
-              {TIPOS_FONTE[f.tipo] ?? f.tipo}. {GLOSSARIO[f.tipo as keyof typeof GLOSSARIO] ?? ""}
-            </dd>
-            <dt>Órgão</dt>
-            <dd>{f.orgao}</dd>
-            <dt>Licença</dt>
-            <dd>{f.licenca ?? "Não informada"}</dd>
-            <dt>Última carga bem-sucedida</dt>
-            <dd>{f.ultima_atualizacao ? formatarDataHora(f.ultima_atualizacao) : "Nunca carregada"}</dd>
-            <dt>Fica desatualizada após</dt>
-            <dd>{limiteTexto(f.limite_desatualizacao_h)} sem carga nova</dd>
-            <dt>Endereço</dt>
-            <dd>
-              <a href={f.url} target="_blank" rel="noopener noreferrer">
+            </Fato>
+            <Fato rotulo="Frescor">
+              <Frescor
+                ultima={f.ultima_atualizacao}
+                limiteH={f.limite_desatualizacao_h}
+                status={f.status}
+                grande
+              />
+            </Fato>
+            <Fato rotulo="Tipo de dado" dica={GLOSSARIO[f.tipo as keyof typeof GLOSSARIO]}>
+              {TIPOS_FONTE[f.tipo] ?? f.tipo}
+            </Fato>
+            <Fato rotulo="Órgão">{f.orgao}</Fato>
+            <Fato rotulo="Licença">{f.licenca ?? "Não informada"}</Fato>
+            <Fato rotulo="Última carga bem-sucedida">
+              {f.ultima_atualizacao ? formatarDataHora(f.ultima_atualizacao) : "Nunca carregada"}
+            </Fato>
+            <Fato
+              rotulo="Fica desatualizada após"
+              dica="Tempo sem carga nova a partir do qual a fonte passa a aparecer como desatualizada."
+            >
+              {limiteTexto(f.limite_desatualizacao_h)}
+            </Fato>
+            <Fato rotulo="Endereço">
+              <a className={estilos.endereco} href={f.url} target="_blank" rel="noopener noreferrer">
                 {f.url.replace(/^https?:\/\//, "")}
               </a>
-            </dd>
-          </dl>
+            </Fato>
+          </Fatos>
         </Painel>
-        <Painel titulo="Execuções do ETL" id="f-execucoes">
-          {execucoes.data?.length ? (
-            <Tabela
-              legenda="Últimas execuções desta fonte"
-              legendaVisivel={false}
-              linhas={execucoes.data}
-              chaveLinha={(e) => e.id}
-              colunas={[
-                { chave: "inicio", titulo: "Início", celula: (e) => formatarDataHora(e.inicio) },
-                {
-                  chave: "status",
-                  titulo: "Resultado",
-                  celula: (e) => (
-                    <span className={estilos.execucao} data-status={e.status}>
-                      {STATUS_EXECUCAO[e.status] ?? e.status}
+        <Painel
+          titulo="Execuções do ETL"
+          id="f-execucoes"
+          dica="Cada vez que o sistema busca dados novos desta fonte. Lidos são os registros recebidos; gravados, os aceitos; descartados, os recusados por não passarem nas regras."
+        >
+          <ListaAdaptavel
+            legenda="Últimas execuções desta fonte"
+            carregando={execucoes.isPending}
+            linhas={execucoes.data ?? []}
+            chaveLinha={(e) => e.id}
+            vazio={
+              <VazioConvidativo
+                titulo={
+                  f.status === "planejada"
+                    ? "Nenhuma execução: o conector ainda está em preparo."
+                    : "Nenhuma execução registrada."
+                }
+              />
+            }
+            colunas={[
+              {
+                chave: "inicio",
+                semQuebra: true,
+                titulo: "Início",
+                celula: (e) => formatarDataHora(e.inicio),
+              },
+              {
+                chave: "status",
+                titulo: "Resultado",
+                celula: (e) => {
+                  const s = STATUS_EXECUCAO[e.status] ?? STATUS_EXECUCAO.em_andamento;
+                  return (
+                    <span className={estilos.execucao}>
+                      <Pilula tom={s.tom} icone={s.icone}>
+                        {STATUS_EXECUCAO[e.status]?.rotulo ?? e.status}
+                      </Pilula>
                       {e.erro && <small>{e.erro}</small>}
                     </span>
-                  ),
+                  );
                 },
-                {
-                  chave: "lidos",
-                  titulo: "Lidos",
-                  numerica: true,
-                  celula: (e) => semDado(e.lidos, formatarNumero),
-                },
-                {
-                  chave: "gravados",
-                  titulo: "Gravados",
-                  numerica: true,
-                  celula: (e) => semDado(e.gravados, formatarNumero),
-                },
-                {
-                  chave: "descartados",
-                  titulo: "Descartados",
-                  numerica: true,
-                  celula: (e) => semDado(e.descartados, formatarNumero),
-                },
-              ]}
-            />
-          ) : (
-            <VazioConvidativo
-              titulo="Nenhuma execução registrada."
-              texto={
-                f.status === "planejada"
-                  ? "O conector desta fonte ainda está em preparo."
-                  : "Esta fonte ainda não foi carregada. O administrador pode iniciar a primeira carga."
-              }
-            />
-          )}
+              },
+              {
+                chave: "lidos",
+                titulo: "Lidos",
+                numerica: true,
+                celula: (e) => semDado(e.lidos, formatarNumero),
+              },
+              {
+                chave: "gravados",
+                titulo: "Gravados",
+                numerica: true,
+                celula: (e) => semDado(e.gravados, formatarNumero),
+              },
+              {
+                chave: "descartados",
+                titulo: "Descartados",
+                numerica: true,
+                celula: (e) => semDado(e.descartados, formatarNumero),
+              },
+            ]}
+          />
         </Painel>
       </div>
     </>
