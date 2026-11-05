@@ -64,7 +64,7 @@ cd backend
 cd ..
 ```
 
-> **Neon com o ETL antigo:** se já existir a tabela `public.silver_vacinados` criada pelo `Projeto-ETL_AVD`, a migração a preserva com o nome `silver_vacinados_legado_etl_avd` (nenhum dado é apagado). O nome antigo passa a ser uma view sobre a nova silver.
+> **Neon com o ETL antigo:** se já existir a tabela `public.silver_vacinados` criada pelo `Projeto-ETL_AVD`, a migração a preserva com o nome `silver_vacinados_legado_etl_avd` (nenhum dado é apagado). O nome antigo passa a ser uma view sobre `silver.vacinados`. Ambas ficam como legado do projeto antigo: a vacinação saiu do ClimaSense (o produto foca chuva, alagamento e deslizamento) e nada no sistema as lê.
 
 No primeiro acesso, o ClimaSense pede a troca da senha. As demais contas da equipe são criadas pelo administrador; cada pessoa recebe uma senha temporária, que precisa trocar ao entrar.
 
@@ -73,14 +73,12 @@ No primeiro acesso, o ClimaSense pede a troca da senha. As demais contas da equi
 Com o `.env` preenchido, dentro de `backend` (cada comando busca a fonte real pela internet):
 
 ```powershell
-..\.venv\Scripts\python -m climasense.territorio carregar      # distritos, bairros e faixas hídricas → Atlas + app.territorios
+..\.venv\Scripts\python -m climasense.territorio carregar      # distritos, bairros e faixas hídricas → Atlas + app.territorios (103 linhas)
 ..\.venv\Scripts\python -m climasense.etl listar                # fontes e situação
-..\.venv\Scripts\python -m climasense.etl run vacinacao --limite 1000
-..\.venv\Scripts\python -m climasense.etl run open-meteo-historico
-..\.venv\Scripts\python -m climasense.etl run open-meteo-previsao
-..\.venv\Scripts\python -m climasense.etl run open-meteo-mare
-..\.venv\Scripts\python -m climasense.etl verificar-gold        # confere se a gold é recalculável da silver
+..\.venv\Scripts\python -m climasense.etl atualizar                  # pipeline completo, em ordem, com resumo e verificação da gold
 ```
+
+Ou fonte a fonte: `etl run open-meteo-historico`, `etl run open-meteo-previsao`, `etl run open-meteo-mare` e `etl verificar-gold` (também `python scripts/verificar_gold.py`). Mapa das APIs, fluxo bronze → silver → gold e agendamento: [`docs/apis-e-etl.md`](docs/apis-e-etl.md).
 
 As fontes planejadas (ANA, APAC, INMET, Cemaden, alagamentos, tábua da Marinha) estão descritas em [`docs/dicionario-dados/`](docs/dicionario-dados/) e não geram dados até terem conector.
 
@@ -104,6 +102,16 @@ cd backend;  ..\.venv\Scripts\pytest            # unidade; integração com Post
 cd frontend; npm test; npm run lint
 ```
 
+## Estudo de ML: risco de alagamento
+
+Árvore de decisão com validação temporal que estima o risco de alagamento por bairro e dia, a partir dos atendimentos da Defesa Civil e da chuva e maré da Open-Meteo. Método, resultado e por que o modelo ainda não é exibido no produto: [`docs/ml/risco-alagamento.md`](docs/ml/risco-alagamento.md).
+
+```powershell
+cd backend
+..\.venv\Scripts\python -m climasense.ml alagamento   # treina, valida no tempo, salva o modelo e grava o relatório em docs/ml
+..\.venv\Scripts\python -m pytest tests/unit/ml        # testes (dados sintéticos, sem banco)
+```
+
 ## Situação atual
 
 | Marco | Situação |
@@ -113,7 +121,7 @@ cd frontend; npm test; npm run lint
 | M2 Backend base e arquitetura | Concluído |
 | M3 Autenticação e papéis | Concluído |
 | M4 Território (Atlas, GeoJSON, mapa portátil) | Concluído |
-| M5 ETL em POO e fontes reais (vacinação, Open-Meteo) | Concluído |
+| M5 ETL em POO e fontes reais (Open-Meteo) | Concluído |
 | M6 em diante (séries, cenários, avaliações, telas da equipe) | Planejado — ver [`specs/tasks.md`](specs/tasks.md) |
 
 ## Origem do código
