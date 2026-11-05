@@ -1,0 +1,65 @@
+/* Minha conta: a mesma identidade do login (cartão branco, sombra em camadas, Outfit, azul maré) */
+.grade {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr));
+  gap: var(--e-5);
+  align-items: start;
+  max-width: 920px;
+}
+.perfil {
+  display: grid;
+  justify-items: start;
+  gap: var(--e-4);
+}
+.avatar {
+  display: grid;
+  place-items: center;
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: var(--cs-mare);
+  box-shadow:
+    0 0 0 4px var(--cs-papel),
+    0 0 0 7px var(--cs-sol);
+  color: var(--cs-sobre-mare);
+  font-family: var(--fonte-titulo);
+  font-size: 1.5rem;
+  font-weight: 800;
+  margin: var(--e-2) 0 var(--e-2) var(--e-2);
+}
+.dados {
+  display: grid;
+  gap: var(--e-3);
+  width: 100%;
+  margin: 0;
+}
+.chips {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: var(--e-1);
+}
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e-5);
+}
+.form > button {
+  align-self: flex-start;
+}
+.erro {
+  display: flex;
+  gap: var(--e-2);
+  align-items: flex-start;
+  margin: 0;
+  padding: var(--e-3) var(--e-4);
+  border-left: 4px solid var(--n-critico);
+  border-radius: var(--r-campo);
+  background: var(--n-alerta-bg);
+  color: var(--n-texto);
+  font-weight: 600;
+}
+.erro svg {
+  flex: none;
+  margin-top: 3px;
+  color: var(--n-critico);
+}

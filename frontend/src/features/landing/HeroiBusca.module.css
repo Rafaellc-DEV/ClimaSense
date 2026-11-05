@@ -1,0 +1,337 @@
+/* Herói: o Recife visto de cima. Azul maré PARADO, com a malha de pluviômetros e o traço dos rios (decoração estática),
+   a pergunta em caixa alta e a busca. Só um banner fino de aviso ativo pode aparecer no topo. Fecha numa onda estática.
+   Ritmo vertical: --heroi-topo e --heroi-base são o respiro de cima e de baixo; --heroi-gap, o espaço entre os blocos. */
+.heroi {
+  --altura-onda: clamp(44px, 7vw, 104px);
+  --heroi-topo: var(--e-6);
+  --heroi-base: var(--e-6);
+  --heroi-gap: var(--e-5);
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  background: var(--cs-mare);
+  color: #fff;
+}
+.heroi :focus-visible {
+  outline-color: var(--cs-sol);
+}
+
+/* ---------- fundo: malha e rios (decoração estática, nada se move) */
+.malha {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-image: radial-gradient(circle, var(--cs-ponto-sobre-mare) 0 1.2px, transparent 1.7px);
+  background-size: var(--malha) var(--malha);
+  background-position: calc(var(--malha) / 2) calc(var(--malha) / 2);
+  -webkit-mask-image: linear-gradient(to bottom, #000 70%, transparent 96%);
+  mask-image: linear-gradient(to bottom, #000 70%, transparent 96%);
+}
+.rios {
+  position: absolute;
+  z-index: -1;
+  top: -10%;
+  right: -22%;
+  width: 96%;
+  height: 130%;
+  opacity: 0.2;
+  pointer-events: none;
+}
+.rios :global(svg) {
+  width: 100%;
+  height: 100%;
+}
+.rios :global(path) {
+  fill: none;
+  stroke: #fff;
+  stroke-width: 1.2;
+}
+.rios :global(.cidade) {
+  fill: rgba(255, 255, 255, 0.05);
+}
+
+/* ---------- conteúdo */
+.interno {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas:
+    "aviso"
+    "texto"
+    "resultado";
+  gap: var(--heroi-gap);
+  max-width: var(--largura);
+  margin: 0 auto;
+  padding: var(--heroi-topo) var(--margem) calc(var(--altura-onda) + var(--heroi-base));
+}
+.texto {
+  grid-area: texto;
+  display: grid;
+  gap: var(--e-4);
+  align-content: start;
+}
+.h1 {
+  font-family: var(--fonte-titulo);
+  font-size: clamp(1.9rem, 8.2vw, 2.25rem);
+  font-weight: 800;
+  line-height: 1.04;
+  letter-spacing: -0.01em;
+  text-transform: uppercase;
+  text-wrap: balance;
+  color: #fff;
+}
+.apoio {
+  display: none;
+  max-width: 46ch;
+  font-size: 1.1rem;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.88);
+}
+.form {
+  display: grid;
+  gap: var(--e-3);
+}
+.rotulo {
+  font-weight: 700;
+}
+.linha {
+  display: grid;
+  gap: var(--e-2);
+}
+.linha input {
+  width: 100%;
+  min-height: var(--alvo-grande);
+  padding: 0 var(--e-5);
+  border: 2px solid transparent;
+  border-radius: var(--r-pilula);
+  background: var(--cs-papel);
+  color: var(--cs-tinta);
+  font-size: var(--t-corpo);
+}
+.linha input::placeholder {
+  color: var(--cs-tinta-2);
+}
+.linha input[aria-invalid="true"] {
+  border-color: #ffb3a9;
+}
+.ver,
+.local {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--e-2);
+  min-height: var(--alvo-grande);
+  padding: 0 var(--e-5);
+  border-radius: var(--r-pilula);
+  font-family: var(--fonte-titulo);
+  font-size: var(--t-corpo);
+  font-weight: 700;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition:
+    background-color var(--mov-rapido),
+    transform var(--mov-rapido),
+    box-shadow var(--mov-rapido);
+}
+/* ação principal: o sol da marca, o único acento quente do herói */
+.ver {
+  border: 0;
+  background: var(--cs-sol);
+  color: var(--cs-tinta);
+}
+.ver:hover {
+  background: #ffc933;
+  box-shadow: 0 8px 18px -8px rgba(0, 0, 0, 0.5);
+}
+.ver:active,
+.local:active {
+  transform: scale(0.97);
+}
+.local {
+  min-height: var(--alvo);
+  justify-self: start;
+  border: 2px solid rgba(255, 255, 255, 0.6);
+  background: transparent;
+  color: #fff;
+}
+.local:hover:not(:disabled) {
+  border-color: #fff;
+  background: rgba(255, 255, 255, 0.12);
+}
+.local:disabled {
+  cursor: progress;
+  opacity: 0.8;
+}
+.ajuda {
+  font-size: var(--t-apoio);
+  color: #d3e4f1;
+}
+.ajuda[data-erro="true"] {
+  color: #ffd2cb;
+  font-weight: 700;
+}
+.sugestoes {
+  list-style: none;
+  margin: 0;
+  padding: var(--e-1);
+  display: grid;
+  border-radius: var(--r-painel);
+  background: var(--cs-papel);
+  color: var(--cs-tinta);
+  box-shadow: var(--sombra-flutuante);
+}
+.sugestoes button {
+  width: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: var(--e-1) var(--e-3);
+  min-height: var(--alvo);
+  padding: var(--e-2) var(--e-4);
+  border: 0;
+  border-radius: var(--r-icone);
+  background: none;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.sugestoes button:hover {
+  background: var(--cs-mare-suave);
+}
+.sugestoes span {
+  color: var(--cs-tinta-2);
+  font-size: var(--t-apoio);
+}
+.emergencia {
+  margin-top: var(--e-3);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0 var(--e-4);
+  font-size: var(--t-apoio);
+  color: #d3e4f1;
+}
+.emergencia a {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--e-1);
+  min-height: var(--alvo-lista);
+  color: #fff;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.emergencia b {
+  font-size: 1.125rem;
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+.nomeTel {
+  display: none;
+}
+/* o resultado é um cartão branco no meio do azul: texto escuro de volta */
+.resultado {
+  grid-area: resultado;
+  color: var(--cs-tinta);
+}
+.resultado:not(:has(*)) {
+  display: none;
+}
+.aviso {
+  grid-area: aviso;
+  min-width: 0;
+}
+.aviso:not(:has(*)) {
+  display: none;
+}
+
+/* celular: busca, localização e telefones precisam caber na primeira tela, acima da barra de emergência */
+@media (max-width: 760px) {
+  .texto {
+    gap: var(--e-3);
+  }
+  .form {
+    gap: var(--e-2);
+  }
+  .emergencia {
+    margin-top: var(--e-2);
+  }
+  .linha input,
+  .ver {
+    min-height: 52px;
+  }
+  .ajuda {
+    font-size: 0.9375rem;
+  }
+}
+@media (min-width: 761px) {
+  .nomeTel {
+    display: inline;
+  }
+  .heroi {
+    --heroi-topo: var(--e-8);
+    --heroi-base: var(--e-7);
+    --heroi-gap: var(--e-6);
+  }
+  .texto {
+    gap: var(--e-4);
+  }
+  .form {
+    gap: var(--e-3);
+  }
+  .emergencia {
+    margin-top: var(--e-4);
+  }
+  .h1 {
+    font-size: clamp(2.5rem, 4.4vw, 3.5rem);
+    max-width: 14ch;
+  }
+  .apoio {
+    display: block;
+  }
+  /* a busca vira uma pílula só: o campo e o botão dentro da mesma peça branca */
+  .linha {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 0;
+    padding: 6px;
+    border-radius: var(--r-pilula);
+    background: var(--cs-papel);
+    box-shadow: 0 14px 30px -14px rgba(3, 20, 34, 0.55);
+  }
+  .linha:focus-within {
+    box-shadow:
+      0 0 0 3px var(--cs-sol),
+      0 14px 30px -14px rgba(3, 20, 34, 0.55);
+  }
+  .linha input,
+  .linha input:focus-visible {
+    outline: none;
+    min-height: var(--alvo);
+    border: 0;
+    background: transparent;
+  }
+  .ver {
+    min-height: var(--alvo);
+  }
+}
+@media (min-width: 1024px) {
+  .heroi {
+    --heroi-topo: calc(var(--e-9) + var(--e-1));
+  }
+  /* o lado direito é só do desenho dos rios; o banner de aviso ocupa a largura toda, acima do título */
+  .interno {
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
+    grid-template-areas:
+      "aviso aviso"
+      "texto ."
+      "resultado resultado";
+    column-gap: var(--e-8);
+    align-items: start;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ver,
+  .local {
+    transition: none;
+  }
+}

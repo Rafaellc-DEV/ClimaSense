@@ -1,0 +1,41 @@
+.mapaCaixa {
+  position: relative;
+  display: grid;
+  gap: var(--e-2);
+}
+/* altura limitada: no celular o mapa não toma a tela inteira */
+.mapa {
+  height: min(52vh, 340px);
+  min-height: 260px;
+  border-radius: var(--r-painel);
+  background: var(--cs-nevoa);
+  overflow: hidden;
+}
+.mapaAviso {
+  position: absolute;
+  inset: auto var(--e-2) 72px;
+  padding: var(--e-2) var(--e-3);
+  border-radius: var(--r-icone);
+  background: var(--cs-papel);
+  font-size: var(--t-apoio);
+  z-index: 500;
+}
+.ativar {
+  min-height: var(--alvo);
+  padding: 0 var(--e-4);
+  border: 2px solid var(--cs-mare);
+  border-radius: var(--r-pilula);
+  background: var(--cs-papel);
+  color: var(--cs-mare);
+  font-weight: 700;
+  cursor: pointer;
+}
+.ativar[aria-pressed="true"] {
+  background: var(--cs-mare);
+  color: var(--cs-sobre-mare);
+}
+@media (min-width: 761px) {
+  .mapa {
+    height: 480px;
+  }
+}

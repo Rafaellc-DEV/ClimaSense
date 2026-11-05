@@ -1,0 +1,23 @@
+.onda {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: var(--altura-onda, clamp(48px, 8vw, 110px));
+  overflow: hidden;
+  pointer-events: none;
+}
+/* o alto do rodapé: a onda fica sobre a borda de cima e a página desce para dentro do azul */
+.onda[data-alto] {
+  bottom: auto;
+  top: 0;
+  transform: translateY(-100%);
+  margin-top: 1px;
+}
+/* o desenho tem duas vezes a largura (dois períodos); parado, o excesso à direita fica cortado pelo overflow */
+.onda svg {
+  display: block;
+  width: 200%;
+  max-width: none;
+  height: 100%;
+}

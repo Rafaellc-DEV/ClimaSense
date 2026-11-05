@@ -1,17 +1,17 @@
-import { Fragment, useMemo, useState, type CSSProperties, type PointerEvent, type ReactNode } from "react";
+import { useMemo, useState, type CSSProperties, type PointerEvent } from "react";
 import { ChevronDown } from "lucide-react";
 import tracos from "@/assets/tracos/distritos.json";
 import { NIVEIS, type ChaveNivel } from "@/design-system/niveis";
 import type { AvisoPublico } from "./useEstado";
-import estilos from "./PaginaInicial.module.css";
+import estilos from "./MapaAvisos.module.css";
 
 interface Props {
   /** distrito → nível do aviso mais alto nele; null = não foi possível verificar */
   niveis: Record<string, string> | null;
   /** avisos em vigor, para marcar na lista de bairros os que são citados em cada um */
   avisos?: AvisoPublico[];
-  /** título e texto da seção, acima da legenda */
-  children?: ReactNode;
+  /** tocar num bairro da lista preenche a busca da página */
+  aoEscolherBairro?: (nome: string) => void;
 }
 
 type Distrito = (typeof tracos.distritos)[number];
@@ -41,7 +41,7 @@ const corNivel = (n: ChaveNivel | null) =>
  * por padrão o de aviso mais alto. A legenda ao lado diz o mesmo em texto (RN-17) e abre a lista completa de bairros.
  * O aviso vale para os bairros citados nele, não para o distrito inteiro (RN-07).
  */
-export function MapaAvisos({ niveis, avisos, children }: Props) {
+export function MapaAvisos({ niveis, avisos, aoEscolherBairro }: Props) {
   const [ativo, setAtivo] = useState<string | null>(null);
   const [aberto, setAberto] = useState<string | null>(null);
 
@@ -88,8 +88,6 @@ export function MapaAvisos({ niveis, avisos, children }: Props) {
 
   return (
     <div className={estilos.mapa}>
-      <div className={estilos.mapaCabecalho}>{children}</div>
-
       <figure className={estilos.mapaFigura} onPointerLeave={sobre(null)}>
         <svg
           viewBox={`0 0 ${tracos.largura} ${tracos.altura}`}
@@ -199,25 +197,29 @@ export function MapaAvisos({ niveis, avisos, children }: Props) {
                   <ChevronDown aria-hidden="true" size={20} className={estilos.seta} />
                 </button>
                 {aberto === d.id && (
-                  <p id={`bairros-${d.id}`} className={estilos.bairros}>
-                    {d.bairros.length} bairros:{" "}
-                    {d.bairros.map((b, i) => {
-                      const nb = nivelBairro.get(b.id);
-                      return (
-                        <Fragment key={b.id}>
-                          {i > 0 && ", "}
-                          {nb ? (
-                            <strong>
-                              {b.nome} ({NIVEIS[nb].rotulo})
-                            </strong>
-                          ) : (
-                            b.nome
-                          )}
-                        </Fragment>
-                      );
-                    })}
-                    .
-                  </p>
+                  <div id={`bairros-${d.id}`} className={estilos.bairros}>
+                    <p>
+                      {d.bairros.length} bairros.{" "}
+                      {aoEscolherBairro ? "Toque num bairro para ver os avisos dele." : ""}
+                    </p>
+                    <ul>
+                      {d.bairros.map((b) => {
+                        const nb = nivelBairro.get(b.id);
+                        const rotulo = nb ? `${b.nome} (${NIVEIS[nb].rotulo})` : b.nome;
+                        return (
+                          <li key={b.id} data-aviso={!!nb}>
+                            {aoEscolherBairro ? (
+                              <button type="button" onClick={() => aoEscolherBairro(b.nome)}>
+                                {rotulo}
+                              </button>
+                            ) : (
+                              rotulo
+                            )}
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </div>
                 )}
               </li>
             );

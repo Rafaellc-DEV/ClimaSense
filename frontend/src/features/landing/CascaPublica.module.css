@@ -1,0 +1,120 @@
+/* Topo da landing pública: 56 px no celular, 64 px a partir de 768 px. Fixo, sem encolher e sem transparência.
+   Só o telefone é colorido; o acesso da equipe é texto (hover = sublinhado de 2 px). */
+.casca.casca {
+  --altura-header: 56px;
+  --margem: var(--e-4);
+  /* o foco e as âncoras nunca ficam atrás do topo fixo (WCAG 2.4.11) */
+  scroll-padding-top: calc(var(--altura-header) + 16px);
+}
+.casca.casca [id] {
+  scroll-margin-top: calc(var(--altura-header) + 16px);
+}
+.topo {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: var(--cs-mare);
+  color: #fff;
+}
+.topo :focus-visible {
+  outline: 3px solid var(--cs-sol);
+  outline-offset: 2px;
+}
+.interno {
+  display: flex;
+  align-items: center;
+  gap: var(--e-3);
+  max-width: var(--largura);
+  height: var(--altura-header);
+  margin: 0 auto;
+  padding: 0 var(--margem);
+}
+.logo {
+  --marca: 20px;
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: #fff;
+  text-decoration: none;
+}
+.acoes {
+  display: flex;
+  align-items: center;
+  gap: var(--e-2);
+  margin-left: auto;
+}
+/* no celular o telefone mora na barra fixa de baixo */
+.ligar {
+  display: none;
+  align-items: center;
+  gap: var(--e-2);
+  min-height: 48px;
+  padding: 0 var(--e-4);
+  border-radius: var(--r-pilula);
+  background: var(--cs-sol);
+  color: var(--cs-tinta);
+  font-size: 1rem;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.ligar:hover {
+  background: #ffc933;
+}
+/* dígitos na fonte dos títulos: o zero da Atkinson tem barra e parece cortado em "0800"; o da Outfit é liso */
+.ligar b {
+  font-family: var(--fonte-titulo);
+  font-size: 1.0625rem;
+  font-weight: 700;
+  font-variant-numeric: lining-nums tabular-nums;
+  letter-spacing: 0.02em;
+  word-spacing: 0.15em;
+}
+.entrar {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 var(--e-3);
+  color: rgba(255, 255, 255, 0.85);
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.entrar:hover {
+  color: #fff;
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 6px;
+}
+.entrarCurto {
+  display: inline;
+}
+.entrarLongo {
+  display: none;
+}
+
+@media (min-width: 761px) {
+  .ligar {
+    display: inline-flex;
+  }
+  .entrarCurto {
+    display: none;
+  }
+  .entrarLongo {
+    display: inline;
+  }
+}
+@media (min-width: 768px) {
+  .casca.casca {
+    --altura-header: 64px;
+    --margem: var(--e-5);
+  }
+  .logo {
+    --marca: 28px;
+  }
+}
+@media (min-width: 1200px) {
+  .casca.casca {
+    --margem: var(--e-6);
+  }
+}

@@ -16,6 +16,8 @@ export function Entrar() {
   const destino = (local.state as { voltarPara?: string } | null)?.voltarPara ?? "/app";
   const [erro, setErro] = useState<string>();
   const [enviando, setEnviando] = useState(false);
+  // A senha temporária digitada no login fica só em memória, para não pedir de novo (e não confundir com a senha nova).
+  const [temporaria, setTemporaria] = useState<string>();
 
   useEffect(() => {
     document.title = "Entrar | ClimaSense";
@@ -35,13 +37,16 @@ export function Entrar() {
         if (dados.get("nova") !== dados.get("confirmar"))
           throw new Error("As duas senhas novas não são iguais.");
         await enviar("/auth/trocar-senha", {
-          senha_atual: dados.get("atual"),
+          senha_atual: temporaria ?? dados.get("atual"),
           nova_senha: dados.get("nova"),
         });
+        setTemporaria(undefined);
         await recarregar();
         navegar(destino);
       } else {
-        const u = await entrar(String(dados.get("email")), String(dados.get("senha")));
+        const senha = String(dados.get("senha"));
+        const u = await entrar(String(dados.get("email")), senha);
+        setTemporaria(u.troca_senha_obrigatoria ? senha : undefined);
         if (!u.troca_senha_obrigatoria) navegar(destino);
       }
     } catch (x) {
@@ -76,13 +81,29 @@ export function Entrar() {
         <form onSubmit={aoEnviar} className={estilos.form}>
           {trocar ? (
             <>
-              <CampoSenha
-                rotulo="Senha atual (temporária)"
-                name="atual"
-                autoComplete="current-password"
-                autoFocus
+              <input
+                type="text"
+                name="username"
+                value={usuario?.email ?? ""}
+                autoComplete="username"
+                readOnly
+                hidden
               />
-              <CampoSenha rotulo="Senha nova" name="nova" autoComplete="new-password" minLength={10} />
+              {!temporaria && (
+                <CampoSenha
+                  rotulo="Senha atual (temporária)"
+                  name="atual"
+                  autoComplete="current-password"
+                  autoFocus
+                />
+              )}
+              <CampoSenha
+                rotulo="Senha nova"
+                name="nova"
+                autoComplete="new-password"
+                minLength={10}
+                autoFocus={!!temporaria}
+              />
               <CampoSenha rotulo="Repita a senha nova" name="confirmar" autoComplete="new-password" />
             </>
           ) : (

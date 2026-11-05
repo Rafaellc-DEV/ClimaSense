@@ -1,0 +1,55 @@
+.barra {
+  display: none;
+}
+@media (max-width: 760px) {
+  .barra {
+    position: fixed;
+    inset: auto 0 0;
+    z-index: 60;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    gap: 1px;
+    height: calc(56px + env(safe-area-inset-bottom));
+    padding-bottom: env(safe-area-inset-bottom);
+    background: var(--cs-tinta);
+    box-shadow: 0 -4px 16px rgba(14, 36, 51, 0.25);
+  }
+  .principal,
+  .link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--e-2);
+    min-height: 56px;
+    padding: 0 var(--e-3);
+    color: #fff;
+    font-size: 0.9375rem;
+    font-weight: 700;
+    text-decoration: none;
+    white-space: nowrap;
+  }
+  .principal {
+    background: var(--n-critico);
+  }
+  .principal svg {
+    display: none;
+  }
+  .link {
+    min-width: 56px;
+    background: var(--cs-mare);
+  }
+  /* mesmos dígitos do botão do topo: o zero liso da Outfit, sem a barra da Atkinson */
+  .numero {
+    font-family: var(--fonte-titulo);
+    font-variant-numeric: lining-nums tabular-nums;
+    letter-spacing: 0.02em;
+    word-spacing: 0.1em;
+  }
+  .link b {
+    font-size: 1.25rem;
+  }
+  .barra :focus-visible {
+    outline-color: var(--cs-sol);
+    outline-offset: -4px;
+  }
+}

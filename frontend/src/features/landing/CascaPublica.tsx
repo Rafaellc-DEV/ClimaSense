@@ -1,135 +1,65 @@
 import type { ReactNode } from "react";
-import { Megaphone, Phone } from "lucide-react";
-import { Link } from "react-router-dom";
-import { Marca } from "@/design-system/componentes/Marca";
+import { Phone } from "lucide-react";
+import { Link, useLocation } from "react-router-dom";
 import rios from "@/assets/tracos/rios.svg?raw";
-import { useEstado } from "./useEstado";
-import { useRolagemSuave } from "./useRolagemSuave";
+import { Marca } from "@/design-system/componentes/Marca";
+import { BarraEmergencia } from "./BarraEmergencia";
+import { useRolarAoChegar } from "./navegacaoLanding";
+import { Onda } from "./Onda";
+import { DEFESA_CIVIL_RECIFE } from "./telefones";
 import estilos from "./PaginaInicial.module.css";
+import topo from "./CascaPublica.module.css";
 
-export const TELEFONES = [
-  { numero: "199", nome: "Defesa Civil" },
-  { numero: "193", nome: "Bombeiros" },
-  { numero: "192", nome: "SAMU" },
-];
+export { TELEFONES } from "./telefones";
 
-/** Linha d’água: fecha o herói e abre o rodapé. A linha fina por cima é a maré que acabou de baixar. */
-export function Onda({
-  cor,
-  linha = false,
-  className,
+/**
+ * Casca das páginas públicas: pular para o conteúdo, barra do topo (logo, telefone da Defesa Civil e acesso da
+ * equipe), conteúdo, rodapé com as fontes e, no celular, a barra fixa de emergência. O espaço dela é reservado no fim da página
+ * (padding-bottom e scroll-padding-bottom) para o foco nunca ficar escondido atrás dela.
+ */
+export function CascaPublica({
+  children,
+  aoAbrirAbrigos,
 }: {
-  cor: string;
-  linha?: boolean;
-  className?: string;
+  children: ReactNode;
+  /** Só na página inicial: o atalho “Abrigos” da barra de emergência troca de aba sem recarregar. */
+  aoAbrirAbrigos?: () => void;
 }) {
+  const naHome = useLocation().pathname === "/";
+  useRolarAoChegar(naHome);
   return (
-    <svg
-      className={[estilos.onda, className].filter(Boolean).join(" ")}
-      viewBox="0 0 1440 120"
-      preserveAspectRatio="none"
-      aria-hidden="true"
-      focusable="false"
-    >
-      {linha && (
-        <path
-          d="M0,50 C200,8 340,4 540,38 C720,70 880,84 1060,50 C1220,20 1340,20 1440,40"
-          fill="none"
-          stroke="rgba(255,255,255,0.75)"
-          strokeWidth="2"
-          vectorEffect="non-scaling-stroke"
-        />
-      )}
-      <path
-        d="M0,72 C180,32 330,22 520,60 C700,96 860,112 1040,74 C1200,42 1330,40 1440,62 L1440,121 L0,121 Z"
-        fill={cor}
-      />
-    </svg>
-  );
-}
-
-/** Telefones de emergência, clicáveis no celular (RF-01.6). */
-export function FaixaEmergencia() {
-  return (
-    <section className={estilos.emergencia} aria-labelledby="emergencia">
-      <h2 id="emergencia" className={estilos.etiqueta}>
-        <Phone aria-hidden="true" size={18} /> Em emergência, ligue
-      </h2>
-      <ul className={estilos.circulos}>
-        {TELEFONES.map((t) => (
-          <li key={t.numero}>
-            <a
-              href={`tel:${t.numero}`}
-              className={estilos.circulo}
-              aria-label={`Ligar para ${t.nome === "SAMU" ? "o" : "a"} ${t.nome}, ${t.numero}`}
-            >
-              <span className={estilos.disco}>
-                <span className={estilos.numero}>{t.numero}</span>
-              </span>
-              <span className={estilos.rotuloCirculo}>{t.nome}</span>
-            </a>
-          </li>
-        ))}
-      </ul>
-    </section>
-  );
-}
-
-/** Botão “Comunicados” do topo, com quantos estão em vigor agora. */
-function BotaoComunicados({ inicio }: { inicio: boolean }) {
-  const s = useEstado();
-  const n = s.tipo === "ok" ? s.estado.avisos_ativos : 0;
-  return (
-    <a
-      href={inicio ? "#comunicados" : "/#comunicados"}
-      className={estilos.botaoComunicados}
-      aria-label={n ? `Comunicados: ${n} em vigor` : "Comunicados"}
-    >
-      <Megaphone aria-hidden="true" size={20} />
-      <span>Comunicados</span>
-      {n > 0 && (
-        <span className={estilos.contagem} aria-hidden="true">
-          {n}
-        </span>
-      )}
-    </a>
-  );
-}
-
-export function CascaPublica({ children, inicio = false }: { children: ReactNode; inicio?: boolean }) {
-  const ancora = (id: string) => (inicio ? `#${id}` : `/#${id}`);
-  useRolagemSuave(inicio);
-  return (
-    <div className={estilos.pagina}>
+    <div className={`${estilos.pagina} ${topo.casca}`}>
       <a href="#conteudo" className={estilos.pular}>
         Pular para o conteúdo
       </a>
-      <header className={estilos.topo}>
-        <div className={estilos.topoInterno}>
-          <Link to="/" aria-label="ClimaSense, página inicial" className={estilos.logo}>
+      <header className={topo.topo}>
+        <div className={topo.interno}>
+          <Link to="/" aria-label="ClimaSense, página inicial" className={topo.logo}>
             <Marca decorativa />
           </Link>
-          <nav aria-label="Seções" className={estilos.nav}>
-            <a href={ancora("mapa")} className={estilos.linkNav}>
-              Mapa
+          <div className={topo.acoes}>
+            <a
+              href={DEFESA_CIVIL_RECIFE.href}
+              className={topo.ligar}
+              aria-label={`Ligar para a Defesa Civil do Recife, ${DEFESA_CIVIL_RECIFE.texto}, 24 horas, grátis`}
+            >
+              <Phone aria-hidden="true" size={20} />
+              <span>
+                Ligar <b>{DEFESA_CIVIL_RECIFE.texto}</b>
+              </span>
             </a>
-            <a href={ancora("como-funciona")} className={estilos.linkNav}>
-              Como funciona
-            </a>
-            <a href={ancora("sobre")} className={estilos.linkNav}>
-              Sobre
-            </a>
-            <BotaoComunicados inicio={inicio} />
-            <Link to="/entrar" className={estilos.entrar}>
-              <span className={estilos.entrarLongo}>Acesso da equipe</span>
-              <span className={estilos.entrarCurto}>Equipe</span>
+            <Link to="/entrar" className={topo.entrar}>
+              <span className={topo.entrarLongo}>Acesso da equipe</span>
+              <span className={topo.entrarCurto}>Equipe</span>
             </Link>
-          </nav>
+          </div>
         </div>
       </header>
-      <main id="conteudo">{children}</main>
+      <main id="conteudo" className={estilos.principal}>
+        {children}
+      </main>
       <footer className={estilos.rodape}>
-        <Onda cor="var(--cs-mare)" className={estilos.ondaRodape} />
+        <Onda cor="var(--cs-mare)" alto />
         <div className={estilos.rodapeInterno}>
           <div className={estilos.rodapeMarca}>
             <Marca />
@@ -144,8 +74,8 @@ export function CascaPublica({ children, inicio = false }: { children: ReactNode
             <p>Projeto acadêmico de Análise e Visualização de Dados da CESAR School, 2026.</p>
           </div>
           <div>
-            <h2 className={estilos.rodapeTitulo}>Canais oficiais</h2>
-            <ul aria-label="Canais oficiais">
+            <h2 className={estilos.rodapeTitulo}>Fontes e canais oficiais</h2>
+            <ul aria-label="Fontes e canais oficiais">
               <li>
                 <a href="https://www2.recife.pe.gov.br" target="_blank" rel="noopener noreferrer">
                   Prefeitura do Recife
@@ -162,6 +92,9 @@ export function CascaPublica({ children, inicio = false }: { children: ReactNode
                 </a>
               </li>
               <li>
+                <Link to="/#sobre">De onde vêm os dados</Link>
+              </li>
+              <li>
                 <Link to="/entrar">Acesso da equipe</Link>
               </li>
             </ul>
@@ -173,6 +106,7 @@ export function CascaPublica({ children, inicio = false }: { children: ReactNode
           />
         </div>
       </footer>
+      <BarraEmergencia aoAbrirAbrigos={aoAbrirAbrigos} />
     </div>
   );
 }

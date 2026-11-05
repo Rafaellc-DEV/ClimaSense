@@ -4,7 +4,7 @@ import { CartaoAviso } from "@/design-system/componentes/CartaoAviso";
 import { EstadoDados } from "@/design-system/componentes/EstadoDados";
 import { Carregando } from "@/design-system/componentes/Painel";
 import { useConsulta } from "@/lib/consultas";
-import { CascaPublica, FaixaEmergencia } from "./CascaPublica";
+import { CascaPublica } from "./CascaPublica";
 import type { AvisoPublico } from "./useEstado";
 import estilos from "./PaginaInicial.module.css";
 
@@ -17,7 +17,6 @@ export function DetalheAviso() {
   }, [r.data]);
   return (
     <CascaPublica>
-      <FaixaEmergencia />
       <div className={estilos.detalhe}>
         <p className={estilos.voltar}>
           <Link to="/">Voltar à página inicial</Link>

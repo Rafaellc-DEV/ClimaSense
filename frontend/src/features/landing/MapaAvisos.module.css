@@ -1,0 +1,350 @@
+.mapa {
+  display: grid;
+  grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
+  grid-template-areas: "legenda figura";
+  column-gap: var(--e-7);
+  align-items: center;
+}
+.legenda {
+  grid-area: legenda;
+}
+.mapaFigura {
+  grid-area: figura;
+  position: relative;
+  isolation: isolate;
+  align-self: center;
+  justify-self: center;
+  width: 100%;
+  max-width: 470px;
+  margin: 0;
+}
+.mapaFigura svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+  filter: drop-shadow(0 22px 28px rgba(15, 76, 117, 0.22));
+}
+.distritoG {
+  cursor: pointer;
+  transform-box: fill-box;
+  transform-origin: center;
+  transition: transform 260ms cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+.distritoG[data-foco="true"] {
+  transform: translateY(-5px);
+}
+.distrito {
+  fill: var(--cs-mare);
+  stroke: #fff;
+  stroke-width: 2;
+  stroke-linejoin: round;
+  transition: fill var(--mov-rapido);
+}
+.distritoG[data-foco="true"] .distrito {
+  fill: var(--cs-mangue);
+}
+.distritoG[data-afetado="true"] .distrito {
+  fill: var(--cor-nivel);
+  stroke: var(--cs-tinta);
+  stroke-width: 2.5;
+  animation: preencher 700ms ease-out;
+}
+@keyframes preencher {
+  from {
+    fill-opacity: 0;
+  }
+}
+.bolinha {
+  pointer-events: none;
+}
+.bolinhaDisco {
+  fill: #fff;
+  stroke: var(--cs-mare);
+  stroke-width: 1.5;
+  transition: fill var(--mov-rapido);
+}
+.bolinha text {
+  font-size: 15px;
+  font-weight: 800;
+  fill: var(--cs-mare);
+}
+.bolinha[data-com-aviso="true"] .bolinhaDisco {
+  stroke: var(--cs-tinta);
+  stroke-width: 2.5;
+}
+.bolinha[data-foco="true"] .bolinhaDisco {
+  fill: var(--cs-sol);
+  stroke: var(--cs-tinta);
+}
+.bolinha[data-foco="true"] text {
+  fill: var(--cs-tinta);
+}
+/* o distrito com aviso emite ondas a partir da bolinha: o único movimento contínuo do mapa, e só quando há aviso */
+.ondulacao {
+  fill: none;
+  stroke: var(--cs-papel);
+  stroke-width: 3;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: ondular 2.4s ease-out 3;
+}
+@keyframes ondular {
+  from {
+    transform: scale(1);
+    opacity: 0.9;
+  }
+  to {
+    transform: scale(2.8);
+    opacity: 0;
+  }
+}
+/* etiqueta do distrito em foco; o ::after é a reta até a bolinha */
+.rotuloFoco {
+  position: absolute;
+  z-index: 2;
+  display: grid;
+  gap: 2px;
+  width: max-content;
+  max-width: 250px;
+  padding: var(--e-3) var(--e-4);
+  background: var(--cs-papel);
+  border-radius: var(--r-painel);
+  box-shadow: var(--sombra-flutuante);
+  font-size: var(--t-apoio);
+  line-height: 1.35;
+  transform: translate(-50%, calc(-100% - 40px));
+  pointer-events: none;
+  animation: surgir 240ms cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+.rotuloFoco::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 100%;
+  width: 2px;
+  height: 24px;
+  background: var(--cs-tinta);
+  transform: translateX(-50%);
+}
+@keyframes surgir {
+  from {
+    opacity: 0;
+    transform: translate(-50%, calc(-100% - 30px));
+  }
+}
+.rotuloFoco strong {
+  color: var(--cs-mare);
+  font-weight: 800;
+}
+.rotuloFoco span {
+  color: var(--cs-tinta-2);
+}
+.rotuloFoco .rotuloFocoSituacao {
+  justify-self: start;
+  margin-top: var(--e-1);
+  font-weight: 700;
+  color: var(--cs-mangue);
+}
+.rotuloFoco .rotuloFocoSituacao[data-com-aviso="true"] {
+  padding: 2px 10px;
+  border-radius: var(--r-pilula);
+  background: var(--fundo-nivel);
+  color: var(--texto-nivel);
+  box-shadow: inset 0 0 0 2px var(--cor-nivel);
+}
+
+/* legenda */
+.notaMapa {
+  margin: 0 0 var(--e-3);
+  color: var(--cs-tinta-2);
+}
+.listaDistritos {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-top: var(--borda);
+}
+.listaDistritos > li {
+  border-bottom: var(--borda);
+}
+.listaDistritos button {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 30px minmax(0, 1fr) auto 20px;
+  align-items: center;
+  gap: var(--e-3);
+  min-height: 60px;
+  padding: var(--e-2);
+  border: 0;
+  border-radius: var(--r-campo);
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color var(--mov-rapido);
+}
+.listaDistritos > li[data-foco="true"] button {
+  background: var(--cs-mare-suave);
+}
+.marcador {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--cs-mare);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 800;
+  transition:
+    background-color var(--mov-rapido),
+    color var(--mov-rapido);
+}
+.listaDistritos > li[data-afetado="true"] .marcador {
+  background: var(--cs-papel);
+  box-shadow: inset 0 0 0 3px var(--cor-nivel);
+  color: var(--cs-tinta);
+}
+.listaDistritos > li[data-foco="true"] .marcador {
+  background: var(--cs-sol);
+  color: var(--cs-tinta);
+}
+.distritoTexto {
+  display: grid;
+  min-width: 0;
+}
+.nomeDistrito {
+  font-weight: 700;
+}
+.exemplosDistrito {
+  overflow: hidden;
+  font-size: var(--t-apoio);
+  color: var(--cs-tinta-2);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.situacaoDistrito {
+  padding: 2px 10px;
+  border-radius: var(--r-pilula);
+  background: var(--fundo-nivel, var(--n-insuf-bg));
+  color: var(--texto-nivel, var(--cs-tinta));
+  box-shadow: inset 0 0 0 2px var(--cor-nivel, var(--n-insuf));
+  font-size: var(--t-apoio);
+  font-weight: 800;
+  white-space: nowrap;
+}
+.seta {
+  color: var(--cs-mare);
+  transition: transform 200ms ease-out;
+}
+.listaDistritos button[aria-expanded="true"] .seta {
+  transform: rotate(180deg);
+}
+.bairros {
+  padding: var(--e-1) var(--e-2) var(--e-4);
+  font-size: var(--t-apoio);
+  color: var(--cs-tinta-2);
+  animation: abrir 200ms ease-out;
+}
+.bairros ul {
+  list-style: none;
+  margin: var(--e-2) 0 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--e-2);
+}
+.bairros li {
+  padding: var(--e-2) var(--e-3);
+  border-radius: var(--r-pilula);
+  background: var(--cs-nevoa);
+  color: var(--cs-tinta);
+}
+.bairros li[data-aviso="true"] {
+  font-weight: 800;
+  box-shadow: inset 0 0 0 2px var(--cs-tinta);
+}
+.bairros li:has(button) {
+  padding: 0;
+}
+.bairros button {
+  min-height: var(--alvo-lista);
+  padding: 0 var(--e-3);
+  border: 0;
+  border-radius: var(--r-pilula);
+  background: none;
+  font: inherit;
+  font-weight: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+.bairros button:hover {
+  background: var(--cs-mare-suave);
+}
+@keyframes abrir {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+
+/* no computador a etiqueta sai para o lado do distrito, por cima da mancha, sem cobrir as bolinhas vizinhas */
+@media (min-width: 1024px) {
+  .rotuloFoco {
+    animation-name: aparecer;
+  }
+  .rotuloFoco[data-lado="dir"] {
+    transform: translate(40px, -50%);
+  }
+  .rotuloFoco[data-lado="esq"] {
+    transform: translate(calc(-100% - 40px), -50%);
+  }
+  .rotuloFoco[data-lado]::after {
+    top: 50%;
+    width: 24px;
+    height: 2px;
+    transform: translateY(-50%);
+  }
+  .rotuloFoco[data-lado="dir"]::after {
+    left: -24px;
+  }
+  .rotuloFoco[data-lado="esq"]::after {
+    left: auto;
+    right: -24px;
+  }
+}
+@keyframes aparecer {
+  from {
+    opacity: 0;
+  }
+}
+
+@media (max-width: 1023px) {
+  .mapa {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "figura"
+      "legenda";
+  }
+  .mapaFigura {
+    max-width: 400px;
+    margin: var(--e-8) auto var(--e-5);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ondulacao,
+  .rotuloFoco,
+  .bairros,
+  .distritoG[data-afetado="true"] .distrito {
+    animation: none;
+  }
+  .ondulacao {
+    display: none;
+  }
+  .distritoG,
+  .seta {
+    transition: none;
+  }
+}

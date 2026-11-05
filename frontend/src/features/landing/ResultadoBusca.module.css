@@ -1,0 +1,194 @@
+/* a região viva existe sempre (para o leitor de tela anunciar a mudança), mas vazia não ocupa espaço */
+.regiao {
+  display: grid;
+  gap: var(--e-5);
+}
+.regiao:not(:has(*)) {
+  margin-top: calc(var(--e-5) * -1);
+}
+.painel {
+  display: grid;
+  gap: var(--e-3);
+  justify-items: start;
+  padding: var(--e-5) var(--e-6);
+  border-radius: 24px;
+  border-left: 8px solid var(--cs-mare);
+  background: var(--cs-papel);
+  box-shadow: 0 18px 40px -18px rgba(3, 20, 34, 0.55);
+}
+.painel[data-tom="sem"] {
+  border-left-color: var(--n-sem);
+}
+.painel[data-tom="aviso"] {
+  border-left-color: var(--n-alerta);
+}
+.painel[data-tom="erro"] {
+  border-left-color: var(--n-insuf);
+}
+.h2 {
+  font-family: var(--fonte-titulo);
+  font-size: 1.375rem;
+  font-weight: 800;
+  line-height: 1.2;
+  color: var(--cs-tinta);
+}
+.avisos {
+  display: grid;
+  gap: var(--e-4);
+  justify-items: stretch;
+  width: 100%;
+}
+.aviso {
+  display: grid;
+  gap: var(--e-2);
+  justify-items: start;
+  padding-left: var(--e-4);
+  border-left: 4px solid var(--cs-linha);
+}
+.avisos .aviso:first-child {
+  padding-left: 0;
+  border-left: 0;
+}
+.titulo {
+  font-family: var(--fonte-titulo);
+  font-size: 1.25rem;
+  font-weight: 700;
+  line-height: 1.25;
+}
+.assunto {
+  color: var(--cs-tinta-2);
+}
+.fazer h4 {
+  font-size: var(--t-corpo);
+  font-weight: 800;
+}
+.fazer ul {
+  margin: var(--e-1) 0 0;
+  padding-left: 1.2em;
+  display: grid;
+  gap: var(--e-1);
+}
+.fonte {
+  font-size: var(--t-apoio);
+  color: var(--cs-tinta-2);
+}
+.ler,
+.botao {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--alvo);
+  padding: 0 var(--e-5);
+  border: 2px solid var(--cs-mare);
+  border-radius: var(--r-pilula);
+  background: var(--cs-mare);
+  color: var(--cs-sobre-mare);
+  font-family: var(--fonte-titulo);
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+}
+.ler:hover,
+.botao:hover {
+  background: var(--cs-mare-forte);
+}
+.opcoes {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--e-2);
+  width: 100%;
+}
+.opcoes button {
+  width: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: var(--e-1) var(--e-3);
+  min-height: var(--alvo);
+  padding: var(--e-2) var(--e-4);
+  border: 1.5px solid var(--cs-linha-forte);
+  border-radius: var(--r-icone);
+  background: var(--cs-papel);
+  text-align: left;
+  cursor: pointer;
+}
+.opcoes button:hover {
+  background: var(--cs-mare-suave);
+}
+.opcoes span {
+  color: var(--cs-tinta-2);
+}
+/* os abrigos são outro cartão branco sobre a maré, com os cartões de cada abrigo dentro, em névoa */
+.abrigos {
+  display: grid;
+  gap: var(--e-3);
+  justify-items: start;
+  padding: var(--e-5) var(--e-6) var(--e-6);
+  border-radius: 24px;
+  background: var(--cs-papel);
+  box-shadow: 0 18px 40px -18px rgba(3, 20, 34, 0.55);
+}
+.h3 {
+  font-family: var(--fonte-titulo);
+  font-size: 1.25rem;
+  font-weight: 800;
+}
+.nota {
+  color: var(--cs-tinta-2);
+}
+.cartoes {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--e-3);
+  width: 100%;
+}
+.link {
+  min-height: var(--alvo);
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--cs-mare);
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+  cursor: pointer;
+}
+.esqueleto {
+  display: grid;
+  gap: var(--e-2);
+  width: 100%;
+  height: 96px;
+  align-content: start;
+}
+.esqueleto i {
+  display: block;
+  height: 24px;
+  border-radius: var(--r-campo);
+  background: var(--cs-linha);
+  animation: pulsar 1.2s ease-in-out infinite;
+}
+.esqueleto i + i {
+  width: 60%;
+}
+@keyframes pulsar {
+  50% {
+    opacity: 0.45;
+  }
+}
+@media (min-width: 761px) {
+  .cartoes {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .avisos {
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .esqueleto i {
+    animation: none;
+  }
+}

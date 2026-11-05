@@ -1,0 +1,67 @@
+/* Banner fino de aviso ativo no topo do herói: papel com a cor do nível na borda esquerda. Parado; sem espaço
+   reservado (a região vazia não ocupa altura). */
+.regiao:empty {
+  display: none;
+}
+.aviso {
+  --cor: var(--n-insuf);
+  display: flex;
+  gap: var(--e-3);
+  align-items: flex-start;
+  padding: var(--e-3) var(--e-4);
+  border-left: 6px solid var(--cor);
+  border-radius: var(--r-campo);
+  background: var(--cs-papel);
+  color: var(--cs-tinta);
+  box-shadow: 0 8px 20px -12px rgba(3, 20, 34, 0.5);
+}
+.aviso[data-nivel="informativo"] {
+  --cor: var(--n-info);
+}
+.aviso[data-nivel="atencao"] {
+  --cor: var(--n-atencao);
+}
+.aviso[data-nivel="alerta"] {
+  --cor: var(--n-alerta);
+}
+.aviso[data-nivel="critico"] {
+  --cor: var(--n-critico);
+}
+.icone {
+  flex: none;
+  margin-top: 2px;
+  color: var(--cor);
+}
+.corpo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  column-gap: var(--e-5);
+  min-width: 0;
+}
+.texto {
+  min-width: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.5;
+}
+.links {
+  display: flex;
+  flex-wrap: wrap;
+  column-gap: var(--e-5);
+}
+.links a,
+.links button {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--alvo);
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--cs-mare);
+  font: inherit;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+  cursor: pointer;
+}
