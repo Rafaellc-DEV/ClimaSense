@@ -15,14 +15,21 @@ from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
+from climasense.api.auditoria_leitura import LEITURA_DADOS_SAUDE, auditar_leitura
 from climasense.api.autorizacao import Contexto, exige, relogio
+from climasense.api.deps import configuracao
 from climasense.api.envelope import Meta, RecorteMeta, RespostaDados
+from climasense.config import Configuracao
 from climasense.dominio.papeis import Permissao
 from climasense.infra.postgres import obter_sessao
 from climasense.servicos import fontes as servico_fontes
 from climasense.servicos import saude_agravos as servico
 
-router = APIRouter(prefix="/saude", tags=["Saúde depois da chuva"])
+router = APIRouter(
+    prefix="/saude",
+    tags=["Saúde depois da chuva"],
+    dependencies=[Depends(auditar_leitura(LEITURA_DADOS_SAUDE))],  # RNF-01: quem leu qual rota
+)
 ocorrencias = APIRouter(prefix="/ocorrencias", tags=["Saúde depois da chuva"])
 consultar = exige(Permissao.CONSULTAR)
 
@@ -111,8 +118,13 @@ class BairroAgravo(BaseModel):
     bairro_id: str
     bairro_nome: str
     distrito_id: str | None
-    casos: int = Field(description="Casos confirmados de residentes do bairro no ano")
-    notificados: int
+    casos: int | None = Field(
+        description="Casos confirmados de residentes do bairro no ano; null quando suprimido (de 1 a 4, RNF-03)"
+    )
+    notificados: int | None = Field(description="Notificados no ano; null quando suprimido")
+    suprimido: bool = Field(
+        default=False, description="true = há contagem entre 1 e supressao_minima - 1 escondida (RN-13)"
+    )
 
 
 class BairrosSaude(BaseModel):
@@ -122,8 +134,10 @@ class BairrosSaude(BaseModel):
     anos_disponiveis: list[int]
     total_confirmados: int | None
     confirmados_sem_bairro: int | None = Field(
-        description="Confirmados sem bairro oficial: no total, fora do mapa"
+        description="Confirmados sem bairro oficial: no total, fora do mapa. Null quando suprimido: com algum bairro "
+        "suprimido, este valor e o total revelariam a célula por diferença"
     )
+    sem_bairro_suprimido: bool = False
     total_notificados: int | None
     fonte_atualizada_em: date | None = None
 
@@ -148,9 +162,16 @@ class HistoricoOcorrencias(BaseModel):
 
 
 def _meta(
-    db: Session, fontes: list[str], agora: datetime, granularidade: str, avisos: list[str], vazio: bool
+    db: Session,
+    fontes: list[str],
+    agora: datetime,
+    granularidade: str,
+    avisos: list[str],
+    vazio: bool,
+    supressao_minima: int | None = None,
 ):
     return Meta(
+        supressao_minima=supressao_minima,
         fontes=[servico_fontes.meta(db, f, agora) for f in fontes],
         recorte=RecorteMeta(territorio_id="recife", granularidade=granularidade),
         avisos=avisos,
@@ -228,18 +249,25 @@ def bairros(
     _: Contexto = Depends(consultar),
     db: Session = Depends(obter_sessao),
     agora: datetime = Depends(relogio),
+    config: Configuracao = Depends(configuracao),
 ) -> RespostaDados[BairrosSaude]:
-    b = servico.bairros(db, agravo, ano)
+    minimo = config.supressao_minima
+    b = servico.bairros(db, agravo, ano, minimo)
     avisos = [
         "Retrato anual e histórico, publicado pela Secretaria de Saúde uma vez por ano; não mostra a situação "
         "atual.",
         "Bairro de residência, não o local da infecção. Em bairro pequeno, poucos casos mudam muito a posição.",
     ]
+    if any(i["suprimido"] for i in b["itens"]):
+        avisos.append(
+            f"Contagens de 1 a {minimo - 1} não são publicadas, para não identificar pessoas (RNF-03). "
+            "Bairro sem valor e marcado como suprimido tem casos; bairro com 0 não teve nenhum."
+        )
     if b["ano"] is not None and b["anos_disponiveis"] and b["ano"] not in b["anos_disponiveis"]:
         avisos.append(f"{b['ano']} ainda não foi publicado.")
     return RespostaDados(
         dados=BairrosSaude(**b),
-        meta=_meta(db, ["recife-arboviroses"], agora, "bairro", avisos, not b["itens"]),
+        meta=_meta(db, ["recife-arboviroses"], agora, "bairro", avisos, not b["itens"], minimo),
     )
 
 

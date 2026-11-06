@@ -48,6 +48,8 @@ class FonteSaude(BaseModel):
     nome: str
     status: str
     ultima_atualizacao: datetime | None
+    limite_frescor_h: float | None = None
+    desatualizado: bool | None = None
 
 
 class Contadores(BaseModel):
@@ -155,7 +157,19 @@ def resumo(
         aguardando_revisao=aguardando,
         territorios_em_atencao=_em_atencao(db, avisos, agora),
         fontes=[
-            FonteSaude(id=f["id"], nome=f["nome"], status=f["status"], ultima_atualizacao=f["ultimo_sucesso"])
+            FonteSaude(
+                id=f["id"],
+                nome=f["nome"],
+                status=f["status"],
+                ultima_atualizacao=f["ultimo_sucesso"],
+                **dict(
+                    zip(
+                        ("limite_frescor_h", "desatualizado"),
+                        servico_fontes.limite_e_desatualizado(f["id"], f["ultimo_sucesso"], agora),
+                        strict=True,
+                    )
+                ),
+            )
             for f in servico_fontes.linhas(db, agora)
         ],
         contadores=Contadores(

@@ -128,7 +128,10 @@ def indicadores(
             )
             for f in geo["features"]
         ]
-        return RespostaDados(dados=dados, meta=Meta(fontes=[FONTE_TERRITORIO], recorte=recorte))
+        return RespostaDados(
+            dados=dados,
+            meta=Meta(fontes=[servico_fontes.com_frescor(FONTE_TERRITORIO, agora)], recorte=recorte),
+        )
     if indicador == "prioridade":
         # cenário experimental de 72 h por distrito: 0 sem indicação, 1 atenção, 2 alerta, 3 crítico
         escala = {"sem_indicacao": 0, "atencao": 1, "alerta": 2, "critico": 3}

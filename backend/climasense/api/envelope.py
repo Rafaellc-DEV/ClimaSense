@@ -22,6 +22,14 @@ class FonteMeta(BaseModel):
     tipo: TipoFonte
     atualizado_em: datetime | None = None
     status: StatusFonte
+    limite_frescor_h: float | None = Field(
+        default=None, description="Idade máxima aceita do dado, em horas; null = fonte sem limite definido"
+    )
+    desatualizado: bool | None = Field(
+        default=None,
+        description="true = passou do limite; false = em dia; null = sem dado ou sem limite (nunca 'em dia' por "
+        "falta de dado, RN-01)",
+    )
 
 
 class RecorteMeta(BaseModel):
@@ -45,6 +53,11 @@ class Meta(BaseModel):
     amostra: Amostra | None = None
     avisos: list[str] = []
     dados_insuficientes: bool = False
+    supressao_minima: int | None = Field(
+        default=None,
+        description="Contagens por território abaixo deste valor (e maiores que zero) saem nulas e com "
+        "suprimido=true (RNF-03, RN-13)",
+    )
 
 
 class RespostaDados(BaseModel, Generic[T]):

@@ -3356,13 +3356,34 @@
             "title": "Distrito Id"
           },
           "casos": {
-            "type": "integer",
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Casos",
-            "description": "Casos confirmados de residentes do bairro no ano"
+            "description": "Casos confirmados de residentes do bairro no ano; null quando suprimido (de 1 a 4, RNF-03)"
           },
           "notificados": {
-            "type": "integer",
-            "title": "Notificados"
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notificados",
+            "description": "Notificados no ano; null quando suprimido"
+          },
+          "suprimido": {
+            "type": "boolean",
+            "title": "Suprimido",
+            "description": "true = há contagem entre 1 e supressao_minima - 1 escondida (RN-13)",
+            "default": false
           }
         },
         "type": "object",
@@ -3431,7 +3452,12 @@
               }
             ],
             "title": "Confirmados Sem Bairro",
-            "description": "Confirmados sem bairro oficial: no total, fora do mapa"
+            "description": "Confirmados sem bairro oficial: no total, fora do mapa. Null quando suprimido: com algum bairro suprimido, este valor e o total revelariam a célula por diferença"
+          },
+          "sem_bairro_suprimido": {
+            "type": "boolean",
+            "title": "Sem Bairro Suprimido",
+            "default": false
           },
           "total_notificados": {
             "anyOf": [
@@ -4784,6 +4810,30 @@
           "limite_desatualizacao_h": {
             "type": "integer",
             "title": "Limite Desatualizacao H"
+          },
+          "limite_frescor_h": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Limite Frescor H",
+            "description": "Limite de frescor (RF-19); null = sem limite"
+          },
+          "desatualizado": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Desatualizado",
+            "description": "null = sem dado ou sem limite (RN-01)"
           }
         },
         "type": "object",
@@ -4840,6 +4890,30 @@
               "planejada"
             ],
             "title": "Status"
+          },
+          "limite_frescor_h": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Limite Frescor H",
+            "description": "Idade máxima aceita do dado, em horas; null = fonte sem limite definido"
+          },
+          "desatualizado": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Desatualizado",
+            "description": "true = passou do limite; false = em dia; null = sem dado ou sem limite (nunca 'em dia' por falta de dado, RN-01)"
           }
         },
         "type": "object",
@@ -4876,6 +4950,28 @@
               }
             ],
             "title": "Ultima Atualizacao"
+          },
+          "limite_frescor_h": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Limite Frescor H"
+          },
+          "desatualizado": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Desatualizado"
           }
         },
         "type": "object",
@@ -5733,6 +5829,17 @@
           },
           "totais": {
             "$ref": "#/components/schemas/climasense__api__routers__abrigos__TotaisAbrigos"
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Meta"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Fontes com hora e frescor (RF-19): o cadastro dos Dados Abertos e o registro da equipe"
           }
         },
         "type": "object",
@@ -6055,6 +6162,18 @@
             "type": "boolean",
             "title": "Dados Insuficientes",
             "default": false
+          },
+          "supressao_minima": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Supressao Minima",
+            "description": "Contagens por território abaixo deste valor (e maiores que zero) saem nulas e com suprimido=true (RNF-03, RN-13)"
           }
         },
         "type": "object",
@@ -6361,6 +6480,7 @@
             "anyOf": [
               {
                 "type": "integer",
+                "maximum": 100000.0,
                 "minimum": 0.0
               },
               {
@@ -6378,6 +6498,7 @@
             "anyOf": [
               {
                 "type": "integer",
+                "maximum": 100000.0,
                 "minimum": 0.0
               },
               {
@@ -6390,6 +6511,7 @@
             "anyOf": [
               {
                 "type": "integer",
+                "maximum": 100000.0,
                 "minimum": 0.0
               },
               {
@@ -6577,6 +6699,7 @@
             "anyOf": [
               {
                 "type": "integer",
+                "maximum": 100000.0,
                 "minimum": 0.0
               },
               {
@@ -6600,6 +6723,7 @@
             "anyOf": [
               {
                 "type": "integer",
+                "maximum": 100000.0,
                 "minimum": 0.0
               },
               {
@@ -6612,6 +6736,7 @@
             "anyOf": [
               {
                 "type": "integer",
+                "maximum": 100000.0,
                 "minimum": 0.0
               },
               {
@@ -6930,7 +7055,9 @@
           "chuva_24h_atencao_mm": {
             "anyOf": [
               {
-                "type": "number"
+                "type": "number",
+                "maximum": 2000.0,
+                "minimum": 0.0
               },
               {
                 "type": "null"
@@ -6941,7 +7068,9 @@
           "chuva_24h_alerta_mm": {
             "anyOf": [
               {
-                "type": "number"
+                "type": "number",
+                "maximum": 2000.0,
+                "minimum": 0.0
               },
               {
                 "type": "null"
@@ -6952,7 +7081,9 @@
           "chuva_24h_critico_mm": {
             "anyOf": [
               {
-                "type": "number"
+                "type": "number",
+                "maximum": 2000.0,
+                "minimum": 0.0
               },
               {
                 "type": "null"
@@ -6963,7 +7094,9 @@
           "chuva_prev_24h_atencao_mm": {
             "anyOf": [
               {
-                "type": "number"
+                "type": "number",
+                "maximum": 2000.0,
+                "minimum": 0.0
               },
               {
                 "type": "null"
@@ -6974,7 +7107,9 @@
           "chuva_prev_24h_alerta_mm": {
             "anyOf": [
               {
-                "type": "number"
+                "type": "number",
+                "maximum": 2000.0,
+                "minimum": 0.0
               },
               {
                 "type": "null"
@@ -6985,7 +7120,9 @@
           "chuva_prev_24h_critico_mm": {
             "anyOf": [
               {
-                "type": "number"
+                "type": "number",
+                "maximum": 2000.0,
+                "minimum": 0.0
               },
               {
                 "type": "null"
@@ -6996,7 +7133,9 @@
           "chuva_prev_72h_atencao_mm": {
             "anyOf": [
               {
-                "type": "number"
+                "type": "number",
+                "maximum": 2000.0,
+                "minimum": 0.0
               },
               {
                 "type": "null"
@@ -7007,7 +7146,9 @@
           "chuva_prev_72h_alerta_mm": {
             "anyOf": [
               {
-                "type": "number"
+                "type": "number",
+                "maximum": 2000.0,
+                "minimum": 0.0
               },
               {
                 "type": "null"
@@ -7018,7 +7159,9 @@
           "chuva_prev_72h_critico_mm": {
             "anyOf": [
               {
-                "type": "number"
+                "type": "number",
+                "maximum": 2000.0,
+                "minimum": 0.0
               },
               {
                 "type": "null"
@@ -7029,7 +7172,9 @@
           "mare_alta_m": {
             "anyOf": [
               {
-                "type": "number"
+                "type": "number",
+                "maximum": 20.0,
+                "minimum": 0.0
               },
               {
                 "type": "null"

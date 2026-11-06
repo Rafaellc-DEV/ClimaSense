@@ -34,6 +34,10 @@ class Fonte(BaseModel):
     status: str
     ultima_atualizacao: datetime | None
     limite_desatualizacao_h: int
+    limite_frescor_h: float | None = Field(
+        default=None, description="Limite de frescor (RF-19); null = sem limite"
+    )
+    desatualizado: bool | None = Field(default=None, description="null = sem dado ou sem limite (RN-01)")
 
 
 class Execucao(BaseModel):
@@ -55,9 +59,13 @@ class PedidoExecucao(BaseModel):
 
 
 def _fontes(db: Session, agora: datetime, fonte_id: str | None = None) -> list[Fonte]:
-    return [
-        Fonte(**r, ultima_atualizacao=r["ultimo_sucesso"]) for r in servico_fontes.linhas(db, agora, fonte_id)
-    ]
+    saida = []
+    for r in servico_fontes.linhas(db, agora, fonte_id):
+        limite, vencido = servico_fontes.limite_e_desatualizado(r["id"], r["ultimo_sucesso"], agora)
+        saida.append(
+            Fonte(**r, ultima_atualizacao=r["ultimo_sucesso"], limite_frescor_h=limite, desatualizado=vencido)
+        )
+    return saida
 
 
 @router.get(
