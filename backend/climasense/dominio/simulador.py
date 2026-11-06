@@ -49,14 +49,16 @@ MOTIVO_SEM_DESLIZAMENTO = "sem histórico de deslizamento na base"
 MOTIVO_SEM_ALAGAMENTO = "sem histórico de ocorrências de alagamento na base"
 MOTIVO_IMPACTO_PENDENTE = "Dados insuficientes: população vulnerável ainda não integrada (Etapa 6)"
 MAX_MOTIVOS = 3
+MOTIVO_SEM_ACUMULADA = "sem chuva acumulada informada"
+MOTIVO_SEM_MARE = "sem maré informada"
 
 
 @dataclass(frozen=True)
 class Premissas:
     chuva_prevista_mm: float
     duracao_h: float
-    chuva_acumulada_mm: float
-    mare_m: float
+    chuva_acumulada_mm: float | None
+    mare_m: float | None
     horizonte_h: int
     abrigos_abertos: int | None = None
     capacidade_abrigos: int | None = None
@@ -116,15 +118,18 @@ def chuva_na_janela(p: Premissas, horas: int) -> float:
 
 
 def gatilhos(p: Premissas, par: dom.Parametros) -> list[Gatilho]:
-    entradas = (
+    entradas = [
         (f"{_mm(chuva_na_janela(p, 24))} previstos em 24 h", chuva_na_janela(p, 24), "chuva_prev_24h"),
         (f"{_mm(chuva_na_janela(p, 72))} previstos em 72 h", chuva_na_janela(p, 72), "chuva_prev_72h"),
-        (
-            f"{_mm(p.chuva_acumulada_mm)} acumulados nas 72 h anteriores",
-            p.chuva_acumulada_mm,
-            "chuva_prev_72h",
-        ),
-    )
+    ]
+    if p.chuva_acumulada_mm is not None:  # premissa desconhecida não vira zero (RN-01): gatilho não avaliado
+        entradas.append(
+            (
+                f"{_mm(p.chuva_acumulada_mm)} acumulados nas 72 h anteriores",
+                p.chuva_acumulada_mm,
+                "chuva_prev_72h",
+            )
+        )
     saida = []
     for rotulo, valor, chave in entradas:
         lim = [getattr(par, f"{chave}_{n}_mm") for n in ("atencao", "alerta", "critico")]
@@ -174,7 +179,7 @@ def classificar_alagamento(
     motivos = _motivos_gatilhos(gs)
     if hist.alagamento is None:
         return "sem_dados", [*motivos, MOTIVO_SEM_ALAGAMENTO], False
-    if base != "observacao" and p.mare_m >= par.mare_alta_m:
+    if base != "observacao" and p.mare_m is not None and p.mare_m >= par.mare_alta_m:
         base = dom.subir(base)  # type: ignore[arg-type]
         motivos.append(f"maré de {_m(p.mare_m)} junto do pico: sobe um nível")
     forte = hist.alagamento >= par.ocorrencias_bairro_minimo
@@ -199,7 +204,7 @@ def classificar_deslizamento(p: Premissas, par: dom.Parametros, hist: Historico)
     if not hist.deslizamento:
         return "sem_dados", [MOTIVO_SEM_DESLIZAMENTO]
     previstos = _maior_nivel(gs[:2])
-    saturado = p.chuva_acumulada_mm >= par.chuva_prev_72h_atencao_mm
+    saturado = p.chuva_acumulada_mm is not None and p.chuva_acumulada_mm >= par.chuva_prev_72h_atencao_mm
     if previstos != "observacao" and saturado:
         base = dom.subir(base)  # type: ignore[arg-type]
         motivos.append(f"solo saturado ({_mm(p.chuva_acumulada_mm)} nas 72 h anteriores): sobe um nível")
@@ -227,17 +232,32 @@ def estagio_sugerido(alag: Classe, desl: Classe) -> Classe:
     return topo
 
 
-def confianca(alag: Classe, desl: Classe) -> Confianca:
+def confianca(alag: Classe, desl: Classe, p: Premissas | None = None) -> Confianca:
     sem = [c == "sem_dados" for c in (alag, desl)]
     if all(sem):
         return "insuficiente"
     if any(sem):
         return "baixa"
+    if p is not None and (p.chuva_acumulada_mm is None or p.mare_m is None):
+        return "baixa"  # insumo que importa para a classe não foi informado
     return "media"  # `alta` só depois de validação temporal documentada (RN-11)
 
 
+def motivos_premissas_ausentes(p: Premissas, alag: Classe) -> list[str]:
+    faltas = []
+    if p.chuva_acumulada_mm is None:
+        faltas.append(MOTIVO_SEM_ACUMULADA)
+    if p.mare_m is None and alag != "sem_dados":
+        faltas.append(MOTIVO_SEM_MARE)
+    return faltas
+
+
 def _escolher_motivos(
-    alag_motivos: list[str], desl_motivos: list[str], desl: Classe, alag: Classe
+    alag_motivos: list[str],
+    desl_motivos: list[str],
+    desl: Classe,
+    alag: Classe,
+    faltas: list[str] | None = None,
 ) -> list[str]:
     """No máximo 3 frases. As de `sem_dados` têm vaga garantida: a falta de dado é o que a pessoa precisa ler."""
     essenciais: list[str] = []
@@ -245,11 +265,12 @@ def _escolher_motivos(
         essenciais.append(MOTIVO_SEM_DESLIZAMENTO)
     if alag == "sem_dados":
         essenciais.append(MOTIVO_SEM_ALAGAMENTO)
+    essenciais = [*essenciais, *(faltas or [])][:MAX_MOTIVOS]
     gerais: list[str] = []
     for m in [*alag_motivos, *desl_motivos]:
         if m not in essenciais and m not in gerais:
             gerais.append(m)
-    return [*gerais[: MAX_MOTIVOS - len(essenciais)], *essenciais][:MAX_MOTIVOS]
+    return [*gerais[: max(0, MAX_MOTIVOS - len(essenciais))], *essenciais][:MAX_MOTIVOS]
 
 
 def classificar_bairro(p: Premissas, par: dom.Parametros, hist: Historico) -> Resultado:
@@ -259,8 +280,8 @@ def classificar_bairro(p: Premissas, par: dom.Parametros, hist: Historico) -> Re
         classe_alagamento=alag,
         classe_deslizamento=desl,
         estagio_sugerido=estagio_sugerido(alag, desl),
-        confianca=confianca(alag, desl),
-        motivos=_escolher_motivos(m_alag, m_desl, desl, alag),
+        confianca=confianca(alag, desl, p),
+        motivos=_escolher_motivos(m_alag, m_desl, desl, alag, motivos_premissas_ausentes(p, alag)),
     )
 
 
@@ -295,10 +316,15 @@ def agregar_distrito(bairros: list[tuple[str, Resultado]]) -> Resultado:
         motivos.append(MOTIVO_SEM_DESLIZAMENTO)
     if alag == "sem_dados":
         motivos.append(MOTIVO_SEM_ALAGAMENTO)
+    for falta in (MOTIVO_SEM_ACUMULADA, MOTIVO_SEM_MARE):
+        if any(falta in r.motivos for _, r in bairros) and falta not in motivos:
+            motivos.append(falta)
     conf: Confianca = confianca(alag, desl)
-    if conf == "media" and sem:
+    if conf == "media" and (sem or any(r.confianca == "baixa" for _, r in bairros)):
         conf = "baixa"
-    return Resultado(alag, desl, estagio, conf, motivos[:MAX_MOTIVOS])
+    faltas = [m for m in motivos if m in (MOTIVO_SEM_ACUMULADA, MOTIVO_SEM_MARE)]
+    resto = [m for m in motivos if m not in faltas]
+    return Resultado(alag, desl, estagio, conf, [*resto[: MAX_MOTIVOS - len(faltas[:2])], *faltas[:2]])
 
 
 def pressao_abrigos(p: Premissas) -> str | None:

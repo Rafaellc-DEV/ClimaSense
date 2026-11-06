@@ -6596,6 +6596,21 @@
             "title": "Avisos",
             "default": []
           },
+          "fonte_por_premissa": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "string"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fonte Por Premissa",
+            "description": "Simulador: id estável da fonte de cada premissa (chuva_prevista_mm etc.)"
+          },
           "dados_insuficientes": {
             "type": "boolean",
             "title": "Dados Insuficientes",
@@ -6670,6 +6685,21 @@
             "type": "array",
             "title": "Avisos",
             "default": []
+          },
+          "fonte_por_premissa": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "string"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fonte Por Premissa",
+            "description": "Simulador: id estável da fonte de cada premissa (chuva_prevista_mm etc.)"
           },
           "dados_insuficientes": {
             "type": "boolean",
@@ -7827,18 +7857,32 @@
             "description": "Duração da chuva prevista, em horas (até 72)"
           },
           "chuva_acumulada_mm": {
-            "type": "number",
-            "maximum": 800.0,
-            "minimum": 0.0,
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 800.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Chuva Acumulada Mm",
-            "description": "Chuva dos 3 dias anteriores, em mm"
+            "description": "Chuva dos 3 dias anteriores, em mm; null = desconhecida (RN-01)"
           },
           "mare_m": {
-            "type": "number",
-            "maximum": 5.0,
-            "minimum": -3.0,
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 5.0,
+                "minimum": -3.0
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Mare M",
-            "description": "Nível previsto da maré junto do pico, em metros"
+            "description": "Nível previsto da maré junto do pico, em m; null = desconhecido"
           },
           "horizonte_h": {
             "type": "integer",

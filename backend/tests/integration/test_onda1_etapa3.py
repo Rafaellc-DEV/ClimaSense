@@ -244,3 +244,42 @@ def test_rota_antiga_passou_para_estimativa(equipe):
     r = equipe["leitor"].get(f"{API}/estimativa", params={"territorio_id": "ds-3", "horizonte_h": 24})
     assert r.status_code == 200
     assert r.json()["dados"]["estimativa"]["experimental"] is True
+
+
+def test_premissas_nulas_sao_aceitas_e_nao_viram_zero(equipe, sessao):
+    b1, _, _ = _bairros(sessao)
+    _carga(sessao, [(b1, "alagamento", 2), (b1, "deslizamento", 2)])
+    c = equipe["leitor"]
+    nulas = {**PREMISSAS, "chuva_acumulada_mm": None, "mare_m": None, "abrigos_abertos": None}
+    r = c.post(f"{API}/simular", json=nulas)
+    assert r.status_code == 200, r.text
+    corpo = r.json()
+    i = _item(corpo, b1)
+    assert i["confianca"] == "baixa"
+    assert "sem chuva acumulada informada" in i["motivos"]
+    # 72 mm em 24 h = alerta; sem maré não sobe pela maré
+    assert i["classe_alagamento"] != "sem_dados"
+    assert corpo["meta"]["fonte_por_premissa"]["mare_m"] == "open-meteo-mare"
+    # campos obrigatórios continuam obrigatórios
+    for k in ("chuva_prevista_mm", "duracao_h", "horizonte_h"):
+        assert c.post(f"{API}/simular", json={**PREMISSAS, k: None}).status_code == 422, k
+
+
+def test_salvar_aceita_premissas_nulas(equipe):
+    nulas = {**PREMISSAS, "chuva_acumulada_mm": None, "mare_m": None}
+    r = equipe["analista"].post(f"{API}", json={"nome": "Sem insumos", "premissas": nulas})
+    assert r.status_code == 201, r.text
+    assert r.json()["dados"]["premissas"]["chuva_acumulada_mm"] is None
+    assert r.json()["meta"]["fonte_por_premissa"]["chuva_acumulada_mm"] == "apac-chuva"
+
+
+def test_premissas_atuais_devolve_fonte_por_premissa(equipe):
+    m = equipe["leitor"].get(f"{API}/premissas-atuais").json()["meta"]["fonte_por_premissa"]
+    assert m == {
+        "chuva_prevista_mm": "open-meteo-previsao",
+        "duracao_h": "open-meteo-previsao",
+        "chuva_acumulada_mm": "apac-chuva",
+        "mare_m": "open-meteo-mare",
+        "abrigos_abertos": "recife-abrigos",
+        "capacidade_abrigos": "recife-abrigos",
+    }

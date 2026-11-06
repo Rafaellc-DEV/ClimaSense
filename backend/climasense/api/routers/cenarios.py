@@ -183,8 +183,12 @@ class PremissasAtuais(BaseModel):
 class PedidoSimulacao(BaseModel):
     chuva_prevista_mm: float = Field(ge=0, le=600, description="Volume previsto, em mm, durante a duração")
     duracao_h: float = Field(gt=0, le=72, description="Duração da chuva prevista, em horas (até 72)")
-    chuva_acumulada_mm: float = Field(ge=0, le=800, description="Chuva dos 3 dias anteriores, em mm")
-    mare_m: float = Field(ge=-3, le=5, description="Nível previsto da maré junto do pico, em metros")
+    chuva_acumulada_mm: float | None = Field(
+        ge=0, le=800, description="Chuva dos 3 dias anteriores, em mm; null = desconhecida (RN-01)"
+    )
+    mare_m: float | None = Field(
+        ge=-3, le=5, description="Nível previsto da maré junto do pico, em m; null = desconhecido"
+    )
     horizonte_h: int = Field(ge=1, le=72, description="Próximas horas do cenário")
     abrigos_abertos: int | None = Field(default=None, ge=0, le=500)
     capacidade_abrigos: int | None = Field(default=None, ge=0, le=200000)
@@ -238,6 +242,15 @@ def _fontes_simulacao(db: Session, agora: datetime) -> list[FonteMeta]:
     return [servico_fontes.meta(db, sim.FONTE_OCORRENCIAS, agora)]
 
 
+FONTE_POR_PREMISSA = {
+    "chuva_prevista_mm": servico.FONTE_PREVISAO,
+    "duracao_h": servico.FONTE_PREVISAO,
+    "chuva_acumulada_mm": sim.FONTE_APAC,
+    "mare_m": servico.FONTE_MARE,
+    "abrigos_abertos": "recife-abrigos",
+    "capacidade_abrigos": "recife-abrigos",
+}
+
 AVISOS_SIMULACAO = [
     "Experimental: regras sobre os limiares dos estágios, ainda sem validação temporal. "
     "A classe é uma ordem de atenção, não uma probabilidade."
@@ -262,6 +275,7 @@ def premissas_atuais(
                 for f in (servico.FONTE_PREVISAO, servico.FONTE_MARE, sim.FONTE_APAC, "recife-abrigos")
             ],
             recorte=RecorteMeta(territorio_id="recife", granularidade="municipio"),
+            fonte_por_premissa=FONTE_POR_PREMISSA,
             avisos=[f"Dados insuficientes para: {', '.join(faltam)}. Preencha à mão."] if faltam else [],
             dados_insuficientes=bool(faltam),
         ),
@@ -287,6 +301,7 @@ def simular(
             fontes=_fontes_simulacao(db, agora),
             recorte=RecorteMeta(territorio_id="recife", granularidade="bairro"),
             avisos=AVISOS_SIMULACAO,
+            fonte_por_premissa=FONTE_POR_PREMISSA,
         ),
     )
 
@@ -334,6 +349,7 @@ def _salvo(db: Session, r: dict, agora: datetime) -> RespostaDados[CenarioSalvo]
                 f"Resultado calculado em {r['resultado']['calculado_em']} com os dados daquele momento.",
                 *AVISOS_SIMULACAO,
             ],
+            fonte_por_premissa=FONTE_POR_PREMISSA,
         ),
     )
 

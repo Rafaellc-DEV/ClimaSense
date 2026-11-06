@@ -196,3 +196,42 @@ def test_impacto_nulo_sem_fonte_e_estrutura_pronta_para_somar():
     i = sim.impacto_pessoas("alerta", v)
     assert i["total_pessoas"] == 2000 and i["equipamentos_saude"] == 4
     assert sim.impacto_pessoas("alerta", sim.Vulneraveis())["total_pessoas"] is None
+
+
+# ------------------------------------------------------------------ premissas desconhecidas (RN-01)
+def test_acumulada_nula_nao_vira_zero_nem_avalia_o_gatilho():
+    p = prem(chuva=10, acum=None)
+    assert len(sim.gatilhos(p, PAR)) == 2
+    assert sim.classificar_alagamento(p, PAR, hist())[0] == "observacao"
+    assert sim.classificar_deslizamento(p, PAR, hist(desl=1))[0] == "observacao"
+
+
+def test_mare_nula_nao_sobe_nivel():
+    com = sim.classificar_alagamento(prem(chuva=55, mare=3.0), PAR, hist())[0]
+    sem = sim.classificar_alagamento(prem(chuva=55, mare=None), PAR, hist())[0]
+    assert sem == "alerta" and com == "critico"
+
+
+def test_sem_acumulada_nao_ha_solo_saturado():
+    classe, motivos = sim.classificar_deslizamento(prem(chuva=30, acum=None), PAR, hist(desl=1))
+    assert classe == "atencao" and not any("saturado" in m for m in motivos)
+
+
+def test_bairro_com_premissa_nula_tem_motivo_e_confianca_no_maximo_baixa():
+    r = sim.classificar_bairro(prem(chuva=55, acum=None, mare=None), PAR, hist(alag=1, desl=1))
+    assert r.confianca == "baixa"
+    assert sim.MOTIVO_SEM_ACUMULADA in r.motivos and sim.MOTIVO_SEM_MARE in r.motivos
+    assert len(r.motivos) <= 3
+    completo = sim.classificar_bairro(prem(chuva=55), PAR, hist(alag=1, desl=1))
+    assert completo.confianca == "media"
+
+
+def test_distrito_herda_confianca_baixa_e_motivo():
+    r = sim.classificar_bairro(prem(chuva=55, acum=None), PAR, hist(alag=1, desl=1))
+    d = sim.agregar_distrito([("A", r)])
+    assert d.confianca == "baixa" and sim.MOTIVO_SEM_ACUMULADA in d.motivos
+
+
+def test_insuficiente_continua_insuficiente_com_premissa_nula():
+    r = sim.classificar_bairro(prem(acum=None), PAR, sim.Historico(None, None))
+    assert r.confianca == "insuficiente"

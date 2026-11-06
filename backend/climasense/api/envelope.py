@@ -52,6 +52,9 @@ class Meta(BaseModel):
     cobertura_pct: float | None = Field(default=None, ge=0, le=100)
     amostra: Amostra | None = None
     avisos: list[str] = []
+    fonte_por_premissa: dict[str, str] | None = Field(
+        default=None, description="Simulador: id estável da fonte de cada premissa (chuva_prevista_mm etc.)"
+    )
     dados_insuficientes: bool = False
     supressao_minima: int | None = Field(
         default=None,
