@@ -58,6 +58,12 @@ interface Envelope<T> {
 
 const ATRASO_MS = 400;
 
+/** Lê `meta.fonte_por_premissa`: qual fonte alimenta cada campo. Sem o mapa, a tela usa o padrão fixo. */
+function fontePorPremissaDe(r: unknown): Partial<Record<CampoNumerico, string>> | null {
+  const m = (r as { meta?: { fonte_por_premissa?: unknown } } | undefined)?.meta?.fonte_por_premissa;
+  return m && typeof m === "object" ? (m as Partial<Record<CampoNumerico, string>>) : null;
+}
+
 const ROTULO_MAPA =
   "Mapa dos bairros do Recife coloridos pela classe do cenário simulado. Use as setas para mover e as teclas + e - para aproximar. " +
   "Para escolher um bairro sem o mapa, use a lista de bairros logo abaixo.";
@@ -97,7 +103,7 @@ export function TelaSimulador() {
   const geoDistritos = useConsulta<ColecaoDistritos>("/territorios/distritos.geojson", {
     staleTime: 30 * 60_000,
   });
-  const prioridade = useConsulta<{ dados?: { territorio_id: string; posicao: number }[] }>(
+  const prioridade = useConsulta<{ dados?: { itens?: { territorio_id: string; posicao: number }[] } }>(
     "/territorios/prioridade",
     { staleTime: 10 * 60_000 },
   );
@@ -166,7 +172,7 @@ export function TelaSimulador() {
   );
 
   const posicao = useMemo(
-    () => new Map((prioridade.data?.dados ?? []).map((p) => [p.territorio_id, p.posicao] as const)),
+    () => new Map((prioridade.data?.dados?.itens ?? []).map((p) => [p.territorio_id, p.posicao] as const)),
     [prioridade.data],
   );
   const ordenados = useMemo(
@@ -223,6 +229,7 @@ export function TelaSimulador() {
           form={form}
           atuais={valoresAtuais}
           fontes={juntarFontes(atuais.data)}
+          fontePorPremissa={fontePorPremissaDe(atuais.data)}
           carregando={atuais.isPending}
           indisponivel={atuais.isError}
           alterado={alterado}

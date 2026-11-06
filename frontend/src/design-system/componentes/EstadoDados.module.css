@@ -1,5 +1,8 @@
 .estado {
   display: flex;
+  flex-wrap: wrap;
+  min-width: 0;
+  max-width: 100%;
   gap: var(--e-3);
   align-items: center;
   padding: var(--e-4) var(--e-5);
@@ -18,8 +21,22 @@
   background: var(--cs-nevoa);
   color: var(--cor);
 }
+.estado > div:not(.acao) {
+  flex: 1 1 12rem;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
 .acao {
   margin-left: auto;
+}
+@media (max-width: 640px) {
+  .estado {
+    padding: var(--e-4);
+  }
+  .acao {
+    flex-basis: 100%;
+    margin-left: 0;
+  }
 }
 .titulo {
   font-family: var(--fonte-titulo);

@@ -106,12 +106,47 @@ const rotas = (extra: Record<string, unknown> = {}) => ({
   "/cenarios/premissas-atuais": atuais,
   "/territorios/bairros.geojson": geo,
   "/territorios/distritos.geojson": { type: "FeatureCollection", features: [] },
-  "/territorios/prioridade": { dados: [] },
+  "/territorios/prioridade": { dados: { itens: [] } },
   "/cenarios": { dados: [] },
   ...extra,
 });
 
 describe("Simulador", () => {
+  it("mostra uma só fonte por campo, com o mapa da API, e envia null para o campo sem dado", async () => {
+    const velha = {
+      ...fonte("apac-chuva", "APAC"),
+      atualizado_em: "2020-01-01T00:00:00Z",
+      desatualizado: true,
+    };
+    const comMapa = {
+      ...atuais,
+      meta: {
+        fontes: [fonte("open-meteo", "Open-Meteo"), fonte("marinha-mare", "Marinha (maré)"), velha],
+        fonte_por_premissa: {
+          chuva_prevista_mm: "open-meteo",
+          mare_m: "marinha-mare",
+          chuva_acumulada_mm: "apac-chuva",
+        },
+      },
+    };
+    const pedidos = simularApi(rotas({ "/cenarios/premissas-atuais": comMapa }), {
+      "/cenarios/simular": resultado,
+    });
+    abrir();
+    const campo = await screen.findByLabelText("Chuva prevista (mm)");
+    await waitFor(() => expect(campo).toHaveValue("80"));
+    const ajuda = document.getElementById(campo.getAttribute("aria-describedby")!)!;
+    expect(ajuda.textContent).toContain("Open-Meteo");
+    expect(ajuda.textContent).not.toContain("Marinha");
+    const acumulada = screen.getByLabelText("Chuva dos dias anteriores (mm)");
+    const ajuda2 = document.getElementById(acumulada.getAttribute("aria-describedby")!)!;
+    expect(ajuda2.textContent).toContain("deixe vazio ou digite um valor");
+    expect(ajuda2.textContent).toContain("APAC");
+    expect(ajuda2.textContent).toContain("Desatualizado");
+    await waitFor(() => expect(pedidos.some((p) => p.metodo === "POST")).toBe(true));
+    expect(pedidos.filter((p) => p.metodo === "POST")[0].corpo).toMatchObject({ chuva_acumulada_mm: null });
+  });
+
   it("preenche com os valores atuais, calcula sozinho e mostra a frase e o selo Experimental", async () => {
     const pedidos = simularApi(rotas(), { "/cenarios/simular": resultado });
     abrir();

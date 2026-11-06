@@ -62,4 +62,8 @@
   .trilho {
     border-radius: var(--r-painel);
   }
+  .trilho label {
+    min-width: 56px;
+    padding: 0 var(--e-3);
+  }
 }

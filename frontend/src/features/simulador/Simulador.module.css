@@ -39,6 +39,11 @@
 }
 .fonteCampo {
   display: block;
+  overflow-wrap: anywhere;
+}
+.fonteCampo [data-selo] {
+  padding: 0 6px;
+  font-size: 0.75rem;
 }
 
 /* ---------- resultado */
