@@ -9,6 +9,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import datetime
 
+MAXIMO_PESSOAS = 100_000
 CAMPOS_HISTORICO = (
     "nome",
     "endereco",
@@ -71,6 +72,8 @@ def problemas(
     ):
         if v is not None and v < 0:
             erros.append(f"{rotulo} não pode ser negativo.")
+        elif v is not None and v > MAXIMO_PESSOAS:
+            erros.append(f"{rotulo} não pode passar de {MAXIMO_PESSOAS:,}.".replace(",", "."))
     return erros
 
 

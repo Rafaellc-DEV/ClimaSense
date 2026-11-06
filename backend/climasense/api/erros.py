@@ -61,6 +61,35 @@ def _campo(loc: tuple) -> str:
     return ".".join(partes) or "pedido"
 
 
+def _mensagem(e: dict) -> str:
+    """Mensagem de validação em português (os textos do Pydantic vêm em inglês)."""
+    ctx = e.get("ctx") or {}
+    tipo = e.get("type", "")
+    match tipo:
+        case "missing":
+            return "Campo obrigatório."
+        case "greater_than_equal" | "greater_than":
+            return f"O valor não pode ser menor que {ctx.get('ge', ctx.get('gt'))}."
+        case "less_than_equal" | "less_than":
+            return f"O valor não pode ser maior que {ctx.get('le', ctx.get('lt'))}."
+        case "string_too_long":
+            return f"O texto não pode ter mais de {ctx.get('max_length')} caracteres."
+        case "string_too_short":
+            return f"O texto precisa ter ao menos {ctx.get('min_length')} caractere(s)."
+        case "too_long":
+            return f"São aceitos no máximo {ctx.get('max_length')} itens."
+        case "too_short":
+            return f"Informe ao menos {ctx.get('min_length')} item(ns)."
+        case "int_parsing" | "int_type" | "int_from_float":
+            return "Informe um número inteiro."
+        case "float_parsing" | "float_type":
+            return "Informe um número."
+        case "bool_parsing" | "bool_type":
+            return "Informe sim ou não."
+        case _:
+            return e["msg"]
+
+
 def registrar_tratadores(app: FastAPI) -> None:
     @app.exception_handler(ErroClimaSense)
     async def _negocio(_: Request, erro: ErroClimaSense) -> JSONResponse:
@@ -75,7 +104,7 @@ def registrar_tratadores(app: FastAPI) -> None:
 
     @app.exception_handler(RequestValidationError)
     async def _validacao(_: Request, erro: RequestValidationError) -> JSONResponse:
-        campos = [{"campo": _campo(tuple(e["loc"])), "mensagem": e["msg"]} for e in erro.errors()]
+        campos = [{"campo": _campo(tuple(e["loc"])), "mensagem": _mensagem(e)} for e in erro.errors()]
         nomes = ", ".join(c["campo"] for c in campos)
         return problema(422, f"Confira os campos: {nomes}.", campos=campos)
 

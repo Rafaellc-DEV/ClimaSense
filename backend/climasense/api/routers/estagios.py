@@ -171,16 +171,16 @@ class PedidoParametros(BaseModel):
 
     limiares: dict[str, float] | None = None
     justificativa: str | None = Field(default=None, max_length=500)
-    chuva_24h_atencao_mm: float | None = None
-    chuva_24h_alerta_mm: float | None = None
-    chuva_24h_critico_mm: float | None = None
-    chuva_prev_24h_atencao_mm: float | None = None
-    chuva_prev_24h_alerta_mm: float | None = None
-    chuva_prev_24h_critico_mm: float | None = None
-    chuva_prev_72h_atencao_mm: float | None = None
-    chuva_prev_72h_alerta_mm: float | None = None
-    chuva_prev_72h_critico_mm: float | None = None
-    mare_alta_m: float | None = None
+    chuva_24h_atencao_mm: float | None = Field(default=None, ge=0, le=2000)
+    chuva_24h_alerta_mm: float | None = Field(default=None, ge=0, le=2000)
+    chuva_24h_critico_mm: float | None = Field(default=None, ge=0, le=2000)
+    chuva_prev_24h_atencao_mm: float | None = Field(default=None, ge=0, le=2000)
+    chuva_prev_24h_alerta_mm: float | None = Field(default=None, ge=0, le=2000)
+    chuva_prev_24h_critico_mm: float | None = Field(default=None, ge=0, le=2000)
+    chuva_prev_72h_atencao_mm: float | None = Field(default=None, ge=0, le=2000)
+    chuva_prev_72h_alerta_mm: float | None = Field(default=None, ge=0, le=2000)
+    chuva_prev_72h_critico_mm: float | None = Field(default=None, ge=0, le=2000)
+    mare_alta_m: float | None = Field(default=None, ge=0, le=20)
     mare_janela_h: float | None = None
     ocorrencias_bairro_minimo: float | None = None
 
