@@ -6,7 +6,7 @@ Horários no fuso do Recife, dd/mm/aaaa (RN-16).
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import date, datetime
 from urllib.parse import quote
 
 from climasense.dominio.estagio import ROTULO
@@ -69,6 +69,12 @@ def numero(v: float | None, unidade: str, casas: int = 1) -> str:
     return f"{v:.{casas}f}".replace(".", ",") + f" {unidade}"
 
 
+def _contagem(v: int | None, parcial: bool = False) -> str:
+    if v is None:
+        return "sem dado (parcial)" if parcial else "sem dado"
+    return str(v)
+
+
 def texto_boletim(
     territorio_nome: str,
     momento: datetime,
@@ -77,8 +83,16 @@ def texto_boletim(
     mare: tuple[float, datetime] | None,
     abrigos: dict,
     acoes_em_andamento: int,
+    *,
+    oficial: dict | None = None,
+    acoes_concluidas: int | None = None,
+    periodo: tuple[date, date] | None = None,
+    saude: list[dict] | None = None,
 ) -> str:
-    """Resumo do boletim (F5) para WhatsApp. `estagios`: (território, estágio, origem: declarado|sugerido)."""
+    """Resumo do boletim (F5) e do relatório executivo (RF-17) para WhatsApp.
+
+    `estagios`: (território, estágio, origem: declarado|sugerido). `abrigos`: `cidade` e `distritos` da situação do
+    evento (ou, no formato antigo, os totais da cidade). Ausência é "sem dado", nunca zero (RN-01, RN-02)."""
     linhas = [
         "*Boletim ClimaSense · Vigidesastres*",
         f"{territorio_nome} · {hora_recife(momento)}",
@@ -87,6 +101,12 @@ def texto_boletim(
     ]
     for nome, estagio, origem in estagios:
         linhas.append(f"- {nome}: {ROTULO[estagio]} ({origem})")
+    linhas.append(
+        f"Estágio oficial do COP (cidade): {ROTULO[oficial['estagio']]}, informado em "
+        f"{hora_recife(oficial['informado_em'])}"
+        if oficial
+        else "Estágio oficial do COP (cidade): sem registro"
+    )
     linhas += ["", "*Chuva*"]
     for chave, rotulo in (
         ("chuva_24h", "Últimas 24 h"),
@@ -100,9 +120,36 @@ def texto_boletim(
         if mare
         else "Maré máxima: sem dado"
     )
-    # ocupação e desabrigados saíram (sem fonte pública e sem contagem pela equipe): só abertos
-    linhas += ["", "*Abrigos*", f"- Abertos: {abrigos.get('abrigos_abertos', 0)}"]
-    if abrigos.get("atualizado_em"):
-        linhas.append(f"- Atualizado em {hora_recife(abrigos['atualizado_em'])}")
-    linhas += ["", f"Ações em andamento: {acoes_em_andamento}", "", ASSINATURA]
+    cidade = abrigos.get("cidade", abrigos)
+    linhas += [
+        "",
+        "*Abrigos (registro da equipe)*",
+        f"- Cidade: {_contagem(cidade.get('abrigos_abertos'))} aberto(s), "
+        f"{_contagem(cidade.get('pessoas_abrigadas'), cidade.get('parcial', False))} abrigado(s), "
+        f"{_contagem(cidade.get('desabrigados'), cidade.get('parcial', False))} desabrigado(s)",
+    ]
+    for d in abrigos.get("distritos", []):
+        if d.get("abrigos_abertos") or d.get("desabrigados"):
+            linhas.append(
+                f"- {d['distrito_nome']}: {_contagem(d['abrigos_abertos'])} aberto(s), "
+                f"{_contagem(d['pessoas_abrigadas'], d.get('parcial', False))} abrigado(s), "
+                f"{_contagem(d['desabrigados'], d.get('parcial', False))} desabrigado(s)"
+            )
+    if cidade.get("atualizado_em"):
+        linhas.append(f"- Atualizado em {hora_recife(cidade['atualizado_em'])}")
+    quando = (
+        f" ({periodo[0].strftime('%d/%m')} a {periodo[1].strftime('%d/%m')})" if periodo is not None else ""
+    )
+    linhas += ["", f"Ações em andamento: {acoes_em_andamento}"]
+    if acoes_concluidas is not None:
+        linhas.append(f"Ações concluídas no período{quando}: {acoes_concluidas}")
+    if saude:
+        linhas += ["", "*Saúde (casos na última semana com dado)*"]
+        for a in saude:
+            semana = a.get("ultima_semana")
+            linhas.append(
+                f"- {a['nome']}: {_contagem(a.get('casos'))} caso(s)"
+                + (f" (SE {semana['semana']}/{semana['ano']})" if semana else "")
+            )
+    linhas += ["", ASSINATURA]
     return limitar("\n".join(linhas))

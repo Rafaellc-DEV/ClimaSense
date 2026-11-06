@@ -6,7 +6,7 @@ import uuid
 from datetime import date, datetime
 from typing import Literal
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
@@ -38,7 +38,9 @@ class Acao(BaseModel):
     situacao_rotulo: str
     inicio_em: datetime | None
     fim_em: datetime | None
-    licao_aprendida: str | None
+    licao_aprendida: str | None = Field(
+        default=None, deprecated=True, description="Obsoleto: lições aprendidas estão fora do escopo (PRD §5)"
+    )
     criada_em: datetime
     atualizada_em: datetime
     autor_nome: str
@@ -58,10 +60,20 @@ class DetalheAcao(Acao):
     linha_do_tempo: list[EventoAcao]
 
 
+class AndamentoDistrito(BaseModel):
+    distrito_id: str
+    distrito_nome: str
+    contagens: dict[str, int] = Field(description="Ações por situação neste distrito (RF-16)")
+
+
 class ListaAcoes(BaseModel):
     itens: list[Acao]
     contagens: dict[str, int]
     total: int
+    por_distrito: list[AndamentoDistrito]
+    ordenado_por_prioridade: bool = Field(
+        description="true quando `ordem=prioridade` foi aplicada (distritos mais vulneráveis primeiro, RF-22)"
+    )
 
 
 class PedidoAcao(BaseModel):
@@ -72,7 +84,9 @@ class PedidoAcao(BaseModel):
     situacao: Situacao = "planejada"
     inicio_em: datetime | None = None
     fim_em: datetime | None = None
-    licao_aprendida: str | None = Field(default=None, max_length=2000)
+    licao_aprendida: str | None = Field(
+        default=None, max_length=2000, deprecated=True, description="Obsoleto (PRD §5): não usar"
+    )
 
 
 class PedidoAtualizacaoAcao(BaseModel):
@@ -81,7 +95,9 @@ class PedidoAtualizacaoAcao(BaseModel):
     situacao: Situacao | None = None
     inicio_em: datetime | None = None
     fim_em: datetime | None = None
-    licao_aprendida: str | None = Field(default=None, max_length=2000)
+    licao_aprendida: str | None = Field(
+        default=None, max_length=2000, deprecated=True, description="Obsoleto (PRD §5): não usar"
+    )
 
 
 @router.get(
@@ -92,12 +108,16 @@ def listar(
     situacao: Situacao | None = None,
     desde: date | None = None,
     ate: date | None = None,
+    ordem: Literal["recente", "prioridade"] = Query(
+        default="recente",
+        description="prioridade: distritos mais vulneráveis primeiro (ordem de /territorios/prioridade)",
+    ),
     _: Contexto = Depends(consultar),
     db: Session = Depends(obter_sessao),
 ) -> ListaAcoes:
     if desde and ate and desde > ate:
         raise ErroClimaSense(422, "A data inicial precisa ser antes da final.")
-    return erro_de_negocio(lambda: servico.listar(db, territorio_id, situacao, desde, ate))
+    return erro_de_negocio(lambda: servico.listar(db, territorio_id, situacao, desde, ate, ordem))
 
 
 @router.post("", response_model=DetalheAcao, status_code=201, summary="Registrar ação de resposta")

@@ -60,17 +60,39 @@ def test_texto_do_boletim():
             "chuva_prev_72h": (80.5, "DS I"),
         },
         (1.2, AGORA + timedelta(hours=2)),
-        {"abrigos_abertos": 2, "pessoas_abrigadas": None, "desabrigados": 37, "atualizado_em": AGORA},
+        {
+            "cidade": {
+                "abrigos_abertos": 2,
+                "pessoas_abrigadas": None,
+                "desabrigados": None,
+                "parcial": True,
+                "atualizado_em": AGORA,
+            },
+            "distritos": [
+                {
+                    "distrito_nome": "DS I",
+                    "abrigos_abertos": 1,
+                    "pessoas_abrigadas": 40,
+                    "desabrigados": 37,
+                    "parcial": False,
+                }
+            ],
+        },
         3,
+        acoes_concluidas=0,
+        saude=[{"nome": "Dengue", "casos": None, "ultima_semana": None}],
     )
     assert "- Distrito Sanitário I: Alerta (declarado)" in t
     assert "- Distrito Sanitário II: Sem dados (sugerido)" in t
     assert "- Últimas 24 h: sem dado" in t
     assert "- Prevista 24 h: 42,0 mm (maior: Distrito Sanitário I)" in t
     assert "Maré máxima: 1,20 m às 04/11 17:30" in t
-    # ocupação e desabrigados saíram do boletim (sem fonte pública e sem contagem pela equipe)
-    assert "Pessoas abrigadas" not in t and "Desabrigados" not in t
-    assert "Ações em andamento: 3" in t
+    # total parcial não vira número (RN-01); o distrito com contagem completa aparece
+    assert "- Cidade: 2 aberto(s), sem dado (parcial) abrigado(s), sem dado (parcial) desabrigado(s)" in t
+    assert "- DS I: 1 aberto(s), 40 abrigado(s), 37 desabrigado(s)" in t
+    assert "Estágio oficial do COP (cidade): sem registro" in t
+    assert "Ações em andamento: 3" in t and "Ações concluídas no período: 0" in t
+    assert "- Dengue: sem dado caso(s)" in t
 
 
 # ---------------------------------------------------------------- F3 abrigos
@@ -129,3 +151,16 @@ def test_licao_aprendida_so_ao_encerrar():
     acoes.validar_licao("em_andamento", None)
     with pytest.raises(RegistroInvalido):
         acoes.validar_licao("em_andamento", "cedo demais")
+
+
+def test_totais_situacao_parcial_zero_derivado_e_ausente():
+    assert abrigos.totais_situacao([]).abrigos_abertos is None  # nada cadastrado: ausente
+    parcial = abrigos.totais_situacao([_a(True, 40, 5), _a(True, None, 3)])
+    assert parcial.parcial and parcial.pessoas_abrigadas is None and parcial.abertos_sem_contagem == 1
+    sem_desabrigados = abrigos.totais_situacao([_a(True, 40, None)])
+    assert sem_desabrigados.parcial and sem_desabrigados.desabrigados is None
+    fechados = abrigos.totais_situacao([_a(False, None, None), _a(False, None, 7)])
+    assert fechados.abrigos_abertos == 0 and fechados.pessoas_abrigadas == 0 and fechados.desabrigados == 7
+    assert not fechados.parcial
+    completo = abrigos.totais_situacao([_a(True, 40, 5), _a(True, 10, 0)])
+    assert completo.pessoas_abrigadas == 50 and completo.desabrigados == 5 and not completo.parcial

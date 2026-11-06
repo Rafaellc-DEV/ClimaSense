@@ -13,7 +13,7 @@ from climasense.dominio import acoes as dom
 from climasense.dominio.evento import RegistroInvalido
 from climasense.dominio.recorte import inicio_do_dia_utc
 from climasense.infra.modelos_sql import Usuario
-from climasense.servicos import fluxo
+from climasense.servicos import fluxo, prioridade_vulnerabilidade
 
 ALVO = "acao_resposta"
 EDITAVEIS = ("descricao", "responsavel", "situacao", "inicio_em", "fim_em", "licao_aprendida")
@@ -48,9 +48,12 @@ def listar(
     situacao: str | None = None,
     desde: date | None = None,
     ate: date | None = None,
+    ordem: str = "recente",
 ) -> dict:
     """Linha do tempo por território e período; `situacao=em_andamento` é o filtro “em andamento agora”.
-    `territorio_id` de distrito inclui os bairros dele. O período pega ações que se cruzam com ele."""
+    `territorio_id` de distrito inclui os bairros dele. O período pega ações que se cruzam com ele.
+    `ordem="prioridade"` põe os distritos mais vulneráveis primeiro (RF-22, ordem de /territorios/prioridade);
+    dentro do distrito, a mais recente primeiro. Sem carga da fonte de prioridade, cai em "recente"."""
     if situacao is not None:
         dom.validar_situacao(situacao)
     todas = [
@@ -70,7 +73,33 @@ def listar(
     for a in todas:
         contagens[a["situacao"]] = contagens.get(a["situacao"], 0) + 1
     itens = [a for a in todas if situacao is None or a["situacao"] == situacao]
-    return {"itens": itens, "contagens": contagens, "total": len(todas)}
+    por_distrito: dict[str, dict] = {}
+    for a in todas:
+        d = por_distrito.setdefault(
+            a["distrito_id"], {"distrito_id": a["distrito_id"], "distrito_nome": None, "contagens": {}}
+        )
+        d["contagens"][a["situacao"]] = d["contagens"].get(a["situacao"], 0) + 1
+    prio = prioridade_vulnerabilidade.listar(db, "distrito") if ordem == "prioridade" else None
+    posicao = {i["territorio_id"]: i["posicao"] for i in prio["itens"]} if prio else {}
+    nomes = {i["territorio_id"]: i["nome"] for i in prio["itens"]} if prio else {}
+    if not nomes and por_distrito:
+        nomes = dict(
+            db.execute(
+                text("select id, nome_exibicao from app.territorios where id = any(:i)"),
+                {"i": list(por_distrito)},
+            ).all()
+        )
+    for d in por_distrito.values():
+        d["distrito_nome"] = nomes.get(d["distrito_id"], d["distrito_id"])
+    if posicao:  # sort estável: dentro do distrito segue a ordem recente da consulta
+        itens = sorted(itens, key=lambda a: posicao.get(a["distrito_id"], 10_000))
+    return {
+        "itens": itens,
+        "contagens": contagens,
+        "total": len(todas),
+        "por_distrito": sorted(por_distrito.values(), key=lambda d: d["distrito_id"]),
+        "ordenado_por_prioridade": bool(posicao),
+    }
 
 
 def eventos(db: Session, acao_id: uuid.UUID) -> list[dict]:
