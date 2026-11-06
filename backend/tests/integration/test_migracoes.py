@@ -43,6 +43,9 @@ TABELAS = {
         "infodengue_semanal",
         "leptospirose_semanal",
         "arboviroses_bairro_ano",
+        "equipamentos_saude",
+        "populacao_bairro",
+        "areas_risco",
     },
     "gold": {
         "chuva_diaria",
