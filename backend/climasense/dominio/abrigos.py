@@ -59,6 +59,44 @@ def totais(abrigos: list[SituacaoAbrigo]) -> Totais:
     )
 
 
+@dataclass(frozen=True)
+class TotaisSituacao:
+    """Totais de um recorte (cidade ou distrito) para a situação do evento (RF-08, RF-09)."""
+
+    abrigos_abertos: int | None  # null: nenhum abrigo cadastrado no recorte (nada sabido)
+    abrigos_cadastrados: int
+    pessoas_abrigadas: int | None
+    desabrigados: int | None
+    parcial: bool  # há abrigo aberto sem contagem: o total sairia subestimado, então fica null
+    abertos_sem_contagem: int
+    atualizado_em: datetime | None
+
+
+def totais_situacao(abrigos: list[SituacaoAbrigo]) -> TotaisSituacao:
+    """Ausência não é zero (RN-01, RN-02). Sem abrigo cadastrado tudo é null. Com abrigos mas nenhum aberto, as
+    pessoas abrigadas são 0 (derivado). Abrigo aberto sem contagem torna o total null e `parcial`."""
+    if not abrigos:
+        return TotaisSituacao(None, 0, None, None, False, 0, None)
+    base = totais(abrigos)
+    abertos = [a for a in abrigos if a.aberto]
+    if not abertos:
+        abrigadas = 0
+    elif base.abertos_sem_contagem:
+        abrigadas = None
+    else:
+        abrigadas = _soma([a.pessoas_abrigadas for a in abertos])
+    abertos_sem_desabrigados = sum(1 for a in abertos if a.desabrigados is None)
+    return TotaisSituacao(
+        abrigos_abertos=base.abrigos_abertos,
+        abrigos_cadastrados=base.abrigos_cadastrados,
+        pessoas_abrigadas=abrigadas,
+        desabrigados=None if abertos_sem_desabrigados else base.desabrigados,
+        parcial=bool(base.abertos_sem_contagem or abertos_sem_desabrigados),
+        abertos_sem_contagem=base.abertos_sem_contagem,
+        atualizado_em=base.atualizado_em,
+    )
+
+
 def problemas(
     nome: str | None, capacidade: int | None, pessoas_abrigadas: int | None, desabrigados: int | None
 ) -> list[str]:

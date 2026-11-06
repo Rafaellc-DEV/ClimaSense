@@ -220,3 +220,38 @@ def historico(db: Session, abrigo_id: uuid.UUID) -> list[dict]:
 def totais_recife(db: Session) -> dict:
     """Topo do painel: abrigos abertos e desabrigados, com a hora da última atualização."""
     return totais(_linhas(db))
+
+
+def ocupacao_atualizada_em(db: Session) -> datetime | None:
+    """Última atualização lançada por uma pessoa da equipe (a fonte "Registro da equipe")."""
+    return db.execute(text("select max(em) from app.abrigo_atualizacoes where autor_id is not null")).scalar()
+
+
+def situacao_evento(db: Session) -> dict:
+    """Totais da cidade e de cada distrito sanitário (RF-08, RF-09), com a hora e o autor da última atualização.
+    Contagem operacional de abrigo: não há supressão (não é agravo de saúde)."""
+    linhas = _linhas(db)
+
+    def _bloco(recorte: list[dict]) -> dict:
+        d = dom.totais_situacao(
+            [
+                dom.SituacaoAbrigo(r["aberto"], r["pessoas_abrigadas"], r["desabrigados"], r["atualizado_em"])
+                for r in recorte
+            ]
+        ).__dict__.copy()
+        datados = [r for r in recorte if r["atualizado_em"]]
+        ultimo = max(datados, key=lambda r: r["atualizado_em"], default=None)
+        d["atualizado_por_nome"] = ultimo["atualizado_por_nome"] if ultimo else None
+        return d
+
+    distritos = db.execute(
+        text("select id, nome_exibicao from app.territorios where tipo = 'distrito' order by id")
+    ).all()
+    return {
+        "cidade": _bloco(linhas),
+        "distritos": [
+            {"distrito_id": i, "distrito_nome": n, **_bloco([r for r in linhas if r["distrito_id"] == i])}
+            for i, n in distritos
+        ],
+        "ocupacao_atualizada_em": ocupacao_atualizada_em(db),
+    }

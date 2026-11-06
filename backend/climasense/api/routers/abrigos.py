@@ -11,7 +11,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from climasense.api.autorizacao import Contexto, exige, relogio
-from climasense.api.envelope import FonteMeta, Meta
+from climasense.api.envelope import FonteMeta, Meta, RecorteMeta, RespostaDados
 from climasense.api.routers.estagios import erro_de_negocio
 from climasense.dominio.papeis import Permissao
 from climasense.infra.postgres import obter_sessao
@@ -73,6 +73,34 @@ class ListaAbrigos(BaseModel):
     )
 
 
+class TotaisSituacao(BaseModel):
+    abrigos_abertos: int | None = Field(description="null = nenhum abrigo cadastrado no recorte (RN-01)")
+    abrigos_cadastrados: int
+    pessoas_abrigadas: int | None = Field(
+        description="Soma nos abrigos abertos; null = sem registro ou parcial (nunca 0 por falta de dado)"
+    )
+    desabrigados: int | None = Field(
+        description="Soma dos abrigos; null = sem registro ou parcial (abrigo aberto sem contagem)"
+    )
+    parcial: bool = Field(description="true: há abrigo aberto sem contagem; o total não sai como completo")
+    abertos_sem_contagem: int
+    atualizado_em: datetime | None
+    atualizado_por_nome: str | None = Field(description="Quem fez a última atualização do recorte")
+
+
+class SituacaoDistrito(TotaisSituacao):
+    distrito_id: str
+    distrito_nome: str
+
+
+class SituacaoEvento(BaseModel):
+    cidade: TotaisSituacao
+    distritos: list[SituacaoDistrito]
+    ocupacao_atualizada_em: datetime | None = Field(
+        description="Última atualização de ocupação ou desabrigados lançada pela equipe"
+    )
+
+
 class PedidoAbrigo(BaseModel):
     nome: str = Field(max_length=160)
     bairro_id: str
@@ -111,6 +139,23 @@ class AtualizacaoAbrigo(BaseModel):
     alteracoes: dict
 
 
+def fontes_abrigos(db: Session, ocupacao_em: datetime | None, agora: datetime) -> list[FonteMeta]:
+    """Feed do COP (abertura) e Registro da equipe (ocupação e desabrigados), cada um com hora e frescor (RF-19)."""
+    ocupacao = servico_fontes.com_frescor(
+        FonteMeta(
+            id=FONTE_OCUPACAO,
+            nome="Registro da equipe (ocupação e desabrigados)",
+            tipo="observada",
+            atualizado_em=ocupacao_em,
+            status="planejada" if ocupacao_em is None else "atualizada",
+        ),
+        agora,
+    )
+    if ocupacao.desatualizado:
+        ocupacao = ocupacao.model_copy(update={"status": "desatualizada"})
+    return [servico_fontes.meta(db, "recife-abrigos", agora), ocupacao]
+
+
 @router.get(
     "", response_model=ListaAbrigos, summary="Abrigos com os totais de abertos, abrigados e desabrigados"
 )
@@ -122,24 +167,37 @@ def listar(
     agora: datetime = Depends(relogio),
 ) -> ListaAbrigos:
     lista = servico.listar(db, aberto, distrito_id)
-    em = lista["totais"]["atualizado_em"]
-    ocupacao = servico_fontes.com_frescor(
-        FonteMeta(
-            id=FONTE_OCUPACAO,
-            nome="Ocupação e desabrigados lançados pela equipe",
-            tipo="observada",
-            atualizado_em=em,
-            status="planejada" if em is None else "atualizada",
-        ),
-        agora,
-    )
-    if ocupacao.desatualizado:
-        ocupacao = ocupacao.model_copy(update={"status": "desatualizada"})
     lista["meta"] = Meta(
-        fontes=[servico_fontes.meta(db, "recife-abrigos", agora), ocupacao],
+        fontes=fontes_abrigos(db, servico.ocupacao_atualizada_em(db), agora),
         dados_insuficientes=not lista["itens"],
     )
     return lista
+
+
+@router.get(
+    "/situacao",
+    response_model=RespostaDados[SituacaoEvento],
+    summary="Situação do evento: abrigos abertos, abrigados e desabrigados na cidade e por distrito",
+)
+def situacao_evento(
+    _: Contexto = Depends(consultar),
+    db: Session = Depends(obter_sessao),
+    agora: datetime = Depends(relogio),
+) -> RespostaDados[SituacaoEvento]:
+    dados = servico.situacao_evento(db)
+    return RespostaDados(
+        dados=SituacaoEvento(**dados),
+        meta=Meta(
+            fontes=fontes_abrigos(db, dados["ocupacao_atualizada_em"], agora),
+            recorte=RecorteMeta(territorio_id="recife", granularidade="distrito"),
+            avisos=[
+                "Abertura de abrigo vem do feed do COP quando ele publica; ocupação e desabrigados são "
+                "lançados pela equipe (não existe API).",
+                *(["Total parcial: há abrigo aberto sem contagem."] if dados["cidade"]["parcial"] else []),
+            ],
+            dados_insuficientes=dados["cidade"]["abrigos_cadastrados"] == 0,
+        ),
+    )
 
 
 @router.post("", response_model=Abrigo, status_code=201, summary="Cadastrar abrigo")
