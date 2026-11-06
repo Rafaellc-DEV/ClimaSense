@@ -1437,72 +1437,6 @@
         }
       }
     },
-    "/api/v1/painel/situacao": {
-      "get": {
-        "tags": [
-          "Painel"
-        ],
-        "summary": "Situação agora: chuva recente, pico previsto, maré, risco e frescor",
-        "operationId": "situacao_agora_api_v1_painel_situacao_get",
-        "parameters": [
-          {
-            "name": "territorio_id",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "recife, ds-1 a ds-8 (bairro vira o distrito)",
-              "default": "recife",
-              "title": "Territorio Id"
-            },
-            "description": "recife, ds-1 a ds-8 (bairro vira o distrito)"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/RespostaDados_SituacaoAgora_"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/painel/acoes": {
-      "get": {
-        "tags": [
-          "Painel"
-        ],
-        "summary": "O que fazer agora: fila curta por urgência (revisões, publicações, avisos, fontes, territórios)",
-        "operationId": "acoes_agora_api_v1_painel_acoes_get",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AcoesAgora"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/api/v1/admin/auditoria": {
       "get": {
         "tags": [
@@ -2280,6 +2214,27 @@
         }
       }
     },
+    "/api/v1/abrigos/situacao": {
+      "get": {
+        "tags": [
+          "Evento de chuva"
+        ],
+        "summary": "Situação do evento: abrigos abertos, abrigados e desabrigados na cidade e por distrito",
+        "operationId": "situacao_evento_api_v1_abrigos_situacao_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaDados_SituacaoEvento_"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/abrigos/{abrigo_id}": {
       "get": {
         "tags": [
@@ -2500,6 +2455,22 @@
               ],
               "title": "Ate"
             }
+          },
+          {
+            "name": "ordem",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "recente",
+                "prioridade"
+              ],
+              "type": "string",
+              "description": "prioridade: distritos mais vulneráveis primeiro (ordem de /territorios/prioridade)",
+              "default": "recente",
+              "title": "Ordem"
+            },
+            "description": "prioridade: distritos mais vulneráveis primeiro (ordem de /territorios/prioridade)"
           }
         ],
         "responses": {
@@ -2678,6 +2649,44 @@
               "title": "Territorio Id"
             },
             "description": "recife ou ds-1 a ds-8 (bairro vira o distrito)"
+          },
+          {
+            "name": "desde",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Início do período (padrão: 7 dias até hoje)",
+              "title": "Desde"
+            },
+            "description": "Início do período (padrão: 7 dias até hoje)"
+          },
+          {
+            "name": "ate",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Fim do período (padrão: hoje, no Recife)",
+              "title": "Ate"
+            },
+            "description": "Fim do período (padrão: hoje, no Recife)"
           }
         ],
         "responses": {
@@ -2720,6 +2729,40 @@
               "type": "string",
               "default": "recife",
               "title": "Territorio Id"
+            }
+          },
+          {
+            "name": "desde",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Desde"
+            }
+          },
+          {
+            "name": "ate",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Ate"
             }
           }
         ],
@@ -3215,12 +3258,17 @@
             },
             "type": "array",
             "title": "Abertos"
+          },
+          "situacao": {
+            "$ref": "#/components/schemas/SituacaoEvento",
+            "description": "Abertos, abrigados e desabrigados na cidade e por distrito; null = sem registro (RN-01)"
           }
         },
         "type": "object",
         "required": [
           "totais",
-          "abertos"
+          "abertos",
+          "situacao"
         ],
         "title": "AbrigosBoletim"
       },
@@ -3321,7 +3369,9 @@
                 "type": "null"
               }
             ],
-            "title": "Licao Aprendida"
+            "title": "Licao Aprendida",
+            "description": "Obsoleto: lições aprendidas estão fora do escopo (PRD §5)",
+            "deprecated": true
           },
           "criada_em": {
             "type": "string",
@@ -3356,84 +3406,12 @@
           "situacao_rotulo",
           "inicio_em",
           "fim_em",
-          "licao_aprendida",
           "criada_em",
           "atualizada_em",
           "autor_nome",
           "atualizado_por_nome"
         ],
         "title": "Acao"
-      },
-      "AcaoAgora": {
-        "properties": {
-          "urgencia": {
-            "type": "string",
-            "enum": [
-              "alta",
-              "media",
-              "baixa"
-            ],
-            "title": "Urgencia"
-          },
-          "tipo": {
-            "type": "string",
-            "title": "Tipo"
-          },
-          "titulo": {
-            "type": "string",
-            "title": "Titulo"
-          },
-          "detalhe": {
-            "type": "string",
-            "title": "Detalhe"
-          },
-          "endereco": {
-            "type": "string",
-            "title": "Endereco"
-          }
-        },
-        "type": "object",
-        "required": [
-          "urgencia",
-          "tipo",
-          "titulo",
-          "detalhe",
-          "endereco"
-        ],
-        "title": "AcaoAgora"
-      },
-      "AcoesAgora": {
-        "properties": {
-          "gerado_em": {
-            "type": "string",
-            "format": "date-time",
-            "title": "Gerado Em"
-          },
-          "itens": {
-            "items": {
-              "$ref": "#/components/schemas/AcaoAgora"
-            },
-            "type": "array",
-            "title": "Itens"
-          },
-          "nota": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Nota"
-          }
-        },
-        "type": "object",
-        "required": [
-          "gerado_em",
-          "itens"
-        ],
-        "title": "AcoesAgora"
       },
       "AjusteFonte": {
         "properties": {
@@ -3588,6 +3566,33 @@
         ],
         "title": "Amostra",
         "description": "Indicador calculado sobre extração parcial (RN-10)."
+      },
+      "AndamentoDistrito": {
+        "properties": {
+          "distrito_id": {
+            "type": "string",
+            "title": "Distrito Id"
+          },
+          "distrito_nome": {
+            "type": "string",
+            "title": "Distrito Nome"
+          },
+          "contagens": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "Contagens",
+            "description": "Ações por situação neste distrito (RF-16)"
+          }
+        },
+        "type": "object",
+        "required": [
+          "distrito_id",
+          "distrito_nome",
+          "contagens"
+        ],
+        "title": "AndamentoDistrito"
       },
       "AtualizacaoAbrigo": {
         "properties": {
@@ -3963,7 +3968,47 @@
               "$ref": "#/components/schemas/Acao"
             },
             "type": "array",
-            "title": "Acoes Em Andamento"
+            "title": "Acoes Em Andamento",
+            "description": "Em andamento agora, distritos mais vulneráveis primeiro (RF-22)"
+          },
+          "periodo": {
+            "$ref": "#/components/schemas/PeriodoBoletim",
+            "description": "Período do relatório executivo (RF-17)"
+          },
+          "estagio_oficial": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/EstagioOficial"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Estágio oficial do COP para a cidade (não há oficial por distrito); null = sem registro"
+          },
+          "acoes_concluidas": {
+            "items": {
+              "$ref": "#/components/schemas/Acao"
+            },
+            "type": "array",
+            "title": "Acoes Concluidas",
+            "description": "Concluídas dentro do período"
+          },
+          "acoes_por_distrito": {
+            "items": {
+              "$ref": "#/components/schemas/AndamentoDistrito"
+            },
+            "type": "array",
+            "title": "Acoes Por Distrito",
+            "description": "Ações do período por distrito e situação"
+          },
+          "saude": {
+            "items": {
+              "$ref": "#/components/schemas/ResumoAgravo"
+            },
+            "type": "array",
+            "title": "Saude",
+            "description": "Agravos na última semana com dado, no município"
           }
         },
         "type": "object",
@@ -3976,7 +4021,12 @@
           "chuva",
           "mare",
           "abrigos",
-          "acoes_em_andamento"
+          "acoes_em_andamento",
+          "periodo",
+          "estagio_oficial",
+          "acoes_concluidas",
+          "acoes_por_distrito",
+          "saude"
         ],
         "title": "Boletim"
       },
@@ -4262,112 +4312,6 @@
           "previsao_emitida_em"
         ],
         "title": "ChuvaBoletim"
-      },
-      "ChuvaRecente": {
-        "properties": {
-          "janela_h": {
-            "type": "integer",
-            "title": "Janela H"
-          },
-          "status": {
-            "type": "string",
-            "enum": [
-              "ok",
-              "dados_insuficientes"
-            ],
-            "title": "Status"
-          },
-          "acumulado_mm": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Acumulado Mm"
-          },
-          "horas_com_dado": {
-            "type": "integer",
-            "title": "Horas Com Dado"
-          },
-          "cobertura_pct": {
-            "type": "number",
-            "title": "Cobertura Pct"
-          },
-          "referencia_mm": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Referencia Mm"
-          },
-          "razao_referencia_pct": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Razao Referencia Pct"
-          },
-          "comparacao": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Comparacao"
-          },
-          "ate_em": {
-            "type": "string",
-            "format": "date-time",
-            "title": "Ate Em"
-          },
-          "fontes_usadas": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Fontes Usadas"
-          },
-          "nota": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Nota"
-          }
-        },
-        "type": "object",
-        "required": [
-          "janela_h",
-          "status",
-          "acumulado_mm",
-          "horas_com_dado",
-          "cobertura_pct",
-          "referencia_mm",
-          "razao_referencia_pct",
-          "comparacao",
-          "ate_em",
-          "fontes_usadas",
-          "nota"
-        ],
-        "title": "ChuvaRecente"
       },
       "ChuvaSemana": {
         "properties": {
@@ -4723,7 +4667,9 @@
                 "type": "null"
               }
             ],
-            "title": "Licao Aprendida"
+            "title": "Licao Aprendida",
+            "description": "Obsoleto: lições aprendidas estão fora do escopo (PRD §5)",
+            "deprecated": true
           },
           "criada_em": {
             "type": "string",
@@ -4765,7 +4711,6 @@
           "situacao_rotulo",
           "inicio_em",
           "fim_em",
-          "licao_aprendida",
           "criada_em",
           "atualizada_em",
           "autor_nome",
@@ -5328,24 +5273,6 @@
         ],
         "title": "Fator"
       },
-      "FatorRisco": {
-        "properties": {
-          "nome": {
-            "type": "string",
-            "title": "Nome"
-          },
-          "descricao": {
-            "type": "string",
-            "title": "Descricao"
-          }
-        },
-        "type": "object",
-        "required": [
-          "nome",
-          "descricao"
-        ],
-        "title": "FatorRisco"
-      },
       "Fonte": {
         "properties": {
           "id": {
@@ -5570,59 +5497,6 @@
           "ultima_atualizacao"
         ],
         "title": "FonteSaude"
-      },
-      "FrescorFonte": {
-        "properties": {
-          "fonte_id": {
-            "type": "string",
-            "title": "Fonte Id"
-          },
-          "nome": {
-            "type": "string",
-            "title": "Nome"
-          },
-          "status": {
-            "type": "string",
-            "title": "Status"
-          },
-          "ultimo_sucesso": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "date-time"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Ultimo Sucesso"
-          },
-          "idade_h": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Idade H"
-          },
-          "limite_h": {
-            "type": "integer",
-            "title": "Limite H"
-          }
-        },
-        "type": "object",
-        "required": [
-          "fonte_id",
-          "nome",
-          "status",
-          "ultimo_sucesso",
-          "idade_h",
-          "limite_h"
-        ],
-        "title": "FrescorFonte"
       },
       "HTTPValidationError": {
         "properties": {
@@ -6553,13 +6427,27 @@
           "total": {
             "type": "integer",
             "title": "Total"
+          },
+          "por_distrito": {
+            "items": {
+              "$ref": "#/components/schemas/AndamentoDistrito"
+            },
+            "type": "array",
+            "title": "Por Distrito"
+          },
+          "ordenado_por_prioridade": {
+            "type": "boolean",
+            "title": "Ordenado Por Prioridade",
+            "description": "true quando `ordem=prioridade` foi aplicada (distritos mais vulneráveis primeiro, RF-22)"
           }
         },
         "type": "object",
         "required": [
           "itens",
           "contagens",
-          "total"
+          "total",
+          "por_distrito",
+          "ordenado_por_prioridade"
         ],
         "title": "ListaAcoes"
       },
@@ -6651,78 +6539,6 @@
           "emitida_em"
         ],
         "title": "MareBoletim"
-      },
-      "MarePrevista": {
-        "properties": {
-          "status": {
-            "type": "string",
-            "enum": [
-              "ok",
-              "dados_insuficientes"
-            ],
-            "title": "Status"
-          },
-          "maxima_m": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Maxima M"
-          },
-          "maxima_em": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "date-time"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Maxima Em"
-          },
-          "emitida_em": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "date-time"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Emitida Em"
-          },
-          "fonte_id": {
-            "type": "string",
-            "title": "Fonte Id"
-          },
-          "nota": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Nota"
-          }
-        },
-        "type": "object",
-        "required": [
-          "status",
-          "maxima_m",
-          "maxima_em",
-          "emitida_em",
-          "fonte_id",
-          "nota"
-        ],
-        "title": "MarePrevista"
       },
       "Mensagem": {
         "properties": {
@@ -7522,7 +7338,9 @@
                 "type": "null"
               }
             ],
-            "title": "Licao Aprendida"
+            "title": "Licao Aprendida",
+            "description": "Obsoleto (PRD §5): não usar",
+            "deprecated": true
           }
         },
         "type": "object",
@@ -7739,7 +7557,9 @@
                 "type": "null"
               }
             ],
-            "title": "Licao Aprendida"
+            "title": "Licao Aprendida",
+            "description": "Obsoleto (PRD §5): não usar",
+            "deprecated": true
           }
         },
         "type": "object",
@@ -8316,6 +8136,26 @@
         ],
         "title": "PedidoUsoMensagem"
       },
+      "PeriodoBoletim": {
+        "properties": {
+          "desde": {
+            "type": "string",
+            "format": "date",
+            "title": "Desde"
+          },
+          "ate": {
+            "type": "string",
+            "format": "date",
+            "title": "Ate"
+          }
+        },
+        "type": "object",
+        "required": [
+          "desde",
+          "ate"
+        ],
+        "title": "PeriodoBoletim"
+      },
       "PessoasEmAlerta": {
         "properties": {
           "bairros_em_alerta": {
@@ -8363,119 +8203,6 @@
           "criterio"
         ],
         "title": "PessoasEmAlerta"
-      },
-      "PicoPrevisto": {
-        "properties": {
-          "horizonte_h": {
-            "type": "integer",
-            "title": "Horizonte H"
-          },
-          "status": {
-            "type": "string",
-            "enum": [
-              "ok",
-              "dados_insuficientes"
-            ],
-            "title": "Status"
-          },
-          "valor_mm": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Valor Mm"
-          },
-          "em": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "date-time"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Em"
-          },
-          "maior_24h_mm": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Maior 24H Mm"
-          },
-          "limite_atencao_mm": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Limite Atencao Mm"
-          },
-          "limite_alerta_mm": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Limite Alerta Mm"
-          },
-          "emitida_em": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "date-time"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Emitida Em"
-          },
-          "fonte_id": {
-            "type": "string",
-            "title": "Fonte Id"
-          },
-          "nota": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Nota"
-          }
-        },
-        "type": "object",
-        "required": [
-          "horizonte_h",
-          "status",
-          "valor_mm",
-          "em",
-          "maior_24h_mm",
-          "limite_atencao_mm",
-          "limite_alerta_mm",
-          "emitida_em",
-          "fonte_id",
-          "nota"
-        ],
-        "title": "PicoPrevisto"
       },
       "PontoChuva": {
         "properties": {
@@ -9172,10 +8899,10 @@
         ],
         "title": "RespostaDados[Simulacao]"
       },
-      "RespostaDados_SituacaoAgora_": {
+      "RespostaDados_SituacaoEvento_": {
         "properties": {
           "dados": {
-            "$ref": "#/components/schemas/SituacaoAgora"
+            "$ref": "#/components/schemas/SituacaoEvento"
           },
           "meta": {
             "$ref": "#/components/schemas/Meta"
@@ -9186,7 +8913,7 @@
           "dados",
           "meta"
         ],
-        "title": "RespostaDados[SituacaoAgora]"
+        "title": "RespostaDados[SituacaoEvento]"
       },
       "RespostaDados_Union_EstagioOficial__NoneType__": {
         "properties": {
@@ -9801,110 +9528,6 @@
         ],
         "title": "RiscoAlagamento"
       },
-      "RiscoGeral": {
-        "properties": {
-          "prioridade": {
-            "type": "string",
-            "enum": [
-              "sem_indicacao",
-              "atencao",
-              "alerta",
-              "critico",
-              "dados_insuficientes"
-            ],
-            "title": "Prioridade"
-          },
-          "rotulo": {
-            "type": "string",
-            "title": "Rotulo"
-          },
-          "motivo": {
-            "type": "string",
-            "title": "Motivo"
-          },
-          "fatores": {
-            "items": {
-              "$ref": "#/components/schemas/FatorRisco"
-            },
-            "type": "array",
-            "title": "Fatores"
-          },
-          "limitacoes": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Limitacoes"
-          },
-          "qualidade": {
-            "type": "string",
-            "enum": [
-              "completa",
-              "parcial",
-              "insuficiente"
-            ],
-            "title": "Qualidade"
-          },
-          "confianca": {
-            "type": "string",
-            "enum": [
-              "media",
-              "baixa",
-              "insuficiente"
-            ],
-            "title": "Confianca"
-          },
-          "janela_atencao": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/JanelaRisco"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "horizonte_h": {
-            "type": "integer",
-            "title": "Horizonte H"
-          },
-          "metodo": {
-            "type": "string",
-            "title": "Metodo"
-          },
-          "versao_metodo": {
-            "type": "string",
-            "title": "Versao Metodo"
-          },
-          "experimental": {
-            "type": "boolean",
-            "const": true,
-            "title": "Experimental",
-            "default": true
-          },
-          "emitida_em": {
-            "type": "string",
-            "format": "date-time",
-            "title": "Emitida Em"
-          }
-        },
-        "type": "object",
-        "required": [
-          "prioridade",
-          "rotulo",
-          "motivo",
-          "fatores",
-          "limitacoes",
-          "qualidade",
-          "confianca",
-          "janela_atencao",
-          "horizonte_h",
-          "metodo",
-          "versao_metodo",
-          "emitida_em"
-        ],
-        "title": "RiscoGeral"
-      },
       "RiscoML": {
         "properties": {
           "classe": {
@@ -10294,57 +9917,138 @@
         ],
         "title": "Simulacao"
       },
-      "SituacaoAgora": {
+      "SituacaoDistrito": {
         "properties": {
-          "territorio_id": {
+          "abrigos_abertos": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Abrigos Abertos",
+            "description": "null = nenhum abrigo cadastrado no recorte (RN-01)"
+          },
+          "abrigos_cadastrados": {
+            "type": "integer",
+            "title": "Abrigos Cadastrados"
+          },
+          "pessoas_abrigadas": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pessoas Abrigadas",
+            "description": "Soma nos abrigos abertos; null = sem registro ou parcial (nunca 0 por falta de dado)"
+          },
+          "desabrigados": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Desabrigados",
+            "description": "Soma dos abrigos; null = sem registro ou parcial (abrigo aberto sem contagem)"
+          },
+          "parcial": {
+            "type": "boolean",
+            "title": "Parcial",
+            "description": "true: há abrigo aberto sem contagem; o total não sai como completo"
+          },
+          "abertos_sem_contagem": {
+            "type": "integer",
+            "title": "Abertos Sem Contagem"
+          },
+          "atualizado_em": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Atualizado Em"
+          },
+          "atualizado_por_nome": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Atualizado Por Nome",
+            "description": "Quem fez a última atualização do recorte"
+          },
+          "distrito_id": {
             "type": "string",
-            "title": "Territorio Id"
+            "title": "Distrito Id"
           },
-          "territorio_nome": {
+          "distrito_nome": {
             "type": "string",
-            "title": "Territorio Nome"
-          },
-          "gerado_em": {
-            "type": "string",
-            "format": "date-time",
-            "title": "Gerado Em"
-          },
-          "chuva_24h": {
-            "$ref": "#/components/schemas/ChuvaRecente"
-          },
-          "chuva_72h": {
-            "$ref": "#/components/schemas/ChuvaRecente"
-          },
-          "pico": {
-            "$ref": "#/components/schemas/PicoPrevisto"
-          },
-          "mare": {
-            "$ref": "#/components/schemas/MarePrevista"
-          },
-          "risco": {
-            "$ref": "#/components/schemas/RiscoGeral"
-          },
-          "frescor": {
-            "items": {
-              "$ref": "#/components/schemas/FrescorFonte"
-            },
-            "type": "array",
-            "title": "Frescor"
+            "title": "Distrito Nome"
           }
         },
         "type": "object",
         "required": [
-          "territorio_id",
-          "territorio_nome",
-          "gerado_em",
-          "chuva_24h",
-          "chuva_72h",
-          "pico",
-          "mare",
-          "risco",
-          "frescor"
+          "abrigos_abertos",
+          "abrigos_cadastrados",
+          "pessoas_abrigadas",
+          "desabrigados",
+          "parcial",
+          "abertos_sem_contagem",
+          "atualizado_em",
+          "atualizado_por_nome",
+          "distrito_id",
+          "distrito_nome"
         ],
-        "title": "SituacaoAgora"
+        "title": "SituacaoDistrito"
+      },
+      "SituacaoEvento": {
+        "properties": {
+          "cidade": {
+            "$ref": "#/components/schemas/TotaisSituacao"
+          },
+          "distritos": {
+            "items": {
+              "$ref": "#/components/schemas/SituacaoDistrito"
+            },
+            "type": "array",
+            "title": "Distritos"
+          },
+          "ocupacao_atualizada_em": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ocupacao Atualizada Em",
+            "description": "Última atualização de ocupação ou desabrigados lançada pela equipe"
+          }
+        },
+        "type": "object",
+        "required": [
+          "cidade",
+          "distritos",
+          "ocupacao_atualizada_em"
+        ],
+        "title": "SituacaoEvento"
       },
       "Sugerido": {
         "properties": {
@@ -10554,6 +10258,95 @@
           "nome_exibicao"
         ],
         "title": "TerritorioRef"
+      },
+      "TotaisSituacao": {
+        "properties": {
+          "abrigos_abertos": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Abrigos Abertos",
+            "description": "null = nenhum abrigo cadastrado no recorte (RN-01)"
+          },
+          "abrigos_cadastrados": {
+            "type": "integer",
+            "title": "Abrigos Cadastrados"
+          },
+          "pessoas_abrigadas": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pessoas Abrigadas",
+            "description": "Soma nos abrigos abertos; null = sem registro ou parcial (nunca 0 por falta de dado)"
+          },
+          "desabrigados": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Desabrigados",
+            "description": "Soma dos abrigos; null = sem registro ou parcial (abrigo aberto sem contagem)"
+          },
+          "parcial": {
+            "type": "boolean",
+            "title": "Parcial",
+            "description": "true: há abrigo aberto sem contagem; o total não sai como completo"
+          },
+          "abertos_sem_contagem": {
+            "type": "integer",
+            "title": "Abertos Sem Contagem"
+          },
+          "atualizado_em": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Atualizado Em"
+          },
+          "atualizado_por_nome": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Atualizado Por Nome",
+            "description": "Quem fez a última atualização do recorte"
+          }
+        },
+        "type": "object",
+        "required": [
+          "abrigos_abertos",
+          "abrigos_cadastrados",
+          "pessoas_abrigadas",
+          "desabrigados",
+          "parcial",
+          "abertos_sem_contagem",
+          "atualizado_em",
+          "atualizado_por_nome"
+        ],
+        "title": "TotaisSituacao"
       },
       "UsuarioAtual": {
         "properties": {

@@ -7,8 +7,6 @@ from climasense.dominio.papeis import Permissao
 from tests.integration.test_matriz_autorizacao import PUBLICAS, ROTAS
 
 ESPERADAS = {
-    ("GET", "/api/v1/painel/situacao"): Permissao.CONSULTAR,
-    ("GET", "/api/v1/painel/acoes"): Permissao.CONSULTAR,
     ("GET", "/api/v1/painel/resumo"): Permissao.CONSULTAR,
     ("GET", "/api/v1/territorios/prioridades"): Permissao.CONSULTAR,
     ("POST", "/api/v1/comunicados/{comunicado_id}/publicar"): Permissao.PUBLICAR,

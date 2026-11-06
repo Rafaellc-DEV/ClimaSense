@@ -11,6 +11,6 @@ def test_gerador_cobre_rotas_novas_e_e_deterministico():
     modulo = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(modulo)
     texto = modulo.gerar()
-    for rota in ("/api/v1/painel/situacao", "/api/v1/painel/acoes", "/api/v1/territorios/prioridades"):
+    for rota in ("/api/v1/painel/resumo", "/api/v1/territorios/prioridades"):
         assert f"`{rota}`" in texto
     assert texto == modulo.gerar()
