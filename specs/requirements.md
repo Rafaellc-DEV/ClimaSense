@@ -1,3 +1,5 @@
+> **Em conflito, vale `docs/PRD.md`.** Este documento é anterior ao PRD (06/11/2026) e fica como histórico.
+
 # ClimaSense — Especificação de Requisitos (`requirements.md`)
 
 > **Antecipar riscos. Orientar decisões. Cuidar do território.**

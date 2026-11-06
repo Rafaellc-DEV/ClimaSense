@@ -11,3 +11,7 @@
 | [0007](0007-sessao-no-servidor.md) | Sessão no servidor com cookie HttpOnly e CSRF | aceita |
 | [0008](0008-somente-dados-reais.md) | Somente dados reais; ETL em POO | aceita |
 | [0009](0009-identidade-regua-de-mare.md) | Identidade visual “régua de maré” | aceita |
+| [0010](0010-politica-dados-reais-e-publicos.md) | Política de dados: só reais, públicos e agregados; exemplo só em teste | proposta (Gate 0) |
+| [0011](0011-chave-funcionalidade-landing-comunicados.md) | Landing pública e comunicados desligados por chave de funcionalidade | proposta (Gate 0) |
+| [0012](0012-pastas-por-agente.md) | Pastas de cada agente na estrutura real | proposta (Gate 0) |
+| [0013](0013-hospedagem.md) | Hospedagem: nuvem gerenciada para dados públicos; definitiva antes de dado não público | hipótese |

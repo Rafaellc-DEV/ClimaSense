@@ -11,7 +11,7 @@ tags = ["mongo", "credencial"]
 [[rules]]
 id = "postgres-uri-com-credencial"
 description = "String de conexão Postgres com usuário e senha"
-regex = '''postgres(?:ql)?://[^:\s/]+:[^@\s]+@[^\s'"]+'''
+regex = '''postgres(?:ql)?(?:\+\w+)?://[^:\s/]+:[^@\s]+@[^\s'"]+'''
 tags = ["postgres", "credencial"]
 
 [allowlist]

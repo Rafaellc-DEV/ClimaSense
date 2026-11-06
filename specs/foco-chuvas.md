@@ -1,3 +1,5 @@
+> **Em conflito, vale `docs/PRD.md`.** Este documento é anterior ao PRD (06/11/2026) e fica como histórico.
+
 # Foco: chuvas, decisão rápida e o dia a dia do Vigidesastres
 
 > Revisão de escopo de 04/11/2026, a partir do desafio da SEVS (Projeto 5), da entrevista de 23/10/2026 com a equipe
