@@ -31,7 +31,6 @@ TABELAS = {
         "acao_eventos",
     },
     "silver": {
-        "vacinados",
         "estacoes",
         "observacoes",
         "ocorrencias",
@@ -66,12 +65,13 @@ def test_migracoes_criam_todas_as_tabelas(engine_teste):
                 ).scalars()
             )
             assert reais == esperadas, esquema
-        assert (
-            c.execute(
-                text("select count(*) from information_schema.views where table_name='silver_vacinados'")
-            ).scalar()
-            == 1
-        )
+        # dados individuais de vacinação foram apagados (0013, RNF-03)
+        assert not c.execute(
+            text(
+                "select 1 from information_schema.tables where table_name in "
+                "('silver_vacinados', 'vacinados', 'silver_vacinados_legado_etl_avd', 'gold_previsoes')"
+            )
+        ).all()
 
 
 def _usuario(sessao, email):
