@@ -88,7 +88,7 @@ function base() {
     "/estagios/parametros": {
       limiares: { chuva_prev_24h_atencao_mm: 25, chuva_prev_72h_atencao_mm: 60, mare_alta_m: 0.6 },
     },
-    "/cenarios": {
+    "/cenarios/estimativa": {
       dados: {
         territorio_id: "ds-5",
         territorio_nome: "Distrito Sanitário V",
@@ -120,7 +120,7 @@ test("próximos 3 dias: uma frase, só os distritos acima do limite e o gráfico
   expect(within(acima).getAllByRole("listitem")).toHaveLength(1);
   expect(within(acima).getByText("Maré alta junto com a chuva")).toBeInTheDocument();
   expect(await screen.findByRole("region", { name: "Chuva e maré, hora a hora" })).toBeInTheDocument();
-  expect(pedidos.some((p) => p.url.includes("/cenarios?territorio_id=ds-5"))).toBe(true);
+  expect(pedidos.some((p) => p.url.includes("/cenarios/estimativa?territorio_id=ds-5"))).toBe(true);
   for (const saiu of [/Variável/, /Frequência/, /Média histórica/, /Série curta/, /Mediana/, /Cobertura/])
     expect(screen.queryByText(saiu)).not.toBeInTheDocument();
   expect(screen.getAllByText(/É uma previsão, não um alerta oficial/)).toHaveLength(1);

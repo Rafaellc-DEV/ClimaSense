@@ -112,7 +112,7 @@ def test_referencia_e_sazonalidade(c, sessao):
 
 
 def test_cenario_sem_mare_e_insuficiente_e_fica_registrado(c, sessao):
-    r = c.get(f"{API}/cenarios", params={"territorio_id": "ds-3", "horizonte_h": 24}).json()
+    r = c.get(f"{API}/cenarios/estimativa", params={"territorio_id": "ds-3", "horizonte_h": 24}).json()
     e = r["dados"]["estimativa"]
     assert e["experimental"] is True and e["prioridade"] == "dados_insuficientes"
     assert r["meta"]["dados_insuficientes"] and r["meta"]["avisos"][0].startswith("Experimental")

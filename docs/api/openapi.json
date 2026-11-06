@@ -1091,13 +1091,13 @@
         }
       }
     },
-    "/api/v1/cenarios": {
+    "/api/v1/cenarios/estimativa": {
       "get": {
         "tags": [
           "Cenários de alagamento"
         ],
-        "summary": "Cenário experimental: previsão, maré e prioridade",
-        "operationId": "cenarios_api_v1_cenarios_get",
+        "summary": "Estimativa experimental por distrito: previsão, maré e prioridade (antiga GET /cenarios)",
+        "operationId": "estimativa_api_v1_cenarios_estimativa_get",
         "parameters": [
           {
             "name": "territorio_id",
@@ -1129,6 +1129,171 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/RespostaDados_Cenario_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/cenarios/premissas-atuais": {
+      "get": {
+        "tags": [
+          "Cenários de alagamento"
+        ],
+        "summary": "Premissas sugeridas pelas fontes reais (previsão, maré, chuva medida e abrigos)",
+        "operationId": "premissas_atuais_api_v1_cenarios_premissas_atuais_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaDados_PremissasAtuais_"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/cenarios/simular": {
+      "post": {
+        "tags": [
+          "Cenários de alagamento"
+        ],
+        "summary": "Simular um cenário por regras: classe de alagamento e deslizamento por bairro e distrito",
+        "operationId": "simular_api_v1_cenarios_simular_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PedidoSimulacao"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaDados_Simulacao_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/cenarios": {
+      "get": {
+        "tags": [
+          "Cenários de alagamento"
+        ],
+        "summary": "Cenários salvos, mais recente primeiro",
+        "operationId": "listar_api_v1_cenarios_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaDados_list_CenarioListado__"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Cenários de alagamento"
+        ],
+        "summary": "Salvar o cenário (analista ou acima; auditado; o servidor recalcula o resultado)",
+        "operationId": "salvar_api_v1_cenarios_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PedidoSalvar"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaDados_CenarioSalvo_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/cenarios/{cenario_id}": {
+      "get": {
+        "tags": [
+          "Cenários de alagamento"
+        ],
+        "summary": "Abrir um cenário salvo",
+        "operationId": "abrir_api_v1_cenarios__cenario_id__get",
+        "parameters": [
+          {
+            "name": "cenario_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Cenario Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaDados_CenarioSalvo_"
                 }
               }
             }
@@ -3824,6 +3989,82 @@
         ],
         "title": "Cenario"
       },
+      "CenarioListado": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "nome": {
+            "type": "string",
+            "title": "Nome"
+          },
+          "autor_nome": {
+            "type": "string",
+            "title": "Autor Nome"
+          },
+          "criado_em": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Criado Em"
+          },
+          "resumo": {
+            "$ref": "#/components/schemas/ResumoSalvo"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "nome",
+          "autor_nome",
+          "criado_em",
+          "resumo"
+        ],
+        "title": "CenarioListado"
+      },
+      "CenarioSalvo": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "nome": {
+            "type": "string",
+            "title": "Nome"
+          },
+          "autor_nome": {
+            "type": "string",
+            "title": "Autor Nome"
+          },
+          "criado_em": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Criado Em"
+          },
+          "resumo": {
+            "$ref": "#/components/schemas/ResumoSalvo"
+          },
+          "premissas": {
+            "$ref": "#/components/schemas/PedidoSimulacao"
+          },
+          "resultado": {
+            "$ref": "#/components/schemas/ResultadoSalvo"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "nome",
+          "autor_nome",
+          "criado_em",
+          "resumo",
+          "premissas",
+          "resultado"
+        ],
+        "title": "CenarioSalvo"
+      },
       "ChuvaBoletim": {
         "properties": {
           "chuva_24h_mm": {
@@ -5322,6 +5563,67 @@
         ],
         "title": "HistoricoOcorrencias"
       },
+      "ImpactoPessoas": {
+        "properties": {
+          "idosos": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Idosos"
+          },
+          "criancas": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Criancas"
+          },
+          "equipamentos_saude": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Equipamentos Saude"
+          },
+          "total_pessoas": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Pessoas"
+          },
+          "criterio": {
+            "type": "string",
+            "title": "Criterio"
+          }
+        },
+        "type": "object",
+        "required": [
+          "idosos",
+          "criancas",
+          "equipamentos_saude",
+          "total_pessoas",
+          "criterio"
+        ],
+        "title": "ImpactoPessoas"
+      },
       "InsumosEstagio": {
         "properties": {
           "chuva_24h_mm": {
@@ -5619,6 +5921,107 @@
           "fatores"
         ],
         "title": "ItemRisco"
+      },
+      "ItemSimulacao": {
+        "properties": {
+          "territorio_id": {
+            "type": "string",
+            "title": "Territorio Id"
+          },
+          "nome": {
+            "type": "string",
+            "title": "Nome"
+          },
+          "nivel": {
+            "type": "string",
+            "enum": [
+              "bairro",
+              "distrito"
+            ],
+            "title": "Nivel"
+          },
+          "distrito_id": {
+            "type": "string",
+            "title": "Distrito Id"
+          },
+          "classe_alagamento": {
+            "type": "string",
+            "enum": [
+              "sem_dados",
+              "observacao",
+              "atencao",
+              "alerta",
+              "critico"
+            ],
+            "title": "Classe Alagamento"
+          },
+          "classe_deslizamento": {
+            "type": "string",
+            "enum": [
+              "sem_dados",
+              "observacao",
+              "atencao",
+              "alerta",
+              "critico"
+            ],
+            "title": "Classe Deslizamento"
+          },
+          "estagio_sugerido": {
+            "type": "string",
+            "enum": [
+              "sem_dados",
+              "observacao",
+              "atencao",
+              "alerta",
+              "critico"
+            ],
+            "title": "Estagio Sugerido",
+            "description": "Apoio à decisão; não é o estágio oficial nem o declarado"
+          },
+          "confianca": {
+            "type": "string",
+            "enum": [
+              "alta",
+              "media",
+              "baixa",
+              "insuficiente"
+            ],
+            "title": "Confianca"
+          },
+          "motivos": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Motivos",
+            "description": "De 1 a 3 frases curtas"
+          },
+          "impacto_pessoas": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ImpactoPessoas"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "null até a população vulnerável ser integrada (Etapa 6)"
+          }
+        },
+        "type": "object",
+        "required": [
+          "territorio_id",
+          "nome",
+          "nivel",
+          "distrito_id",
+          "classe_alagamento",
+          "classe_deslizamento",
+          "estagio_sugerido",
+          "confianca",
+          "motivos",
+          "impacto_pessoas"
+        ],
+        "title": "ItemSimulacao"
       },
       "JanelaAtencao": {
         "properties": {
@@ -7374,6 +7777,113 @@
         "title": "PedidoParametros",
         "description": "Aceita os limiares soltos no corpo ou dentro de `limiares`. O que não vier mantém o valor atual."
       },
+      "PedidoSalvar": {
+        "properties": {
+          "nome": {
+            "type": "string",
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Nome",
+            "description": "Nome curto; não escreva dado de pessoas"
+          },
+          "premissas": {
+            "$ref": "#/components/schemas/PedidoSimulacao"
+          },
+          "resultado": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resultado",
+            "description": "Ignorado: o servidor recalcula e guarda o próprio resultado"
+          }
+        },
+        "type": "object",
+        "required": [
+          "nome",
+          "premissas"
+        ],
+        "title": "PedidoSalvar"
+      },
+      "PedidoSimulacao": {
+        "properties": {
+          "chuva_prevista_mm": {
+            "type": "number",
+            "maximum": 600.0,
+            "minimum": 0.0,
+            "title": "Chuva Prevista Mm",
+            "description": "Volume previsto, em mm, durante a duração"
+          },
+          "duracao_h": {
+            "type": "number",
+            "maximum": 72.0,
+            "exclusiveMinimum": 0.0,
+            "title": "Duracao H",
+            "description": "Duração da chuva prevista, em horas (até 72)"
+          },
+          "chuva_acumulada_mm": {
+            "type": "number",
+            "maximum": 800.0,
+            "minimum": 0.0,
+            "title": "Chuva Acumulada Mm",
+            "description": "Chuva dos 3 dias anteriores, em mm"
+          },
+          "mare_m": {
+            "type": "number",
+            "maximum": 5.0,
+            "minimum": -3.0,
+            "title": "Mare M",
+            "description": "Nível previsto da maré junto do pico, em metros"
+          },
+          "horizonte_h": {
+            "type": "integer",
+            "maximum": 72.0,
+            "minimum": 1.0,
+            "title": "Horizonte H",
+            "description": "Próximas horas do cenário"
+          },
+          "abrigos_abertos": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 500.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Abrigos Abertos"
+          },
+          "capacidade_abrigos": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 200000.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Capacidade Abrigos"
+          }
+        },
+        "type": "object",
+        "required": [
+          "chuva_prevista_mm",
+          "duracao_h",
+          "chuva_acumulada_mm",
+          "mare_m",
+          "horizonte_h"
+        ],
+        "title": "PedidoSimulacao"
+      },
       "PedidoTrocaSenha": {
         "properties": {
           "senha_atual": {
@@ -7666,6 +8176,95 @@
         ],
         "title": "PontoSerie"
       },
+      "PremissasAtuais": {
+        "properties": {
+          "chuva_prevista_mm": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Chuva Prevista Mm",
+            "description": "Maior chuva prevista em 24 h entre os distritos (Open-Meteo)"
+          },
+          "duracao_h": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duracao H"
+          },
+          "chuva_acumulada_mm": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Chuva Acumulada Mm",
+            "description": "Chuva medida nas últimas 72 h (APAC), maior entre os distritos"
+          },
+          "mare_m": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mare M",
+            "description": "Maré máxima prevista no horizonte (Open-Meteo)"
+          },
+          "horizonte_h": {
+            "type": "integer",
+            "title": "Horizonte H"
+          },
+          "abrigos_abertos": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Abrigos Abertos"
+          },
+          "capacidade_abrigos": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Capacidade Abrigos"
+          }
+        },
+        "type": "object",
+        "required": [
+          "chuva_prevista_mm",
+          "duracao_h",
+          "chuva_acumulada_mm",
+          "mare_m",
+          "horizonte_h",
+          "abrigos_abertos",
+          "capacidade_abrigos"
+        ],
+        "title": "PremissasAtuais",
+        "description": "Valores sugeridos a partir das fontes reais; `null` = a fonte falta (Dados insuficientes)."
+      },
       "PrioridadeVulnerabilidade": {
         "properties": {
           "itens": {
@@ -7920,6 +8519,22 @@
         ],
         "title": "RespostaDados[Boletim]"
       },
+      "RespostaDados_CenarioSalvo_": {
+        "properties": {
+          "dados": {
+            "$ref": "#/components/schemas/CenarioSalvo"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "dados",
+          "meta"
+        ],
+        "title": "RespostaDados[CenarioSalvo]"
+      },
       "RespostaDados_Cenario_": {
         "properties": {
           "dados": {
@@ -7967,6 +8582,22 @@
           "meta"
         ],
         "title": "RespostaDados[HistoricoOcorrencias]"
+      },
+      "RespostaDados_PremissasAtuais_": {
+        "properties": {
+          "dados": {
+            "$ref": "#/components/schemas/PremissasAtuais"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "dados",
+          "meta"
+        ],
+        "title": "RespostaDados[PremissasAtuais]"
       },
       "RespostaDados_PrioridadeVulnerabilidade_": {
         "properties": {
@@ -8096,6 +8727,22 @@
         ],
         "title": "RespostaDados[SerieTemporal]"
       },
+      "RespostaDados_Simulacao_": {
+        "properties": {
+          "dados": {
+            "$ref": "#/components/schemas/Simulacao"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "dados",
+          "meta"
+        ],
+        "title": "RespostaDados[Simulacao]"
+      },
       "RespostaDados_SituacaoAgora_": {
         "properties": {
           "dados": {
@@ -8134,6 +8781,26 @@
           "meta"
         ],
         "title": "RespostaDados[Union[EstagioOficial, NoneType]]"
+      },
+      "RespostaDados_list_CenarioListado__": {
+        "properties": {
+          "dados": {
+            "items": {
+              "$ref": "#/components/schemas/CenarioListado"
+            },
+            "type": "array",
+            "title": "Dados"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "dados",
+          "meta"
+        ],
+        "title": "RespostaDados[list[CenarioListado]]"
       },
       "RespostaDados_list_EstagioOficial__": {
         "properties": {
@@ -8190,6 +8857,52 @@
           "meta"
         ],
         "title": "RespostaEstagios"
+      },
+      "ResultadoSalvo": {
+        "properties": {
+          "itens": {
+            "items": {
+              "$ref": "#/components/schemas/ItemSimulacao"
+            },
+            "type": "array",
+            "title": "Itens"
+          },
+          "resumo": {
+            "$ref": "#/components/schemas/ResumoSimulacao"
+          },
+          "experimental": {
+            "type": "boolean",
+            "const": true,
+            "title": "Experimental",
+            "default": true
+          },
+          "calculado_em": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Calculado Em"
+          },
+          "tempo_calculo_ms": {
+            "type": "integer",
+            "title": "Tempo Calculo Ms"
+          },
+          "fontes": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Fontes",
+            "description": "Fontes e horas de atualização no momento de salvar"
+          }
+        },
+        "type": "object",
+        "required": [
+          "itens",
+          "resumo",
+          "calculado_em",
+          "tempo_calculo_ms"
+        ],
+        "title": "ResultadoSalvo"
       },
       "ResumoAgravo": {
         "properties": {
@@ -8371,6 +9084,44 @@
         ],
         "title": "ResumoPainel"
       },
+      "ResumoSalvo": {
+        "properties": {
+          "por_classe": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "additionalProperties": {
+                    "type": "integer"
+                  },
+                  "type": "object"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Por Classe"
+          },
+          "pressao_abrigos": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pressao Abrigos"
+          }
+        },
+        "type": "object",
+        "required": [
+          "por_classe",
+          "pressao_abrigos"
+        ],
+        "title": "ResumoSalvo"
+      },
       "ResumoSaude": {
         "properties": {
           "agravos": {
@@ -8403,6 +9154,50 @@
           "gerado_em"
         ],
         "title": "ResumoSaude"
+      },
+      "ResumoSimulacao": {
+        "properties": {
+          "por_classe": {
+            "additionalProperties": {
+              "additionalProperties": {
+                "type": "integer"
+              },
+              "type": "object"
+            },
+            "type": "object",
+            "title": "Por Classe",
+            "description": "Contagem de bairros por classe: alagamento, deslizamento e estagio_sugerido"
+          },
+          "pressao_abrigos": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pressao Abrigos"
+          },
+          "impacto_pessoas_aviso": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Impacto Pessoas Aviso"
+          }
+        },
+        "type": "object",
+        "required": [
+          "por_classe",
+          "pressao_abrigos",
+          "impacto_pessoas_aviso"
+        ],
+        "title": "ResumoSimulacao"
       },
       "RiscoAlagamento": {
         "properties": {
@@ -8908,6 +9703,43 @@
           "lacunas_dias"
         ],
         "title": "SerieTemporal"
+      },
+      "Simulacao": {
+        "properties": {
+          "itens": {
+            "items": {
+              "$ref": "#/components/schemas/ItemSimulacao"
+            },
+            "type": "array",
+            "title": "Itens"
+          },
+          "resumo": {
+            "$ref": "#/components/schemas/ResumoSimulacao"
+          },
+          "experimental": {
+            "type": "boolean",
+            "const": true,
+            "title": "Experimental",
+            "default": true
+          },
+          "calculado_em": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Calculado Em"
+          },
+          "tempo_calculo_ms": {
+            "type": "integer",
+            "title": "Tempo Calculo Ms"
+          }
+        },
+        "type": "object",
+        "required": [
+          "itens",
+          "resumo",
+          "calculado_em",
+          "tempo_calculo_ms"
+        ],
+        "title": "Simulacao"
       },
       "SituacaoAgora": {
         "properties": {

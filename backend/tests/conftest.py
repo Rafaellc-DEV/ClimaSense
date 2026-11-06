@@ -120,3 +120,13 @@ def _sem_cache_de_insumos(monkeypatch):
 
     estagios.limpar_cache_insumos()
     monkeypatch.setattr(estagios, "CACHE_INSUMOS_S", 0.0)
+
+
+@pytest.fixture(autouse=True)
+def _sem_cache_do_simulador():
+    """O cache dos insumos estáticos do simulador faria um teste enxergar a malha e o histórico do anterior."""
+    from climasense.servicos import simulador
+
+    simulador.limpar_cache()
+    yield
+    simulador.limpar_cache()

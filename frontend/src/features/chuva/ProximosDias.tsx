@@ -234,7 +234,7 @@ export function ProximosDias() {
   const [escolha, setEscolha] = useState<string | null>(null);
   const distrito = escolha ?? maisChuvoso?.territorio_id ?? null;
   const cenario = useConsultaViva<Cenario>(
-    distrito ? `/cenarios${consulta({ territorio_id: distrito, horizonte_h: 72 })}` : null,
+    distrito ? `/cenarios/estimativa${consulta({ territorio_id: distrito, horizonte_h: 72 })}` : null,
     5 * 60_000,
     { staleTime: 5 * 60_000 },
   );
