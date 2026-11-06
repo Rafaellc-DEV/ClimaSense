@@ -21,8 +21,15 @@ Hoje o frontend já usa chaves de build (`VITE_VITRINE`, `VITE_AMBIENTE` em `fro
 
    | Chave (backend, `.env`) | Chave (frontend, build) | O que liga |
    |---|---|---|
-   | `FUNC_LANDING_PUBLICA=false` | `VITE_FUNC_LANDING_PUBLICA=0` | Rotas `GET /publico/*`; página `/` e `/avisos/:id` com a landing |
-   | `FUNC_COMUNICADOS=false` | `VITE_FUNC_COMUNICADOS=0` | Rotas `/comunicados/*` e `/avaliacoes/*`; telas de comunicados; contador no menu |
+   | `FUNC_LANDING_PUBLICA=false` | `VITE_FUNC_LANDING_PUBLICA=0` | Rotas `GET /publico/*`, inclusive `/publico/territorios/busca`; página `/` e `/avisos/:id` com a landing |
+   | `FUNC_COMUNICADOS=false` | `VITE_FUNC_COMUNICADOS=0` | Rotas `/comunicados/*`; telas de comunicados; contador no menu |
+   | `FUNC_AVALIACOES=false` | `VITE_FUNC_AVALIACOES=0` | Rotas `/avaliacoes/*`; link "Ver a avaliação" no editor de comunicados |
+   | `FUNC_MAPA_PORTATIL=false` | `VITE_FUNC_MAPA_PORTATIL=0` | Rota `/territorios/mapa-portatil` |
+   | `FUNC_ESTATISTICAS_SERIES=false` | `VITE_FUNC_ESTATISTICAS_SERIES=0` | Rota `/series/estatisticas` |
+
+   Ajuste da Onda 1 (06/11/2026): avaliações ganharam chave própria, separada dos comunicados, e mapa portátil e
+   estatísticas de séries entraram, por decisão do dono no Gate 0. Em produção, `/api/docs`, `/api/redoc` e
+   `/api/openapi.json` ficam fechados e `/api/v1/health` responde só o status.
 
 2. **Desligada no backend = rota não registrada** (`ROTEADORES` em `backend/climasense/api/main.py` filtra pelos
    valores da configuração). A rota some do OpenAPI exportado e devolve 404, o que reduz a superfície pública
