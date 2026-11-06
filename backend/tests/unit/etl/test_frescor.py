@@ -8,8 +8,13 @@ from climasense.etl.conectores import IMPLEMENTADOS
 AGORA = datetime(2026, 11, 6, 12, 0, tzinfo=UTC)
 
 
+# Retrato fixo, sem limite de frescor por decisao (valor 0 no frescor.toml): Censo 2022 (proximo em 2030).
+ESTATICAS_SEM_LIMITE = {"ibge-censo-2022-bairro"}
+
+
 def test_todo_conector_implementado_tem_limite():
-    assert [i for i in IMPLEMENTADOS if frescor.limite_frescor_h(i) is None] == []
+    assert [i for i in IMPLEMENTADOS - ESTATICAS_SEM_LIMITE if frescor.limite_frescor_h(i) is None] == []
+    assert all(frescor.limite_frescor_h(i) is None for i in ESTATICAS_SEM_LIMITE)
 
 
 def test_limites_documentados():
@@ -18,6 +23,8 @@ def test_limites_documentados():
     assert frescor.limite_frescor_h("infodengue") == 192
     assert frescor.limite_frescor_h("sinan-leptospirose") == 360
     assert frescor.limite_frescor_h("recife-arboviroses") == 9600
+    assert frescor.limite_frescor_h("cnes-equipamentos") == 744
+    assert frescor.limite_frescor_h("recife-areas-risco") == 8760
 
 
 def test_territorio_estatico_e_fonte_desconhecida_sem_limite():

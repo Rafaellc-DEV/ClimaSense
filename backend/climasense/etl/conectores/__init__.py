@@ -5,6 +5,9 @@ from climasense.etl.conectores.alagamento import ConectorRecifeAlagamento
 from climasense.etl.conectores.alertas import ConectorAlertasOficiais
 from climasense.etl.conectores.apac import ConectorApacChuva
 from climasense.etl.conectores.arboviroses import ConectorRecifeArboviroses
+from climasense.etl.conectores.areas_risco import ConectorRecifeAreasRisco
+from climasense.etl.conectores.cnes import ConectorCnesEquipamentos
+from climasense.etl.conectores.ibge_censo import ConectorIbgeCenso2022Bairro
 from climasense.etl.conectores.infodengue import ConectorInfoDengue
 from climasense.etl.conectores.leptospirose import ConectorSinanLeptospirose
 from climasense.etl.conectores.open_meteo import (
@@ -29,6 +32,9 @@ CONECTORES = {
         ConectorAlertasOficiais,
         ConectorRecifeAlagamento,
         ConectorRecifeAbrigos,
+        ConectorCnesEquipamentos,
+        ConectorIbgeCenso2022Bairro,
+        ConectorRecifeAreasRisco,
         ConectorInfoDengue,
         ConectorSinanLeptospirose,
         ConectorRecifeArboviroses,
@@ -49,6 +55,9 @@ IMPLEMENTADOS = {
     "infodengue",
     "sinan-leptospirose",
     "recife-arboviroses",
+    "cnes-equipamentos",
+    "ibge-censo-2022-bairro",
+    "recife-areas-risco",
 }
 # Modos aceitos por `etl run <fonte> --modo`
 MODOS = {"apac-chuva": ("tempo-real", "historico"), "recife-abrigos": ("cadastro", "ativos")}

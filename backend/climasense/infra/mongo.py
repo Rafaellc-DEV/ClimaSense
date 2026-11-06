@@ -26,6 +26,9 @@ COLECOES_BRONZE = (
     ("bronze", "infodengue"),
     ("bronze", "sinan_leptospirose"),  # só contagens por semana; nenhuma linha individual
     ("bronze", "recife_arboviroses"),  # só contagens por bairro e ano; sem endereço, CEP ou nascimento
+    ("bronze", "cnes_equipamentos"),  # só unidades públicas/SUS; sem telefone, e-mail, CNPJ ou razão social
+    ("bronze", "ibge_censo_2022_bairro"),  # só contagens por bairro
+    ("bronze", "recife_areas_risco"),  # polígonos de setores de risco da Sedec (cobertura parcial)
 )
 
 

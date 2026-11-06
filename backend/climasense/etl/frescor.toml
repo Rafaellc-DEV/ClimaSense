@@ -28,3 +28,9 @@ sinan-leptospirose = 360
 recife-arboviroses = 9600
 # Base territorial oficial e estatica, revisada periodicamente: sem limite.
 territorio-oficial = 0
+# Cadastro CNES: o Ministerio da Saude atualiza todo mes; 744 h = 31 dias.
+cnes-equipamentos = 744
+# Censo 2022 e um retrato fixo (proximo censo em 2030): sem limite.
+ibge-censo-2022-bairro = 0
+# Setores de risco da Sedec: revisao rara (anual); 8760 h = 365 dias.
+recife-areas-risco = 8760

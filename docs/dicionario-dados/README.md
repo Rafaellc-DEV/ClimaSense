@@ -15,6 +15,9 @@ Cada fonte do ClimaSense tem um verbete. **Todas são reais**; as planejadas ain
 | [InfoDengue — dengue e chikungunya no Recife por semana](infodengue.md) | Implementada |
 | [SINAN (DATASUS) — leptospirose no Recife por semana de sintomas](sinan-leptospirose.md) | Implementada |
 | [Dados Abertos do Recife — dengue e chikungunya por bairro e ano](recife-arboviroses.md) | Implementada |
+| [CNES — equipamentos de saúde do Recife (públicos e SUS)](cnes-equipamentos.md) | Implementada |
+| [IBGE — Censo 2022: moradores por bairro e faixa de idade](ibge-censo-2022-bairro.md) | Implementada |
+| [Sedec — setores de risco (cobertura parcial)](recife-areas-risco.md) | Implementada |
 | [ANA — HidroWebService (telemetria)](ana-telemetria.md) | Planejada |
 | [INMET — estação automática A301 (Recife)](inmet.md) | Planejada |
 | [Cemaden — pluviômetros automáticos](cemaden.md) | Planejada |
