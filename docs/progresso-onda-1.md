@@ -108,3 +108,28 @@ build verdes. Rotas novas conferidas na API real contra o Neon (94 bairros; prio
 - A lista "Bairros, do mais exposto ao menos" do Simulador mistura bairros e distritos ("102 bairros"): ajustar o
   rótulo na Etapa 5.
 - `impacto_pessoas` segue nulo até a Etapa 6 (população vulnerável).
+
+## Etapa 6 — Camadas com o dado que existe (06/11/2026)
+
+**O que mudou**
+- RF-02, RF-04: `cnes-equipamentos` — 271 unidades públicas e SUS do CNES (sem consultórios de pessoa física, CNPJ,
+  telefone, e-mail ou endereço), bairro por ponto-em-polígono; 263 com coordenada no mapa.
+- RF-03: `ibge-censo-2022-bairro` — 94 de 94 bairros, faixas 0-4, 0-14, 60+, 70+ e total (1.482.654 moradores). O
+  IBGE não publica 80+ por bairro: a faixa é 70+ (migração 0018) e nada é estimado. Deficiência: "Dados insuficientes"
+  (não há dado público por bairro).
+- RF-02: `recife-areas-risco` — 677 setores R1–R4 da camada `Setores_Risco_SEDEC`, cobrindo 24 de 94 bairros
+  (regionais Nordeste, Noroeste, Norte, Oeste e Sul): rotulado "cobertura parcial"; a camada não informa o tipo de
+  perigo.
+- Backend: tabelas silver (migração 0017), rotas das camadas, `resumo-vulnerabilidade` por território (equipamentos
+  em área de risco) e população vulnerável exposta no simulador (contagem de residentes, nunca percentual).
+- Frontend: controle "Camadas do mapa" no Mapa e no Simulador; painel do bairro com residentes vulneráveis,
+  equipamentos (em área de risco) e áreas mapeadas, cada número com a fonte.
+
+**Testes**: backend 1078 passed, ruff limpo; frontend lint, tsc, 226 testes e build verdes. Cargas reais no Neon e
+conferência na tela com dados reais (Edge, 1440 e 375 px).
+
+**Pendências**
+- P-22 (como combinar histórico e população na ordem dos prioritários), P-23 (deficiência), P-24 (80+), P-25
+  (cobertura e tipo de perigo das áreas de risco), P-26 (rede municipal sem CNES).
+- Para a Etapa 5: lista de abrigos longa no painel do bairro; Mapa estoura 3 px a 375 px; rótulo "102 bairros" no
+  Simulador mistura distritos.
