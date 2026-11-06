@@ -83,3 +83,28 @@ build verdes. Rotas novas conferidas na API real contra o Neon (94 bairros; prio
 - Duas execuções antigas de `recife-alagamento` ficaram como "em_andamento" em `app.etl_execucoes`.
 - Alertas oficiais são municipais (sem área própria): o painel diz "alerta do município do Recife".
 - `/estagios?nivel=bairro` leva ~4 s na API local; a previsão estava com 25 h (ETL de tempo real não rodou).
+
+## Etapa 3 — Simulador de cenário (06/11/2026)
+
+**O que mudou**
+- RF-23, RF-24, RF-25, RF-28, RN-01, RN-06, RN-11: `GET /cenarios/premissas-atuais` (valores das fontes reais, com
+  `meta.fonte_por_premissa`) e `POST /cenarios/simular`: classes ordinais por bairro e distrito (alagamento,
+  deslizamento, estágio sugerido) pelos gatilhos de estágio + histórico da Defesa Civil, confiança (nunca "alta" antes
+  da validação), 1 a 3 motivos, limiar sensível, selo experimental e `tempo_calculo_ms`. Premissa desconhecida (null)
+  não vira zero: o gatilho não é avaliado e a confiança cai.
+- RF-27: cenários salvos (`app.cenarios`, somente-inclusão, migração 0016 aplicada no Neon).
+- A antiga estimativa "e se chover X" passou para `GET /cenarios/estimativa` (Chuva > Próximos dias atualizado).
+- Frontend: tela **Simulador** com premissas pré-preenchidas (uma linha de fonte por campo), mapa que recalcula sozinho,
+  alternância Alagamento/Deslizamento/Situação sugerida, motivos ao clicar, salvar e abrir cenários; cabe em 375 px.
+- Dados: recarga de `recife-alagamento` com deslizamentos (Neon: 1.722 alagamentos e 3.266 deslizamentos por
+  bairro-dia). O DS VII passa a liderar os prioritários (1.237 deslizamentos), como o cliente descreveu. Previsão, maré,
+  APAC, alertas e abrigos ativos atualizados; quatro execuções interrompidas fechadas como falha.
+
+**Testes**: backend 1039 passed, ruff limpo; frontend lint, tsc, 212 testes e build verdes. Conferido com a API real
+(Edge, 1440 e 375 px, sem rolagem horizontal; cálculo em 1,3 s).
+
+**Pendências**
+- Queda de rede (DNS do Neon) travou dois agentes e uma carga; tudo foi retomado e refeito.
+- A lista "Bairros, do mais exposto ao menos" do Simulador mistura bairros e distritos ("102 bairros"): ajustar o
+  rótulo na Etapa 5.
+- `impacto_pessoas` segue nulo até a Etapa 6 (população vulnerável).
