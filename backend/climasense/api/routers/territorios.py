@@ -239,7 +239,7 @@ class ItemVulneraveis(BaseModel):
     criancas_0_4: int | None
     criancas_0_14: int | None
     idosos_60_mais: int | None
-    idosos_80_mais: int | None
+    idosos_70_mais: int | None
     total: int | None
     suprimido: dict[str, bool] = Field(
         description="Por campo: true = oculto (IBGE ou menos de supressao_minima)"

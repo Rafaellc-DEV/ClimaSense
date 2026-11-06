@@ -8,14 +8,14 @@ def test_publicar_bairro_suprime_abaixo_do_minimo_mas_mantem_zero_medido():
         "0-4": (3, False),
         "0-14": (0, False),
         "60+": (1200, False),
-        "80+": (None, True),
+        "70+": (None, True),
         "total": (9000, False),
     }
     valores, marcas = v.publicar_bairro(c, 5)
     assert valores["criancas_0_4"] is None and marcas["criancas_0_4"] is True  # 3 < 5: do projeto
     assert valores["criancas_0_14"] == 0 and marcas["criancas_0_14"] is False  # zero medido
     assert valores["idosos_60_mais"] == 1200 and marcas["idosos_60_mais"] is False
-    assert valores["idosos_80_mais"] is None and marcas["idosos_80_mais"] is True  # do IBGE
+    assert valores["idosos_70_mais"] is None and marcas["idosos_70_mais"] is True  # do IBGE
     assert valores["total"] == 9000
 
 

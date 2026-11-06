@@ -115,7 +115,7 @@ def test_tabelas_vazias_dizem_qual_fonte_falta_e_nunca_zero(c, sessao):
 # ------------------------------------------------------------------ vulneráveis, supressão (RNF-03)
 def test_vulneraveis_aplicam_supressao_do_projeto_e_do_ibge(c, sessao):
     (b1, ds1), (b2, _), (b3, _) = _bairros(sessao)
-    _populacao(sessao, b1, {"0-4": 3, "0-14": 900, "total": 9000, "60+": 1500, "80+": 0})
+    _populacao(sessao, b1, {"0-4": 3, "0-14": 900, "total": 9000, "60+": 1500, "70+": 0})
     _populacao(sessao, b2, {"0-4": None, "60+": 40})
     r = c.get(f"{T}/camadas/vulneraveis").json()
     assert r["meta"]["ano"] == 2022 and r["meta"]["supressao_minima"] == 5
@@ -125,7 +125,7 @@ def test_vulneraveis_aplicam_supressao_do_projeto_e_do_ibge(c, sessao):
     i1 = itens[b1]
     assert i1["criancas_0_4"] is None and i1["suprimido"]["criancas_0_4"] is True  # 3 < 5
     assert i1["criancas_0_14"] == 900 and i1["idosos_60_mais"] == 1500 and i1["total"] == 9000
-    assert i1["idosos_80_mais"] == 0 and i1["suprimido"]["idosos_80_mais"] is False  # zero medido
+    assert i1["idosos_70_mais"] == 0 and i1["suprimido"]["idosos_70_mais"] is False  # zero medido
     assert i1["deficiencia"] is None and i1["distrito_id"] == ds1
     i2 = itens[b2]
     assert i2["criancas_0_4"] is None and i2["suprimido"]["criancas_0_4"] is True  # oculto pelo IBGE
@@ -269,3 +269,14 @@ def test_simulador_sem_fonte_de_populacao_segue_nulo_com_aviso(c):
     assert all(i["impacto_pessoas"] is None for i in corpo["itens"])
     assert corpo["resumo"]["impacto_pessoas_aviso"].startswith("Dados insuficientes")
     assert corpo["resumo"]["pessoas_vulneraveis_em_alerta"] is None
+
+
+def test_faixa_80_mais_rejeitada_e_70_mais_aceita(c, sessao):
+    """Migração 0018 (ADR 0010): o IBGE não publica 80+ por bairro; nada é estimado."""
+    from sqlalchemy.exc import IntegrityError
+
+    (b1, _), _, _ = _bairros(sessao)
+    _populacao(sessao, b1, {"70+": 10})
+    with pytest.raises(IntegrityError):
+        _populacao(sessao, b1, {"80+": 1})
+    sessao.rollback()

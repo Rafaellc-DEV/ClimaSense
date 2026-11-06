@@ -6219,7 +6219,7 @@
             ],
             "title": "Idosos 60 Mais"
           },
-          "idosos_80_mais": {
+          "idosos_70_mais": {
             "anyOf": [
               {
                 "type": "integer"
@@ -6228,7 +6228,7 @@
                 "type": "null"
               }
             ],
-            "title": "Idosos 80 Mais"
+            "title": "Idosos 70 Mais"
           },
           "total": {
             "anyOf": [
@@ -6263,7 +6263,7 @@
           "criancas_0_4",
           "criancas_0_14",
           "idosos_60_mais",
-          "idosos_80_mais",
+          "idosos_70_mais",
           "total",
           "suprimido",
           "deficiencia"

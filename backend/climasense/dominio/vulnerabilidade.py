@@ -14,7 +14,7 @@ CAMPOS: dict[str, str] = {
     "criancas_0_4": "0-4",
     "criancas_0_14": "0-14",
     "idosos_60_mais": "60+",
-    "idosos_80_mais": "80+",
+    "idosos_70_mais": "70+",
     "total": "total",
 }
 FALTA_DEFICIENCIA = "Dados insuficientes: não há dado público de deficiência por bairro (Censo 2022 só por área de ponderação)"
