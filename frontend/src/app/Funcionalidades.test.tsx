@@ -39,7 +39,7 @@ describe("chaves desligadas", () => {
     simularApi({ "/auth/eu": usuarioTeste(), "/painel/resumo": RESUMO });
     window.history.pushState({}, "", "/");
     render(<App />);
-    expect(await screen.findByRole("heading", { level: 1, name: "Situação" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { level: 1, name: "Mapa" })).toBeInTheDocument();
     expect(window.location.pathname).toBe("/app");
   });
 
@@ -47,7 +47,7 @@ describe("chaves desligadas", () => {
     simularApi({ "/auth/eu": usuarioTeste(), "/painel/resumo": RESUMO });
     window.history.pushState({}, "", "/app/comunicados/novo");
     render(<App />);
-    expect(await screen.findByRole("heading", { level: 1, name: "Situação" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { level: 1, name: "Mapa" })).toBeInTheDocument();
     expect(window.location.pathname).toBe("/app");
     const menu = (await screen.findAllByRole("navigation", { name: "Menu principal" }))[0];
     expect(within(menu).queryByRole("link", { name: /Comunicados/ })).not.toBeInTheDocument();

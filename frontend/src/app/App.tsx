@@ -16,6 +16,7 @@ const Vitrine = carregar(() => import("@/features/vitrine/Vitrine"), "Vitrine");
 const Entrar = carregar(() => import("@/features/entrar/Entrar"), "Entrar");
 const DetalheAvisoPublico = carregar(() => import("@/features/landing/DetalheAviso"), "DetalheAviso");
 const AppShell = carregar(() => import("./AppShell"), "AppShell");
+const Mapa = carregar(() => import("@/features/mapa/TelaMapa"), "TelaMapa");
 const Situacao = carregar(() => import("@/features/situacao/TelaSituacao"), "TelaSituacao");
 const Chuva = carregar(() => import("@/features/chuva/TelaChuva"), "TelaChuva");
 const Registro = carregar(() => import("@/features/registro/TelaRegistro"), "TelaRegistro");
@@ -42,8 +43,8 @@ function RedirecionarEquipe() {
  */
 function antigas(): [string, string][] {
   return [
-    ["painel", "/app"],
-    ["estagios", "/app"],
+    ["painel", "/app/situacao"],
+    ["estagios", "/app/situacao"],
     ["mapa", "/app"],
     ["avaliacoes/*", "/app"],
     ["avaliacoes", "/app"],
@@ -81,7 +82,8 @@ export function App() {
                 )}
                 <Route path="/entrar" element={<Entrar />} />
                 <Route path="/app" element={<AppShell />}>
-                  <Route index element={<Situacao />} />
+                  <Route index element={<Mapa />} />
+                  <Route path="situacao" element={<Situacao />} />
                   <Route path="chuva" element={<Chuva />} />
                   <Route path="registro" element={<Registro />} />
                   <Route path="abrigos" element={<Abrigos />} />

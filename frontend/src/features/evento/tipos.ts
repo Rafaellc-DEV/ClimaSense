@@ -56,7 +56,16 @@ export interface ItemEstagio {
   sugerido: EstagioSugerido;
   declarado: EstagioDeclarado | null;
   /** Alertas de órgãos oficiais, quando o conector existir. */
-  alertas_oficiais?: { origem: string; nivel: string; emitido_em: string; url?: string | null }[];
+  alertas_oficiais?: {
+    origem: string;
+    nivel: string;
+    emitido_em: string;
+    url?: string | null;
+    evento?: string | null;
+    expira_em?: string | null;
+    /** Área exata do aviso na fonte (ex.: município, mesorregião). */
+    area?: string | null;
+  }[];
 }
 
 export interface MensagemWhatsApp {

@@ -10,6 +10,7 @@ afterEach(() => {
 });
 
 const MENU = [
+  "Mapa",
   "Situação",
   "Chuva",
   "Registro do evento",
@@ -19,7 +20,7 @@ const MENU = [
   "Boletim",
 ];
 
-test("com comunicados ligado, o menu tem 7 itens, nesta ordem, e Fontes e Administração no rodapé", async () => {
+test("com comunicados ligado, o menu tem 8 itens, nesta ordem, e Fontes e Administração no rodapé", async () => {
   vi.stubEnv("VITE_FUNC_COMUNICADOS", "1");
   simularApi({
     "/auth/eu": usuarioTeste(["consultar", "editar", "administrar"]),
@@ -57,12 +58,12 @@ test("Administração só aparece com permissão", async () => {
 
 test.each([
   ["/app/estagios", "Situação"],
-  ["/app/mapa", "Situação"],
-  ["/app/avaliacoes/123", "Situação"],
+  ["/app/mapa", "Mapa"],
+  ["/app/avaliacoes/123", "Mapa"],
   ["/app/cenarios", "Chuva"],
   ["/app/series", "Chuva"],
   ["/app/acoes", "Registro do evento"],
-  ["/app/qualquer-coisa", "Situação"],
+  ["/app/qualquer-coisa", "Mapa"],
 ])("o endereço antigo %s leva à tela %s, sem 404", async (de, titulo) => {
   simularApi({
     "/auth/eu": usuarioTeste(),

@@ -7,6 +7,7 @@ import {
   HeartPulse,
   LogOut,
   Megaphone,
+  Map as MapIcon,
   Menu,
   NotebookPen,
   Settings,
@@ -39,11 +40,12 @@ interface ItemMenu {
 }
 
 /**
- * Sete itens, cada um responde a uma dor da equipe, na ordem do dia a dia: o que fazer agora, a chuva, o registro, os
+ * Oito itens, cada um responde a uma dor da equipe, na ordem do dia a dia: o mapa, o que fazer agora, a chuva, o registro, os
  * abrigos, a saúde depois da chuva, o aviso à população e o boletim. Fontes e Administração ficam no rodapé.
  */
 const TODOS_PRINCIPAIS: ItemMenu[] = [
-  { para: "/app", rotulo: "Situação", icone: <Siren />, fim: true },
+  { para: "/app", rotulo: "Mapa", icone: <MapIcon />, fim: true },
+  { para: "/app/situacao", rotulo: "Situação", icone: <Siren /> },
   { para: "/app/chuva", rotulo: "Chuva", icone: <CloudRain /> },
   { para: "/app/registro", rotulo: "Registro do evento", icone: <NotebookPen /> },
   { para: "/app/abrigos", rotulo: "Abrigos", icone: <Tent /> },

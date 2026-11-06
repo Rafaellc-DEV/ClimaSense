@@ -85,7 +85,7 @@ afterEach(() => {
 
 test("a frase do topo diz o que fazer; quem pede decisão sobe; motivo comum e APAC/Cemaden uma vez", async () => {
   simularApi(base());
-  window.history.pushState({}, "", "/app");
+  window.history.pushState({}, "", "/app/situacao");
   render(<App />);
   expect(
     await screen.findByText("DS V pede a sua decisão: a sugestão está acima da situação declarada."),
@@ -109,7 +109,7 @@ test("a frase do topo diz o que fazer; quem pede decisão sobe; motivo comum e A
 
 test("o resumo conta os distritos por situação e mostra a chuva e a maré com a fonte", async () => {
   simularApi(base());
-  window.history.pushState({}, "", "/app");
+  window.history.pushState({}, "", "/app/situacao");
   render(<App />);
   const contagens = await screen.findByRole("list", { name: "Distritos por situação" });
   expect(
@@ -132,7 +132,7 @@ test("o resumo conta os distritos por situação e mostra a chuva e a maré com 
 
 test("os bairros que passam do distrito aparecem no cartão, com a situação sugerida de cada um", async () => {
   simularApi(base());
-  window.history.pushState({}, "", "/app");
+  window.history.pushState({}, "", "/app/situacao");
   render(<App />);
   const lista = await screen.findByRole("list", {
     name: "Bairros de Distrito Sanitário V que pedem atenção",
@@ -146,7 +146,7 @@ test("os bairros que passam do distrito aparecem no cartão, com a situação su
 
 test("escolher o distrito no cartão marca o destaque; sem falta de dado vira calmaria", async () => {
   simularApi(base());
-  window.history.pushState({}, "", "/app");
+  window.history.pushState({}, "", "/app/situacao");
   render(<App />);
   const botao = await screen.findByRole("button", { name: /DS I \(Distrito Sanitário I\)/ });
   expect(botao).toHaveAttribute("aria-pressed", "false");
@@ -170,7 +170,7 @@ test("quando nada pede decisão, diz isso numa frase e não repete motivos", asy
     },
     "/estagios?nivel=bairro": { itens: [] },
   });
-  window.history.pushState({}, "", "/app");
+  window.history.pushState({}, "", "/app/situacao");
   render(<App />);
   expect(await screen.findByText("Nenhum distrito pede decisão agora.")).toBeInTheDocument();
   expect(screen.queryByRole("heading", { name: /Pedem a sua decisão/ })).not.toBeInTheDocument();
@@ -199,7 +199,7 @@ test("sem dado nunca vira calmaria: o cartão diz o que falta", async () => {
       meta: { fontes: [] },
     },
   });
-  window.history.pushState({}, "", "/app");
+  window.history.pushState({}, "", "/app/situacao");
   render(<App />);
   expect(await screen.findByText("Sem dado: falta previsão de chuva.")).toBeInTheDocument();
   expect(screen.getByText("Sem dado")).toBeInTheDocument();
@@ -208,7 +208,7 @@ test("sem dado nunca vira calmaria: o cartão diz o que falta", async () => {
 
 test("erro ao carregar mostra o motivo e permite tentar de novo", async () => {
   simularApi({ ...base(), "/estagios?nivel=distrito": { status: 500, corpo: { detail: "Falhou." } } });
-  window.history.pushState({}, "", "/app");
+  window.history.pushState({}, "", "/app/situacao");
   render(<App />);
   expect(await screen.findByText("Não foi possível carregar.")).toBeInTheDocument();
   expect(screen.getByRole("button", { name: /Tentar de novo/ })).toBeInTheDocument();
@@ -219,7 +219,7 @@ test("declarar grava a situação e abre a mensagem pronta para o WhatsApp", asy
     "/estagios/mensagem": { texto: "DS V em Alerta.", wa_me_url: "https://wa.me/?text=DS" },
     "/estagios": { status: 201, corpo: [] },
   });
-  window.history.pushState({}, "", "/app");
+  window.history.pushState({}, "", "/app/situacao");
   render(<App />);
   const u = userEvent.setup();
   await u.click(await screen.findByRole("button", { name: "Declarar situação de Distrito Sanitário V" }));
@@ -240,7 +240,7 @@ test("o botão WhatsApp de uma linha gera o texto da situação em vigor", async
   const pedidos = simularApi(base(), {
     "/estagios/mensagem": { texto: "DS I em Observação.", wa_me_url: "https://wa.me/?text=DS" },
   });
-  window.history.pushState({}, "", "/app");
+  window.history.pushState({}, "", "/app/situacao");
   render(<App />);
   await userEvent
     .setup()
@@ -254,7 +254,7 @@ test("o botão WhatsApp de uma linha gera o texto da situação em vigor", async
 
 test("sem permissão de editar, não há botão de declarar", async () => {
   simularApi(base(["consultar"]));
-  window.history.pushState({}, "", "/app");
+  window.history.pushState({}, "", "/app/situacao");
   render(<App />);
   await screen.findAllByRole("article");
   expect(screen.queryByRole("button", { name: /^Declarar/ })).not.toBeInTheDocument();

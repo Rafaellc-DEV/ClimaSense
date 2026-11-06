@@ -45,7 +45,7 @@ test("Situação mostra fonte, hora, selo Desatualizado e “Atualizado às”",
       },
     ]),
   );
-  window.history.pushState({}, "", "/app");
+  window.history.pushState({}, "", "/app/situacao");
   render(<App />);
   expect((await screen.findAllByText("Desatualizado")).length).toBeGreaterThan(0);
   expect(screen.getAllByText(/Open-Meteo, atualizado há 2 h/).length).toBeGreaterThan(0);
@@ -55,7 +55,7 @@ test("Situação mostra fonte, hora, selo Desatualizado e “Atualizado às”",
 
 test("sem meta.fontes a Situação mantém o texto antigo e não mostra selo", async () => {
   simularApi(api([]));
-  window.history.pushState({}, "", "/app");
+  window.history.pushState({}, "", "/app/situacao");
   render(<App />);
   expect(await screen.findByText(/Previsão de chuva e maré: Open-Meteo/)).toBeInTheDocument();
   expect(screen.queryByText("Desatualizado")).not.toBeInTheDocument();
