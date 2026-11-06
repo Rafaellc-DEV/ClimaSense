@@ -27,6 +27,7 @@ surgiram na matriz (`docs/matriz-prd-codigo.md`). As decisões do dono do produt
 | P-18 | Que dados exigem registro de quem **leu** (além de quem alterou)? Só a camada de vulneráveis? | Cliente e encarregado de dados | RNF-01, RNF-03 |
 | P-19 | Trocar a senha do neondb_owner antes do Gate 1 ou antes de qualquer dado não público; credencial exposta no histórico de uma sessão em 06/11/2026. | Dono do produto | RNF-01, RNF-12 |
 | P-20 | `POST /etl/execucoes` (a API dispara o ETL) usa a URL do dono do banco (`DATABASE_URL_MIGRACOES`), que fica ao alcance da API. Em produção, mover o disparo do ETL para fora da API (agendador ou GitHub Actions) e não dar essa variável à API? | Dono do produto | RNF-01, RNF-12, ADR 0014 |
+| P-21 | O COP pode publicar o estágio oficial da cidade num formato legível por máquina (camada ArcGIS, JSON ou RSS)? Hoje ele não existe em nenhuma fonte pública e entra por registro manual da equipe (ver `docs/pesquisa/estagio-oficial-cop.md`). | COP | RF-01, RNF-04 |
 
 ## 2. Decisões do dono do produto (Gate 0)
 
