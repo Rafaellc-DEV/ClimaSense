@@ -9,7 +9,9 @@ import { Dialogo } from "@/design-system/componentes/Dialogo";
 import { CarregandoLista } from "@/design-system/componentes/Esqueleto";
 import { Painel } from "@/design-system/componentes/Painel";
 import { enviar, ErroApi } from "@/lib/api";
-import { useConsulta } from "@/lib/consultas";
+import { useConsultaViva, ultimaAtualizacao } from "@/lib/consultas";
+import { juntarFontes } from "@/lib/frescor";
+import { fontesDado, LegendaFonte } from "@/design-system/componentes/EstadoDados";
 import { formatarData, formatarDataHora, formatarHora } from "@/lib/formatos";
 import { useSessao } from "@/lib/sessao";
 import { EstadoConsulta, invalidarPrefixo, SelecaoTerritorio } from "@/features/evento/Evento";
@@ -58,8 +60,8 @@ export function corpoRegistro(texto: string, territorio: string, extra: Record<s
 export function TelaRegistro() {
   const { pode } = useSessao();
   const podeEditar = pode("editar");
-  const acoes = useConsulta<unknown>("/acoes");
-  const historico = useConsulta<unknown>("/estagios/historico");
+  const acoes = useConsultaViva<unknown>("/acoes");
+  const historico = useConsultaViva<unknown>("/estagios/historico");
   const linha = montarLinha(listaDe<Acao>(acoes.data), listaDe<Declaracao>(historico.data));
   const { atual, encerrados } = eventoAtual(linha);
   const [encerrar, setEncerrar] = useState(false);
@@ -69,6 +71,7 @@ export function TelaRegistro() {
       <CabecalhoTela
         titulo="Registro do evento"
         proposito="O que aconteceu, com hora. Vira a memória do evento e entra no boletim."
+        atualizadoEm={ultimaAtualizacao(acoes, historico)}
       />
       <div className={estilos.pagina}>
         {podeEditar && <CaixaRegistro />}
@@ -95,6 +98,7 @@ export function TelaRegistro() {
             </p>
           )}
           {atual.length > 0 && <Linha entradas={atual} />}
+          <LegendaFonte fontes={fontesDado(juntarFontes(acoes.data, historico.data))} />
           {podeEditar && atual.length > 0 && (
             <div className={estilos.encerrar}>
               <Botao variante="secundario" icone={<Flag />} onClick={() => setEncerrar(true)}>
@@ -221,6 +225,7 @@ function CaixaRegistro() {
   return (
     <form className={estilos.caixa} onSubmit={registrar} noValidate aria-label="Novo registro">
       <AreaTexto
+        privacidade
         rotulo="O que aconteceu?"
         ajuda="Pode colar o que chegou pelo WhatsApp."
         rows={2}
@@ -307,6 +312,7 @@ function DialogoEncerrarEvento({ aoFechar }: { aoFechar: () => void }) {
         noValidate
       >
         <AreaTexto
+          privacidade
           rotulo="O que funcionou e o que mudar da próxima vez?"
           rows={4}
           maxLength={2000}

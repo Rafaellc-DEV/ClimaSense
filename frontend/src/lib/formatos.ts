@@ -23,6 +23,12 @@ export function formatarDataHora(iso: string | Date): string {
   return `${p.day}/${p.month}/${p.year}, ${p.hour}h${p.minute}`;
 }
 
+/** "14:32", hora do Recife, para o "Atualizado às". */
+export function formatarHoraMinuto(momento: string | Date | number): string {
+  const p = partes(new Date(momento));
+  return `${p.hour}:${p.minute}`;
+}
+
 /** "15/10/2026" */
 export function formatarData(iso: string | Date): string {
   const p = partes(iso);

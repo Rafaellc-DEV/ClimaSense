@@ -1,8 +1,7 @@
 import { useId, useState, type ReactNode } from "react";
 import { Info } from "lucide-react";
-import { formatarDataHora } from "@/lib/formatos";
 import estilos from "./Dica.module.css";
-import type { FonteDado } from "./EstadoDados";
+import { TextoFonte, type FonteDado } from "./EstadoDados";
 
 export interface DicaProps {
   /** O que o (i) revela. Uma ou duas frases; é aqui que moram as explicações que não cabem na tela. */
@@ -66,8 +65,11 @@ export function DicaFonte({
   fontes: FonteDado[];
   rotulo?: string;
 }) {
-  const frase = fontes
-    .map((f) => (f.atualizadoEm ? `${f.nome}, atualizada em ${formatarDataHora(f.atualizadoEm)}` : f.nome))
-    .join("; ");
-  return <Dica rotulo={rotulo} texto={`Fonte: ${frase}.`} alinhar="fim" />;
+  const frase = fontes.map((f, i) => (
+    <span key={`${f.nome}-${i}`}>
+      {i > 0 && "; "}
+      <TextoFonte f={f} />
+    </span>
+  ));
+  return <Dica rotulo={rotulo} texto={<>Fonte: {frase}.</>} alinhar="fim" />;
 }

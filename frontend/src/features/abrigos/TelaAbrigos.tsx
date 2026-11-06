@@ -28,7 +28,9 @@ import {
   type TotaisAbrigos,
 } from "@/features/evento/tipos";
 import { consulta, enviar, ErroApi } from "@/lib/api";
-import { useConsulta } from "@/lib/consultas";
+import { useConsulta, useConsultaViva, ultimaAtualizacao } from "@/lib/consultas";
+import { fontesDe, type FonteMeta } from "@/lib/frescor";
+import { fontesDado } from "@/design-system/componentes/EstadoDados";
 import { formatarDataHora, formatarNumero, quandoRelativo } from "@/lib/formatos";
 import { useSessao } from "@/lib/sessao";
 import { normalizar } from "@/features/landing/abrigosPublicos";
@@ -50,10 +52,13 @@ export function TotaisAbrigosIndicadores({
   totais,
   carregando,
   locais,
+  fontes = [],
 }: {
   totais: TotaisAbrigos | null;
   carregando?: boolean;
   locais?: number;
+  /** `meta.fontes` da resposta: com ela, cada número mostra a hora e o selo “Desatualizado” (RF-19). */
+  fontes?: FonteMeta[];
 }) {
   const hora = totais?.atualizado_em ?? null;
   const semCadastro = totais?.abrigos_cadastrados === 0;
@@ -64,14 +69,22 @@ export function TotaisAbrigosIndicadores({
         carregando={carregando}
         valor={semCadastro ? null : numeroOuNulo(totais?.abrigos_abertos)}
         explicacao={semCadastro ? "Nenhum local cadastrado ainda." : undefined}
-        fonte={[{ nome: "Feed do COP e registro da equipe", atualizadoEm: hora }]}
+        fonte={
+          fontes.length > 0
+            ? fontesDado(fontes)
+            : [{ nome: "Feed do COP e registro da equipe", atualizadoEm: hora }]
+        }
       />
       {locais !== undefined && (
         <Indicador
           rotulo="Locais que podem virar abrigo"
           carregando={carregando}
           valor={locais}
-          fonte={[{ nome: "Dados Abertos do Recife e Plano de Contingência", atualizadoEm: null }]}
+          fonte={
+            fontes.length > 0
+              ? fontesDado(fontes)
+              : [{ nome: "Dados Abertos do Recife e Plano de Contingência", atualizadoEm: null }]
+          }
         />
       )}
     </>
@@ -107,7 +120,7 @@ export function TelaAbrigos() {
   const { pode } = useSessao();
   const podeEditar = pode("editar");
   const [filtro, setFiltro] = useState<"todos" | "abertos">("todos");
-  const r = useConsulta<unknown>(`/abrigos${consulta({ aberto: filtro === "abertos" ? "true" : null })}`);
+  const r = useConsultaViva<unknown>(`/abrigos${consulta({ aberto: filtro === "abertos" ? "true" : null })}`);
   const nome = useNomeTerritorio();
   const todos = listaDe<Abrigo>(r.data);
   const totais = totaisDe(r.data);
@@ -141,6 +154,7 @@ export function TelaAbrigos() {
     <>
       <CabecalhoTela
         titulo="Abrigos"
+        atualizadoEm={ultimaAtualizacao(r)}
         proposito="Onde ficam os locais que podem virar abrigo e quais estão abertos agora. Capacidade e endereço são informados pela equipe (ligação ou visita); não vêm de nenhuma API."
         acoes={
           podeEditar && (
@@ -161,6 +175,7 @@ export function TelaAbrigos() {
             <TotaisAbrigosIndicadores
               totais={totais}
               carregando={r.isPending}
+              fontes={fontesDe(r.data)}
               locais={filtro === "todos" ? todos.length : undefined}
             />
           </section>
@@ -456,6 +471,7 @@ function DialogoAtualizar({ abrigo, aoFechar }: { abrigo: Abrigo; aoFechar: () =
           aoMudar={setAberto}
         />
         <AreaTexto
+          privacidade
           rotulo="Observação (opcional)"
           rows={2}
           value={obs}
@@ -525,8 +541,9 @@ function DialogoEditarDados({ abrigo, aoFechar }: { abrigo: Abrigo; aoFechar: ()
         />
         <Campo rotulo="Endereço" value={endereco} onChange={(e) => setEndereco(e.target.value)} />
         <AreaTexto
+          privacidade
           rotulo="Observação"
-          ajuda="Ex.: contato: Fulano, tel. 81 9xxxx-xxxx, confirmado por ligação em 04/11."
+          ajuda="Ex.: acesso pelo portão lateral, confirmado por ligação em 04/11."
           rows={3}
           value={obs}
           onChange={(e) => setObs(e.target.value)}
@@ -637,6 +654,7 @@ function DialogoCadastrar({ aoFechar }: { aoFechar: () => void }) {
           aoMudar={mudar("aberto")}
         />
         <AreaTexto
+          privacidade
           rotulo="Observação (opcional)"
           rows={2}
           value={v.observacao}

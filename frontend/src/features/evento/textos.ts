@@ -1,6 +1,6 @@
 /** Textos curtos comuns às telas da equipe: nomes de distrito, listas em frase, horas e fontes. */
 import type { Esquemas } from "@/lib/api";
-import { useConsulta } from "@/lib/consultas";
+import { useConsultaViva } from "@/lib/consultas";
 import { formatarData, quandoRelativo } from "@/lib/formatos";
 
 /** “Distrito Sanitário V” → “DS V”. Bairro e outros nomes ficam como estão. */
@@ -41,7 +41,7 @@ export type FonteResumo = Esquemas["ResumoPainel"]["fontes"][number];
 
 /** Fontes do painel (nome, situação e hora da última carga), para o rodapé de cada tela. */
 export function useFontesResumo() {
-  const r = useConsulta<Esquemas["ResumoPainel"]>("/painel/resumo");
+  const r = useConsultaViva<Esquemas["ResumoPainel"]>("/painel/resumo");
   const lista = r.data?.fontes ?? [];
   return {
     consulta: r,

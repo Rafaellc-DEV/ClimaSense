@@ -6,11 +6,12 @@ import { useAviso } from "@/design-system/componentes/Aviso";
 import { Botao } from "@/design-system/componentes/Botao";
 import { Dialogo } from "@/design-system/componentes/Dialogo";
 import { CarregandoLista, Esqueleto } from "@/design-system/componentes/Esqueleto";
-import { EstadoDados } from "@/design-system/componentes/EstadoDados";
+import { EstadoDados, LegendaFonte, fontesDado } from "@/design-system/componentes/EstadoDados";
 import { FaixaMare } from "@/design-system/componentes/FaixaMare";
 import { Painel } from "@/design-system/componentes/Painel";
 import { consulta, enviar, ErroApi } from "@/lib/api";
-import { useConsulta } from "@/lib/consultas";
+import { useConsultaViva, ultimaAtualizacao } from "@/lib/consultas";
+import { fontesDe, juntarFontes } from "@/lib/frescor";
 import { formatarNumero } from "@/lib/formatos";
 import { useSessao } from "@/lib/sessao";
 import { ESTAGIOS, infoEstagio } from "@/features/evento/estagios";
@@ -79,10 +80,11 @@ export function fraseAgora(distritos: ItemEstagio[], bairros: ItemEstagio[]): st
 export function TelaSituacao() {
   const { pode } = useSessao();
   const podeDeclarar = pode("editar");
-  const distritos = useConsulta<unknown>(`/estagios${consulta({ nivel: "distrito" })}`);
-  const bairros = useConsulta<unknown>(`/estagios${consulta({ nivel: "bairro" })}`);
-  const abrigos = useConsulta<unknown>(`/abrigos${consulta({ aberto: "true" })}`);
+  const distritos = useConsultaViva<unknown>(`/estagios${consulta({ nivel: "distrito" })}`);
+  const bairros = useConsultaViva<unknown>(`/estagios${consulta({ nivel: "bairro" })}`);
+  const abrigos = useConsultaViva<unknown>(`/abrigos${consulta({ aberto: "true" })}`);
   const fontes = useFontesResumo();
+  const fontesEstagios = fontesDe(distritos.data);
   const avisar = useAviso();
 
   const itens = useMemo(() => listaDe<ItemEstagio>(distritos.data).sort(porNome), [distritos.data]);
@@ -161,6 +163,7 @@ export function TelaSituacao() {
       <CabecalhoTela
         titulo="Situação"
         proposito="Onde agir agora: a situação de cada distrito e dos bairros."
+        atualizadoEm={ultimaAtualizacao(distritos, bairros, abrigos)}
         acoes={
           podeDeclarar &&
           itens.length > 0 && (
@@ -192,7 +195,9 @@ export function TelaSituacao() {
           <ConfiraOficial sobreMare />
         </FaixaMare>
 
-        {distritos.isSuccess && itens.length > 0 && <ResumoTopo itens={itens} horaFonte={horaPrevisao} />}
+        {distritos.isSuccess && itens.length > 0 && (
+          <ResumoTopo itens={itens} horaFonte={horaPrevisao} fontes={fontesEstagios} />
+        )}
 
         <div className={estilos.corpo}>
           <section className={estilos.distritos} aria-labelledby="si-distritos">
@@ -262,8 +267,11 @@ export function TelaSituacao() {
 
         <p className={estilos.rodape}>
           {calculo ? `Sugestão calculada ${quandoAs(calculo)}. ` : ""}
-          Previsão de chuva e maré: Open-Meteo, {atualizada(horaPrevisao)}.
+          {fontesEstagios.length === 0 && (
+            <>Previsão de chuva e maré: Open-Meteo, {atualizada(horaPrevisao)}.</>
+          )}
         </p>
+        <LegendaFonte fontes={fontesDado(juntarFontes(distritos.data, bairros.data))} />
       </div>
 
       {declarar && (
@@ -287,7 +295,7 @@ export function TelaSituacao() {
 }
 
 /* ------------------------------------------------------------------ abrigos abertos */
-function AbrigosAbertos({ r }: { r: ReturnType<typeof useConsulta<unknown>> }) {
+function AbrigosAbertos({ r }: { r: ReturnType<typeof useConsultaViva<unknown>> }) {
   const lista = listaDe<Abrigo>(r.data).filter((a) => a.aberto);
   const totais = totaisDe(r.data);
   const semInformacao = totais?.abrigos_cadastrados === 0;
@@ -323,9 +331,13 @@ function AbrigosAbertos({ r }: { r: ReturnType<typeof useConsulta<unknown>> }) {
                 {lista.length > 5 && <li className={estilos.apagado}>e mais {lista.length - 5}</li>}
               </ul>
             )}
-            <p className={estilos.detalhe}>
-              Feed do COP e registro da equipe, {atualizada(totais?.atualizado_em, "o")}.
-            </p>
+            {fontesDe(r.data).length === 0 ? (
+              <p className={estilos.detalhe}>
+                Feed do COP e registro da equipe, {atualizada(totais?.atualizado_em, "o")}.
+              </p>
+            ) : (
+              <LegendaFonte fontes={fontesDado(fontesDe(r.data))} />
+            )}
           </>
         ))}
     </Painel>

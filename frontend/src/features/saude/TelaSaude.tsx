@@ -12,7 +12,10 @@ import { Painel } from "@/design-system/componentes/Painel";
 import { Pilula } from "@/design-system/componentes/Pilula";
 import { Segmentado } from "@/design-system/componentes/Segmentado";
 import { consulta, ErroApi } from "@/lib/api";
-import { useConsulta } from "@/lib/consultas";
+import { INTERVALO, useConsultaViva, ultimaAtualizacao } from "@/lib/consultas";
+import { fontesDe, supressaoMinima, type FonteMeta } from "@/lib/frescor";
+import { fontesDado, LegendaFonte } from "@/design-system/componentes/EstadoDados";
+import { ValorSuprimido } from "@/design-system/componentes/ValorSuprimido";
 import { diaNoRecife, formatarNumero, somarDias } from "@/lib/formatos";
 import { useTerritorios } from "@/app/FiltroFrase";
 import { distritoPorExtenso } from "@/textos/glossario";
@@ -47,7 +50,7 @@ export const CHECKLIST_LEPTO = [
  * da chuva, e o retrato por bairro do ano escolhido. Prevenção, não diagnóstico.
  */
 export function TelaSaude() {
-  const resumo = useConsulta<unknown>("/saude/resumo");
+  const resumo = useConsultaViva<unknown>("/saude/resumo", INTERVALO.saude);
   const fontes = useFontesResumo();
   const r = dadosDe<ResumoSaude>(resumo.data);
   const janela = r?.janela_leptospirose;
@@ -59,6 +62,7 @@ export function TelaSaude() {
       <CabecalhoTela
         titulo="Saúde depois da chuva"
         proposito="Dengue, chikungunya e leptospirose no Recife, ao lado da chuva, para agir antes dos casos."
+        atualizadoEm={ultimaAtualizacao(resumo)}
       />
       <div className={estilos.pagina}>
         {janela?.ativa && <AvisoJanela janela={janela} />}
@@ -74,7 +78,16 @@ export function TelaSaude() {
           {r && (
             <div className={estilos.kpis}>
               {(["dengue", "chikungunya", "leptospirose"] as Agravo[]).map((a) => (
-                <CartaoAgravo key={a} agravo={a} item={r.agravos.find((x) => x.agravo === a)} />
+                <CartaoAgravo
+                  key={a}
+                  agravo={a}
+                  item={r.agravos.find((x) => x.agravo === a)}
+                  fontes={fontesDoAgravo(
+                    fontesDe(resumo.data),
+                    r.agravos.find((x) => x.agravo === a),
+                  )}
+                  minimo={supressaoMinima(resumo.data)}
+                />
               ))}
             </div>
           )}
@@ -92,10 +105,12 @@ export function TelaSaude() {
           Limites: leptospirose só tem dado do Recife inteiro, sem bairro. Dengue e chikungunya por bairro
           saem uma vez por ano.
         </p>
-        <p className={estilos.rodape}>
-          {fraseFontes(r?.agravos ?? [], (id) => fontes.lista.find((f) => f.id === id))} Chuva: ERA5,{" "}
-          {atualizada(fontes.hora("open-meteo-historico"))}.
-        </p>
+        {fontesDe(resumo.data).length === 0 && (
+          <p className={estilos.rodape}>
+            {fraseFontes(r?.agravos ?? [], (id) => fontes.lista.find((f) => f.id === id))} Chuva: ERA5,{" "}
+            {atualizada(fontes.hora("open-meteo-historico"))}.
+          </p>
+        )}
       </div>
     </>
   );
@@ -187,7 +202,23 @@ export function fraseAgravo(item: ResumoAgravo | undefined): string {
   }${semana}${comparacao}.${nivel}`;
 }
 
-function CartaoAgravo({ agravo, item }: { agravo: Agravo; item: ResumoAgravo | undefined }) {
+/** As fontes de um agravo: a do `fonte_id` dele em `meta.fontes`; se não achar, todas as da resposta. */
+export function fontesDoAgravo(fontes: FonteMeta[], item: ResumoAgravo | undefined): FonteMeta[] {
+  const dele = item ? fontes.filter((f) => f.id === item.fonte_id) : [];
+  return dele.length > 0 ? dele : fontes;
+}
+
+function CartaoAgravo({
+  agravo,
+  item,
+  fontes = [],
+  minimo = 5,
+}: {
+  agravo: Agravo;
+  item: ResumoAgravo | undefined;
+  fontes?: FonteMeta[];
+  minimo?: number;
+}) {
   const id = useId();
   const nivel = item?.nivel_alerta ? NIVEL_ALERTA[item.nivel_alerta] : null;
   const casos = item?.casos ?? null;
@@ -206,7 +237,14 @@ function CartaoAgravo({ agravo, item }: { agravo: Agravo; item: ResumoAgravo | u
           </span>
         )}
       </div>
-      {casos === null ? (
+      {casos === null && item?.suprimido ? (
+        <p className={estilos.numero}>
+          <span className="numeros">
+            <ValorSuprimido minimo={minimo} />
+          </span>
+          <span className={estilos.unidade}>casos</span>
+        </p>
+      ) : casos === null ? (
         <p className={estilos.semDado}>Sem dado</p>
       ) : (
         <p className={estilos.numero}>
@@ -214,7 +252,9 @@ function CartaoAgravo({ agravo, item }: { agravo: Agravo; item: ResumoAgravo | u
           <span className={estilos.unidade}>{casos === 1 ? "caso" : "casos"}</span>
         </p>
       )}
-      <p className={estilos.frase}>{fraseAgravo(item)}</p>
+      <p className={estilos.frase}>
+        {item?.suprimido && casos === null ? "Poucos casos na semana." : fraseAgravo(item)}
+      </p>
       {item?.incompleta && (
         <p className={estilos.incompleta}>
           Semana incompleta
@@ -223,6 +263,7 @@ function CartaoAgravo({ agravo, item }: { agravo: Agravo; item: ResumoAgravo | u
           .
         </p>
       )}
+      <LegendaFonte fontes={fontesDado(fontes)} />
     </div>
   );
 }
@@ -337,7 +378,7 @@ function GraficoSemanal() {
   const modo = useTemaAtual();
   const [agravo, setAgravo] = useState<Agravo>("dengue");
   const desde = somarDias(diaNoRecife(), -364);
-  const r = useConsulta<unknown>(`/saude/semanal${consulta({ agravo, desde })}`);
+  const r = useConsultaViva<unknown>(`/saude/semanal${consulta({ agravo, desde })}`, INTERVALO.saude);
   const s = dadosDe<SerieSemanal>(r.data);
   const g = useMemo(
     () => (s && s.itens.length ? montarSemanal(s, NOME_AGRAVO[agravo]) : null),
@@ -377,22 +418,38 @@ function GraficoSemanal() {
           altura={360}
         />
       )}
+      <LegendaFonte fontes={fontesDado(fontesDe(r.data))} />
     </section>
   );
 }
 
 /* ------------------------------------------------------------------ ranking por bairro ou distrito */
-export function agruparPorDistrito(itens: CasosBairros["itens"]) {
-  const m = new Map<string, number | null>();
+export interface LinhaRanking {
+  id: string;
+  nome: string;
+  casos: number | null;
+  /** Só havia contagens omitidas (< mínimo): aparece como “< 5”. */
+  suprimido?: boolean;
+  /** Parte dos bairros do distrito foi omitida: a soma é no mínimo este valor (“≥ N”). */
+  parcial?: boolean;
+}
+
+/** Soma por distrito. Valor omitido nunca entra como zero: sozinho vira “< 5”, junto de outros vira “≥ soma”. */
+export function agruparPorDistrito(itens: CasosBairros["itens"]): LinhaRanking[] {
+  const m = new Map<string, { soma: number | null; omitidos: number }>();
   for (const i of itens) {
     const k = i.distrito_id ?? "sem-distrito";
-    const atual = m.get(k);
-    m.set(k, i.casos === null ? (atual ?? null) : (atual ?? 0) + i.casos);
+    const a = m.get(k) ?? { soma: null, omitidos: 0 };
+    if (i.casos !== null) a.soma = (a.soma ?? 0) + i.casos;
+    else if (i.suprimido) a.omitidos += 1;
+    m.set(k, a);
   }
-  return [...m.entries()].map(([id, casos]) => ({
+  return [...m.entries()].map(([id, a]) => ({
     id,
     nome: id === "sem-distrito" ? "Sem distrito" : nomeCurto(distritoPorExtenso(id)),
-    casos,
+    casos: a.soma,
+    suprimido: a.soma === null && a.omitidos > 0,
+    parcial: a.soma !== null && a.omitidos > 0,
   }));
 }
 
@@ -400,20 +457,29 @@ function RankingBairros() {
   const [agravo, setAgravo] = useState<Exclude<Agravo, "leptospirose">>("dengue");
   const [ano, setAno] = useState<number | null>(null);
   const [nivel, setNivel] = useState<"distrito" | "bairro">("distrito");
-  const r = useConsulta<unknown>(`/saude/bairros${consulta({ agravo, ano: ano ?? undefined })}`);
+  const r = useConsultaViva<unknown>(
+    `/saude/bairros${consulta({ agravo, ano: ano ?? undefined })}`,
+    INTERVALO.saude,
+  );
   const territorios = useTerritorios();
   const d = dadosDe<CasosBairros>(r.data);
+  const minimo = supressaoMinima(r.data);
   const linhas = useMemo(() => {
     if (!d) return [];
-    const base =
+    const base: LinhaRanking[] =
       nivel === "distrito"
         ? agruparPorDistrito(d.itens)
-        : d.itens.map((i) => ({ id: i.bairro_id, nome: i.bairro_nome, casos: i.casos }));
-    // quem não tem registro vai ao fim, escrito "sem registro" (nunca zero)
-    return base
-      .sort((a, b) => (b.casos ?? -1) - (a.casos ?? -1) || a.nome.localeCompare(b.nome, "pt-BR"))
-      .slice(0, 10);
+        : d.itens.map((i) => ({
+            id: i.bairro_id,
+            nome: i.bairro_nome,
+            casos: i.casos,
+            suprimido: i.suprimido === true && i.casos === null,
+          }));
+    // com valor primeiro; depois os omitidos ("< 5"); por último quem não tem registro (nunca zero)
+    const peso = (l: LinhaRanking) => (l.casos !== null ? l.casos : l.suprimido ? -1 : -2);
+    return base.sort((a, b) => peso(b) - peso(a) || a.nome.localeCompare(b.nome, "pt-BR")).slice(0, 10);
   }, [d, nivel]);
+  const haOmitidos = d?.itens.some((i) => i.suprimido === true && i.casos === null) ?? false;
   const maximo = Math.max(1, ...linhas.map((l) => l.casos ?? 0));
   const anos = d?.anos_disponiveis ?? [];
   const comCasos = d?.itens.filter((i) => i.casos !== null) ?? [];
@@ -480,8 +546,11 @@ function RankingBairros() {
             {comCasos.length > 0 ? (
               <>
                 Total em {anoTexto}: <b>{formatarNumero(total)}</b> casos de {nomeAgravo} nos bairros com
-                registro.
+                registro
+                {haOmitidos ? ", sem contar os valores pequenos omitidos" : ""}.
               </>
+            ) : haOmitidos ? (
+              `Em ${anoTexto}, os bairros com registro de ${nomeAgravo} têm menos de ${minimo} casos cada.`
             ) : (
               `Nenhum bairro com registro de ${nomeAgravo} em ${anoTexto}.`
             )}{" "}
@@ -497,13 +566,20 @@ function RankingBairros() {
                       distrito={l.nome}
                       bairros={bairrosDoDistrito(l.id, territorios.data ?? [], d?.itens ?? [])}
                       oQue={`Casos de ${nomeAgravo} em ${anoTexto}`}
+                      minimo={minimo}
                     />
                   )}
                 </span>
                 {l.casos === null ? (
                   <>
                     <span aria-hidden="true" />
-                    <span className={estilos.semRegistro}>sem registro</span>
+                    {l.suprimido ? (
+                      <span className={estilos.valorBarra}>
+                        <ValorSuprimido minimo={minimo} />
+                      </span>
+                    ) : (
+                      <span className={estilos.semRegistro}>sem registro</span>
+                    )}
                   </>
                 ) : (
                   <>
@@ -513,6 +589,11 @@ function RankingBairros() {
                       aria-hidden="true"
                     />
                     <span className={estilos.valorBarra}>
+                      {l.parcial && (
+                        <span title="Parte dos bairros tem valor pequeno omitido: a soma é no mínimo este valor.">
+                          ≥{" "}
+                        </span>
+                      )}
                       {formatarNumero(l.casos)}
                       <span className="so-leitor"> casos</span>
                     </span>
@@ -523,6 +604,7 @@ function RankingBairros() {
           </ol>
         </>
       )}
+      <LegendaFonte fontes={fontesDado(fontesDe(r.data))} />
     </Painel>
   );
 }

@@ -47,3 +47,22 @@
   font-size: var(--t-apoio);
   color: var(--cs-tinta-2);
 }
+/* selo de dado vencido: cor de aviso + ícone + texto */
+.seloVencido {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 1px 8px;
+  border-radius: var(--r-pilula);
+  background: var(--n-atencao-bg);
+  color: var(--cs-tinta);
+  border: 1px solid var(--n-atencao);
+  font-size: 0.875rem;
+  font-weight: 700;
+  white-space: nowrap;
+  vertical-align: baseline;
+}
+.atualizadoAs {
+  font-size: var(--t-apoio);
+  color: var(--cs-tinta-2);
+}

@@ -1,5 +1,6 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { Info, X } from "lucide-react";
+import { ValorSuprimido } from "@/design-system/componentes/ValorSuprimido";
 import { formatarNumero } from "@/lib/formatos";
 import type { BairroDoDistrito } from "./bairros";
 import estilos from "./PopoverBairros.module.css";
@@ -12,11 +13,14 @@ export function PopoverBairros({
   distrito,
   bairros,
   oQue,
+  minimo = 5,
 }: {
   distrito: string;
   bairros: BairroDoDistrito[];
   /** “casos de dengue em 2025” */
   oQue: string;
+  /** `meta.supressao_minima`. */
+  minimo?: number;
 }) {
   const [aberto, setAberto] = useState(false);
   const raiz = useRef<HTMLSpanElement>(null);
@@ -32,7 +36,7 @@ export function PopoverBairros({
     return () => document.removeEventListener("pointerdown", fora);
   }, [aberto]);
 
-  const comRegistro = bairros.filter((b) => b.casos !== null).length;
+  const comRegistro = bairros.filter((b) => b.casos !== null || b.suprimido).length;
   return (
     <span
       ref={raiz}
@@ -88,7 +92,9 @@ export function PopoverBairros({
             {bairros.map((b) => (
               <li key={b.id}>
                 <span>{b.nome}</span>
-                {b.casos === null ? (
+                {b.suprimido && b.casos === null ? (
+                  <ValorSuprimido minimo={minimo} />
+                ) : b.casos === null ? (
                   <span className={estilos.semRegistro}>sem registro</span>
                 ) : (
                   <b>{formatarNumero(b.casos)}</b>

@@ -1,9 +1,9 @@
+import { quandoRelativo } from "@/lib/formatos";
 import { useId, type CSSProperties, type ReactNode } from "react";
 import { ArrowDownRight, ArrowRight, ArrowUpRight } from "lucide-react";
 import { NIVEIS, type ChaveNivel } from "../niveis";
-import { quandoRelativo } from "@/lib/formatos";
 import { Dica } from "./Dica";
-import type { FonteDado } from "./EstadoDados";
+import { TextoFonte, type FonteDado } from "./EstadoDados";
 import { EsqueletoIndicador } from "./Esqueleto";
 import { Pilula } from "./Pilula";
 import estilos from "./Indicador.module.css";
@@ -107,8 +107,25 @@ export function Indicador({
   );
 }
 
-/** “Fonte: APAC, hoje, 14h05.” Sem hora conhecida, diz isso em vez de calar. */
+/**
+ * “Fonte: APAC, atualizado há 3 h.” Com `meta.fontes`: selo “Desatualizado” se vencida e “Dados insuficientes” com a
+ * fonte que falta. Sem `meta.fontes`, o formato antigo (nome e hora).
+ */
 function LinhaFonte({ fontes }: { fontes: FonteDado[] }) {
+  if (fontes.some((f) => f.desatualizado !== undefined)) {
+    return (
+      <p className={estilos.fonte}>
+        Fonte:{" "}
+        {fontes.map((f, i) => (
+          <span key={`${f.nome}-${i}`}>
+            {i > 0 && "; "}
+            <TextoFonte f={f} />
+          </span>
+        ))}
+        .
+      </p>
+    );
+  }
   const horas = fontes.map((f) => f.atualizadoEm).filter((h): h is string => !!h);
   const ultima = horas.sort().pop();
   return (

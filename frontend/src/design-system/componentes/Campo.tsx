@@ -98,10 +98,31 @@ export function Campo({ rotulo, ajuda, dica, erro, id, className, ...resto }: Ca
   );
 }
 
-export type AreaTextoProps = Base & TextareaHTMLAttributes<HTMLTextAreaElement>;
+export type AreaTextoProps = Base & {
+  /** Texto livre da equipe: acrescenta a dica de que não se escreve dado de pessoa (RNF-03). */
+  privacidade?: boolean;
+} & TextareaHTMLAttributes<HTMLTextAreaElement>;
 
-export function AreaTexto({ rotulo, ajuda, erro, id, className, ...resto }: AreaTextoProps) {
+export const DICA_PRIVACIDADE = "Não escreva nome, CPF ou dado de saúde de pessoas.";
+
+export function AreaTexto({
+  rotulo,
+  ajuda: ajudaBase,
+  privacidade,
+  erro,
+  id,
+  className,
+  ...resto
+}: AreaTextoProps) {
   const ids = useIds(id);
+  const ajuda = privacidade ? (
+    <>
+      {ajudaBase && <>{ajudaBase} </>}
+      <span data-privacidade="true">{DICA_PRIVACIDADE}</span>
+    </>
+  ) : (
+    ajudaBase
+  );
   return (
     <div className={[estilos.campo, className].filter(Boolean).join(" ")}>
       <label htmlFor={ids.campo} className={estilos.rotulo}>

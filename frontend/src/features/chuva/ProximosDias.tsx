@@ -4,10 +4,11 @@ import { QuadroGrafico } from "@/charts/QuadroGrafico";
 import { estiloReferencia, token, useTemaAtual } from "@/charts/tema";
 import campo from "@/design-system/componentes/Campo.module.css";
 import { CarregandoLista } from "@/design-system/componentes/Esqueleto";
-import { EstadoDados } from "@/design-system/componentes/EstadoDados";
+import { AtualizadoAs, EstadoDados, LegendaFonte, fontesDado } from "@/design-system/componentes/EstadoDados";
 import { Pilula } from "@/design-system/componentes/Pilula";
 import { consulta, type Esquemas } from "@/lib/api";
-import { useConsulta } from "@/lib/consultas";
+import { useConsulta, useConsultaViva } from "@/lib/consultas";
+import { juntarFontes } from "@/lib/frescor";
 import { formatarDataHora, formatarHora, formatarMm, formatarNumero, FUSO } from "@/lib/formatos";
 import { infoEstagio } from "@/features/evento/estagios";
 import { EstadoConsulta } from "@/features/evento/Evento";
@@ -206,7 +207,7 @@ function montarGrafico(d: Cenario["dados"], mareAlta: number | null) {
 /** Aba “Próximos 3 dias”: uma frase, só os distritos acima do limite e o gráfico de chuva com maré. */
 export function ProximosDias() {
   const modo = useTemaAtual();
-  const r = useConsulta<unknown>(`/estagios${consulta({ nivel: "distrito" })}`);
+  const r = useConsultaViva<unknown>(`/estagios${consulta({ nivel: "distrito" })}`);
   const p = useConsulta<unknown>("/estagios/parametros");
   const fontes = useFontesResumo();
   const lim = limiaresDe(p.data);
@@ -230,8 +231,9 @@ export function ProximosDias() {
   )[0];
   const [escolha, setEscolha] = useState<string | null>(null);
   const distrito = escolha ?? maisChuvoso?.territorio_id ?? null;
-  const cenario = useConsulta<Cenario>(
+  const cenario = useConsultaViva<Cenario>(
     distrito ? `/cenarios${consulta({ territorio_id: distrito, horizonte_h: 72 })}` : null,
+    5 * 60_000,
     { staleTime: 5 * 60_000 },
   );
   const grafico = useMemo(
@@ -243,6 +245,7 @@ export function ProximosDias() {
 
   return (
     <div className={estilos.pagina}>
+      <AtualizadoAs em={r.dataUpdatedAt} />
       {r.isPending && <CarregandoLista linhas={1} altura="7rem" texto="Carregando a previsão…" />}
       {r.isError && (
         <EstadoConsulta erro={r.error} oQue="a previsão por distrito" aoTentar={() => r.refetch()} />
@@ -336,6 +339,7 @@ export function ProximosDias() {
         Previsão de chuva e maré: Open-Meteo, {atualizada(fontes.hora("open-meteo-previsao"))}. A maré é a de
         frente ao Porto do Recife. É uma previsão, não um alerta oficial.
       </p>
+      <LegendaFonte fontes={fontesDado(juntarFontes(r.data, cenario.data))} />
     </div>
   );
 }

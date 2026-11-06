@@ -1,0 +1,10 @@
+.valor {
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: help;
+  border-bottom: 1px dotted currentColor;
+}
+.valor:focus-visible {
+  outline: 2px solid var(--cs-mare);
+  outline-offset: 2px;
+}

@@ -3,10 +3,11 @@ import type { EChartsOption } from "echarts";
 import { QuadroGrafico } from "@/charts/QuadroGrafico";
 import { estiloReferencia, token, useTemaAtual } from "@/charts/tema";
 import { CarregandoLista } from "@/design-system/componentes/Esqueleto";
-import { EstadoDados } from "@/design-system/componentes/EstadoDados";
+import { EstadoDados, LegendaFonte, fontesDado } from "@/design-system/componentes/EstadoDados";
 import { Painel } from "@/design-system/componentes/Painel";
 import { consulta, type Esquemas } from "@/lib/api";
 import { useConsulta } from "@/lib/consultas";
+import { juntarFontes } from "@/lib/frescor";
 import { diaNoRecife, formatarMm, formatarNumero, nomeMes } from "@/lib/formatos";
 import { EstadoConsulta } from "@/features/evento/Evento";
 import { atualizada, listaEmFrase, useFontesResumo } from "@/features/evento/textos";
@@ -247,6 +248,7 @@ export function Historico() {
         Alagamentos: atendimentos da Defesa Civil do Recife, 2014 a 2024,{" "}
         {atualizada(fontes.hora("recife-alagamento"), "o")}.
       </p>
+      <LegendaFonte fontes={fontesDado(juntarFontes(sazonal.data, bairros.data))} />
     </div>
   );
 }

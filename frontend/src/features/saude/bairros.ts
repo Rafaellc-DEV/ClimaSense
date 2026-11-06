@@ -12,6 +12,8 @@ export interface BairroDoDistrito {
   nome: string;
   /** `null` = sem registro no ano. Nunca vira zero (RN-01). */
   casos: number | null;
+  /** Contagem pequena omitida pela API: aparece como “< 5”, não como “sem registro” (RNF-03). */
+  suprimido?: boolean;
 }
 
 /**
@@ -30,12 +32,18 @@ export function bairrosDoDistrito(
   }
   for (const i of itens) {
     if (i.distrito_id === distritoId)
-      mapa.set(i.bairro_id, { id: i.bairro_id, nome: i.bairro_nome, casos: i.casos });
+      mapa.set(i.bairro_id, {
+        id: i.bairro_id,
+        nome: i.bairro_nome,
+        casos: i.casos,
+        suprimido: i.suprimido === true && i.casos === null,
+      });
   }
   return [...mapa.values()].sort((a, b) => {
-    if (a.casos === null && b.casos === null) return a.nome.localeCompare(b.nome, "pt-BR");
-    if (a.casos === null) return 1;
-    if (b.casos === null) return -1;
+    // com valor, depois os omitidos (< mínimo), por último os sem registro
+    const peso = (x: BairroDoDistrito) => (x.casos !== null ? 0 : x.suprimido ? 1 : 2);
+    if (a.casos === null || b.casos === null)
+      return peso(a) - peso(b) || a.nome.localeCompare(b.nome, "pt-BR");
     return b.casos - a.casos || a.nome.localeCompare(b.nome, "pt-BR");
   });
 }

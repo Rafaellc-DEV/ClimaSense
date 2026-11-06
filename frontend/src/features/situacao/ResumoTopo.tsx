@@ -1,3 +1,5 @@
+import { TextoFonte } from "@/design-system/componentes/EstadoDados";
+import type { FonteMeta } from "@/lib/frescor";
 import { formatarMm, formatarNumero } from "@/lib/formatos";
 import { ESTAGIOS } from "@/features/evento/estagios";
 import { atualizada } from "@/features/evento/textos";
@@ -18,12 +20,15 @@ function Medida({
   itens,
   hora,
   fonte,
+  meta,
 }: {
   rotulo: string;
   campo: CampoInsumo;
   itens: ItemEstagio[];
   hora: string | null;
   fonte: string;
+  /** Fonte em `meta.fontes`, quando a API a trouxe: dá a hora e o selo “Desatualizado” (RF-19). */
+  meta?: FonteMeta;
 }) {
   const m = maiorValor(itens, campo);
   const mare = campo === "mare_max_m";
@@ -51,14 +56,38 @@ function Medida({
               ? "Maior valor, em mais de um distrito."
               : `Maior valor: ${m.nome}.`}
         <br />
-        {fonte}, {atualizada(hora)}.
+        {meta ? (
+          <TextoFonte
+            f={{
+              nome: fonte,
+              atualizadoEm: meta.atualizado_em ?? hora,
+              desatualizado: meta.atualizado_em || hora ? (meta.desatualizado ?? null) : null,
+            }}
+          />
+        ) : (
+          <>
+            {fonte}, {atualizada(hora)}
+          </>
+        )}
+        .
       </dd>
     </div>
   );
 }
 
 /** O resumo do topo: quantos distritos em cada situação e a chuva e a maré que importam agora. */
-export function ResumoTopo({ itens, horaFonte }: { itens: ItemEstagio[]; horaFonte: string | null }) {
+export function ResumoTopo({
+  itens,
+  horaFonte,
+  fontes = [],
+}: {
+  itens: ItemEstagio[];
+  horaFonte: string | null;
+  fontes?: FonteMeta[];
+}) {
+  const previsao = fontes.find((f) => f.id === "open-meteo-previsao");
+  const historico = fontes.find((f) => f.id === "open-meteo-historico") ?? previsao;
+  const mare = fontes.find((f) => /mar[eé]/i.test(`${f.id} ${f.nome}`));
   const c = contarSituacoes(itens);
   const horaPrev = horaDoInsumo(itens, "previsao_emitida_em") ?? horaFonte;
   const horaMare = horaDoInsumo(itens, "mare_emitida_em");
@@ -98,6 +127,7 @@ export function ResumoTopo({ itens, horaFonte }: { itens: ItemEstagio[]; horaFon
           itens={itens}
           hora={calculo ?? null}
           fonte="Open-Meteo"
+          meta={historico}
         />
         <Medida
           rotulo="Previsto para as próximas 24 h"
@@ -105,6 +135,7 @@ export function ResumoTopo({ itens, horaFonte }: { itens: ItemEstagio[]; horaFon
           itens={itens}
           hora={horaPrev}
           fonte="Open-Meteo"
+          meta={previsao}
         />
         <Medida
           rotulo="Previsto para as próximas 72 h"
@@ -112,6 +143,7 @@ export function ResumoTopo({ itens, horaFonte }: { itens: ItemEstagio[]; horaFon
           itens={itens}
           hora={horaPrev}
           fonte="Open-Meteo"
+          meta={previsao}
         />
         <Medida
           rotulo="Maré alta prevista"
@@ -119,6 +151,7 @@ export function ResumoTopo({ itens, horaFonte }: { itens: ItemEstagio[]; horaFon
           itens={itens}
           hora={horaMare}
           fonte="Previsão de maré"
+          meta={mare}
         />
       </dl>
     </section>

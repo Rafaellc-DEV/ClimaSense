@@ -16,7 +16,9 @@ export interface ResumoAgravo {
   nome: string;
   fonte_id: string;
   ultima_semana: SemanaRef | null;
+  /** `null` com `suprimido` = contagem pequena omitida (RNF-03). */
   casos: number | null;
+  suprimido?: boolean;
   casos_estimados: number | null;
   variacao_4s_pct: number | null;
   /** Nível de alerta do InfoDengue, 1 a 4. */
@@ -55,7 +57,14 @@ export interface SerieSemanal {
 
 export interface CasosBairros {
   ano: number;
-  itens: { bairro_id: string; bairro_nome: string; distrito_id: string | null; casos: number | null }[];
+  itens: {
+    bairro_id: string;
+    bairro_nome: string;
+    distrito_id: string | null;
+    casos: number | null;
+    /** Contagem abaixo do mínimo: `casos` vem `null` (RNF-03). */
+    suprimido?: boolean;
+  }[];
   anos_disponiveis: number[];
 }
 

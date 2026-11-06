@@ -118,6 +118,7 @@ export function AcoesFluxo<T>({
         }
       >
         <AreaTexto
+          privacidade
           rotulo="Motivo"
           value={justificativa}
           onChange={(e) => {

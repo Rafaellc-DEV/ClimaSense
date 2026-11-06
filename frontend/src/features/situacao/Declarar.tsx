@@ -126,6 +126,7 @@ export function DialogoDeclarar({
           aoMudar={setEstagio}
         />
         <AreaTexto
+          privacidade
           rotulo="Justificativa"
           ajuda="Uma frase curta. Ex.: chuva de 60 mm prevista e maré alta às 15h."
           value={justificativa}
@@ -200,6 +201,7 @@ export function DialogoEncerrar({ item, aoFechar }: { item: ItemEstagio; aoFecha
           {item.territorio_nome}: <SeloEstagio estagio={item.declarado?.estagio} />
         </p>
         <AreaTexto
+          privacidade
           rotulo="Justificativa"
           ajuda="Uma frase curta. Ex.: a chuva passou e o COP voltou à situação de observação."
           value={justificativa}
@@ -310,6 +312,7 @@ export function Parametros() {
             ))}
           </div>
           <AreaTexto
+            privacidade
             rotulo="Por que mudar (opcional)"
             rows={2}
             maxLength={500}

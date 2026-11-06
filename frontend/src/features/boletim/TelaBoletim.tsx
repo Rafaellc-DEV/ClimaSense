@@ -7,7 +7,9 @@ import { Botao } from "@/design-system/componentes/Botao";
 import { CarregandoLista } from "@/design-system/componentes/Esqueleto";
 import { Marca } from "@/design-system/componentes/Marca";
 import { consulta, enviar, ErroApi, type Esquemas } from "@/lib/api";
-import { useConsulta } from "@/lib/consultas";
+import { INTERVALO, useConsultaViva, ultimaAtualizacao } from "@/lib/consultas";
+import { juntarFontes } from "@/lib/frescor";
+import { fontesDado, TextoFonte } from "@/design-system/componentes/EstadoDados";
 import { diaNoRecife, formatarData, formatarHora, formatarMm, formatarNumero } from "@/lib/formatos";
 import { noProduto } from "@/lib/fontes";
 import { useSessao } from "@/lib/sessao";
@@ -148,12 +150,12 @@ export function TelaBoletim() {
   const emitido = useRef(new Date()).current;
   const numero = numeroBoletim(emitido);
   const registrado = useRef(false);
-  const r = useConsulta<Esquemas["RespostaDados_Boletim_"]>(
+  const r = useConsultaViva<Esquemas["RespostaDados_Boletim_"]>(
     `/boletim${consulta({ territorio_id: "recife" })}`,
   );
-  const saudeR = useConsulta<unknown>("/saude/resumo");
-  const acoes = useConsulta<unknown>("/acoes");
-  const historico = useConsulta<unknown>("/estagios/historico");
+  const saudeR = useConsultaViva<unknown>("/saude/resumo", INTERVALO.saude);
+  const acoes = useConsultaViva<unknown>("/acoes");
+  const historico = useConsultaViva<unknown>("/estagios/historico");
   const fontes = useFontesResumo();
   const territorios = useTerritorios();
   const bairrosDe = (distritoId: string): string[] =>
@@ -172,6 +174,7 @@ export function TelaBoletim() {
     ? [fraseSituacao(distritos), fraseChuva(b.chuva), fraseAbrigosSaude(b, saude, saudeR.isError)]
     : [];
   const topicos = destaques(b, saude, registros.length);
+  const fontesMeta = fontesDado(juntarFontes(r.data, saudeR.data));
   const fontesAtivas = fontes.lista.filter((f) => f.status !== "planejada").filter(noProduto);
 
   const texto = [
@@ -221,6 +224,7 @@ export function TelaBoletim() {
         <CabecalhoTela
           titulo="Boletim"
           proposito="O resumo do evento em uma página, para a gerência e os distritos."
+          atualizadoEm={ultimaAtualizacao(r, saudeR, acoes, historico)}
           acoes={
             <>
               <Botao variante="secundario" icone={<Copy />} onClick={copiar} disabled={!b}>
@@ -440,11 +444,17 @@ export function TelaBoletim() {
         <footer className={estilos.rodape}>
           <h3>De onde vêm os números</h3>
           <ul>
-            {fontesAtivas.map((f) => (
-              <li key={f.id}>
-                {f.nome}, {atualizada(f.ultima_atualizacao)}.
-              </li>
-            ))}
+            {fontesMeta.length > 0
+              ? fontesMeta.map((f, i) => (
+                  <li key={`${f.nome}-${i}`}>
+                    <TextoFonte f={f} />.
+                  </li>
+                ))
+              : fontesAtivas.map((f) => (
+                  <li key={f.id}>
+                    {f.nome}, {atualizada(f.ultima_atualizacao)}.
+                  </li>
+                ))}
             <li>Situação: declarada pela equipe, com nome e hora.</li>
           </ul>
           <p className={estilos.aviso}>
