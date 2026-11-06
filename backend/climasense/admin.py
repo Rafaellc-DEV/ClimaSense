@@ -2,11 +2,15 @@
 
     python -m climasense.admin criar-admin
     python -m climasense.admin criar-equipe equipe.csv [--senhas-em tmp/senhas-equipe.txt]
+    python -m climasense.admin criar-papel-app [--env caminho/.env]
 
 criar-admin: cria o primeiro administrador com ADMIN_EMAIL e ADMIN_SENHA_INICIAL do .env (T3.7).
 criar-equipe: cria as contas listadas num CSV `nome;email;papeis` (papéis separados por vírgula) (T7.7).
   As senhas temporárias vão SÓ para o arquivo indicado (em tmp/, fora do Git), para entrega individual.
   Não cria avaliações nem comunicados: a demonstração usa o fluxo de verdade.
+criar-papel-app: define a senha do papel de banco `climasense_app` (ADR 0014) com a URL do dono (DATABASE_URL_MIGRACOES,
+  ou DATABASE_URL se ainda não houver) e grava no .env: DATABASE_URL (papel da aplicação) e DATABASE_URL_MIGRACOES (dono).
+  Rode `alembic upgrade head` antes (a migração 0014 concede os privilégios). Rodar de novo troca a senha.
 Nenhuma senha é impressa. A troca é obrigatória no primeiro acesso. Rodar de novo não duplica.
 """
 
@@ -14,14 +18,23 @@ from __future__ import annotations
 
 import argparse
 import csv
+import secrets
 import sys
 from pathlib import Path
 
 from email_validator import EmailNotValidError, validate_email
+from sqlalchemy import text
+from sqlalchemy.engine import make_url
 
-from climasense.config import ConfiguracaoAusente, obter_configuracao
+from climasense.config import RAIZ_REPOSITORIO, ConfiguracaoAusente, obter_configuracao
 from climasense.dominio.senha import problemas_da_senha
-from climasense.infra.postgres import engine_da_configuracao, fabrica_sessoes
+from climasense.infra.postgres import (
+    criar_engine,
+    engine_da_configuracao,
+    fabrica_sessoes,
+    normalizar_url,
+    url_do_dono,
+)
 from climasense.infra.repositorios.usuarios import RepositorioUsuarios
 from climasense.servicos.usuarios import ServicoUsuarios
 
@@ -59,6 +72,51 @@ def criar_equipe(sessao, linhas: list[dict[str, str]]) -> tuple[list[str], dict[
     return mensagens, senhas
 
 
+PAPEL_APP = "climasense_app"
+
+
+def definir_senha_do_papel_app(url_dono: str) -> tuple[str, str]:
+    """Cria o papel (se faltar) e troca a senha dele. Devolve (url da aplicação, url do dono), nunca impressas."""
+    dono = make_url(normalizar_url(url_dono))
+    if dono.username == PAPEL_APP:
+        raise ValueError(
+            f"A URL do dono aponta para o papel {PAPEL_APP}; use a URL de quem é dono do esquema."
+        )
+    senha = secrets.token_urlsafe(32)  # só letras, dígitos, "-" e "_": seguro como literal SQL
+    engine = criar_engine(dono.render_as_string(hide_password=False))
+    try:
+        with engine.begin() as c:
+            existe = c.execute(text("select 1 from pg_roles where rolname = :r"), {"r": PAPEL_APP}).scalar()
+            if not existe:
+                c.execute(
+                    text(
+                        f"create role {PAPEL_APP} login nosuperuser nocreatedb nocreaterole noinherit nobypassrls"
+                    )
+                )
+            c.execute(text(f"alter role {PAPEL_APP} login password '{senha}'"))
+    finally:
+        engine.dispose()
+    url_app = dono.set(username=PAPEL_APP, password=senha).render_as_string(hide_password=False)
+    return url_app, dono.render_as_string(hide_password=False)
+
+
+def gravar_no_env(caminho: Path, valores: dict[str, str]) -> None:
+    """Troca (ou acrescenta) só as variáveis indicadas; as demais linhas ficam como estão."""
+    texto = caminho.read_text(encoding="utf-8", newline="") if caminho.exists() else ""
+    quebra = "\r\n" if "\r\n" in texto else "\n"
+    linhas = texto.split(quebra) if texto else []
+    pendentes = dict(valores)
+    for i, linha in enumerate(linhas):
+        nome = linha.split("=", 1)[0].strip()
+        if "=" in linha and not linha.lstrip().startswith("#") and nome.upper() in pendentes:
+            linhas[i] = f"{nome}={pendentes.pop(nome.upper())}"
+    if pendentes:
+        if linhas and linhas[-1] == "":
+            linhas.pop()
+        linhas += [f"{n}={v}" for n, v in pendentes.items()] + [""]
+    caminho.write_text(quebra.join(linhas), encoding="utf-8", newline="")
+
+
 def ler_csv(caminho: Path) -> list[dict[str, str]]:
     with caminho.open(encoding="utf-8-sig", newline="") as arquivo:
         linhas = list(csv.DictReader(arquivo, delimiter=";"))
@@ -81,8 +139,26 @@ def main(argv: list[str] | None = None) -> int:
     eq = sub.add_parser("criar-equipe", help="Cria as contas da equipe a partir de um CSV nome;email;papeis")
     eq.add_argument("arquivo", type=Path)
     eq.add_argument("--senhas-em", type=Path, default=Path("tmp/senhas-equipe.txt"))
+    pa = sub.add_parser(
+        "criar-papel-app", help="Define a senha do papel de banco da aplicação e grava no .env"
+    )
+    pa.add_argument("--env", type=Path, default=RAIZ_REPOSITORIO / ".env")
     args = parser.parse_args(argv)
     config = obter_configuracao()
+    if args.comando == "criar-papel-app":
+        try:
+            url_app, url_dono = definir_senha_do_papel_app(url_do_dono(config))
+            gravar_no_env(args.env, {"DATABASE_URL": url_app, "DATABASE_URL_MIGRACOES": url_dono})
+        except (ConfiguracaoAusente, ValueError, OSError) as erro:
+            print(f"Não foi possível criar o papel da aplicação: {erro}", file=sys.stderr)
+            return 1
+        except Exception as erro:  # noqa: BLE001 - a mensagem do driver pode conter a URL: só o tipo
+            print(f"Não foi possível criar o papel da aplicação ({type(erro).__name__}).", file=sys.stderr)
+            return 1
+        print(
+            f"Papel {PAPEL_APP} pronto. DATABASE_URL e DATABASE_URL_MIGRACOES atualizados em {args.env.name}."
+        )
+        return 0
     if args.comando == "criar-equipe":
         try:
             linhas = ler_csv(args.arquivo)

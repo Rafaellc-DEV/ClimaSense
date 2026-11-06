@@ -14,9 +14,10 @@ import pytest
 from alembic import command
 from alembic.config import Config as ConfigAlembic
 from sqlalchemy import text
+from sqlalchemy.engine import make_url
 
 from climasense.config import Configuracao
-from climasense.infra.postgres import criar_engine, fabrica_sessoes
+from climasense.infra.postgres import criar_engine, fabrica_sessoes, normalizar_url
 
 RAIZ = Path(__file__).resolve().parents[2]
 BACKEND = RAIZ / "backend"
@@ -59,7 +60,6 @@ def _alembic(url: str) -> ConfigAlembic:
 def recriar_banco(url: str):
     engine = criar_engine(url)
     with engine.begin() as c:
-        c.execute(text("drop view if exists public.silver_vacinados"))
         c.execute(
             text(
                 "drop schema if exists gold cascade; drop schema if exists silver cascade; drop schema if exists app cascade"
@@ -79,9 +79,29 @@ def engine_teste():
     engine.dispose()
 
 
+SENHA_PAPEL_APP_TESTE = "senha-do-papel-de-teste-nao-usar-fora-daqui"
+
+
+@pytest.fixture(scope="session")
+def engine_app(engine_teste):
+    """Engine do papel `climasense_app` (criado pela 0014, sem senha): dá a senha de teste e conecta como ele."""
+    with engine_teste.begin() as c:
+        c.execute(text(f"alter role climasense_app login password '{SENHA_PAPEL_APP_TESTE}'"))
+    url = make_url(normalizar_url(URL_TESTE)).set(username="climasense_app", password=SENHA_PAPEL_APP_TESTE)
+    engine = criar_engine(url.render_as_string(hide_password=False))
+    yield engine
+    engine.dispose()
+
+
 @pytest.fixture
-def sessao(engine_teste):
-    """Sessão com transação desfeita ao fim de cada teste (o banco volta limpo)."""
+def sessao(engine_teste, request):
+    """Sessão com transação desfeita ao fim de cada teste (o banco volta limpo).
+
+    TESTES_COMO_APP=1 roda as rotas como `climasense_app` (privilégio mínimo, ADR 0014); o padrão é o dono,
+    porque muitos testes semeiam silver e gold, que a aplicação só lê.
+    """
+    if os.getenv("TESTES_COMO_APP") == "1":
+        engine_teste = request.getfixturevalue("engine_app")
     conexao = engine_teste.connect()
     transacao = conexao.begin()
     s = fabrica_sessoes(engine_teste)(bind=conexao, join_transaction_mode="create_savepoint")

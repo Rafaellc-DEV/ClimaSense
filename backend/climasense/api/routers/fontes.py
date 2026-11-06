@@ -16,7 +16,7 @@ from climasense.api.erros import ErroClimaSense
 from climasense.dominio.papeis import Permissao
 from climasense.etl import execucao
 from climasense.etl.conectores import CONECTORES
-from climasense.infra.postgres import engine_da_configuracao, obter_sessao
+from climasense.infra.postgres import engine_do_dono, obter_sessao
 from climasense.servicos import fontes as servico_fontes
 
 router = APIRouter(tags=["Fontes de dados"])
@@ -102,9 +102,7 @@ def executor_em_segundo_plano(request: Request):
     config = request.app.state.config
 
     def rodar(fonte_id: str, execucao_id: str, limite: int | None) -> None:
-        execucao.executar(
-            engine_da_configuracao(config), mongo(request), config, fonte_id, execucao_id, limite
-        )
+        execucao.executar(engine_do_dono(config), mongo(request), config, fonte_id, execucao_id, limite)
 
     return rodar
 

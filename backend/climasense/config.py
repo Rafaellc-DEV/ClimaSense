@@ -38,6 +38,10 @@ class Configuracao(BaseSettings):
         default=None, validation_alias=AliasChoices("DATABASE_URL", "NEON_URL")
     )
 
+    # URL do dono do banco (RNF-01, ADR 0014): só Alembic, ETL e comandos administrativos. A API usa `database_url`
+    # (papel `climasense_app`, sem poder de dono). Ausente: cai em `database_url` (desenvolvimento e testes).
+    database_url_migracoes: SecretStr | None = None
+
     session_secret: SecretStr | None = None
     sessao_inatividade_min: int = Field(default=60, ge=5, le=24 * 60)
     cors_origins: Annotated[list[str], NoDecode] = ["http://localhost:5173"]

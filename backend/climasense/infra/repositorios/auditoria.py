@@ -21,6 +21,7 @@ _PROIBIDAS = {
     "csrf",
     "mongo_uri",
     "database_url",
+    "database_url_migracoes",
 }
 
 

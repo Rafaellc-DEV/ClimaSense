@@ -19,7 +19,7 @@ from climasense.config import obter_configuracao
 from climasense.etl import execucao, gold, orquestrador
 from climasense.etl.conectores import CONECTORES, IMPLEMENTADOS, MODOS
 from climasense.infra.mongo import conectar
-from climasense.infra.postgres import engine_da_configuracao
+from climasense.infra.postgres import engine_do_dono
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -54,7 +54,7 @@ def main(argv: list[str] | None = None) -> int:
             estado = "implementada" if fid in IMPLEMENTADOS else "planejada"
             print(f"{fid:24} {estado:13} {classe.fonte.tipo:9} {classe.fonte.nome}")
         return 0
-    engine = engine_da_configuracao(config)
+    engine = engine_do_dono(config)  # o ETL escreve em silver/gold (ADR 0014)
     if args.comando == "verificar-gold":
         with engine.connect() as c:
             dif = gold.verificar(c)

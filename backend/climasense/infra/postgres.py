@@ -40,6 +40,18 @@ def engine_da_configuracao(config: Configuracao | None = None) -> Engine:
     return _engine_padrao(config.exigir("database_url"))
 
 
+def url_do_dono(config: Configuracao) -> str:
+    """URL de quem é dono do esquema (Alembic, ETL, carga do território). Sem ela, usa a da aplicação (ADR 0014)."""
+    if config.database_url_migracoes is not None:
+        return config.database_url_migracoes.get_secret_value()
+    return config.exigir("database_url")
+
+
+def engine_do_dono(config: Configuracao | None = None) -> Engine:
+    """Engine com a URL do dono: escreve em silver/gold e altera o esquema. Não use nas rotas da API."""
+    return _engine_padrao(url_do_dono(config or obter_configuracao()))
+
+
 def fabrica_sessoes(engine: Engine) -> sessionmaker[Session]:
     return sessionmaker(bind=engine, autoflush=False, expire_on_commit=False)
 

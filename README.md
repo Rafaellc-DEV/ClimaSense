@@ -47,7 +47,7 @@ No terminal do VS Code, dentro da pasta ClimaSense (só uma vez):
 powershell -ExecutionPolicy Bypass -File .\setup.ps1
 ```
 
-Depois, preencha no `.env` as mesmas `MONGO_URI` e `DATABASE_URL` (Neon) usadas no ETL anterior. No VS Code, escolha o interpretador `.venv\Scripts\python.exe` (Ctrl+Shift+P → *Python: Select Interpreter*).
+Depois, preencha no `.env` as mesmas `MONGO_URI` e `DATABASE_URL` (Neon) usadas no ETL anterior. Com o banco migrado, `python -m climasense.admin criar-papel-app` cria o papel `climasense_app` e passa a URL do dono para `DATABASE_URL_MIGRACOES` (ADR 0014). No VS Code, escolha o interpretador `.venv\Scripts\python.exe` (Ctrl+Shift+P → *Python: Select Interpreter*).
 
 As bibliotecas estão fixadas em [`backend/requirements.txt`](backend/requirements.txt) (aplicação e ETL) e [`backend/requirements-dev.txt`](backend/requirements-dev.txt) (testes e qualidade). O frontend usa o `frontend/package-lock.json`.
 
