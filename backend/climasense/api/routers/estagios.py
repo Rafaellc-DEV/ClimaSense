@@ -11,13 +11,14 @@ from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from climasense.api.autorizacao import Contexto, exige, relogio
-from climasense.api.envelope import Meta, RecorteMeta, RespostaDados
+from climasense.api.envelope import FonteMeta, Meta, RecorteMeta, RespostaDados
 from climasense.api.erros import ErroClimaSense
 from climasense.dominio.estagio import Parametros
 from climasense.dominio.evento import RegistroInvalido
 from climasense.dominio.fluxo_revisao import TransicaoNegada
 from climasense.dominio.papeis import Permissao
 from climasense.infra.postgres import obter_sessao
+from climasense.servicos import estagio_oficial as servico_oficial
 from climasense.servicos import estagios as servico
 from climasense.servicos import fontes as servico_fontes
 
@@ -113,11 +114,53 @@ class ItemEstagio(BaseModel):
     )
 
 
+class EstagioOficial(BaseModel):
+    """Estágio da cidade dado pelo COP, registrado pela equipe (RF-01). Não é a sugestão nem a declaração."""
+
+    estagio: Declaravel
+    informado_em: datetime = Field(description="Hora em que o COP informou o estágio")
+    registrado_em: datetime = Field(description="Hora em que a equipe registrou no ClimaSense")
+    autor_nome: str
+    observacao: str | None
+    fonte: str = Field(description="Sempre 'COP (informado pela equipe)' até haver feed")
+
+
+class PedidoEstagioOficial(BaseModel):
+    estagio: Declaravel
+    informado_em: datetime | None = Field(
+        default=None, description="Hora do COP com fuso; sem ela vale a do registro"
+    )
+    observacao: str | None = Field(default=None, max_length=500)
+
+
+class MetaEstagios(Meta):
+    estagio_oficial: EstagioOficial | None = Field(
+        default=None, description="Estágio oficial vigente; null = sem registro (Dados insuficientes, RN-01)"
+    )
+
+
+def _fonte_oficial(oficial: dict | None, agora: datetime) -> FonteMeta:
+    return servico_fontes.com_frescor(
+        FonteMeta(
+            id="cop-estagio-oficial",
+            nome=servico_oficial.FONTE,
+            tipo="observada",
+            atualizado_em=oficial["registrado_em"] if oficial else None,
+            status="atualizada" if oficial else "planejada",
+        ),
+        agora,
+    )
+
+
 class ListaEstagios(BaseModel):
     nivel: Literal["distrito", "bairro"]
     gerado_em: datetime
     parametros_versao: int | None
     itens: list[ItemEstagio]
+
+
+class RespostaEstagios(RespostaDados[ListaEstagios]):
+    meta: MetaEstagios
 
 
 class PedidoDeclaracao(BaseModel):
@@ -223,8 +266,8 @@ def _parametros(d: dict) -> ParametrosEstagio:
 
 @router.get(
     "",
-    response_model=RespostaDados[ListaEstagios],
-    summary="Estágio sugerido (experimental) e declarado de cada distrito ou bairro",
+    response_model=RespostaEstagios,
+    summary="Estágio sugerido (experimental) e declarado de cada distrito ou bairro, com o oficial do COP",
 )
 def listar(
     nivel: Literal["distrito", "bairro"] = Query(default="distrito"),
@@ -234,7 +277,7 @@ def listar(
     _: Contexto = Depends(consultar),
     db: Session = Depends(obter_sessao),
     agora: datetime = Depends(relogio),
-) -> RespostaDados[ListaEstagios]:
+) -> RespostaEstagios:
     itens = servico.listar(db, nivel, agora, distrito_id)
     versao = servico.parametros_atuais(db)["versao"]
     avisos = [
@@ -246,13 +289,80 @@ def listar(
     if versao is None:
         avisos.append("Limiares padrão, ainda não validados com a equipe.")
     sem_dados = sum(1 for i in itens if i["sugerido"]["estagio"] == "sem_dados")
-    return RespostaDados(
+    oficial = servico_oficial.vigente(db)
+    return RespostaEstagios(
         dados=ListaEstagios(nivel=nivel, gerado_em=agora, parametros_versao=versao, itens=itens),
-        meta=Meta(
+        meta=MetaEstagios(
+            estagio_oficial=oficial,
             fontes=[servico_fontes.meta(db, f, agora) for f in servico.FONTES],
             recorte=RecorteMeta(territorio_id=distrito_id or "recife", granularidade=nivel),
             avisos=avisos,
             dados_insuficientes=bool(itens) and sem_dados == len(itens),
+        ),
+    )
+
+
+@router.get(
+    "/oficial",
+    response_model=RespostaDados[EstagioOficial | None],
+    summary="Estágio oficial da cidade dado pelo COP (registro da equipe); null sem registro",
+)
+def oficial(
+    _: Contexto = Depends(consultar), db: Session = Depends(obter_sessao), agora: datetime = Depends(relogio)
+) -> RespostaDados[EstagioOficial | None]:
+    vigente = servico_oficial.vigente(db)
+    return RespostaDados(
+        dados=vigente,
+        meta=Meta(
+            fontes=[_fonte_oficial(vigente, agora)],
+            recorte=RecorteMeta(territorio_id="recife", granularidade="municipio"),
+            avisos=["Informado pela equipe a partir do COP; o ClimaSense não calcula este estágio."],
+            dados_insuficientes=vigente is None,
+        ),
+    )
+
+
+@router.post(
+    "/oficial",
+    response_model=RespostaDados[EstagioOficial],
+    status_code=201,
+    summary="Registrar o estágio oficial informado pelo COP (analista ou acima; auditado; só inclusão)",
+)
+def registrar_oficial(
+    pedido: PedidoEstagioOficial,
+    ctx: Contexto = Depends(editar),
+    db: Session = Depends(obter_sessao),
+    agora: datetime = Depends(relogio),
+) -> RespostaDados[EstagioOficial]:
+    r = erro_de_negocio(
+        lambda: servico_oficial.registrar(
+            db, pedido.estagio, pedido.informado_em, pedido.observacao, ctx.usuario, ctx.ip, agora
+        )
+    )
+    return RespostaDados(
+        dados=r,
+        meta=Meta(
+            fontes=[_fonte_oficial(r, agora)],
+            recorte=RecorteMeta(territorio_id="recife", granularidade="municipio"),
+        ),
+    )
+
+
+@router.get(
+    "/oficial/historico",
+    response_model=RespostaDados[list[EstagioOficial]],
+    summary="Histórico do estágio oficial, mais recente primeiro",
+)
+def historico_oficial(
+    _: Contexto = Depends(consultar), db: Session = Depends(obter_sessao), agora: datetime = Depends(relogio)
+) -> RespostaDados[list[EstagioOficial]]:
+    itens = servico_oficial.historico(db)
+    return RespostaDados(
+        dados=itens,
+        meta=Meta(
+            fontes=[_fonte_oficial(itens[0] if itens else None, agora)],
+            recorte=RecorteMeta(territorio_id="recife", granularidade="municipio"),
+            dados_insuficientes=not itens,
         ),
     )
 

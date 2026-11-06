@@ -12,6 +12,7 @@ SOMENTE_INCLUSAO = (
     "auditoria",
     "estagio_parametros",
     "estagio_declaracoes",
+    "estagio_oficial",
     "abrigo_atualizacoes",
     "acao_eventos",
     "liberacoes_login",

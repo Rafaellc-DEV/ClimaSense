@@ -25,6 +25,7 @@ TABELAS = {
         "auditoria",
         "estagio_parametros",
         "estagio_declaracoes",
+        "estagio_oficial",
         "abrigos",
         "abrigo_atualizacoes",
         "acoes_resposta",
