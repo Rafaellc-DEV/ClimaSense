@@ -207,7 +207,7 @@ test("sem as rotas de saúde (404), um aviso só: ainda não disponível", async
   simularApi(b);
   window.history.pushState({}, "", "/app/saude");
   render(<App />);
-  expect(await screen.findByText("Ainda não disponível.")).toBeInTheDocument();
+  await waitFor(() => expect(screen.getByText("Ainda não disponível.")).toBeInTheDocument());
   expect(screen.getAllByText("Ainda não disponível.")).toHaveLength(1);
   expect(screen.queryByText(/Janela de vigilância/)).not.toBeInTheDocument();
 });

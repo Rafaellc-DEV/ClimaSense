@@ -4,6 +4,7 @@ import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { Botao } from "@/design-system/componentes/Botao";
 import { Campo } from "@/design-system/componentes/Campo";
 import { Marca } from "@/design-system/componentes/Marca";
+import { funcionalidadeLigada } from "@/lib/funcionalidades";
 import { enviar } from "@/lib/api";
 import { useSessao } from "@/lib/sessao";
 import { CampoSenha } from "./CampoSenha";
@@ -12,6 +13,7 @@ import estilos from "./Entrar.module.css";
 export function Entrar() {
   const { usuario, entrar, recarregar, motivoSaida, garantir } = useSessao();
   const navegar = useNavigate();
+  const landing = funcionalidadeLigada("landingPublica");
   const local = useLocation();
   const destino = (local.state as { voltarPara?: string } | null)?.voltarPara ?? "/app";
   const [erro, setErro] = useState<string>();
@@ -58,14 +60,22 @@ export function Entrar() {
 
   return (
     <div className={estilos.tela}>
-      <Link to="/" className={estilos.voltar}>
-        <ArrowLeft aria-hidden="true" size={16} strokeWidth={1.5} />
-        <span className={estilos.voltarTexto}>Voltar à página inicial</span>
-      </Link>
-      <main className={estilos.principal}>
-        <Link to="/" aria-label="ClimaSense, página inicial" className={estilos.logo}>
-          <Marca decorativa />
+      {landing && (
+        <Link to="/" className={estilos.voltar}>
+          <ArrowLeft aria-hidden="true" size={16} strokeWidth={1.5} />
+          <span className={estilos.voltarTexto}>Voltar à página inicial</span>
         </Link>
+      )}
+      <main className={estilos.principal}>
+        {landing ? (
+          <Link to="/" aria-label="ClimaSense, página inicial" className={estilos.logo}>
+            <Marca decorativa />
+          </Link>
+        ) : (
+          <span className={estilos.logo}>
+            <Marca />
+          </span>
+        )}
         <h1>{trocar ? "Crie uma senha nova" : "Acesso da equipe"}</h1>
         {trocar && (
           <p className={estilos.apoio}>

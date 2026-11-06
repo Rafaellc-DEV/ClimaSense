@@ -10,12 +10,16 @@ export default defineConfig({
   timeout: 30_000,
   use: { baseURL: "http://localhost:4173", trace: "retain-on-failure", channel: canal },
   webServer: {
-    command: "npx cross-env VITE_VITRINE=1 npm run build && npm run preview -- --port 4173",
+    command:
+      "npx cross-env VITE_VITRINE=1 VITE_FUNC_LANDING_PUBLICA=1 VITE_FUNC_COMUNICADOS=1 VITE_FUNC_AVALIACOES=1 npm run build && npm run preview -- --port 4173",
     port: 4173,
     reuseExistingServer: true,
   },
   projects: [
-    { name: "desktop", use: { ...devices["Desktop Chrome"], viewport: { width: 1440, height: 1000 }, channel: canal } },
+    {
+      name: "desktop",
+      use: { ...devices["Desktop Chrome"], viewport: { width: 1440, height: 1000 }, channel: canal },
+    },
     { name: "celular", use: { ...devices["Pixel 7"], channel: canal } },
   ],
 });

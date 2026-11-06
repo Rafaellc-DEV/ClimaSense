@@ -4,6 +4,7 @@ import { simularApi, usuarioTeste } from "@/features/evento/testes";
 import { clienteConsultas } from "@/lib/api";
 
 afterEach(() => {
+  vi.unstubAllEnvs();
   vi.unstubAllGlobals();
   clienteConsultas.clear();
 });
@@ -18,7 +19,8 @@ const MENU = [
   "Boletim",
 ];
 
-test("o menu tem 7 itens, nesta ordem, e Fontes e Administração no rodapé", async () => {
+test("com comunicados ligado, o menu tem 7 itens, nesta ordem, e Fontes e Administração no rodapé", async () => {
+  vi.stubEnv("VITE_FUNC_COMUNICADOS", "1");
   simularApi({
     "/auth/eu": usuarioTeste(["consultar", "editar", "administrar"]),
     "/painel/resumo": { contadores: { avaliacoes: 2, comunicados: 3 }, fontes: [] },

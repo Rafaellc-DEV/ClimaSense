@@ -6,6 +6,7 @@ import { Carregando } from "@/design-system/componentes/Painel";
 import { PaginaInicial } from "@/features/landing/PaginaInicial";
 import { clienteConsultas } from "@/lib/api";
 import { VITRINE_ATIVA } from "@/lib/ambiente";
+import { funcionalidadeLigada } from "@/lib/funcionalidades";
 import { ProvedorSessao } from "@/lib/sessao";
 
 const carregar = <K extends string>(f: () => Promise<Record<K, React.ComponentType>>, nome: K) =>
@@ -39,18 +40,29 @@ function RedirecionarEquipe() {
  * Telas que saíram do menu levam para a tela nova que ficou com o conteúdo delas, sem 404. Endereço desconhecido
  * dentro de /app volta para a Situação.
  */
-const ANTIGAS: [string, string][] = [
-  ["painel", "/app"],
-  ["estagios", "/app"],
-  ["mapa", "/app"],
-  ["avaliacoes/*", "/app"],
-  ["avaliacoes", "/app"],
-  ["cenarios", "/app/chuva"],
-  ["series", "/app/chuva?aba=historico"],
-  ["acoes", "/app/registro"],
-];
+function antigas(): [string, string][] {
+  return [
+    ["painel", "/app"],
+    ["estagios", "/app"],
+    ["mapa", "/app"],
+    ["avaliacoes/*", "/app"],
+    ["avaliacoes", "/app"],
+    ["cenarios", "/app/chuva"],
+    ["series", "/app/chuva?aba=historico"],
+    ["acoes", "/app/registro"],
+    // comunicados desligados (ADR 0011): o endereço não existe mais; quem tinha o favorito cai na Situação
+    ...(funcionalidadeLigada("comunicados")
+      ? []
+      : ([
+          ["comunicados/*", "/app"],
+          ["comunicados", "/app"],
+        ] as [string, string][])),
+  ];
+}
 
 export function App() {
+  const landing = funcionalidadeLigada("landingPublica");
+  const comunicados = funcionalidadeLigada("comunicados");
   return (
     <QueryClientProvider client={clienteConsultas}>
       <ProvedorAvisos>
@@ -58,8 +70,15 @@ export function App() {
           <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
             <Suspense fallback={<Carregando />}>
               <Routes>
-                <Route path="/" element={<PaginaInicial />} />
-                <Route path="/avisos/:id" element={<DetalheAvisoPublico />} />
+                {landing ? (
+                  <>
+                    <Route path="/" element={<PaginaInicial />} />
+                    <Route path="/avisos/:id" element={<DetalheAvisoPublico />} />
+                  </>
+                ) : (
+                  // sem landing, "/" abre o login (que leva à área da equipe se já houver sessão)
+                  <Route path="/" element={<Navigate to="/entrar" replace />} />
+                )}
                 <Route path="/entrar" element={<Entrar />} />
                 <Route path="/app" element={<AppShell />}>
                   <Route index element={<Situacao />} />
@@ -68,12 +87,16 @@ export function App() {
                   <Route path="abrigos" element={<Abrigos />} />
                   <Route path="saude" element={<Saude />} />
                   <Route path="boletim" element={<Boletim />} />
-                  {ANTIGAS.map(([de, para]) => (
+                  {antigas().map(([de, para]) => (
                     <Route key={de} path={de} element={<Navigate to={para} replace />} />
                   ))}
-                  <Route path="comunicados" element={<Comunicados />} />
-                  <Route path="comunicados/novo" element={<NovoComunicado />} />
-                  <Route path="comunicados/:id" element={<Comunicado />} />
+                  {comunicados && (
+                    <>
+                      <Route path="comunicados" element={<Comunicados />} />
+                      <Route path="comunicados/novo" element={<NovoComunicado />} />
+                      <Route path="comunicados/:id" element={<Comunicado />} />
+                    </>
+                  )}
                   <Route path="fontes" element={<Fontes />} />
                   <Route path="fontes/:id" element={<Fonte />} />
                   <Route path="admin/*" element={<Admin />} />
@@ -82,7 +105,7 @@ export function App() {
                 </Route>
                 <Route path="/equipe/*" element={<RedirecionarEquipe />} />
                 {VITRINE_ATIVA && <Route path="/_vitrine" element={<Vitrine />} />}
-                <Route path="*" element={<PaginaInicial />} />
+                <Route path="*" element={landing ? <PaginaInicial /> : <Navigate to="/entrar" replace />} />
               </Routes>
             </Suspense>
           </BrowserRouter>

@@ -21,6 +21,7 @@ import { useConsulta } from "@/lib/consultas";
 import { formatarDataHora, quandoRelativo } from "@/lib/formatos";
 import { normalize } from "@/map/model";
 import { PUBLICOS } from "@/textos/glossario";
+import { funcionalidadeLigada } from "@/lib/funcionalidades";
 import { RETORNO } from "@/textos/mensagens";
 import { AcoesFluxo, ListaEvidencias, type EvidenciaForm } from "@/features/fluxo/AcoesFluxo";
 import { EtapasFinas, SeloEstado } from "@/features/fluxo/Estado";
@@ -674,7 +675,7 @@ export function EditorComunicado() {
                 <Bloco titulo="Evidências">
                   <ListaEvidencias evidencias={c.evidencias as unknown as EvidenciaForm[]} />
                 </Bloco>
-                {c.avaliacao_id && (
+                {c.avaliacao_id && funcionalidadeLigada("avaliacoes") && (
                   <p>
                     <Link to={`/app/avaliacoes/${c.avaliacao_id}`}>
                       Ver a avaliação que originou este comunicado

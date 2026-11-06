@@ -33,7 +33,13 @@ function respostas(mapa: Record<string, { status: number; corpo?: unknown }>) {
   );
 }
 
+// A landing pública está desligada por padrão (ADR 0011); estes testes cobrem o código dela, então ligam a chave.
+beforeEach(() => {
+  vi.stubEnv("VITE_FUNC_LANDING_PUBLICA", "1");
+});
+
 afterEach(() => {
+  vi.unstubAllEnvs();
   vi.unstubAllGlobals();
   clienteConsultas.clear();
 });

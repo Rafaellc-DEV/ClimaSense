@@ -18,6 +18,7 @@ import { Link, Navigate, NavLink, Outlet, useLocation, useNavigate } from "react
 import { Marca } from "@/design-system/componentes/Marca";
 import rios from "@/assets/tracos/rios.svg?raw";
 import type { Esquemas } from "@/lib/api";
+import { enderecoInicial, funcionalidadeLigada } from "@/lib/funcionalidades";
 import { useConsulta } from "@/lib/consultas";
 import { useSessao } from "@/lib/sessao";
 import { PAPEIS } from "@/textos/glossario";
@@ -41,7 +42,7 @@ interface ItemMenu {
  * Sete itens, cada um responde a uma dor da equipe, na ordem do dia a dia: o que fazer agora, a chuva, o registro, os
  * abrigos, a saúde depois da chuva, o aviso à população e o boletim. Fontes e Administração ficam no rodapé.
  */
-const PRINCIPAIS: ItemMenu[] = [
+const TODOS_PRINCIPAIS: ItemMenu[] = [
   { para: "/app", rotulo: "Situação", icone: <Siren />, fim: true },
   { para: "/app/chuva", rotulo: "Chuva", icone: <CloudRain /> },
   { para: "/app/registro", rotulo: "Registro do evento", icone: <NotebookPen /> },
@@ -50,6 +51,9 @@ const PRINCIPAIS: ItemMenu[] = [
   { para: "/app/comunicados", rotulo: "Comunicados", icone: <Megaphone />, contador: "comunicados" },
   { para: "/app/boletim", rotulo: "Boletim", icone: <FileText /> },
 ];
+/** Itens de funcionalidades desligadas por chave (ADR 0011) não entram no menu. */
+const principais = () =>
+  TODOS_PRINCIPAIS.filter((i) => i.para !== "/app/comunicados" || funcionalidadeLigada("comunicados"));
 const RODAPE: ItemMenu[] = [
   { para: "/app/fontes", rotulo: "Fontes", icone: <Database /> },
   { para: "/app/admin", rotulo: "Administração", icone: <Settings />, permissao: "administrar" },
@@ -66,8 +70,10 @@ function Contador({ n }: { n: number }) {
 
 function Navegacao({ aoEscolher }: { aoEscolher?: () => void }) {
   const { pode } = useSessao();
-  const resumo = useConsulta<Esquemas["ResumoPainel"]>("/painel/resumo");
-  const contar = (i: ItemMenu) => (i.contador ? resumo.data?.contadores[i.contador] ?? 0 : 0);
+  const resumo = useConsulta<Esquemas["ResumoPainel"]>("/painel/resumo", {
+    enabled: funcionalidadeLigada("comunicados"),
+  });
+  const contar = (i: ItemMenu) => (i.contador ? (resumo.data?.contadores[i.contador] ?? 0) : 0);
 
   const lista = (itens: ItemMenu[], classe?: string) => (
     <ul className={[estilos.grupo, classe].filter(Boolean).join(" ")}>
@@ -89,7 +95,7 @@ function Navegacao({ aoEscolher }: { aoEscolher?: () => void }) {
 
   return (
     <nav aria-label="Menu principal" className={estilos.nav}>
-      <div className={estilos.bloco}>{lista(PRINCIPAIS)}</div>
+      <div className={estilos.bloco}>{lista(principais())}</div>
       <div className={`${estilos.bloco} ${estilos.blocoRodape}`}>{lista(RODAPE, estilos.grupoRodape)}</div>
     </nav>
   );
@@ -153,7 +159,7 @@ export function AppShell() {
   const comDemo = AMBIENTE_DEMO || usuario.ambiente === "demonstracao";
   const sairDaConta = async () => {
     await sair();
-    navegar("/");
+    navegar(enderecoInicial());
   };
 
   return (
