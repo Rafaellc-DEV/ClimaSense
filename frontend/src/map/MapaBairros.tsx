@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { token } from "@/charts/tema";
+import { token, useTemaAtual } from "@/charts/tema";
 import estilos from "./MapaTerritorio.module.css";
 
 export interface PropsFeicao {
@@ -9,6 +9,27 @@ export interface PropsFeicao {
   nome: string;
 }
 export type ColecaoFeicoes = GeoJSON.FeatureCollection<GeoJSON.Geometry, PropsFeicao>;
+
+/** Valor de um bairro na camada de população: faixa 0..n, ou `null` (sem dado). `suprimido` = "< 5", ocultado. */
+export interface AparenciaPopulacao {
+  classe: number | null;
+  suprimido: boolean;
+}
+
+export interface TipoPino {
+  chave: string;
+  glifo: string;
+  rotulo: string;
+}
+
+export interface PontoAbrigo {
+  id: string | number;
+  nome: string;
+  lat: number;
+  lng: number;
+  /** `true` = aberto (destaque); `false` = fechado; `null` = ninguém informou a situação. */
+  aberto: boolean | null;
+}
 
 /** Como pintar um território: `ordem` 0 a 3 (observação a crítico) ou `null` (sem dado, hachura cinza, nunca verde). */
 export interface Aparencia {
@@ -30,6 +51,22 @@ interface Props {
   aoSelecionar: (id: string) => void;
   /** Cores dos 4 estágios (tokens), lidas na hora de desenhar para valerem nos dois temas. */
   tokensEstagio: string[];
+  /** O que pinta os bairros: o estágio/classe (padrão), a população vulnerável ou nada (só contorno). */
+  modo?: "estagio" | "populacao" | "nenhum";
+  populacao?: (id: string) => AparenciaPopulacao;
+  /** Tokens das faixas da população, da menor para a maior. */
+  tokensPopulacao?: string[];
+  /** Camadas por cima (RF-02, RF-26). `null` ou ausente = desligada. */
+  areasRisco?: {
+    colecao: GeoJSON.FeatureCollection;
+    /** Token de cor para o tipo da área. */
+    cor: (tipo: string) => string;
+  } | null;
+  equipamentos?: {
+    colecao: GeoJSON.FeatureCollection;
+    tipo: (props: Record<string, unknown>) => TipoPino;
+  } | null;
+  abrigos?: PontoAbrigo[] | null;
 }
 
 const PREFIXO = "cs-mapa-";
@@ -54,6 +91,7 @@ export function MapaBairros(props: Props) {
   const atuais = useRef(props);
   atuais.current = props;
   const [tilesFalharam, setTilesFalharam] = useState(false);
+  const tema = useTemaAtual();
 
   function desenharPadroes() {
     const d = defs.current;
@@ -64,6 +102,7 @@ export function MapaBairros(props: Props) {
     const cores = atuais.current.tokensEstagio.map((t) => token(t));
     d.innerHTML =
       `<pattern id="${PREFIXO}sem" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="8" height="8" fill="${cinza}"/><line x1="0" y1="0" x2="0" y2="8" stroke="${traco}" stroke-width="3"/></pattern>` +
+      `<pattern id="${PREFIXO}supr" width="6" height="6" patternUnits="userSpaceOnUse"><rect width="6" height="6" fill="${token("--g-seq-1")}"/><circle cx="3" cy="3" r="1.3" fill="${token("--g-seq-6")}"/></pattern>` +
       cores
         .map(
           (c, i) =>
@@ -74,13 +113,33 @@ export function MapaBairros(props: Props) {
 
   function estilo(id: string): L.PathOptions {
     const p = atuais.current;
-    const a = p.aparencia(id);
     const sel = id === p.selecionado;
     const base: L.PathOptions = {
       color: sel ? token("--cs-tinta") : token("--cs-papel"),
       weight: sel ? 3.5 : 1.2,
       opacity: 1,
     };
+    if (p.modo === "nenhum")
+      return { ...base, color: sel ? token("--cs-tinta") : token("--cs-linha-forte"), fillOpacity: 0 };
+    if (p.modo === "populacao" && p.populacao) {
+      const v = p.populacao(id);
+      if (v.suprimido)
+        return {
+          ...base,
+          fillColor: `url(#${PREFIXO}supr)`,
+          fillOpacity: 1,
+          dashArray: sel ? undefined : "2 3",
+        };
+      if (v.classe === null)
+        return {
+          ...base,
+          fillColor: `url(#${PREFIXO}sem)`,
+          fillOpacity: 1,
+          dashArray: sel ? undefined : "3 3",
+        };
+      return { ...base, fillColor: token(p.tokensPopulacao?.[v.classe] ?? "--g-seq-4"), fillOpacity: 0.9 };
+    }
+    const a = p.aparencia(id);
     if (a.ordem === null)
       return {
         ...base,
@@ -108,6 +167,7 @@ export function MapaBairros(props: Props) {
     m.setView([-8.05, -34.92], 12);
     m.zoomControl.setPosition("bottomright");
     L.control.scale({ imperial: false, position: "bottomright" }).addTo(m);
+    m.createPane("areas").style.zIndex = "430";
     m.createPane("contorno").style.zIndex = "450";
     const tiles = L.tileLayer(atuais.current.tilesUrl, { maxZoom: 18, attribution: "Mapa de fundo © Esri" });
     tiles.on("tileerror", () => setTilesFalharam(true));
@@ -173,6 +233,88 @@ export function MapaBairros(props: Props) {
       camada.setTooltipContent(props.dica(id, nome));
     });
   });
+
+  // áreas de risco (polígonos por tipo; sem clique, para não tapar o bairro)
+  useEffect(() => {
+    const m = mapa.current;
+    const cfg = props.areasRisco;
+    if (!m || !cfg) return;
+    const g = L.geoJSON(cfg.colecao, {
+      pane: "areas",
+      interactive: false,
+      style: (f) => {
+        const cor = token(cfg.cor(String((f?.properties as { tipo?: unknown } | null)?.tipo ?? "")));
+        return { color: cor, weight: 1.5, dashArray: "4 2", fillColor: cor, fillOpacity: 0.35, opacity: 1 };
+      },
+    }).addTo(m);
+    return () => {
+      g.remove();
+    };
+  }, [props.areasRisco, tema]);
+
+  // equipamentos de saúde (pino com letra por tipo; clique mostra nome e tipo)
+  useEffect(() => {
+    const m = mapa.current;
+    const cfg = props.equipamentos;
+    if (!m || !cfg) return;
+    const g = L.layerGroup();
+    for (const f of cfg.colecao.features) {
+      if (f.geometry?.type !== "Point") continue;
+      const [lng, lat] = f.geometry.coordinates;
+      const p = (f.properties ?? {}) as Record<string, unknown>;
+      const t = cfg.tipo(p);
+      const nome = String(p.nome ?? "Equipamento de saúde");
+      L.marker([lat, lng], {
+        title: `${nome} (${t.rotulo})`,
+        alt: `${nome}, ${t.rotulo}`,
+        // centenas de pontos: sem parada de Tab em cada um; a lista do bairro traz os mesmos nomes em texto
+        keyboard: false,
+        icon: L.divIcon({
+          className: `${estilos.pino} ${estilos.pinoSaude}`,
+          html: `<span aria-hidden="true">${escapar(t.glifo)}</span>`,
+          iconSize: [24, 24],
+          iconAnchor: [12, 12],
+          popupAnchor: [0, -12],
+        }),
+      })
+        .bindPopup(`<strong>${escapar(nome)}</strong><br>${escapar(String(p.tipo ?? t.rotulo))}`)
+        .addTo(g);
+    }
+    g.addTo(m);
+    return () => {
+      g.remove();
+    };
+  }, [props.equipamentos]);
+
+  // abrigos: aberto em destaque (cheio e maior), fechado ou sem informação (vazado)
+  useEffect(() => {
+    const m = mapa.current;
+    const lista = props.abrigos;
+    if (!m || !lista) return;
+    const g = L.layerGroup();
+    for (const a of lista) {
+      const sit = a.aberto === null ? "situação não informada" : a.aberto ? "aberto" : "fechado";
+      const tam = a.aberto ? 30 : 24;
+      L.marker([a.lat, a.lng], {
+        title: `${a.nome} (${sit})`,
+        alt: `${a.nome}, ${sit}`,
+        zIndexOffset: a.aberto ? 500 : 0,
+        icon: L.divIcon({
+          className: `${estilos.pino} ${estilos.pinoAbrigo} ${a.aberto ? estilos.pinoAberto : ""}`,
+          html: `<span aria-hidden="true">${a.aberto ? "A" : "a"}</span>`,
+          iconSize: [tam, tam],
+          iconAnchor: [tam / 2, tam / 2],
+          popupAnchor: [0, -tam / 2],
+        }),
+      })
+        .bindPopup(`<strong>${escapar(a.nome)}</strong><br>Abrigo, ${sit}`)
+        .addTo(g);
+    }
+    g.addTo(m);
+    return () => {
+      g.remove();
+    };
+  }, [props.abrigos]);
 
   // foco no território escolhido
   useEffect(() => {

@@ -1,0 +1,223 @@
+/* Camadas do mapa: controle, legenda e rótulo de cobertura (RF-02, RF-19, RF-26) */
+.camadas {
+  display: grid;
+  gap: var(--e-3);
+  min-width: 0;
+  margin: 0;
+  padding: var(--e-3) var(--e-4);
+  border: 0;
+  border-radius: var(--r-painel);
+  background: var(--cs-papel);
+  box-shadow: var(--sombra-cartao);
+}
+.camadas > legend {
+  padding: 0;
+  font-weight: 700;
+  color: var(--cs-tinta);
+}
+.lista {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
+  gap: var(--e-1) var(--e-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.camada {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--e-2);
+  min-height: var(--alvo-lista);
+  padding: var(--e-1) 0;
+  cursor: pointer;
+  color: var(--cs-tinta);
+}
+.camada input {
+  flex: none;
+  width: 1.375rem;
+  height: 1.375rem;
+  margin: 2px 0 0;
+}
+.camada span {
+  display: grid;
+  min-width: 0;
+  font-weight: 600;
+}
+.camada small {
+  font-weight: 400;
+  color: var(--cs-tinta-2);
+  font-size: var(--t-apoio);
+}
+.indicadores {
+  display: grid;
+  gap: var(--e-2);
+  min-width: 0;
+  margin: 0;
+  padding: var(--e-3) 0 0;
+  border: 0;
+  border-top: var(--borda);
+}
+.indicadores > legend {
+  padding: 0 var(--e-2) 0 0;
+  font-size: var(--t-apoio);
+  font-weight: 700;
+  color: var(--cs-tinta-2);
+}
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--e-2);
+}
+.chips label {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 var(--e-3);
+  border-radius: 999px;
+  border: 1.5px solid var(--cs-linha-forte);
+  background: var(--cs-papel);
+  color: var(--cs-tinta);
+  font-weight: 600;
+  cursor: pointer;
+}
+.chips label[data-marcado="true"] {
+  background: var(--cs-mare);
+  border-color: var(--cs-mare);
+  color: var(--cs-sobre-mare);
+}
+.chips label[data-desabilitado="true"] {
+  border-style: dashed;
+  color: var(--cs-tinta-2);
+  background: var(--n-insuf-bg);
+  cursor: not-allowed;
+}
+.chips input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  margin: 0;
+  cursor: inherit;
+}
+.chips label:has(input:focus-visible) {
+  outline: 3px solid var(--cs-foco);
+  outline-offset: 2px;
+}
+.avisoDeficiencia,
+.nota,
+.estado,
+.fonte,
+.resumoCamada {
+  margin: 0;
+  font-size: var(--t-apoio);
+  color: var(--cs-tinta-2);
+}
+.avisoDeficiencia {
+  font-weight: 700;
+  color: var(--cs-tinta);
+}
+
+/* ---------- legenda por camada */
+.legendas {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 1fr));
+  gap: var(--e-3);
+  min-width: 0;
+}
+.legenda {
+  display: grid;
+  align-content: start;
+  gap: var(--e-2);
+  min-width: 0;
+  padding: var(--e-3) var(--e-4);
+  border-radius: var(--r-painel);
+  background: var(--cs-papel);
+  box-shadow: var(--sombra-cartao);
+  font-size: 0.9375rem;
+  color: var(--cs-tinta-2);
+}
+.legenda h3 {
+  margin: 0;
+  font-size: 1rem;
+  color: var(--cs-tinta);
+}
+.legenda p {
+  overflow-wrap: anywhere;
+}
+.itens {
+  display: grid;
+  gap: var(--e-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.itens li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.amostra {
+  flex: none;
+  width: 20px;
+  height: 14px;
+  border-radius: 4px;
+  box-shadow: inset 0 0 0 1px rgba(14, 36, 51, 0.3);
+}
+.semDado {
+  background: repeating-linear-gradient(45deg, var(--n-insuf-bg) 0 3px, var(--g-eixo) 3px 5px);
+  border: 1px dashed var(--n-insuf);
+}
+.supr {
+  background: radial-gradient(var(--g-seq-6) 1.2px, var(--g-seq-1) 1.6px) 0 0 / 6px 6px;
+}
+.pinoLegenda {
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  font: 700 12px/1 var(--fonte);
+  color: var(--cs-sobre-mare);
+  background: var(--g-saude-6);
+  border: 2px solid var(--cs-papel);
+  border-radius: 6px;
+  box-shadow: 0 0 0 1px var(--cs-linha-forte);
+}
+.abrigoAberto {
+  background: var(--cs-mare-forte);
+  border: 3px solid var(--cs-sol);
+  border-radius: 4px 4px 50% 50%;
+}
+.abrigoFechado {
+  background: var(--cs-papel);
+  color: var(--cs-mare-forte);
+  border: 2px solid var(--cs-mare-forte);
+  border-radius: 4px 4px 50% 50%;
+}
+.alertaCobertura {
+  padding: var(--e-2) var(--e-3);
+  border-radius: var(--r-icone);
+  background: var(--n-atencao-bg, var(--n-insuf-bg));
+  color: var(--cs-tinta);
+  font-weight: 600;
+}
+
+/* rótulo permanente sobre o mapa */
+.rotuloMapa {
+  position: absolute;
+  z-index: 1000;
+  top: var(--e-2);
+  left: var(--e-2);
+  max-width: calc(100% - 64px);
+  margin: 0;
+  padding: var(--e-1) var(--e-3);
+  border-radius: var(--r-icone);
+  background: var(--cs-papel);
+  box-shadow: var(--sombra-flutuante);
+  border: 2px solid var(--cs-sol);
+  font-size: 0.875rem;
+  font-weight: 700;
+  line-height: 1.35;
+  color: var(--cs-tinta);
+  pointer-events: none;
+}

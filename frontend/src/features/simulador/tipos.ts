@@ -49,7 +49,12 @@ export interface ItemSimulado {
 
 export interface ResultadoSimulacao {
   itens: ItemSimulado[];
-  resumo?: { por_classe?: Record<string, number> | null; pressao_abrigos?: unknown } | null;
+  resumo?: {
+    por_classe?: Record<string, number> | null;
+    pressao_abrigos?: unknown;
+    impacto_pessoas_aviso?: string | null;
+    pessoas_vulneraveis_em_alerta?: unknown;
+  } | null;
   experimental?: boolean;
   calculado_em?: string | null;
   tempo_calculo_ms?: number | null;

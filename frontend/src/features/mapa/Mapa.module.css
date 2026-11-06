@@ -313,6 +313,7 @@
   margin: 0;
 }
 .dupla small,
+.numeros small,
 .alertas small,
 .abrigos small {
   font-size: 0.9375rem;
@@ -320,6 +321,45 @@
 }
 .apagado {
   color: var(--cs-tinta-2);
+}
+.numeros {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--e-3);
+  margin: 0;
+}
+.numeros > div:last-child {
+  grid-column: 1 / -1;
+}
+.numeros dt {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--cs-tinta-2);
+}
+.numeros dd {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.numeros dd b {
+  font-size: 1.25rem;
+  line-height: 1.2;
+  color: var(--cs-tinta);
+}
+.fonteLinha {
+  font-size: 0.875rem;
+  color: var(--cs-tinta-2);
+}
+.etiquetaRisco {
+  justify-self: start;
+  padding: 2px var(--e-2);
+  border-radius: 999px;
+  border: 1.5px solid var(--n-alerta);
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--cs-tinta);
 }
 .acoesPainel {
   display: flex;

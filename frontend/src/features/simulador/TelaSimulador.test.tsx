@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { App } from "@/app/App";
 import { AGORA, simularApi, usuarioTeste } from "@/features/evento/testes";
@@ -192,7 +192,65 @@ describe("Simulador", () => {
     await userEvent.click(await screen.findByText("mapa: Ibura"));
     const painel = await screen.findByTestId("painel-bairro");
     expect(painel).toHaveTextContent("Chuva de 80 mm passa do gatilho de alerta.");
-    expect(painel).toHaveTextContent("Dados insuficientes (em breve)");
+    expect(painel).toHaveTextContent("População vulnerável exposta");
+    expect(painel).toHaveTextContent("Dados insuficientes");
+    expect(painel).not.toHaveTextContent(/%/);
+  });
+
+  it("mostra residentes expostos do bairro e a soma em bairros em alerta, sem percentual", async () => {
+    const comImpacto = {
+      ...resultado,
+      dados: {
+        ...resultado.dados,
+        itens: resultado.dados.itens.map((i) =>
+          i.territorio_id === "bairro-ibura"
+            ? {
+                ...i,
+                impacto_pessoas: {
+                  idosos_60_mais: 4210,
+                  criancas_0_14: null,
+                  equipamentos_saude: 6,
+                  deficiencia: null,
+                  total_pessoas: 4210,
+                  criterio: "residentes",
+                },
+              }
+            : i,
+        ),
+        resumo: {
+          ...resultado.dados.resumo,
+          pessoas_vulneraveis_em_alerta: {
+            bairros_em_alerta: 1,
+            idosos_60_mais: 4210,
+            criancas_0_14: null,
+            parcial: true,
+            criterio: "residentes",
+          },
+        },
+      },
+    };
+    simularApi(rotas(), { "/cenarios/simular": comImpacto });
+    abrir();
+    const resumo = await screen.findByTestId("expostos-resumo");
+    expect(resumo).toHaveTextContent("4.210 idosos 60+");
+    expect(resumo).toHaveTextContent("crianças 0–14: dados insuficientes");
+    expect(resumo).toHaveTextContent("Soma parcial");
+    await userEvent.click(await screen.findByText("mapa: Ibura"));
+    const painel = await screen.findByTestId("painel-bairro");
+    expect(painel).toHaveTextContent("4.210");
+    expect(painel).toHaveTextContent("residentes");
+    expect(painel).toHaveTextContent("Equipamentos de saúde6");
+    expect(painel).toHaveTextContent("Dados insuficientes: não há dado público por bairro");
+    expect(painel).not.toHaveTextContent(/%/);
+  });
+
+  it("tem as mesmas camadas do mapa principal, desligadas, e a classe do cenário ligada", async () => {
+    simularApi(rotas(), { "/cenarios/simular": resultado });
+    abrir();
+    const grupo = await screen.findByRole("group", { name: "Camadas do mapa" });
+    expect(within(grupo).getByRole("checkbox", { name: /Classe do cenário/ })).toBeChecked();
+    for (const nome of [/Equipamentos de saúde/, /População vulnerável/, /Áreas de risco/, /Abrigos/])
+      expect(within(grupo).getByRole("checkbox", { name: nome })).not.toBeChecked();
   });
 
   it("endpoint ainda inexistente (404) diz Ainda não disponível", async () => {

@@ -22,6 +22,9 @@ import { EstadoConsulta, MensagemPronta } from "@/features/evento/Evento";
 import { listaDe, type Abrigo, type ItemEstagio, type MensagemWhatsApp } from "@/features/evento/tipos";
 import { DialogoDeclarar, DialogoEncerrar } from "@/features/situacao/Declarar";
 import { ROTULO_ESTAGIO, TOKEN_ESTAGIO } from "@/features/territorio/indicadoresMapa";
+import { CoberturaNoMapa, ControleCamadas, LegendaCamadas } from "./PainelCamadas";
+import { useCamadas } from "./usarCamadas";
+import { INDICADORES, textoPessoas, valorDe } from "./modeloCamadas";
 import { FaixaOficial } from "./EstagioOficial";
 import { ListaBairros, Prioritarios } from "./Listas";
 import { PainelTerritorio } from "./PainelTerritorio";
@@ -47,6 +50,7 @@ export function TelaMapa() {
   useTemaAtual(); // as cores do mapa vêm dos tokens: redesenha ao trocar claro/escuro
   const podeDeclarar = pode("editar");
 
+  const camadas = useCamadas();
   const oficial = useConsultaViva<unknown>("/estagios/oficial");
   const distritos = useConsultaViva<unknown>(`/estagios${consulta({ nivel: "distrito" })}`);
   const bairros = useConsultaViva<unknown>(`/estagios${consulta({ nivel: "bairro" })}`);
@@ -111,8 +115,16 @@ export function TelaMapa() {
     },
     [porId],
   );
+  const modoPopulacao = camadas.modo === "populacao";
+  const porBairroPop = camadas.populacao.porBairro;
+  const indicadorPop = camadas.indicador;
   const dica = useCallback(
     (id: string, nome: string) => {
+      if (modoPopulacao) {
+        const pop = valorDe(porBairroPop.get(id), indicadorPop);
+        const rotulo = INDICADORES.find((i) => i.valor === indicadorPop)?.rotulo ?? "";
+        return `<strong>${nome.replace(/</g, "&lt;")}</strong><br>${rotulo}: ${textoPessoas(pop)}`;
+      }
       const v = emVigor(porId.get(id));
       const texto =
         v.ordem === null
@@ -120,7 +132,7 @@ export function TelaMapa() {
           : `${ROTULO_ESTAGIO[v.ordem]} (${v.origem === "declarado" ? "declarado" : "sugerido pelo sistema"})`;
       return `<strong>${nome.replace(/</g, "&lt;")}</strong><br>${texto}`;
     },
-    [porId],
+    [porId, modoPopulacao, porBairroPop, indicadorPop],
   );
 
   const enquadrar = useMemo(() => {
@@ -141,7 +153,7 @@ export function TelaMapa() {
     <>
       <CabecalhoTela
         titulo="Mapa"
-        proposito="Onde agir primeiro: escolha um bairro para ver o estágio, os alertas oficiais e os abrigos."
+        proposito="Onde agir primeiro: escolha um bairro para ver o estágio, os alertas oficiais, a população vulnerável e os abrigos."
         atualizadoEm={momento}
       />
       <div className={estilos.pagina}>
@@ -180,15 +192,21 @@ export function TelaMapa() {
                   enquadrar={enquadrar}
                   aoSelecionar={setSel}
                   tokensEstagio={TOKEN_ESTAGIO}
+                  {...camadas.propsMapa}
                 />
               )}
+              <CoberturaNoMapa c={camadas} />
             </section>
             {modoDistrito && (
               <EstadoDados tipo="insuficiente" titulo="O mapa dos bairros ainda não está disponível.">
                 Mostrando os 8 distritos, com o estágio de cada um. Os bairros continuam na lista.
               </EstadoDados>
             )}
-            <LegendaEstagios fontes={fontes} consultadoEm={bairros.dataUpdatedAt} />
+            <ControleCamadas c={camadas} rotuloBase="Estágio dos bairros" />
+            {camadas.modo === "estagio" && (
+              <LegendaEstagios fontes={fontes} consultadoEm={bairros.dataUpdatedAt} />
+            )}
+            <LegendaCamadas c={camadas} />
             {bairros.isError && (
               <EstadoConsulta
                 erro={bairros.error}

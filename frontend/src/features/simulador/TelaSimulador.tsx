@@ -26,6 +26,16 @@ import { distritoPorExtenso } from "@/textos/glossario";
 import { EstadoConsulta } from "@/features/evento/Evento";
 import { TOKEN_ESTAGIO } from "@/features/territorio/indicadoresMapa";
 import estilosMapa from "@/features/mapa/Mapa.module.css";
+import { useCamadas } from "@/features/mapa/usarCamadas";
+import { CoberturaNoMapa, ControleCamadas, LegendaCamadas } from "@/features/mapa/PainelCamadas";
+import {
+  AVISO_DEFICIENCIA,
+  INDICADORES,
+  impactoDe,
+  somaExposta,
+  textoPessoas,
+  valorDe,
+} from "@/features/mapa/modeloCamadas";
 import { PainelPremissas } from "./Premissas";
 import {
   CLASSES,
@@ -95,6 +105,7 @@ export function TelaSimulador() {
   const { usuario } = useSessao();
   useTemaAtual();
   const clientes = useQueryClient();
+  const camadas = useCamadas();
 
   const atuais = useConsulta<Envelope<Partial<Premissas>>>("/cenarios/premissas-atuais", {
     staleTime: 5 * 60_000,
@@ -162,13 +173,21 @@ export function TelaSimulador() {
     },
     [porId, visao],
   );
+  const modoPopulacao = camadas.modo === "populacao";
+  const porBairroPop = camadas.populacao.porBairro;
+  const indicadorPop = camadas.indicador;
   const dica = useCallback(
     (id: string, nome: string) => {
+      if (modoPopulacao) {
+        const pop = valorDe(porBairroPop.get(id), indicadorPop);
+        const rotulo = INDICADORES.find((i) => i.valor === indicadorPop)?.rotulo ?? "";
+        return `<strong>${nome.replace(/</g, "&lt;")}</strong><br>${rotulo}: ${textoPessoas(pop)}`;
+      }
       const o = classeDoItem(porId.get(id), visao);
       const texto = o === null ? "Dados insuficientes" : ROTULO_CLASSE[o];
       return `<strong>${nome.replace(/</g, "&lt;")}</strong><br>${texto}`;
     },
-    [porId, visao],
+    [porId, visao, modoPopulacao, porBairroPop, indicadorPop],
   );
 
   const posicao = useMemo(
@@ -298,16 +317,19 @@ export function TelaSimulador() {
                   selecionado={sel}
                   aoSelecionar={setSel}
                   tokensEstagio={TOKEN_ESTAGIO}
+                  {...camadas.propsMapa}
                 />
               )}
+              <CoberturaNoMapa c={camadas} />
               {calculando && (
                 <p className={estilos.calculando} role="status">
                   Calculando…
                 </p>
               )}
             </section>
-            <Legenda visao={visao} />
-            <Camadas />
+            <ControleCamadas c={camadas} rotuloBase="Classe do cenário" />
+            {camadas.modo === "estagio" && <Legenda visao={visao} />}
+            <LegendaCamadas c={camadas} />
             {fontes.length > 0 && (
               <div className={estilos.fontes}>
                 {fontes.some((f) => f.desatualizado === true) && (
@@ -325,7 +347,11 @@ export function TelaSimulador() {
 
           <div className={estilos.colunaLateral}>
             {item ? (
-              <PainelBairro item={item} aoFechar={() => setSel(null)} />
+              <PainelBairro
+                item={item}
+                aviso={resultado?.resumo?.impacto_pessoas_aviso ?? null}
+                aoFechar={() => setSel(null)}
+              />
             ) : (
               <p className={estilosMapa.dicaClique}>
                 Toque em um bairro no mapa, ou escolha na lista, para ver o motivo da classe.
@@ -437,6 +463,7 @@ function ResumoResultado({
         {!calculando && resultado.calculado_em ? `, às ${formatarHoraMinuto(resultado.calculado_em)}` : ""}.
         {erro && " Não foi possível atualizar: o mapa mostra o cálculo anterior."}
       </p>
+      <ExpostosNoResumo resumo={resultado.resumo} />
       <p className={estilos.abrigos}>
         <b>Pressão nos abrigos:</b>{" "}
         {pressao ? (
@@ -453,6 +480,81 @@ function ResumoResultado({
         )}
       </p>
     </div>
+  );
+}
+
+/** Residentes do bairro e equipamentos de saúde: contagem, nunca percentual (RN-06). Sem dado, nunca zero (RN-01). */
+function PopulacaoExposta({
+  impacto,
+  aviso,
+}: {
+  impacto: ReturnType<typeof impactoDe>;
+  aviso: string | null;
+}) {
+  if (!impacto)
+    return (
+      <p className={estilosMapa.apagado}>
+        {aviso ??
+          "Dados insuficientes: sem estágio de atenção ou mais neste bairro, ou falta a fonte IBGE (Censo 2022)."}
+      </p>
+    );
+  const n = (v: number | null | undefined) =>
+    v === null || v === undefined ? "Dados insuficientes" : formatarNumero(v);
+  return (
+    <>
+      <dl className={estilosMapa.numeros}>
+        <div>
+          <dt>Idosos (60 anos ou mais)</dt>
+          <dd>
+            <b>{n(impacto.idosos_60_mais)}</b>
+            {impacto.idosos_60_mais != null && <small>residentes</small>}
+          </dd>
+        </div>
+        <div>
+          <dt>Crianças (0 a 14 anos)</dt>
+          <dd>
+            <b>{n(impacto.criancas_0_14)}</b>
+            {impacto.criancas_0_14 != null && <small>residentes</small>}
+          </dd>
+        </div>
+        <div>
+          <dt>Equipamentos de saúde</dt>
+          <dd>
+            <b>{n(impacto.equipamentos_saude)}</b>
+            {impacto.equipamentos_saude != null && <small>no bairro</small>}
+          </dd>
+        </div>
+        <div>
+          <dt>Pessoas com deficiência</dt>
+          <dd>
+            <b>Dados insuficientes</b>
+            <small>{AVISO_DEFICIENCIA}</small>
+          </dd>
+        </div>
+      </dl>
+      <p className={estilosMapa.fonteLinha}>
+        Moradores do bairro, não pessoas atingidas. Fonte: IBGE, Censo 2022 e CNES.
+      </p>
+    </>
+  );
+}
+
+function ExpostosNoResumo({ resumo }: { resumo: ResultadoSimulacao["resumo"] }) {
+  const s = somaExposta(resumo);
+  if (!s) return null;
+  if (s.bairros_em_alerta === 0)
+    return (
+      <p className={estilos.abrigos}>
+        <b>Moradores vulneráveis expostos:</b> nenhum bairro em alerta ou acima neste cenário.
+      </p>
+    );
+  const parte = (v: number | null | undefined, rotulo: string) =>
+    v === null || v === undefined ? `${rotulo}: dados insuficientes` : `${formatarNumero(v)} ${rotulo}`;
+  return (
+    <p className={estilos.abrigos} data-testid="expostos-resumo">
+      <b>Moradores vulneráveis em bairros em alerta ou acima:</b> {parte(s.idosos_60_mais, "idosos 60+")} e{" "}
+      {parte(s.criancas_0_14, "crianças 0–14")}.{s.parcial && " Soma parcial: algum bairro está sem número."}
+    </p>
   );
 }
 
@@ -502,21 +604,15 @@ function Legenda({ visao }: { visao: Visao }) {
   );
 }
 
-function Camadas() {
-  return (
-    <fieldset className={estilos.camadas}>
-      <legend>Outras camadas</legend>
-      {["Abrigos", "População vulnerável", "Equipamentos de saúde"].map((c) => (
-        <label key={c} className={estilos.camada} data-desligada="true">
-          <input type="checkbox" disabled />
-          {c} <small>(em breve)</small>
-        </label>
-      ))}
-    </fieldset>
-  );
-}
-
-function PainelBairro({ item, aoFechar }: { item: ItemSimulado; aoFechar: () => void }) {
+function PainelBairro({
+  item,
+  aviso: avisoImpacto,
+  aoFechar,
+}: {
+  item: ItemSimulado;
+  aviso: string | null;
+  aoFechar: () => void;
+}) {
   const classe = (v: string | null | undefined) => {
     const o = ordemDaClasse(v);
     return o === null ? (
@@ -576,7 +672,7 @@ function PainelBairro({ item, aoFechar }: { item: ItemSimulado; aoFechar: () => 
       </div>
       <div className={estilosMapa.bloco}>
         <h3>População vulnerável exposta</h3>
-        <p className={estilosMapa.emBreve}>Dados insuficientes (em breve)</p>
+        <PopulacaoExposta impacto={impactoDe(item.impacto_pessoas)} aviso={avisoImpacto} />
       </div>
       <p className={estilos.estimativa}>
         <Experimental /> Estimativa por regras, ainda sem validação. Confira o alerta oficial na APAC e no

@@ -9,6 +9,7 @@ import { quandoAs } from "@/features/evento/textos";
 import type { Abrigo, ItemEstagio } from "@/features/evento/tipos";
 import { formatarDataHora } from "@/lib/formatos";
 import { distritoPorExtenso } from "@/textos/glossario";
+import { ResumoBairro } from "./ResumoBairro";
 import { emVigor } from "./tipos";
 import estilos from "./Mapa.module.css";
 
@@ -216,6 +217,7 @@ export function PainelTerritorio({
         {abrigos.erro && <EstadoConsulta erro={abrigos.erro} oQue="os abrigos" aoTentar={abrigos.aoTentar} />}
         {!abrigos.carregando && !abrigos.erro && (
           <>
+            <small className={estilos.fonteLinha}>Fonte: cadastro de abrigos (equipe e COP)</small>
             {doTerritorio.length === 0 ? (
               <p>Nenhum abrigo cadastrado {ehDistrito ? "neste distrito" : "neste bairro"}.</p>
             ) : (
@@ -239,13 +241,17 @@ export function PainelTerritorio({
         )}
       </section>
 
-      <section className={estilos.bloco} aria-labelledby="painel-breve">
-        <h3 id="painel-breve">População vulnerável e equipamentos de saúde</h3>
-        <p className={estilos.emBreve}>
-          <b>Em breve.</b> Pessoas com deficiência, idosos, crianças e unidades de saúde do território entram
-          quando as fontes forem integradas. Por enquanto, não há número para mostrar.
-        </p>
-      </section>
+      {ehDistrito ? (
+        <section className={estilos.bloco} aria-labelledby="painel-vulneravel">
+          <h3 id="painel-vulneravel">População vulnerável e equipamentos de saúde</h3>
+          <p className={estilos.apagado}>
+            Esses números são por bairro. Escolha um bairro deste distrito para ver idosos, crianças, unidades
+            de saúde e áreas de risco.
+          </p>
+        </section>
+      ) : (
+        <ResumoBairro territorioId={item.territorio_id} />
+      )}
     </aside>
   );
 }

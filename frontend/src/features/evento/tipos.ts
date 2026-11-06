@@ -96,6 +96,9 @@ export interface Abrigo {
   territorio_id?: string | null;
   territorio_nome?: string | null;
   endereco?: string | null;
+  /** Coordenadas do abrigo (camada do mapa, RF-02). Sem elas o abrigo não aparece no mapa. */
+  latitude?: number | null;
+  longitude?: number | null;
   capacidade?: number | null;
   aberto: boolean;
   pessoas_abrigadas?: number | null;

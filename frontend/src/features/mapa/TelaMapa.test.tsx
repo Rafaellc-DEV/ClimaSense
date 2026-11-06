@@ -286,8 +286,9 @@ test("clicar no bairro abre o painel: estágio declarado e sugerido, alertas, ab
   expect(within(painel).getByText("Escola do Ibura")).toBeInTheDocument();
   expect(within(painel).getByText("Outros abrigos do mesmo distrito")).toBeInTheDocument();
   expect(within(painel).getByText("Igreja da Cohab")).toBeInTheDocument();
-  // espaço reservado, sem números
-  expect(within(painel).getByText("Em breve.")).toBeInTheDocument();
+  // sem o resumo no servidor: avisa, sem número inventado
+  expect(await within(painel).findByText("Ainda não disponível")).toBeInTheDocument();
+  expect(within(painel).queryByText("Em breve.")).not.toBeInTheDocument();
   expect(within(painel).getByRole("button", { name: /Declarar/ })).toBeInTheDocument();
 });
 
