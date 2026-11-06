@@ -121,10 +121,15 @@ def test_saude_semanal_bairros_e_onde_ja_aconteceu(ambiente):  # noqa: F811
     b = r.json()["dados"]
     assert b["ano"] == 2025 and b["anos_disponiveis"] == [2025, 2015]
     por_bairro = {i["bairro_id"]: i for i in b["itens"]}
-    assert len(por_bairro) == 94 and por_bairro["bairro-pina"]["casos"] == 1
+    assert len(por_bairro) == 94
+    # RNF-03/RN-13: 1 a 4 casos saem nulos e marcados; zero medido continua zero
+    assert por_bairro["bairro-pina"]["casos"] is None and por_bairro["bairro-pina"]["suprimido"] is True
     assert por_bairro["bairro-pina"]["distrito_id"] == "ds-6"
-    assert por_bairro["bairro-torre"]["casos"] == 0 and por_bairro["bairro-torre"]["notificados"] == 1
-    assert b["total_confirmados"] == 3 and b["confirmados_sem_bairro"] == 0
+    assert por_bairro["bairro-torre"]["casos"] == 0 and por_bairro["bairro-torre"]["notificados"] is None
+    assert b["total_confirmados"] is None  # 3 casos no total: pequeno demais
+    assert b["total_notificados"] == 10
+    assert b["confirmados_sem_bairro"] is None and b["sem_bairro_suprimido"] is True
+    assert r.json()["meta"]["supressao_minima"] == 5
     assert r.json()["meta"]["recorte"]["granularidade"] == "bairro"
     vazio = c.get("/api/v1/saude/bairros", params={"agravo": "chikungunya"}).json()
     assert vazio["dados"]["itens"] == [] and vazio["meta"]["dados_insuficientes"] is True

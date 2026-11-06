@@ -15,6 +15,7 @@ from sqlalchemy.orm import Session
 
 from climasense.dominio import estagio as dom
 from climasense.dominio import janela_leptospirose as janela
+from climasense.dominio.supressao import deve_suprimir, suprimir
 from climasense.etl.conectores.comum import FUSO_RECIFE
 from climasense.servicos import estagios
 
@@ -154,7 +155,27 @@ def anos_bairros(db: Session, agravo: str) -> list[int]:
     )
 
 
-def bairros(db: Session, agravo: str, ano: int | None) -> dict:
+def _suprimir_bairros(itens: list[dict], minimo: int) -> tuple[list[dict], bool]:
+    """Casos e notificados de 1 a `minimo - 1` saem nulos (`suprimido`). Devolve também se alguma célula de casos
+    foi suprimida. A ordem não pode vazar o valor: ≥ mínimo (decrescente), suprimidos (por nome), zeros (por nome)."""
+    saida, houve = [], False
+    for i in itens:
+        casos, s_casos = suprimir(i["casos"], minimo)
+        notificados, s_notif = suprimir(i["notificados"], minimo)
+        houve = houve or s_casos
+        saida.append({**i, "casos": casos, "notificados": notificados, "suprimido": s_casos or s_notif})
+
+    def chave(i: dict):
+        if i["suprimido"]:
+            return (1, 0, i["bairro_nome"])
+        return (
+            (0, -(i["casos"] or 0), i["bairro_nome"]) if (i["casos"] or 0) > 0 else (2, 0, i["bairro_nome"])
+        )
+
+    return sorted(saida, key=chave), houve
+
+
+def bairros(db: Session, agravo: str, ano: int | None, supressao_minima: int = 5) -> dict:
     anos = anos_bairros(db, agravo)
     ano = ano if ano is not None else (anos[0] if anos else None)
     if ano is None or ano not in anos:
@@ -186,14 +207,19 @@ def bairros(db: Session, agravo: str, ano: int | None) -> dict:
         .mappings()
         .one()
     )
+    itens, houve_supressao = _suprimir_bairros(itens, supressao_minima)
+    # Supressão complementar: com uma célula escondida, total e "sem bairro" publicados juntos a revelariam por
+    # diferença; então "sem bairro" sai nulo sempre que algum bairro foi suprimido (ou se ele próprio é pequeno).
+    sem_bairro_suprimido = houve_supressao or deve_suprimir(total["sem_bairro"], supressao_minima)
     return {
         "agravo": agravo,
         "ano": ano,
         "itens": itens,
         "anos_disponiveis": anos,
-        "total_confirmados": total["total"],
-        "confirmados_sem_bairro": total["sem_bairro"],
-        "total_notificados": total["notificados"],
+        "total_confirmados": suprimir(total["total"], supressao_minima)[0],
+        "confirmados_sem_bairro": None if sem_bairro_suprimido else total["sem_bairro"],
+        "sem_bairro_suprimido": sem_bairro_suprimido,
+        "total_notificados": suprimir(total["notificados"], supressao_minima)[0],
         "fonte_atualizada_em": total["atualizada"],
     }
 
