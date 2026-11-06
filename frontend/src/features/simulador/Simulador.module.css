@@ -1,0 +1,251 @@
+/* Simulador: premissas no alto, resultado em uma frase, mapa à esquerda e painel do bairro à direita. */
+.pagina {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--e-5);
+}
+
+/* ---------- premissas */
+.premissas {
+  display: grid;
+  gap: var(--e-4);
+  padding: var(--e-4);
+  border-radius: var(--r-painel);
+  background: var(--cs-papel);
+  box-shadow: var(--sombra-cartao);
+  color: var(--cs-tinta);
+}
+.premissasTopo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--e-2) var(--e-4);
+}
+.premissasTopo h2 {
+  margin: 0;
+  font-family: var(--fonte-titulo);
+  font-size: var(--t-3);
+}
+.campos {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 10.5rem), 1fr));
+  gap: var(--e-3) var(--e-4);
+  align-items: start;
+}
+.campos input {
+  min-width: 0;
+  width: 100%;
+}
+.fonteCampo {
+  display: block;
+}
+
+/* ---------- resultado */
+.resultado {
+  display: grid;
+  gap: var(--e-3);
+  padding: var(--e-4);
+  border-radius: var(--r-painel);
+  background: var(--cs-papel);
+  box-shadow: var(--sombra-cartao);
+  color: var(--cs-tinta);
+}
+.resumo {
+  display: grid;
+  gap: var(--e-2);
+}
+.frase {
+  max-width: 48ch;
+  margin: 0;
+  font-family: var(--fonte-titulo);
+  font-size: clamp(1.25rem, 1.05rem + 1vw, 1.75rem);
+  font-weight: 700;
+  line-height: 1.25;
+}
+.estado,
+.abrigos {
+  margin: 0;
+  color: var(--cs-tinta-2);
+  font-size: var(--t-apoio);
+}
+.abrigos {
+  color: var(--cs-tinta);
+}
+.contagem {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--e-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.contagem li {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--e-2);
+  padding: var(--e-2) var(--e-3);
+  border-top: 5px solid var(--n-insuf);
+  border-radius: var(--r-icone);
+  background: var(--cs-nevoa);
+  font-size: 0.9375rem;
+}
+.contagem li b {
+  font-family: var(--fonte-titulo);
+  font-size: var(--t-3);
+  line-height: 1;
+}
+.contagem li[data-zero="true"] {
+  color: var(--cs-tinta-2);
+}
+.contagem li[data-classe="observacao"] {
+  border-top-color: var(--n-info);
+}
+.contagem li[data-classe="atencao"] {
+  border-top-color: var(--n-atencao);
+}
+.contagem li[data-classe="alerta"] {
+  border-top-color: var(--n-alerta);
+}
+.contagem li[data-classe="critico"] {
+  border-top-color: var(--n-critico);
+}
+.contagem li[data-classe="sem_dados"] {
+  border-top-style: dashed;
+}
+
+/* ---------- corpo */
+.corpo {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 26rem);
+  gap: var(--e-5);
+  align-items: start;
+}
+.colunaMapa,
+.colunaLateral {
+  display: grid;
+  gap: var(--e-4);
+  min-width: 0;
+}
+.colunaMapa {
+  position: sticky;
+  top: var(--e-4);
+}
+.barraMapa {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--e-3) var(--e-4);
+}
+.mapa[data-calculando="true"] > div:first-child {
+  opacity: 0.55;
+  transition: opacity 0.2s;
+}
+.calculando {
+  position: absolute;
+  top: var(--e-3);
+  left: 50%;
+  z-index: 1000;
+  transform: translateX(-50%);
+  margin: 0;
+  padding: var(--e-2) var(--e-4);
+  border-radius: var(--r-pilula);
+  background: var(--cs-mare);
+  color: var(--cs-sobre-mare);
+  font-weight: 700;
+  box-shadow: var(--sombra-cartao-alta);
+}
+
+/* ---------- camadas */
+.camadas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--e-2) var(--e-4);
+  margin: 0;
+  padding: var(--e-3) var(--e-4);
+  border: 0;
+  border-radius: var(--r-painel);
+  background: var(--cs-papel);
+  box-shadow: var(--sombra-cartao);
+}
+.camadas legend {
+  padding: 0;
+  font-weight: 700;
+  font-size: var(--t-apoio);
+  color: var(--cs-tinta-2);
+}
+.camada {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--e-2);
+  min-height: var(--alvo-lista);
+  cursor: pointer;
+}
+.camada input {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+.camada[data-desligada="true"] {
+  color: var(--cs-tinta-2);
+  cursor: not-allowed;
+}
+.fontes {
+  display: grid;
+  gap: var(--e-2);
+  font-size: var(--t-apoio);
+  color: var(--cs-tinta-2);
+}
+.fontes p {
+  margin: 0;
+}
+
+/* ---------- painel do bairro e listas */
+.motivos {
+  display: grid;
+  gap: var(--e-2);
+  margin: 0;
+  padding-left: 1.25rem;
+}
+.estimativa {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--e-2);
+  margin: 0;
+  font-size: var(--t-apoio);
+  color: var(--cs-tinta-2);
+}
+.itemNome {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+  font-weight: 700;
+}
+.itemNome small {
+  font-weight: 400;
+  color: var(--cs-tinta-2);
+}
+.salvar {
+  display: grid;
+  gap: var(--e-3);
+}
+.ok {
+  margin: var(--e-2) 0 0;
+  color: var(--cs-mangue);
+  font-weight: 700;
+}
+.erroSalvar {
+  margin: var(--e-2) 0 0;
+  color: var(--n-critico);
+  font-weight: 700;
+}
+
+@media (max-width: 62rem) {
+  .corpo {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .colunaMapa {
+    position: static;
+  }
+}

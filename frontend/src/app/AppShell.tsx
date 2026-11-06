@@ -3,6 +3,7 @@ import * as Dialog from "@radix-ui/react-dialog";
 import {
   CloudRain,
   Database,
+  FlaskConical,
   FileText,
   HeartPulse,
   LogOut,
@@ -47,6 +48,7 @@ const TODOS_PRINCIPAIS: ItemMenu[] = [
   { para: "/app", rotulo: "Mapa", icone: <MapIcon />, fim: true },
   { para: "/app/situacao", rotulo: "Situação", icone: <Siren /> },
   { para: "/app/chuva", rotulo: "Chuva", icone: <CloudRain /> },
+  { para: "/app/simulador", rotulo: "Simulador", icone: <FlaskConical /> },
   { para: "/app/registro", rotulo: "Registro do evento", icone: <NotebookPen /> },
   { para: "/app/abrigos", rotulo: "Abrigos", icone: <Tent /> },
   { para: "/app/saude", rotulo: "Saúde depois da chuva", icone: <HeartPulse /> },

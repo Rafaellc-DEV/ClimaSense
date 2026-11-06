@@ -19,6 +19,7 @@ const AppShell = carregar(() => import("./AppShell"), "AppShell");
 const Mapa = carregar(() => import("@/features/mapa/TelaMapa"), "TelaMapa");
 const Situacao = carregar(() => import("@/features/situacao/TelaSituacao"), "TelaSituacao");
 const Chuva = carregar(() => import("@/features/chuva/TelaChuva"), "TelaChuva");
+const Simulador = carregar(() => import("@/features/simulador/TelaSimulador"), "TelaSimulador");
 const Registro = carregar(() => import("@/features/registro/TelaRegistro"), "TelaRegistro");
 const Abrigos = carregar(() => import("@/features/abrigos/TelaAbrigos"), "TelaAbrigos");
 const Saude = carregar(() => import("@/features/saude/TelaSaude"), "TelaSaude");
@@ -85,6 +86,7 @@ export function App() {
                   <Route index element={<Mapa />} />
                   <Route path="situacao" element={<Situacao />} />
                   <Route path="chuva" element={<Chuva />} />
+                  <Route path="simulador" element={<Simulador />} />
                   <Route path="registro" element={<Registro />} />
                   <Route path="abrigos" element={<Abrigos />} />
                   <Route path="saude" element={<Saude />} />

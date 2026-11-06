@@ -1,8 +1,10 @@
 import { useId, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import type { EChartsOption } from "echarts";
 import { QuadroGrafico } from "@/charts/QuadroGrafico";
 import { estiloReferencia, token, useTemaAtual } from "@/charts/tema";
 import campo from "@/design-system/componentes/Campo.module.css";
+import { classesBotao } from "@/design-system/componentes/Botao";
 import { CarregandoLista } from "@/design-system/componentes/Esqueleto";
 import { AtualizadoAs, EstadoDados, LegendaFonte, fontesDado } from "@/design-system/componentes/EstadoDados";
 import { Pilula } from "@/design-system/componentes/Pilula";
@@ -246,6 +248,11 @@ export function ProximosDias() {
   return (
     <div className={estilos.pagina}>
       <AtualizadoAs em={r.dataUpdatedAt} />
+      <p>
+        <Link to="/app/simulador" className={classesBotao("secundario")}>
+          Simular este cenário
+        </Link>
+      </p>
       {r.isPending && <CarregandoLista linhas={1} altura="7rem" texto="Carregando a previsão…" />}
       {r.isError && (
         <EstadoConsulta erro={r.error} oQue="a previsão por distrito" aoTentar={() => r.refetch()} />

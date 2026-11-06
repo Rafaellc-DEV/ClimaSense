@@ -13,6 +13,7 @@ const MENU = [
   "Mapa",
   "Situação",
   "Chuva",
+  "Simulador",
   "Registro do evento",
   "Abrigos",
   "Saúde depois da chuva",
@@ -20,7 +21,7 @@ const MENU = [
   "Boletim",
 ];
 
-test("com comunicados ligado, o menu tem 8 itens, nesta ordem, e Fontes e Administração no rodapé", async () => {
+test("com comunicados ligado, o menu tem 9 itens, nesta ordem, e Fontes e Administração no rodapé", async () => {
   vi.stubEnv("VITE_FUNC_COMUNICADOS", "1");
   simularApi({
     "/auth/eu": usuarioTeste(["consultar", "editar", "administrar"]),
