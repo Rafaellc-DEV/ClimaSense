@@ -11,7 +11,7 @@
         "tags": [
           "Saúde do sistema"
         ],
-        "summary": "Estado da API e dos bancos",
+        "summary": "Estado da API e dos bancos (em produção, só ok ou falha)",
         "operationId": "health_api_v1_health_get",
         "responses": {
           "200": {
@@ -19,7 +19,15 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Saude"
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/Saude"
+                    },
+                    {
+                      "$ref": "#/components/schemas/SaudeMinima"
+                    }
+                  ],
+                  "title": "Response Health Api V1 Health Get"
                 }
               }
             }
@@ -343,6 +351,47 @@
         }
       }
     },
+    "/api/v1/admin/login/liberar": {
+      "post": {
+        "tags": [
+          "Administração"
+        ],
+        "summary": "Liberar um e-mail e/ou IP bloqueados no login (auditado)",
+        "operationId": "liberar_api_v1_admin_login_liberar_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PedidoLiberacao"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Liberacao"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/territorios": {
       "get": {
         "tags": [
@@ -570,239 +619,6 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/territorios/mapa-portatil": {
-      "get": {
-        "tags": [
-          "Território"
-        ],
-        "summary": "Baixar o mapa portátil (HTML offline, porte da Aula 07)",
-        "operationId": "mapa_api_v1_territorios_mapa_portatil_get",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/publico/territorios/busca": {
-      "get": {
-        "tags": [
-          "Público"
-        ],
-        "summary": "Busca de bairro sem diferenciar acentos",
-        "operationId": "busca_api_v1_publico_territorios_busca_get",
-        "parameters": [
-          {
-            "name": "q",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "minLength": 2,
-              "maxLength": 60,
-              "title": "Q"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/Bairro"
-                  },
-                  "title": "Response Busca Api V1 Publico Territorios Busca Get"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/publico/estado": {
-      "get": {
-        "tags": [
-          "Público"
-        ],
-        "summary": "Estado dos avisos para o topo da página inicial",
-        "operationId": "estado_api_v1_publico_estado_get",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/EstadoPublico"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/publico/avisos": {
-      "get": {
-        "tags": [
-          "Público"
-        ],
-        "summary": "Avisos publicados e vigentes, do nível mais alto",
-        "operationId": "avisos_api_v1_publico_avisos_get",
-        "parameters": [
-          {
-            "name": "bairro",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string",
-                  "maxLength": 60
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "description": "Nome do bairro, sem diferenciar acentos",
-              "title": "Bairro"
-            },
-            "description": "Nome do bairro, sem diferenciar acentos"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/AvisoPublico"
-                  },
-                  "title": "Response Avisos Api V1 Publico Avisos Get"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/publico/avisos/{aviso_id}": {
-      "get": {
-        "tags": [
-          "Público"
-        ],
-        "summary": "Detalhe de um aviso publicado",
-        "operationId": "aviso_api_v1_publico_avisos__aviso_id__get",
-        "parameters": [
-          {
-            "name": "aviso_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Aviso Id"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AvisoPublico"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/publico/fontes": {
-      "get": {
-        "tags": [
-          "Público"
-        ],
-        "summary": "De onde vêm os dados (status das fontes)",
-        "operationId": "fontes_api_v1_publico_fontes_get",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/FontePublica"
-                  },
-                  "type": "array",
-                  "title": "Response Fontes Api V1 Publico Fontes Get"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/publico/abrigos": {
-      "get": {
-        "tags": [
-          "Público"
-        ],
-        "summary": "Abrigos e pontos de apoio (sem dados pessoais nem ocupação detalhada)",
-        "operationId": "abrigos_publicos_api_v1_publico_abrigos_get",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ListaAbrigosPublica"
                 }
               }
             }
@@ -1201,98 +1017,6 @@
         }
       }
     },
-    "/api/v1/series/estatisticas": {
-      "get": {
-        "tags": [
-          "Séries e sazonalidade"
-        ],
-        "summary": "Estatística descritiva em texto simples",
-        "operationId": "estatisticas_api_v1_series_estatisticas_get",
-        "parameters": [
-          {
-            "name": "territorio_id",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "default": "recife",
-              "title": "Territorio Id"
-            }
-          },
-          {
-            "name": "inicio",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string",
-                  "format": "date"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Inicio"
-            }
-          },
-          {
-            "name": "fim",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string",
-                  "format": "date"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Fim"
-            }
-          },
-          {
-            "name": "frequencia",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "enum": [
-                "diaria",
-                "semanal",
-                "mensal"
-              ],
-              "type": "string",
-              "default": "diaria",
-              "title": "Frequencia"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/RespostaDados_Estatisticas_"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/api/v1/cenarios": {
       "get": {
         "tags": [
@@ -1331,1189 +1055,6 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/RespostaDados_Cenario_"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/avaliacoes": {
-      "get": {
-        "tags": [
-          "Avaliações"
-        ],
-        "summary": "Avaliações com filtros e contagem por estado",
-        "operationId": "listar_api_v1_avaliacoes_get",
-        "parameters": [
-          {
-            "name": "estado",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Estado"
-            }
-          },
-          {
-            "name": "territorio_id",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Territorio Id"
-            }
-          },
-          {
-            "name": "inicio",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string",
-                  "format": "date"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Inicio"
-            }
-          },
-          {
-            "name": "fim",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string",
-                  "format": "date"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Fim"
-            }
-          },
-          {
-            "name": "pagina",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "integer",
-                  "minimum": 1
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "description": "Opcional: sem ela, devolve tudo",
-              "title": "Pagina"
-            },
-            "description": "Opcional: sem ela, devolve tudo"
-          },
-          {
-            "name": "por_pagina",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "integer",
-              "maximum": 200,
-              "minimum": 1,
-              "default": 20,
-              "title": "Por Pagina"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ListaAvaliacoes"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      },
-      "post": {
-        "tags": [
-          "Avaliações"
-        ],
-        "summary": "Registrar avaliação (rascunho)",
-        "operationId": "criar_api_v1_avaliacoes_post",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/PedidoAvaliacao"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/DetalheAvaliacao"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/avaliacoes/{avaliacao_id}": {
-      "get": {
-        "tags": [
-          "Avaliações"
-        ],
-        "summary": "Detalhe com versão atual e linha do tempo",
-        "operationId": "detalhe_api_v1_avaliacoes__avaliacao_id__get",
-        "parameters": [
-          {
-            "name": "avaliacao_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Avaliacao Id"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/DetalheAvaliacao"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      },
-      "put": {
-        "tags": [
-          "Avaliações"
-        ],
-        "summary": "Salvar nova versão",
-        "operationId": "nova_versao_api_v1_avaliacoes__avaliacao_id__put",
-        "parameters": [
-          {
-            "name": "avaliacao_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Avaliacao Id"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/PedidoVersaoAvaliacao"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/DetalheAvaliacao"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/avaliacoes/{avaliacao_id}/enviar": {
-      "post": {
-        "tags": [
-          "Avaliações"
-        ],
-        "summary": "Enviar para revisão",
-        "operationId": "avaliacao_enviar_api_v1_avaliacoes__avaliacao_id__enviar_post",
-        "parameters": [
-          {
-            "name": "avaliacao_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Avaliacao Id"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "anyOf": [
-                  {
-                    "$ref": "#/components/schemas/Decisao"
-                  },
-                  {
-                    "type": "null"
-                  }
-                ],
-                "title": "Pedido"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/DetalheAvaliacao"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/avaliacoes/{avaliacao_id}/aprovar": {
-      "post": {
-        "tags": [
-          "Avaliações"
-        ],
-        "summary": "Aprovar a versão atual (revisor diferente do autor)",
-        "operationId": "avaliacao_aprovar_api_v1_avaliacoes__avaliacao_id__aprovar_post",
-        "parameters": [
-          {
-            "name": "avaliacao_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Avaliacao Id"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "anyOf": [
-                  {
-                    "$ref": "#/components/schemas/Decisao"
-                  },
-                  {
-                    "type": "null"
-                  }
-                ],
-                "title": "Pedido"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/DetalheAvaliacao"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/avaliacoes/{avaliacao_id}/devolver": {
-      "post": {
-        "tags": [
-          "Avaliações"
-        ],
-        "summary": "Devolver com justificativa",
-        "operationId": "avaliacao_devolver_api_v1_avaliacoes__avaliacao_id__devolver_post",
-        "parameters": [
-          {
-            "name": "avaliacao_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Avaliacao Id"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "anyOf": [
-                  {
-                    "$ref": "#/components/schemas/Decisao"
-                  },
-                  {
-                    "type": "null"
-                  }
-                ],
-                "title": "Pedido"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/DetalheAvaliacao"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/avaliacoes/{avaliacao_id}/encerrar": {
-      "post": {
-        "tags": [
-          "Avaliações"
-        ],
-        "summary": "Encerrar (coordenação)",
-        "operationId": "avaliacao_encerrar_api_v1_avaliacoes__avaliacao_id__encerrar_post",
-        "parameters": [
-          {
-            "name": "avaliacao_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Avaliacao Id"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "anyOf": [
-                  {
-                    "$ref": "#/components/schemas/Decisao"
-                  },
-                  {
-                    "type": "null"
-                  }
-                ],
-                "title": "Pedido"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/DetalheAvaliacao"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/comunicados": {
-      "get": {
-        "tags": [
-          "Comunicados"
-        ],
-        "summary": "Comunicados com filtros e contagem por estado",
-        "operationId": "listar_api_v1_comunicados_get",
-        "parameters": [
-          {
-            "name": "estado",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Estado"
-            }
-          },
-          {
-            "name": "territorio_id",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Territorio Id"
-            }
-          },
-          {
-            "name": "pagina",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "integer",
-                  "minimum": 1
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "description": "Opcional: sem ela, devolve tudo",
-              "title": "Pagina"
-            },
-            "description": "Opcional: sem ela, devolve tudo"
-          },
-          {
-            "name": "por_pagina",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "integer",
-              "maximum": 200,
-              "minimum": 1,
-              "default": 20,
-              "title": "Por Pagina"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ListaComunicados"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      },
-      "post": {
-        "tags": [
-          "Comunicados"
-        ],
-        "summary": "Criar rascunho de comunicado",
-        "operationId": "criar_api_v1_comunicados_post",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/PedidoComunicado"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/DetalheComunicado"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/comunicados/{comunicado_id}": {
-      "get": {
-        "tags": [
-          "Comunicados"
-        ],
-        "summary": "Detalhe com prévia, versões e ações",
-        "operationId": "detalhe_api_v1_comunicados__comunicado_id__get",
-        "parameters": [
-          {
-            "name": "comunicado_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Comunicado Id"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/DetalheComunicado"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      },
-      "put": {
-        "tags": [
-          "Comunicados"
-        ],
-        "summary": "Salvar nova versão",
-        "operationId": "nova_versao_api_v1_comunicados__comunicado_id__put",
-        "parameters": [
-          {
-            "name": "comunicado_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Comunicado Id"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/PedidoComunicado"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/DetalheComunicado"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/comunicados/{comunicado_id}/previa": {
-      "get": {
-        "tags": [
-          "Comunicados"
-        ],
-        "summary": "A versão atual como a landing mostrará",
-        "operationId": "previa_api_v1_comunicados__comunicado_id__previa_get",
-        "parameters": [
-          {
-            "name": "comunicado_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Comunicado Id"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AvisoPublico"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/comunicados/{comunicado_id}/versoes": {
-      "get": {
-        "tags": [
-          "Comunicados"
-        ],
-        "summary": "Histórico de versões",
-        "operationId": "versoes_api_v1_comunicados__comunicado_id__versoes_get",
-        "parameters": [
-          {
-            "name": "comunicado_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Comunicado Id"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/VersaoResumo"
-                  },
-                  "title": "Response Versoes Api V1 Comunicados  Comunicado Id  Versoes Get"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/comunicados/{comunicado_id}/versoes/{a}/diferenca/{b}": {
-      "get": {
-        "tags": [
-          "Comunicados"
-        ],
-        "summary": "O que mudou entre duas versões",
-        "operationId": "diferenca_api_v1_comunicados__comunicado_id__versoes__a__diferenca__b__get",
-        "parameters": [
-          {
-            "name": "comunicado_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Comunicado Id"
-            }
-          },
-          {
-            "name": "a",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "title": "A"
-            }
-          },
-          {
-            "name": "b",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "title": "B"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Diferenca"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/comunicados/{comunicado_id}/enviar": {
-      "post": {
-        "tags": [
-          "Comunicados"
-        ],
-        "summary": "Enviar para revisão",
-        "operationId": "comunicado_enviar_api_v1_comunicados__comunicado_id__enviar_post",
-        "parameters": [
-          {
-            "name": "comunicado_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Comunicado Id"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "anyOf": [
-                  {
-                    "$ref": "#/components/schemas/Decisao"
-                  },
-                  {
-                    "type": "null"
-                  }
-                ],
-                "title": "Pedido"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/DetalheComunicado"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/comunicados/{comunicado_id}/aprovar": {
-      "post": {
-        "tags": [
-          "Comunicados"
-        ],
-        "summary": "Aprovar a versão atual (revisor diferente do autor)",
-        "operationId": "comunicado_aprovar_api_v1_comunicados__comunicado_id__aprovar_post",
-        "parameters": [
-          {
-            "name": "comunicado_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Comunicado Id"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "anyOf": [
-                  {
-                    "$ref": "#/components/schemas/Decisao"
-                  },
-                  {
-                    "type": "null"
-                  }
-                ],
-                "title": "Pedido"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/DetalheComunicado"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/comunicados/{comunicado_id}/devolver": {
-      "post": {
-        "tags": [
-          "Comunicados"
-        ],
-        "summary": "Devolver com justificativa",
-        "operationId": "comunicado_devolver_api_v1_comunicados__comunicado_id__devolver_post",
-        "parameters": [
-          {
-            "name": "comunicado_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Comunicado Id"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "anyOf": [
-                  {
-                    "$ref": "#/components/schemas/Decisao"
-                  },
-                  {
-                    "type": "null"
-                  }
-                ],
-                "title": "Pedido"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/DetalheComunicado"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/comunicados/{comunicado_id}/publicar": {
-      "post": {
-        "tags": [
-          "Comunicados"
-        ],
-        "summary": "Publicar na página inicial (só a versão aprovada)",
-        "operationId": "comunicado_publicar_api_v1_comunicados__comunicado_id__publicar_post",
-        "parameters": [
-          {
-            "name": "comunicado_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Comunicado Id"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "anyOf": [
-                  {
-                    "$ref": "#/components/schemas/Decisao"
-                  },
-                  {
-                    "type": "null"
-                  }
-                ],
-                "title": "Pedido"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/DetalheComunicado"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/comunicados/{comunicado_id}/encerrar": {
-      "post": {
-        "tags": [
-          "Comunicados"
-        ],
-        "summary": "Encerrar: tira o aviso da página inicial",
-        "operationId": "comunicado_encerrar_api_v1_comunicados__comunicado_id__encerrar_post",
-        "parameters": [
-          {
-            "name": "comunicado_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Comunicado Id"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "anyOf": [
-                  {
-                    "$ref": "#/components/schemas/Decisao"
-                  },
-                  {
-                    "type": "null"
-                  }
-                ],
-                "title": "Pedido"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/DetalheComunicado"
                 }
               }
             }
@@ -4238,173 +2779,6 @@
         ],
         "title": "Abrigo"
       },
-      "AbrigoPublico": {
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Id"
-          },
-          "nome": {
-            "type": "string",
-            "title": "Nome"
-          },
-          "endereco": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Endereco"
-          },
-          "bairro_nome": {
-            "type": "string",
-            "title": "Bairro Nome"
-          },
-          "distrito_nome": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Distrito Nome"
-          },
-          "latitude": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Latitude"
-          },
-          "longitude": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Longitude"
-          },
-          "aberto": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Aberto"
-          },
-          "aberto_fonte": {
-            "anyOf": [
-              {
-                "type": "string",
-                "enum": [
-                  "equipe",
-                  "cop"
-                ]
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Aberto Fonte"
-          },
-          "aberto_lido_em": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "date-time"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Aberto Lido Em"
-          },
-          "atualizado_em": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "date-time"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Atualizado Em"
-          },
-          "origem": {
-            "type": "string",
-            "title": "Origem"
-          },
-          "fonte_url": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Fonte Url"
-          },
-          "tipo": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Tipo"
-          },
-          "capacidade": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Capacidade"
-          }
-        },
-        "type": "object",
-        "required": [
-          "id",
-          "nome",
-          "endereco",
-          "bairro_nome",
-          "distrito_nome",
-          "latitude",
-          "longitude",
-          "aberto",
-          "aberto_fonte",
-          "aberto_lido_em",
-          "atualizado_em",
-          "origem",
-          "fonte_url",
-          "tipo",
-          "capacidade"
-        ],
-        "title": "AbrigoPublico"
-      },
       "AbrigosBoletim": {
         "properties": {
           "totais": {
@@ -4959,36 +3333,6 @@
           "publico"
         ],
         "title": "AvisoPublico"
-      },
-      "Bairro": {
-        "properties": {
-          "id": {
-            "type": "string",
-            "title": "Id"
-          },
-          "nome": {
-            "type": "string",
-            "title": "Nome"
-          },
-          "distrito_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Distrito Id"
-          }
-        },
-        "type": "object",
-        "required": [
-          "id",
-          "nome",
-          "distrito_id"
-        ],
-        "title": "Bairro"
       },
       "BairroAgravo": {
         "properties": {
@@ -5613,24 +3957,6 @@
         ],
         "title": "Contadores"
       },
-      "Decisao": {
-        "properties": {
-          "justificativa": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 2000
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Justificativa"
-          }
-        },
-        "type": "object",
-        "title": "Decisao"
-      },
       "Declaracao": {
         "properties": {
           "id": {
@@ -5921,314 +4247,6 @@
         ],
         "title": "DetalheAcao"
       },
-      "DetalheAvaliacao": {
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Id"
-          },
-          "estado": {
-            "type": "string",
-            "title": "Estado"
-          },
-          "territorio_id": {
-            "type": "string",
-            "title": "Territorio Id"
-          },
-          "territorio_nome": {
-            "type": "string",
-            "title": "Territorio Nome"
-          },
-          "periodo_inicio": {
-            "type": "string",
-            "format": "date",
-            "title": "Periodo Inicio"
-          },
-          "periodo_fim": {
-            "type": "string",
-            "format": "date",
-            "title": "Periodo Fim"
-          },
-          "versao_atual": {
-            "type": "integer",
-            "title": "Versao Atual"
-          },
-          "versao": {
-            "$ref": "#/components/schemas/VersaoAvaliacao"
-          },
-          "linha_do_tempo": {
-            "items": {
-              "$ref": "#/components/schemas/EventoLinhaTempo"
-            },
-            "type": "array",
-            "title": "Linha Do Tempo"
-          },
-          "acoes": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Acoes"
-          }
-        },
-        "type": "object",
-        "required": [
-          "id",
-          "estado",
-          "territorio_id",
-          "territorio_nome",
-          "periodo_inicio",
-          "periodo_fim",
-          "versao_atual",
-          "versao",
-          "linha_do_tempo",
-          "acoes"
-        ],
-        "title": "DetalheAvaliacao"
-      },
-      "DetalheComunicado": {
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Id"
-          },
-          "estado": {
-            "type": "string",
-            "title": "Estado"
-          },
-          "versao_atual": {
-            "type": "integer",
-            "title": "Versao Atual"
-          },
-          "versao_aprovada": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Versao Aprovada"
-          },
-          "publicado_em": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "date-time"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Publicado Em"
-          },
-          "avaliacao_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Avaliacao Id"
-          },
-          "autor_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Autor Id"
-          },
-          "autor_nome": {
-            "type": "string",
-            "title": "Autor Nome"
-          },
-          "publico": {
-            "type": "string",
-            "title": "Publico"
-          },
-          "territorios": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Territorios"
-          },
-          "evidencias": {
-            "items": {
-              "additionalProperties": true,
-              "type": "object"
-            },
-            "type": "array",
-            "title": "Evidencias"
-          },
-          "hash_conteudo": {
-            "type": "string",
-            "title": "Hash Conteudo"
-          },
-          "previa": {
-            "$ref": "#/components/schemas/AvisoPublico"
-          },
-          "versoes": {
-            "items": {
-              "$ref": "#/components/schemas/VersaoResumo"
-            },
-            "type": "array",
-            "title": "Versoes"
-          },
-          "linha_do_tempo": {
-            "items": {
-              "$ref": "#/components/schemas/EventoLinhaTempo"
-            },
-            "type": "array",
-            "title": "Linha Do Tempo"
-          },
-          "acoes": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Acoes"
-          },
-          "frases_longas": {
-            "items": {
-              "$ref": "#/components/schemas/FraseLonga"
-            },
-            "type": "array",
-            "title": "Frases Longas"
-          }
-        },
-        "type": "object",
-        "required": [
-          "id",
-          "estado",
-          "versao_atual",
-          "versao_aprovada",
-          "publicado_em",
-          "avaliacao_id",
-          "autor_id",
-          "autor_nome",
-          "publico",
-          "territorios",
-          "evidencias",
-          "hash_conteudo",
-          "previa",
-          "versoes",
-          "linha_do_tempo",
-          "acoes",
-          "frases_longas"
-        ],
-        "title": "DetalheComunicado"
-      },
-      "Diferenca": {
-        "properties": {
-          "de": {
-            "type": "integer",
-            "title": "De"
-          },
-          "para": {
-            "type": "integer",
-            "title": "Para"
-          },
-          "campos": {
-            "additionalProperties": {
-              "items": {
-                "$ref": "#/components/schemas/Trecho"
-              },
-              "type": "array"
-            },
-            "type": "object",
-            "title": "Campos"
-          },
-          "alterados": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Alterados"
-          },
-          "metadados": {
-            "additionalProperties": {
-              "additionalProperties": {
-                "type": "string"
-              },
-              "type": "object"
-            },
-            "type": "object",
-            "title": "Metadados"
-          }
-        },
-        "type": "object",
-        "required": [
-          "de",
-          "para",
-          "campos",
-          "alterados",
-          "metadados"
-        ],
-        "title": "Diferenca"
-      },
-      "EstadoPublico": {
-        "properties": {
-          "avisos_ativos": {
-            "type": "integer",
-            "title": "Avisos Ativos"
-          },
-          "distritos_afetados": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Distritos Afetados"
-          },
-          "niveis_por_distrito": {
-            "additionalProperties": {
-              "type": "string"
-            },
-            "type": "object",
-            "title": "Niveis Por Distrito"
-          },
-          "nivel_mais_alto": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Nivel Mais Alto"
-          },
-          "principal": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/AvisoPublico"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "atualizado_em": {
-            "type": "string",
-            "format": "date-time",
-            "title": "Atualizado Em"
-          }
-        },
-        "type": "object",
-        "required": [
-          "avisos_ativos",
-          "distritos_afetados",
-          "niveis_por_distrito",
-          "nivel_mais_alto",
-          "principal",
-          "atualizado_em"
-        ],
-        "title": "EstadoPublico"
-      },
       "EstagioDistrito": {
         "properties": {
           "territorio_id": {
@@ -6276,42 +4294,6 @@
           "declarado"
         ],
         "title": "EstagioDistrito"
-      },
-      "Estatisticas": {
-        "properties": {
-          "frequencia": {
-            "type": "string",
-            "title": "Frequencia"
-          },
-          "n": {
-            "type": "integer",
-            "title": "N"
-          },
-          "minimo_observacoes": {
-            "type": "integer",
-            "title": "Minimo Observacoes"
-          },
-          "serie_curta": {
-            "type": "boolean",
-            "title": "Serie Curta"
-          },
-          "medidas": {
-            "items": {
-              "$ref": "#/components/schemas/Medida"
-            },
-            "type": "array",
-            "title": "Medidas"
-          }
-        },
-        "type": "object",
-        "required": [
-          "frequencia",
-          "n",
-          "minimo_observacoes",
-          "serie_curta",
-          "medidas"
-        ],
-        "title": "Estatisticas"
       },
       "EstimativaSaida": {
         "properties": {
@@ -6503,103 +4485,6 @@
           "alteracoes"
         ],
         "title": "EventoAcao"
-      },
-      "EventoLinhaTempo": {
-        "properties": {
-          "tipo": {
-            "type": "string",
-            "title": "Tipo"
-          },
-          "numero": {
-            "type": "integer",
-            "title": "Numero"
-          },
-          "em": {
-            "type": "string",
-            "format": "date-time",
-            "title": "Em"
-          },
-          "por": {
-            "type": "string",
-            "title": "Por"
-          },
-          "texto": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Texto"
-          }
-        },
-        "type": "object",
-        "required": [
-          "tipo",
-          "numero",
-          "em",
-          "por",
-          "texto"
-        ],
-        "title": "EventoLinhaTempo"
-      },
-      "Evidencia": {
-        "properties": {
-          "tipo": {
-            "type": "string",
-            "title": "Tipo",
-            "description": "mapa | serie | cenario | fonte"
-          },
-          "descricao": {
-            "type": "string",
-            "maxLength": 300,
-            "title": "Descricao"
-          },
-          "fonte_id": {
-            "type": "string",
-            "title": "Fonte Id"
-          },
-          "capturada_em": {
-            "type": "string",
-            "format": "date-time",
-            "title": "Capturada Em"
-          },
-          "valor": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 120
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Valor"
-          },
-          "endereco": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 300
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Endereco",
-            "description": "Caminho da tela com o recorte usado"
-          }
-        },
-        "type": "object",
-        "required": [
-          "tipo",
-          "descricao",
-          "fonte_id",
-          "capturada_em"
-        ],
-        "title": "Evidencia"
       },
       "EvidenciaPrioridade": {
         "properties": {
@@ -6966,52 +4851,6 @@
         ],
         "title": "FonteMeta"
       },
-      "FontePublica": {
-        "properties": {
-          "id": {
-            "type": "string",
-            "title": "Id"
-          },
-          "nome": {
-            "type": "string",
-            "title": "Nome"
-          },
-          "orgao": {
-            "type": "string",
-            "title": "Orgao"
-          },
-          "tipo": {
-            "type": "string",
-            "title": "Tipo"
-          },
-          "status": {
-            "type": "string",
-            "title": "Status"
-          },
-          "ultima_atualizacao": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "date-time"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Ultima Atualizacao"
-          }
-        },
-        "type": "object",
-        "required": [
-          "id",
-          "nome",
-          "orgao",
-          "tipo",
-          "status",
-          "ultima_atualizacao"
-        ],
-        "title": "FontePublica"
-      },
       "FonteSaude": {
         "properties": {
           "id": {
@@ -7047,29 +4886,6 @@
           "ultima_atualizacao"
         ],
         "title": "FonteSaude"
-      },
-      "FraseLonga": {
-        "properties": {
-          "frase": {
-            "type": "integer",
-            "title": "Frase"
-          },
-          "palavras": {
-            "type": "integer",
-            "title": "Palavras"
-          },
-          "inicio": {
-            "type": "string",
-            "title": "Inicio"
-          }
-        },
-        "type": "object",
-        "required": [
-          "frase",
-          "palavras",
-          "inicio"
-        ],
-        "title": "FraseLonga"
       },
       "FrescorFonte": {
         "properties": {
@@ -7783,6 +5599,38 @@
         ],
         "title": "JanelaRisco"
       },
+      "Liberacao": {
+        "properties": {
+          "email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email"
+          },
+          "ip": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ip"
+          }
+        },
+        "type": "object",
+        "required": [
+          "email",
+          "ip"
+        ],
+        "title": "Liberacao"
+      },
       "Limiares": {
         "properties": {
           "chuva_24h_atencao_mm": {
@@ -7894,40 +5742,6 @@
         ],
         "title": "ListaAbrigos"
       },
-      "ListaAbrigosPublica": {
-        "properties": {
-          "itens": {
-            "items": {
-              "$ref": "#/components/schemas/AbrigoPublico"
-            },
-            "type": "array",
-            "title": "Itens"
-          },
-          "atualizado_em": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "date-time"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Atualizado Em"
-          },
-          "aviso": {
-            "type": "string",
-            "title": "Aviso"
-          }
-        },
-        "type": "object",
-        "required": [
-          "itens",
-          "atualizado_em",
-          "aviso"
-        ],
-        "title": "ListaAbrigosPublica"
-      },
       "ListaAcoes": {
         "properties": {
           "itens": {
@@ -7956,64 +5770,6 @@
           "total"
         ],
         "title": "ListaAcoes"
-      },
-      "ListaAvaliacoes": {
-        "properties": {
-          "itens": {
-            "items": {
-              "$ref": "#/components/schemas/ResumoAvaliacao"
-            },
-            "type": "array",
-            "title": "Itens"
-          },
-          "contagens": {
-            "additionalProperties": {
-              "type": "integer"
-            },
-            "type": "object",
-            "title": "Contagens"
-          },
-          "total": {
-            "type": "integer",
-            "title": "Total"
-          }
-        },
-        "type": "object",
-        "required": [
-          "itens",
-          "contagens",
-          "total"
-        ],
-        "title": "ListaAvaliacoes"
-      },
-      "ListaComunicados": {
-        "properties": {
-          "itens": {
-            "items": {
-              "$ref": "#/components/schemas/ResumoComunicado"
-            },
-            "type": "array",
-            "title": "Itens"
-          },
-          "contagens": {
-            "additionalProperties": {
-              "type": "integer"
-            },
-            "type": "object",
-            "title": "Contagens"
-          },
-          "total": {
-            "type": "integer",
-            "title": "Total"
-          }
-        },
-        "type": "object",
-        "required": [
-          "itens",
-          "contagens",
-          "total"
-        ],
-        "title": "ListaComunicados"
       },
       "ListaEstagios": {
         "properties": {
@@ -8175,46 +5931,6 @@
           "nota"
         ],
         "title": "MarePrevista"
-      },
-      "Medida": {
-        "properties": {
-          "chave": {
-            "type": "string",
-            "title": "Chave"
-          },
-          "nome": {
-            "type": "string",
-            "title": "Nome"
-          },
-          "valor": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Valor"
-          },
-          "texto": {
-            "type": "string",
-            "title": "Texto"
-          },
-          "explicacao": {
-            "type": "string",
-            "title": "Explicacao"
-          }
-        },
-        "type": "object",
-        "required": [
-          "chave",
-          "nome",
-          "valor",
-          "texto",
-          "explicacao"
-        ],
-        "title": "Medida"
       },
       "Mensagem": {
         "properties": {
@@ -9029,143 +6745,6 @@
         "type": "object",
         "title": "PedidoAtualizacaoAcao"
       },
-      "PedidoAvaliacao": {
-        "properties": {
-          "territorio_id": {
-            "type": "string",
-            "title": "Territorio Id"
-          },
-          "periodo_inicio": {
-            "type": "string",
-            "format": "date",
-            "title": "Periodo Inicio"
-          },
-          "periodo_fim": {
-            "type": "string",
-            "format": "date",
-            "title": "Periodo Fim"
-          },
-          "prioridade": {
-            "type": "string",
-            "title": "Prioridade",
-            "description": "sem_indicacao | atencao | alerta | critico"
-          },
-          "justificativa": {
-            "type": "string",
-            "maxLength": 4000,
-            "title": "Justificativa"
-          },
-          "limitacoes": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 2000
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Limitacoes"
-          },
-          "evidencias": {
-            "items": {
-              "$ref": "#/components/schemas/Evidencia"
-            },
-            "type": "array",
-            "maxItems": 20,
-            "title": "Evidencias"
-          }
-        },
-        "type": "object",
-        "required": [
-          "territorio_id",
-          "periodo_inicio",
-          "periodo_fim",
-          "prioridade",
-          "justificativa"
-        ],
-        "title": "PedidoAvaliacao"
-      },
-      "PedidoComunicado": {
-        "properties": {
-          "territorios": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "maxItems": 20,
-            "minItems": 1,
-            "title": "Territorios"
-          },
-          "publico": {
-            "type": "string",
-            "title": "Publico",
-            "default": "populacao"
-          },
-          "nivel": {
-            "type": "string",
-            "title": "Nivel"
-          },
-          "titulo": {
-            "type": "string",
-            "maxLength": 120,
-            "title": "Titulo"
-          },
-          "texto": {
-            "type": "string",
-            "maxLength": 1200,
-            "title": "Texto",
-            "default": ""
-          },
-          "orientacoes": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "maxItems": 5,
-            "title": "Orientacoes"
-          },
-          "validade_inicio": {
-            "type": "string",
-            "format": "date-time",
-            "title": "Validade Inicio"
-          },
-          "validade_fim": {
-            "type": "string",
-            "format": "date-time",
-            "title": "Validade Fim"
-          },
-          "evidencias": {
-            "items": {
-              "$ref": "#/components/schemas/Evidencia"
-            },
-            "type": "array",
-            "maxItems": 20,
-            "title": "Evidencias"
-          },
-          "avaliacao_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Avaliacao Id"
-          }
-        },
-        "type": "object",
-        "required": [
-          "territorios",
-          "nivel",
-          "titulo",
-          "validade_inicio",
-          "validade_fim"
-        ],
-        "title": "PedidoComunicado"
-      },
       "PedidoDeclaracao": {
         "properties": {
           "territorio_ids": {
@@ -9247,6 +6826,36 @@
           "fonte_id"
         ],
         "title": "PedidoExecucao"
+      },
+      "PedidoLiberacao": {
+        "properties": {
+          "email": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "email"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email"
+          },
+          "ip": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 45
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ip"
+          }
+        },
+        "type": "object",
+        "title": "PedidoLiberacao"
       },
       "PedidoMensagem": {
         "properties": {
@@ -9521,45 +7130,6 @@
           "territorio_ids"
         ],
         "title": "PedidoUsoMensagem"
-      },
-      "PedidoVersaoAvaliacao": {
-        "properties": {
-          "prioridade": {
-            "type": "string",
-            "title": "Prioridade"
-          },
-          "justificativa": {
-            "type": "string",
-            "maxLength": 4000,
-            "title": "Justificativa"
-          },
-          "limitacoes": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 2000
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Limitacoes"
-          },
-          "evidencias": {
-            "items": {
-              "$ref": "#/components/schemas/Evidencia"
-            },
-            "type": "array",
-            "maxItems": 20,
-            "title": "Evidencias"
-          }
-        },
-        "type": "object",
-        "required": [
-          "prioridade",
-          "justificativa"
-        ],
-        "title": "PedidoVersaoAvaliacao"
       },
       "PicoPrevisto": {
         "properties": {
@@ -10027,22 +7597,6 @@
         ],
         "title": "RespostaDados[Cenario]"
       },
-      "RespostaDados_Estatisticas_": {
-        "properties": {
-          "dados": {
-            "$ref": "#/components/schemas/Estatisticas"
-          },
-          "meta": {
-            "$ref": "#/components/schemas/Meta"
-          }
-        },
-        "type": "object",
-        "required": [
-          "dados",
-          "meta"
-        ],
-        "title": "RespostaDados[Estatisticas]"
-      },
       "RespostaDados_HistoricoOcorrencias_": {
         "properties": {
           "dados": {
@@ -10350,158 +7904,6 @@
         ],
         "title": "ResumoAgravo"
       },
-      "ResumoAvaliacao": {
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Id"
-          },
-          "estado": {
-            "type": "string",
-            "title": "Estado"
-          },
-          "territorio_id": {
-            "type": "string",
-            "title": "Territorio Id"
-          },
-          "territorio_nome": {
-            "type": "string",
-            "title": "Territorio Nome"
-          },
-          "periodo_inicio": {
-            "type": "string",
-            "format": "date",
-            "title": "Periodo Inicio"
-          },
-          "periodo_fim": {
-            "type": "string",
-            "format": "date",
-            "title": "Periodo Fim"
-          },
-          "prioridade": {
-            "type": "string",
-            "title": "Prioridade"
-          },
-          "versao_atual": {
-            "type": "integer",
-            "title": "Versao Atual"
-          },
-          "autor_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Autor Id"
-          },
-          "autor_nome": {
-            "type": "string",
-            "title": "Autor Nome"
-          },
-          "atualizado_em": {
-            "type": "string",
-            "format": "date-time",
-            "title": "Atualizado Em"
-          }
-        },
-        "type": "object",
-        "required": [
-          "id",
-          "estado",
-          "territorio_id",
-          "territorio_nome",
-          "periodo_inicio",
-          "periodo_fim",
-          "prioridade",
-          "versao_atual",
-          "autor_id",
-          "autor_nome",
-          "atualizado_em"
-        ],
-        "title": "ResumoAvaliacao"
-      },
-      "ResumoComunicado": {
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Id"
-          },
-          "estado": {
-            "type": "string",
-            "title": "Estado"
-          },
-          "nivel": {
-            "type": "string",
-            "title": "Nivel"
-          },
-          "titulo": {
-            "type": "string",
-            "title": "Titulo"
-          },
-          "territorios": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Territorios"
-          },
-          "validade_inicio": {
-            "type": "string",
-            "format": "date-time",
-            "title": "Validade Inicio"
-          },
-          "validade_fim": {
-            "type": "string",
-            "format": "date-time",
-            "title": "Validade Fim"
-          },
-          "versao_atual": {
-            "type": "integer",
-            "title": "Versao Atual"
-          },
-          "autor_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Autor Id"
-          },
-          "autor_nome": {
-            "type": "string",
-            "title": "Autor Nome"
-          },
-          "atualizado_em": {
-            "type": "string",
-            "format": "date-time",
-            "title": "Atualizado Em"
-          },
-          "publicado_em": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "date-time"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Publicado Em"
-          }
-        },
-        "type": "object",
-        "required": [
-          "id",
-          "estado",
-          "nivel",
-          "titulo",
-          "territorios",
-          "validade_inicio",
-          "validade_fim",
-          "versao_atual",
-          "autor_id",
-          "autor_nome",
-          "atualizado_em",
-          "publicado_em"
-        ],
-        "title": "ResumoComunicado"
-      },
       "ResumoPainel": {
         "properties": {
           "avisos": {
@@ -10807,6 +8209,24 @@
           "bancos"
         ],
         "title": "Saude"
+      },
+      "SaudeMinima": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "ok",
+              "falha"
+            ],
+            "title": "Status"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status"
+        ],
+        "title": "SaudeMinima",
+        "description": "Resposta sem login em produção: nada de ambiente, versão ou estado de dependências (RNF-02)."
       },
       "Sazonalidade": {
         "properties": {
@@ -11336,24 +8756,6 @@
         ],
         "title": "TerritorioRef"
       },
-      "Trecho": {
-        "properties": {
-          "tipo": {
-            "type": "string",
-            "title": "Tipo"
-          },
-          "texto": {
-            "type": "string",
-            "title": "Texto"
-          }
-        },
-        "type": "object",
-        "required": [
-          "tipo",
-          "texto"
-        ],
-        "title": "Trecho"
-      },
       "UsuarioAtual": {
         "properties": {
           "id": {
@@ -11485,67 +8887,6 @@
         ],
         "title": "ValorDistrito"
       },
-      "VersaoAvaliacao": {
-        "properties": {
-          "numero": {
-            "type": "integer",
-            "title": "Numero"
-          },
-          "prioridade": {
-            "type": "string",
-            "title": "Prioridade"
-          },
-          "justificativa": {
-            "type": "string",
-            "title": "Justificativa"
-          },
-          "limitacoes": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Limitacoes"
-          },
-          "evidencias": {
-            "items": {
-              "additionalProperties": true,
-              "type": "object"
-            },
-            "type": "array",
-            "title": "Evidencias"
-          },
-          "autor_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Autor Id"
-          },
-          "autor_nome": {
-            "type": "string",
-            "title": "Autor Nome"
-          },
-          "criado_em": {
-            "type": "string",
-            "format": "date-time",
-            "title": "Criado Em"
-          }
-        },
-        "type": "object",
-        "required": [
-          "numero",
-          "prioridade",
-          "justificativa",
-          "limitacoes",
-          "evidencias",
-          "autor_id",
-          "autor_nome",
-          "criado_em"
-        ],
-        "title": "VersaoAvaliacao"
-      },
       "VersaoParametros": {
         "properties": {
           "versao": {
@@ -11592,40 +8933,6 @@
           "atualizado_por_nome"
         ],
         "title": "VersaoParametros"
-      },
-      "VersaoResumo": {
-        "properties": {
-          "numero": {
-            "type": "integer",
-            "title": "Numero"
-          },
-          "criado_em": {
-            "type": "string",
-            "format": "date-time",
-            "title": "Criado Em"
-          },
-          "hash_conteudo": {
-            "type": "string",
-            "title": "Hash Conteudo"
-          },
-          "titulo": {
-            "type": "string",
-            "title": "Titulo"
-          },
-          "autor_nome": {
-            "type": "string",
-            "title": "Autor Nome"
-          }
-        },
-        "type": "object",
-        "required": [
-          "numero",
-          "criado_em",
-          "hash_conteudo",
-          "titulo",
-          "autor_nome"
-        ],
-        "title": "VersaoResumo"
       },
       "climasense__api__routers__abrigos__TotaisAbrigos": {
         "properties": {

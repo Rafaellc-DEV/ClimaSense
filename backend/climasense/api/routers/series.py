@@ -21,6 +21,9 @@ from climasense.servicos import series as servico
 from climasense.servicos.territorio import TerritorioUsado, no_maximo_distrito
 
 router = APIRouter(prefix="/series", tags=["Séries e sazonalidade"])
+estatisticas_router = APIRouter(
+    prefix="/series", tags=["Séries e sazonalidade"]
+)  # atrás de FUNC_ESTATISTICAS_SERIES
 consultar = exige(Permissao.CONSULTAR)
 
 Variavel = Literal["chuva_mm", "mare_m", "temp_c", "nivel_m"]
@@ -260,7 +263,7 @@ def sazonalidade(
     )
 
 
-@router.get(
+@estatisticas_router.get(
     "/estatisticas",
     response_model=RespostaDados[Estatisticas],
     summary="Estatística descritiva em texto simples",

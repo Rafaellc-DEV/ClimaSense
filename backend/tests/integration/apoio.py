@@ -23,8 +23,18 @@ class Relogio:
         self.agora += timedelta(**delta)
 
 
-def cliente(sessao, relogio: Relogio) -> TestClient:
-    app = criar_app(configuracao_teste())
+# Todas as funcionalidades atrás de chave (ADR 0011) ligadas: os testes delas não podem apodrecer.
+FUNCOES_LIGADAS = {
+    "func_landing_publica": True,
+    "func_comunicados": True,
+    "func_avaliacoes": True,
+    "func_mapa_portatil": True,
+    "func_estatisticas_series": True,
+}
+
+
+def cliente(sessao, relogio: Relogio, **config) -> TestClient:
+    app = criar_app(configuracao_teste(**{**FUNCOES_LIGADAS, **config}))
     app.dependency_overrides[obter_sessao] = lambda: sessao
     app.dependency_overrides[autorizacao.relogio] = lambda: relogio.agora
     return TestClient(app, raise_server_exceptions=True)

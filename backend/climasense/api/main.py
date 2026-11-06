@@ -15,6 +15,7 @@ from climasense.api.erros import registrar_tratadores
 from climasense.api.routers import (
     abrigos,
     acoes,
+    admin_login,
     admin_sistema,
     admin_usuarios,
     auth,
@@ -36,16 +37,20 @@ from climasense.api.seguranca import CabecalhosSeguranca
 from climasense.config import Configuracao, obter_configuracao
 
 PREFIXO = "/api/v1"
-# Ordem de inclusão sob /api/v1. Também lida pelo teste da matriz de autorização.
+# Ordem de inclusão sob /api/v1. Também lida pelo teste da matriz de autorização: lista TODOS os roteadores,
+# inclusive os que ficam atrás de chave de funcionalidade (veja FUNCOES e `roteadores_ativos`).
 ROTEADORES = [
     saude.router,
     auth.router,
     admin_usuarios.router,
+    admin_login.router,
     territorios.router,
+    territorios.mapa_portatil_router,
     territorios.publico,
     publico.router,
     fontes.router,
     series.router,
+    series.estatisticas_router,
     cenarios.router,
     avaliacoes.router,
     comunicados.router,
@@ -59,7 +64,21 @@ ROTEADORES = [
     saude_agravos.router,
     saude_agravos.ocorrencias,
 ]
+# Chaves de funcionalidade (ADR 0011, RNF-02): campo da Configuracao -> roteadores que ela liga. Desligada
+# (padrão) = a rota nem é registrada: 404 e fora do OpenAPI.
+FUNCOES: dict[str, list[APIRouter]] = {
+    "func_landing_publica": [publico.router, territorios.publico],
+    "func_comunicados": [comunicados.router],
+    "func_avaliacoes": [avaliacoes.router],
+    "func_mapa_portatil": [territorios.mapa_portatil_router],
+    "func_estatisticas_series": [series.estatisticas_router],
+}
 log = logging.getLogger("climasense.api")
+
+
+def roteadores_ativos(config: Configuracao) -> list[APIRouter]:
+    desligados = {id(r) for campo, rs in FUNCOES.items() if not getattr(config, campo) for r in rs}
+    return [r for r in ROTEADORES if id(r) not in desligados]
 
 
 async def _expirar_periodicamente(config: Configuracao) -> None:
@@ -96,9 +115,11 @@ def criar_app(config: Configuracao | None = None) -> FastAPI:
         title="ClimaSense API",
         version=__version__,
         description="Inteligência climática para a Vigilância em Saúde do Recife. Somente dados reais e identificados.",
-        docs_url="/api/docs",
+        # Em produção a documentação interativa e o contrato não ficam no ar (RNF-02);
+        # scripts/exportar_openapi.py gera o contrato sem servidor.
+        docs_url=None if config.em_producao else "/api/docs",
         redoc_url=None,
-        openapi_url="/api/openapi.json",
+        openapi_url=None if config.em_producao else "/api/openapi.json",
     )
     app.state.config = config
     registrar_tratadores(app)
@@ -112,7 +133,7 @@ def criar_app(config: Configuracao | None = None) -> FastAPI:
     )
 
     v1 = APIRouter(prefix=PREFIXO)
-    for roteador in ROTEADORES:
+    for roteador in roteadores_ativos(config):
         v1.include_router(roteador)
     app.include_router(v1)
     return app

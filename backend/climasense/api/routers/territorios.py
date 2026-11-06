@@ -29,6 +29,7 @@ from climasense.territorio import carga, mapa_portatil
 
 router = APIRouter(prefix="/territorios", tags=["Território"])
 publico = APIRouter(prefix="/publico", tags=["Público"])
+mapa_portatil_router = APIRouter(prefix="/territorios", tags=["Território"])  # atrás de FUNC_MAPA_PORTATIL
 consultar = exige(Permissao.CONSULTAR)
 
 FONTE_TERRITORIO = FonteMeta(
@@ -226,7 +227,7 @@ def prioridades(
     )
 
 
-@router.get("/mapa-portatil", summary="Baixar o mapa portátil (HTML offline, porte da Aula 07)")
+@mapa_portatil_router.get("/mapa-portatil", summary="Baixar o mapa portátil (HTML offline, porte da Aula 07)")
 def mapa(
     _: Contexto = Depends(consultar), cliente=Depends(mongo), config: Configuracao = Depends(configuracao)
 ) -> Response:

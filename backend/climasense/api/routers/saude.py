@@ -26,6 +26,12 @@ class Saude(BaseModel):
     bancos: dict[str, EstadoBanco]
 
 
+class SaudeMinima(BaseModel):
+    """Resposta sem login em produção: nada de ambiente, versão ou estado de dependências (RNF-02)."""
+
+    status: Literal["ok", "falha"]
+
+
 def _checar(nome: str, verificador: Callable[[], bool]) -> EstadoBanco:
     try:
         return "ok" if verificador() else "indisponivel"
@@ -56,12 +62,18 @@ def verificadores() -> dict[str, Callable[[], bool]]:
     return {"postgres": verificar_postgres, "mongo": verificar_mongo}
 
 
-@router.get("/health", response_model=Saude, summary="Estado da API e dos bancos")
+@router.get(
+    "/health",
+    response_model=Saude | SaudeMinima,
+    summary="Estado da API e dos bancos (em produção, só ok ou falha)",
+)
 def health(
     config: Configuracao = Depends(configuracao),
     checagens: dict[str, Callable[[], bool]] = Depends(verificadores),
-) -> Saude:
+) -> Saude | SaudeMinima:
     bancos = {nome: _checar(nome, f) for nome, f in checagens.items()}
+    if config.em_producao:
+        return SaudeMinima(status="ok" if all(v == "ok" for v in bancos.values()) else "falha")
     return Saude(
         status="ok" if all(v == "ok" for v in bancos.values()) else "degradado",
         versao=__version__,
