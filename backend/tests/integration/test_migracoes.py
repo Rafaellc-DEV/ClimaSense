@@ -13,6 +13,7 @@ TABELAS = {
         "usuarios",
         "sessoes",
         "tentativas_login",
+        "liberacoes_login",
         "territorios",
         "fontes",
         "etl_execucoes",

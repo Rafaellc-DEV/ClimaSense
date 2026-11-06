@@ -8,7 +8,7 @@ from datetime import datetime
 from sqlalchemy import func, select, update
 from sqlalchemy.orm import Session
 
-from climasense.infra.modelos_sql import Sessao, TentativaLogin, Usuario
+from climasense.infra.modelos_sql import LiberacaoLogin, Sessao, TentativaLogin, Usuario
 
 
 class RepositorioUsuarios:
@@ -68,3 +68,26 @@ class RepositorioTentativas:
             .order_by(TentativaLogin.em)
         )
         return list(self.sessao.scalars(consulta))
+
+    def recentes_do_ip(self, ip: str, desde: datetime) -> list[TentativaLogin]:
+        consulta = (
+            select(TentativaLogin)
+            .where(TentativaLogin.ip == ip, TentativaLogin.em >= desde)
+            .order_by(TentativaLogin.em)
+        )
+        return list(self.sessao.scalars(consulta))
+
+
+class RepositorioLiberacoes:
+    def __init__(self, sessao: Session) -> None:
+        self.sessao = sessao
+
+    def registrar(self, email: str | None, ip: str | None, em: datetime, admin_id: uuid.UUID) -> None:
+        self.sessao.add(LiberacaoLogin(email=email, ip=ip, em=em, admin_id=admin_id))
+        self.sessao.flush()
+
+    def ultima_do_email(self, email: str) -> datetime | None:
+        return self.sessao.scalar(select(func.max(LiberacaoLogin.em)).where(LiberacaoLogin.email == email))
+
+    def ultima_do_ip(self, ip: str) -> datetime | None:
+        return self.sessao.scalar(select(func.max(LiberacaoLogin.em)).where(LiberacaoLogin.ip == ip))

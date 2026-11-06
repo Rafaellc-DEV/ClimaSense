@@ -14,6 +14,7 @@ ESPERADAS = {
     ("POST", "/api/v1/comunicados/{comunicado_id}/publicar"): Permissao.PUBLICAR,
     ("POST", "/api/v1/avaliacoes/{avaliacao_id}/aprovar"): Permissao.REVISAR,
     ("GET", "/api/v1/admin/auditoria"): Permissao.ADMINISTRAR,
+    ("POST", "/api/v1/admin/login/liberar"): Permissao.ADMINISTRAR,
     # evento de chuva (specs/foco-chuvas.md): consultar todos; registrar e declarar = editar;
     # limiares só coordenação e administrador
     ("GET", "/api/v1/estagios"): Permissao.CONSULTAR,

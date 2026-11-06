@@ -68,6 +68,18 @@ class TentativaLogin(Base):
     sucesso: Mapped[bool] = mapped_column(Boolean)
 
 
+class LiberacaoLogin(Base):
+    """Desbloqueio feito por administrador: falhas do e-mail e/ou do IP anteriores a `em` deixam de contar."""
+
+    __tablename__ = "liberacoes_login"
+    __table_args__ = {"schema": "app"}
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    email: Mapped[str | None] = mapped_column(String(254), nullable=True)
+    ip: Mapped[str | None] = mapped_column(INET, nullable=True)
+    em: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    admin_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("app.usuarios.id"))
+
+
 class Territorio(Base):
     __tablename__ = "territorios"
     __table_args__ = {"schema": "app"}

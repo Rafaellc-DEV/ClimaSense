@@ -32,12 +32,38 @@ def relogio() -> datetime:
     return datetime.now(UTC)
 
 
-def ip_cliente(request: Request) -> str | None:
-    host = request.client.host if request.client else None
+def _ip_valido(texto: str | None) -> ipaddress.IPv4Address | ipaddress.IPv6Address | None:
     try:
-        return str(ipaddress.ip_address(host)) if host else None
+        return ipaddress.ip_address(texto.strip()) if texto and texto.strip() else None
     except ValueError:
         return None
+
+
+def resolver_ip(
+    host: str | None, encaminhado: str | None, proxies: list[ipaddress.IPv4Network | ipaddress.IPv6Network]
+) -> str | None:
+    """IP do cliente. X-Forwarded-For só vale quando o par direto é um proxy confiável (config
+    PROXIES_CONFIAVEIS); então se lê a lista da direita para a esquerda e fica o primeiro IP que não é
+    proxy confiável (o que está à esquerda pode ser forjado pelo cliente)."""
+    par = _ip_valido(host)
+    if par is None:
+        return None
+    if not proxies or not encaminhado or not any(par in rede for rede in proxies):
+        return str(par)
+    for item in reversed(encaminhado.split(",")):
+        ip = _ip_valido(item)
+        if ip is None:
+            return str(par)  # cabeçalho malformado: não confie
+        if not any(ip in rede for rede in proxies):
+            return str(ip)
+    return str(par)
+
+
+def ip_cliente(request: Request) -> str | None:
+    config = getattr(request.app.state, "config", None)
+    proxies = config.redes_proxy if config is not None else []
+    host = request.client.host if request.client else None
+    return resolver_ip(host, request.headers.get("x-forwarded-for"), proxies)
 
 
 @dataclass
