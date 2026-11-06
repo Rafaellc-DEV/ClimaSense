@@ -455,6 +455,25 @@
         }
       }
     },
+    "/api/v1/territorios/bairros.geojson": {
+      "get": {
+        "tags": [
+          "Território"
+        ],
+        "summary": "Os 94 bairros (GeoJSON simplificado, ids iguais aos de /estagios)",
+        "operationId": "bairros_geojson_api_v1_territorios_bairros_geojson_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/territorios/indicadores": {
       "get": {
         "tags": [
@@ -516,6 +535,61 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/RespostaDados_list_ValorDistrito__"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/territorios/prioridade": {
+      "get": {
+        "tags": [
+          "Território"
+        ],
+        "summary": "Prioridade por vulnerabilidade: onde já houve mais atendimentos da Defesa Civil (não é probabilidade)",
+        "operationId": "prioridade_por_vulnerabilidade_api_v1_territorios_prioridade_get",
+        "parameters": [
+          {
+            "name": "nivel",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "distrito",
+                    "bairro"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "distrito ou bairro; sem o parâmetro vêm os dois, cada um numerado",
+              "title": "Nivel"
+            },
+            "description": "distrito ou bairro; sem o parâmetro vêm os dois, cada um numerado"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaDados_PrioridadeVulnerabilidade_"
                 }
               }
             }
@@ -1393,7 +1467,7 @@
         "tags": [
           "Evento de chuva"
         ],
-        "summary": "Estágio sugerido (experimental) e declarado de cada distrito ou bairro",
+        "summary": "Estágio sugerido (experimental) e declarado de cada distrito ou bairro, com o oficial do COP",
         "operationId": "listar_api_v1_estagios_get",
         "parameters": [
           {
@@ -1436,7 +1510,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/RespostaDados_ListaEstagios_"
+                  "$ref": "#/components/schemas/RespostaEstagios"
                 }
               }
             }
@@ -1490,6 +1564,87 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/estagios/oficial": {
+      "get": {
+        "tags": [
+          "Evento de chuva"
+        ],
+        "summary": "Estágio oficial da cidade dado pelo COP (registro da equipe); null sem registro",
+        "operationId": "oficial_api_v1_estagios_oficial_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaDados_Union_EstagioOficial__NoneType__"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Evento de chuva"
+        ],
+        "summary": "Registrar o estágio oficial informado pelo COP (analista ou acima; auditado; só inclusão)",
+        "operationId": "registrar_oficial_api_v1_estagios_oficial_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PedidoEstagioOficial"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaDados_EstagioOficial_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/estagios/oficial/historico": {
+      "get": {
+        "tags": [
+          "Evento de chuva"
+        ],
+        "summary": "Histórico do estágio oficial, mais recente primeiro",
+        "operationId": "historico_oficial_api_v1_estagios_oficial_historico_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaDados_list_EstagioOficial__"
                 }
               }
             }
@@ -4321,6 +4476,63 @@
         ],
         "title": "EstagioDistrito"
       },
+      "EstagioOficial": {
+        "properties": {
+          "estagio": {
+            "type": "string",
+            "enum": [
+              "observacao",
+              "atencao",
+              "alerta",
+              "critico"
+            ],
+            "title": "Estagio"
+          },
+          "informado_em": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Informado Em",
+            "description": "Hora em que o COP informou o estágio"
+          },
+          "registrado_em": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Registrado Em",
+            "description": "Hora em que a equipe registrou no ClimaSense"
+          },
+          "autor_nome": {
+            "type": "string",
+            "title": "Autor Nome"
+          },
+          "observacao": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Observacao"
+          },
+          "fonte": {
+            "type": "string",
+            "title": "Fonte",
+            "description": "Sempre 'COP (informado pela equipe)' até haver feed"
+          }
+        },
+        "type": "object",
+        "required": [
+          "estagio",
+          "informado_em",
+          "registrado_em",
+          "autor_nome",
+          "observacao",
+          "fonte"
+        ],
+        "title": "EstagioOficial",
+        "description": "Estágio da cidade dado pelo COP, registrado pela equipe (RF-01). Não é a sugestão nem a declaração."
+      },
       "EstimativaSaida": {
         "properties": {
           "experimental": {
@@ -5341,183 +5553,6 @@
         ],
         "title": "ItemEstagio"
       },
-      "ItemPrioridade": {
-        "properties": {
-          "posicao": {
-            "type": "integer",
-            "title": "Posicao"
-          },
-          "territorio_id": {
-            "type": "string",
-            "title": "Territorio Id"
-          },
-          "territorio_nome": {
-            "type": "string",
-            "title": "Territorio Nome"
-          },
-          "tipo": {
-            "type": "string",
-            "enum": [
-              "distrito",
-              "bairro"
-            ],
-            "title": "Tipo"
-          },
-          "distrito_id": {
-            "type": "string",
-            "title": "Distrito Id"
-          },
-          "nivel": {
-            "type": "string",
-            "enum": [
-              "sem_indicacao",
-              "atencao",
-              "alerta",
-              "critico",
-              "dados_insuficientes"
-            ],
-            "title": "Nivel"
-          },
-          "rotulo": {
-            "type": "string",
-            "title": "Rotulo"
-          },
-          "nivel_estimador": {
-            "type": "string",
-            "enum": [
-              "sem_indicacao",
-              "atencao",
-              "alerta",
-              "critico",
-              "dados_insuficientes"
-            ],
-            "title": "Nivel Estimador"
-          },
-          "nivel_equipe": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Nivel Equipe"
-          },
-          "experimental": {
-            "type": "boolean",
-            "const": true,
-            "title": "Experimental",
-            "default": true
-          },
-          "confianca": {
-            "type": "string",
-            "enum": [
-              "media",
-              "baixa",
-              "insuficiente"
-            ],
-            "title": "Confianca"
-          },
-          "motivos": {
-            "items": {
-              "$ref": "#/components/schemas/MotivoPrioridade"
-            },
-            "type": "array",
-            "title": "Motivos"
-          },
-          "notas_qualidade": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Notas Qualidade"
-          },
-          "evidencias": {
-            "items": {
-              "$ref": "#/components/schemas/EvidenciaPrioridade"
-            },
-            "type": "array",
-            "title": "Evidencias"
-          },
-          "janela_atencao": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/JanelaRisco"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "acumulado_previsto_mm": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Acumulado Previsto Mm"
-          },
-          "limite_atencao_mm": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Limite Atencao Mm"
-          },
-          "limite_alerta_mm": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Limite Alerta Mm"
-          },
-          "ocorrencias_historicas": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Ocorrencias Historicas"
-          }
-        },
-        "type": "object",
-        "required": [
-          "posicao",
-          "territorio_id",
-          "territorio_nome",
-          "tipo",
-          "distrito_id",
-          "nivel",
-          "rotulo",
-          "nivel_estimador",
-          "nivel_equipe",
-          "confianca",
-          "motivos",
-          "notas_qualidade",
-          "evidencias",
-          "janela_atencao",
-          "acumulado_previsto_mm",
-          "limite_atencao_mm",
-          "limite_alerta_mm",
-          "ocorrencias_historicas"
-        ],
-        "title": "ItemPrioridade"
-      },
       "ItemRevisao": {
         "properties": {
           "tipo": {
@@ -6181,6 +6216,92 @@
           "fontes"
         ],
         "title": "Meta"
+      },
+      "MetaEstagios": {
+        "properties": {
+          "fontes": {
+            "items": {
+              "$ref": "#/components/schemas/FonteMeta"
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Fontes"
+          },
+          "recorte": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RecorteMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "cobertura_pct": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 100.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cobertura Pct"
+          },
+          "amostra": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Amostra"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "avisos": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Avisos",
+            "default": []
+          },
+          "dados_insuficientes": {
+            "type": "boolean",
+            "title": "Dados Insuficientes",
+            "default": false
+          },
+          "supressao_minima": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Supressao Minima",
+            "description": "Contagens por território abaixo deste valor (e maiores que zero) saem nulas e com suprimido=true (RNF-03, RN-13)"
+          },
+          "estagio_oficial": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/EstagioOficial"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Estágio oficial vigente; null = sem registro (Dados insuficientes, RN-01)"
+          }
+        },
+        "type": "object",
+        "required": [
+          "fontes"
+        ],
+        "title": "MetaEstagios"
       },
       "ModeloRisco": {
         "properties": {
@@ -6927,6 +7048,50 @@
         ],
         "title": "PedidoEntrada"
       },
+      "PedidoEstagioOficial": {
+        "properties": {
+          "estagio": {
+            "type": "string",
+            "enum": [
+              "observacao",
+              "atencao",
+              "alerta",
+              "critico"
+            ],
+            "title": "Estagio"
+          },
+          "informado_em": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Informado Em",
+            "description": "Hora do COP com fuso; sem ela vale a do registro"
+          },
+          "observacao": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Observacao"
+          }
+        },
+        "type": "object",
+        "required": [
+          "estagio"
+        ],
+        "title": "PedidoEstagioOficial"
+      },
       "PedidoExecucao": {
         "properties": {
           "fonte_id": {
@@ -7501,6 +7666,35 @@
         ],
         "title": "PontoSerie"
       },
+      "PrioridadeVulnerabilidade": {
+        "properties": {
+          "itens": {
+            "items": {
+              "$ref": "#/components/schemas/climasense__api__routers__territorios__ItemPrioridade"
+            },
+            "type": "array",
+            "title": "Itens"
+          },
+          "desde": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Desde",
+            "description": "Ano do primeiro atendimento na base"
+          }
+        },
+        "type": "object",
+        "required": [
+          "itens",
+          "desde"
+        ],
+        "title": "PrioridadeVulnerabilidade"
+      },
       "Prioridades": {
         "properties": {
           "nivel_territorial": {
@@ -7530,7 +7724,7 @@
           },
           "itens": {
             "items": {
-              "$ref": "#/components/schemas/ItemPrioridade"
+              "$ref": "#/components/schemas/climasense__api__esquemas_decisao__ItemPrioridade"
             },
             "type": "array",
             "title": "Itens"
@@ -7742,6 +7936,22 @@
         ],
         "title": "RespostaDados[Cenario]"
       },
+      "RespostaDados_EstagioOficial_": {
+        "properties": {
+          "dados": {
+            "$ref": "#/components/schemas/EstagioOficial"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "dados",
+          "meta"
+        ],
+        "title": "RespostaDados[EstagioOficial]"
+      },
       "RespostaDados_HistoricoOcorrencias_": {
         "properties": {
           "dados": {
@@ -7758,10 +7968,10 @@
         ],
         "title": "RespostaDados[HistoricoOcorrencias]"
       },
-      "RespostaDados_ListaEstagios_": {
+      "RespostaDados_PrioridadeVulnerabilidade_": {
         "properties": {
           "dados": {
-            "$ref": "#/components/schemas/ListaEstagios"
+            "$ref": "#/components/schemas/PrioridadeVulnerabilidade"
           },
           "meta": {
             "$ref": "#/components/schemas/Meta"
@@ -7772,7 +7982,7 @@
           "dados",
           "meta"
         ],
-        "title": "RespostaDados[ListaEstagios]"
+        "title": "RespostaDados[PrioridadeVulnerabilidade]"
       },
       "RespostaDados_Prioridades_": {
         "properties": {
@@ -7902,6 +8112,49 @@
         ],
         "title": "RespostaDados[SituacaoAgora]"
       },
+      "RespostaDados_Union_EstagioOficial__NoneType__": {
+        "properties": {
+          "dados": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/EstagioOficial"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "dados",
+          "meta"
+        ],
+        "title": "RespostaDados[Union[EstagioOficial, NoneType]]"
+      },
+      "RespostaDados_list_EstagioOficial__": {
+        "properties": {
+          "dados": {
+            "items": {
+              "$ref": "#/components/schemas/EstagioOficial"
+            },
+            "type": "array",
+            "title": "Dados"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "dados",
+          "meta"
+        ],
+        "title": "RespostaDados[list[EstagioOficial]]"
+      },
       "RespostaDados_list_ValorDistrito__": {
         "properties": {
           "dados": {
@@ -7921,6 +8174,22 @@
           "meta"
         ],
         "title": "RespostaDados[list[ValorDistrito]]"
+      },
+      "RespostaEstagios": {
+        "properties": {
+          "dados": {
+            "$ref": "#/components/schemas/ListaEstagios"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/MetaEstagios"
+          }
+        },
+        "type": "object",
+        "required": [
+          "dados",
+          "meta"
+        ],
+        "title": "RespostaEstagios"
       },
       "ResumoAgravo": {
         "properties": {
@@ -9079,6 +9348,183 @@
         ],
         "title": "VersaoParametros"
       },
+      "climasense__api__esquemas_decisao__ItemPrioridade": {
+        "properties": {
+          "posicao": {
+            "type": "integer",
+            "title": "Posicao"
+          },
+          "territorio_id": {
+            "type": "string",
+            "title": "Territorio Id"
+          },
+          "territorio_nome": {
+            "type": "string",
+            "title": "Territorio Nome"
+          },
+          "tipo": {
+            "type": "string",
+            "enum": [
+              "distrito",
+              "bairro"
+            ],
+            "title": "Tipo"
+          },
+          "distrito_id": {
+            "type": "string",
+            "title": "Distrito Id"
+          },
+          "nivel": {
+            "type": "string",
+            "enum": [
+              "sem_indicacao",
+              "atencao",
+              "alerta",
+              "critico",
+              "dados_insuficientes"
+            ],
+            "title": "Nivel"
+          },
+          "rotulo": {
+            "type": "string",
+            "title": "Rotulo"
+          },
+          "nivel_estimador": {
+            "type": "string",
+            "enum": [
+              "sem_indicacao",
+              "atencao",
+              "alerta",
+              "critico",
+              "dados_insuficientes"
+            ],
+            "title": "Nivel Estimador"
+          },
+          "nivel_equipe": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nivel Equipe"
+          },
+          "experimental": {
+            "type": "boolean",
+            "const": true,
+            "title": "Experimental",
+            "default": true
+          },
+          "confianca": {
+            "type": "string",
+            "enum": [
+              "media",
+              "baixa",
+              "insuficiente"
+            ],
+            "title": "Confianca"
+          },
+          "motivos": {
+            "items": {
+              "$ref": "#/components/schemas/MotivoPrioridade"
+            },
+            "type": "array",
+            "title": "Motivos"
+          },
+          "notas_qualidade": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Notas Qualidade"
+          },
+          "evidencias": {
+            "items": {
+              "$ref": "#/components/schemas/EvidenciaPrioridade"
+            },
+            "type": "array",
+            "title": "Evidencias"
+          },
+          "janela_atencao": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/JanelaRisco"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "acumulado_previsto_mm": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Acumulado Previsto Mm"
+          },
+          "limite_atencao_mm": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Limite Atencao Mm"
+          },
+          "limite_alerta_mm": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Limite Alerta Mm"
+          },
+          "ocorrencias_historicas": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ocorrencias Historicas"
+          }
+        },
+        "type": "object",
+        "required": [
+          "posicao",
+          "territorio_id",
+          "territorio_nome",
+          "tipo",
+          "distrito_id",
+          "nivel",
+          "rotulo",
+          "nivel_estimador",
+          "nivel_equipe",
+          "confianca",
+          "motivos",
+          "notas_qualidade",
+          "evidencias",
+          "janela_atencao",
+          "acumulado_previsto_mm",
+          "limite_atencao_mm",
+          "limite_alerta_mm",
+          "ocorrencias_historicas"
+        ],
+        "title": "ItemPrioridade"
+      },
       "climasense__api__routers__abrigos__TotaisAbrigos": {
         "properties": {
           "abrigos_abertos": {
@@ -9191,6 +9637,55 @@
         ],
         "title": "TotaisAbrigos",
         "description": "Primeiras métricas no pico do evento (F3): só o que a equipe registrou; null = ninguém informou."
+      },
+      "climasense__api__routers__territorios__ItemPrioridade": {
+        "properties": {
+          "territorio_id": {
+            "type": "string",
+            "title": "Territorio Id"
+          },
+          "nome": {
+            "type": "string",
+            "title": "Nome"
+          },
+          "nivel": {
+            "type": "string",
+            "enum": [
+              "distrito",
+              "bairro"
+            ],
+            "title": "Nivel"
+          },
+          "posicao": {
+            "type": "integer",
+            "title": "Posicao",
+            "description": "1 = mais atendimentos; empatados dividem a posição"
+          },
+          "ocorrencias_alagamento": {
+            "type": "integer",
+            "title": "Ocorrencias Alagamento"
+          },
+          "ocorrencias_deslizamento": {
+            "type": "integer",
+            "title": "Ocorrencias Deslizamento"
+          },
+          "criterio": {
+            "type": "string",
+            "title": "Criterio",
+            "description": "Por que esta ordem, em texto"
+          }
+        },
+        "type": "object",
+        "required": [
+          "territorio_id",
+          "nome",
+          "nivel",
+          "posicao",
+          "ocorrencias_alagamento",
+          "ocorrencias_deslizamento",
+          "criterio"
+        ],
+        "title": "ItemPrioridade"
       }
     }
   }

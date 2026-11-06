@@ -9,7 +9,7 @@ from datetime import date, datetime
 from typing import Literal
 
 from fastapi import APIRouter, Depends, Query, Request, Response
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
@@ -23,8 +23,9 @@ from climasense.config import Configuracao
 from climasense.dominio.papeis import Permissao
 from climasense.dominio.territorio import normalizar_busca
 from climasense.infra.postgres import obter_sessao
-from climasense.servicos import cenarios, decisao
+from climasense.servicos import cenarios, decisao, prioridade_vulnerabilidade
 from climasense.servicos import fontes as servico_fontes
+from climasense.servicos import territorio as servico_territorio
 from climasense.territorio import carga, mapa_portatil
 
 router = APIRouter(prefix="/territorios", tags=["Território"])
@@ -100,6 +101,16 @@ def hidrografia(
     return _geojson(request, carga.ler_hidrografia(cliente, config.mongo_db_territorio))
 
 
+@router.get("/bairros.geojson", summary="Os 94 bairros (GeoJSON simplificado, ids iguais aos de /estagios)")
+def bairros_geojson(
+    request: Request, _: Contexto = Depends(consultar), db: Session = Depends(obter_sessao)
+) -> Response:
+    malha = servico_territorio.malha_bairros(db)
+    if malha is None:
+        raise ErroClimaSense(503, "A malha dos bairros não está disponível neste ambiente.")
+    return _geojson(request, malha)
+
+
 @router.get(
     "/indicadores",
     response_model=RespostaDados[list[ValorDistrito]],
@@ -163,6 +174,50 @@ def indicadores(
             recorte=recorte,
             dados_insuficientes=True,
             avisos=["Fonte ainda não integrada. Nenhum valor é exibido no lugar."],
+        ),
+    )
+
+
+class ItemPrioridade(BaseModel):
+    territorio_id: str
+    nome: str
+    nivel: Literal["distrito", "bairro"]
+    posicao: int = Field(description="1 = mais atendimentos; empatados dividem a posição")
+    ocorrencias_alagamento: int
+    ocorrencias_deslizamento: int
+    criterio: str = Field(description="Por que esta ordem, em texto")
+
+
+class PrioridadeVulnerabilidade(BaseModel):
+    itens: list[ItemPrioridade]
+    desde: int | None = Field(description="Ano do primeiro atendimento na base")
+
+
+@router.get(
+    "/prioridade",
+    response_model=RespostaDados[PrioridadeVulnerabilidade],
+    summary="Prioridade por vulnerabilidade: onde já houve mais atendimentos da Defesa Civil (não é probabilidade)",
+)
+def prioridade_por_vulnerabilidade(
+    nivel: Literal["distrito", "bairro"] | None = Query(
+        default=None, description="distrito ou bairro; sem o parâmetro vêm os dois, cada um numerado"
+    ),
+    _: Contexto = Depends(consultar),
+    db: Session = Depends(obter_sessao),
+    agora: datetime = Depends(relogio),
+) -> RespostaDados[PrioridadeVulnerabilidade]:
+    r = prioridade_vulnerabilidade.listar(db, nivel)
+    return RespostaDados(
+        dados=PrioridadeVulnerabilidade(itens=r["itens"] if r else [], desde=r["desde"] if r else None),
+        meta=Meta(
+            fontes=[servico_fontes.meta(db, prioridade_vulnerabilidade.FONTE, agora)],
+            recorte=RecorteMeta(territorio_id="recife", granularidade=nivel or "bairro"),
+            dados_insuficientes=r is None,
+            avisos=[
+                "Prioridade é a ordem do histórico de atendimentos, não uma chance de alagar (RN-06).",
+                "Ainda não considera idosos e crianças (IBGE).",
+            ]
+            + (["Fonte sem carga: nenhum território é ordenado."] if r is None else []),
         ),
     )
 
