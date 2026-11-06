@@ -6,7 +6,7 @@ Painel de gestão do Vigidesastres (Secretaria de Saúde do Recife) para antecip
 - O PRD está em `docs/PRD.md`. Em conflito com `specs/requirements.md` ou `specs/foco-chuvas.md`, vale o PRD.
 - Todo trabalho cita um ID do PRD (`RF-xx`, `RNF-xx`) e, quando couber, uma regra `RN-xx` de `specs/requirements.md`.
 - Se algo não está no PRD, não construa. Registre como pergunta em `docs/perguntas-abertas.md`.
-- Decisões de arquitetura ficam em `docs/adr/` (próximo número: 0014).
+- Decisões de arquitetura ficam em `docs/adr/` (próximo número: 0015).
 
 ## Regras que valem para todo código
 1. Somente dados reais (ADR 0008, RF-12.10). Sem dado simulado no produto. Dados de exemplo só em testes automatizados.
