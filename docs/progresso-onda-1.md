@@ -133,3 +133,30 @@ conferência na tela com dados reais (Edge, 1440 e 375 px).
   (cobertura e tipo de perigo das áreas de risco), P-26 (rede municipal sem CNES).
 - Para a Etapa 5: lista de abrigos longa no painel do bairro; Mapa estoura 3 px a 375 px; rótulo "102 bairros" no
   Simulador mistura distritos.
+
+## Etapa 5 — Menu nas cinco telas (06/11/2026)
+
+**O que mudou**
+- RF-20: menu com as cinco telas do PRD — Mapa (`/app`), Situação do evento, Saúde, Ações e Simulador; Fontes e
+  Administração no rodapé. Saíram do menu (com redirecionamento, sem 404): Registro do evento → Ações, Abrigos →
+  Situação do evento, Boletim → Ações > Relatório executivo, painel antigo → Situação; Chuva segue acessível pelo
+  Simulador ("Previsão e histórico de chuva").
+- RF-08, RF-09, RF-10: `GET /abrigos/situacao` com abrigos abertos, pessoas abrigadas e desabrigados da cidade e dos 8
+  distritos (vulneráveis primeiro). Ocupação e desabrigados voltam como registro manual da equipe (PRD v2 §9), com
+  hora e autor; vazio = "Dados insuficientes", soma com abrigo aberto sem contagem = "soma parcial".
+- RF-15, RF-16, RF-17: Ações com distrito, responsável, status e horário; em andamento pelos territórios mais
+  vulneráveis; "Encerrar evento e lição aprendida" saiu (fora do escopo; dados preservados, campo obsoleto).
+  Relatório executivo a partir do Boletim, com período, estágio oficial do COP, abrigos por distrito, ações e saúde.
+- `/painel/situacao` e `/painel/acoes` removidas; o frontend não usa mais `/painel/` (fontes via `GET /fontes`).
+- Ajustes da revisão: 3 abrigos à vista no painel do bairro, Mapa sem estouro a 375 px, "Territórios" no Simulador.
+
+**Testes**: backend 1080 passed, ruff limpo; frontend lint, tsc, 218 testes e build verdes. Conferido com dados
+reais, sem interceptar rotas: as cinco telas e o relatório a 1440 e 375 px, sem erro de JavaScript, sem resposta de
+erro da API e sem rolagem horizontal.
+
+**Pendências**
+- `GET /painel/resumo` ainda existe no backend, sem uso no frontend: pode ser removida.
+- O feed do COP está vazio hoje: "Abrigos abertos" é 0 pelo feed e desabrigados dependem do registro da equipe.
+- Ações gravam `tipo: "outro"` porque a API ainda exige o campo; registros antigos "Boletim emitido: ..." aparecem em
+  "Concluídas e canceladas".
+- `docs/matriz-prd-codigo.md` e `docs/funcionalidades-equipe.md` ainda citam rotas do painel antigo.
