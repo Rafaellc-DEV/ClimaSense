@@ -387,7 +387,7 @@ export function agruparPorDistrito(itens: CasosBairros["itens"]) {
   for (const i of itens) {
     const k = i.distrito_id ?? "sem-distrito";
     const atual = m.get(k);
-    m.set(k, i.casos === null ? atual ?? null : (atual ?? 0) + i.casos);
+    m.set(k, i.casos === null ? (atual ?? null) : (atual ?? 0) + i.casos);
   }
   return [...m.entries()].map(([id, casos]) => ({
     id,

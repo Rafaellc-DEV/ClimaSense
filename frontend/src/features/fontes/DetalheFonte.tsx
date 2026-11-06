@@ -85,7 +85,7 @@ export function DetalheFonte() {
     <>
       <CabecalhoTela
         titulo={f.nome}
-        proposito={f.status === "planejada" ? PLANOS[f.id] ?? f.orgao : f.orgao}
+        proposito={f.status === "planejada" ? (PLANOS[f.id] ?? f.orgao) : f.orgao}
         voltar={voltar}
         acoes={
           podeAtualizar && (

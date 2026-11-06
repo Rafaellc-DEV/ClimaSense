@@ -49,7 +49,7 @@ export function simularApi(mapa: Record<string, Resposta>, metodos: Record<strin
         .find((k) => url.includes(k));
       const r = chave === undefined ? { status: 404, corpo: { detail: "Não encontrado." } } : fonte[chave];
       const status = ehStatus(r) ? r.status : 200;
-      const conteudo = ehStatus(r) ? r.corpo ?? {} : r;
+      const conteudo = ehStatus(r) ? (r.corpo ?? {}) : r;
       return new Response(JSON.stringify(conteudo), { status });
     }),
   );

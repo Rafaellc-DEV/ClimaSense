@@ -71,7 +71,7 @@ function deAcao(a: Acao): Entrada {
     registradoEm: tardio ? feito : null,
     texto: tipo === "boletim" ? d.slice(PREFIXO_BOLETIM.length).trim() : d,
     autor: a.autor_nome,
-    territorio: geral ? null : a.territorio_nome ?? a.territorio_id,
+    territorio: geral ? null : (a.territorio_nome ?? a.territorio_id),
     licao: a.licao_aprendida,
   };
 }

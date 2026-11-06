@@ -41,7 +41,7 @@ export function AbasEstado({
   return (
     <div className={estilos.abas} role="group" aria-label="Filtrar por estado">
       {["todos", ...estados].map((e) => {
-        const n = e === "todos" ? total : contagens[e] ?? 0;
+        const n = e === "todos" ? total : (contagens[e] ?? 0);
         return (
           <button
             key={e}

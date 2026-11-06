@@ -237,7 +237,7 @@ export function SelecaoTerritorio({
         aria-describedby={erro ? `${id}-erro` : undefined}
         disabled={r.isPending}
       >
-        <option value="">{r.isPending ? "Carregando…" : vazio ?? "Escolha um território"}</option>
+        <option value="">{r.isPending ? "Carregando…" : (vazio ?? "Escolha um território")}</option>
         {niveis.includes("municipio") && lista.some((t) => t.id === "recife") && (
           <option value="recife">Recife inteiro</option>
         )}
@@ -280,7 +280,7 @@ export function SelecaoTerritorio({
 export function useNomeTerritorio() {
   const r = useTerritorios();
   return (id: string | null | undefined, reserva?: string | null) =>
-    reserva || (id ? r.data?.find((t) => t.id === id)?.nome_exibicao ?? id : "sem dado");
+    reserva || (id ? (r.data?.find((t) => t.id === id)?.nome_exibicao ?? id) : "sem dado");
 }
 
 /** Invalida toda consulta cujo caminho começa com o prefixo (a chave é o caminho com a query string). */

@@ -44,12 +44,11 @@ export function PaginaInicial() {
   const irParaAba = useCallback((a: AbaLanding) => {
     setAba(a);
     // espera a aba abrir para levar a tela até ela
-    requestAnimationFrame(
-      () =>
-        document.getElementById("avisos-e-abrigos")?.scrollIntoView?.({
-          block: "start",
-          behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
-        }),
+    requestAnimationFrame(() =>
+      document.getElementById("avisos-e-abrigos")?.scrollIntoView?.({
+        block: "start",
+        behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
+      }),
     );
   }, []);
 
