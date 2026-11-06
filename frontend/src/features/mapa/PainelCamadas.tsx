@@ -222,7 +222,8 @@ function LegendaPopulacao({ c }: { c: Camadas }) {
   return (
     <>
       <p className={estilos.resumoCamada}>
-        {rotulo}: pessoas residentes por bairro{ano}. Contagem, não percentual.
+        {rotulo}: pessoas residentes por bairro{ano}. Contagem, não percentual. O IBGE publica por bairro só
+        até 70 anos ou mais.
       </p>
       <ul className={estilos.itens}>
         {rotulos.map((r, i) => (

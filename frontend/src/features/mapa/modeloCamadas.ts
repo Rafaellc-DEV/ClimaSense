@@ -30,11 +30,11 @@ export const ROTULO_CAMADA: Record<Exclude<IdCamada, "base">, string> = {
 };
 
 // ---------- população vulnerável
-export type Indicador = "idosos_60_mais" | "idosos_80_mais" | "criancas_0_4" | "criancas_0_14";
+export type Indicador = "idosos_60_mais" | "idosos_70_mais" | "criancas_0_4" | "criancas_0_14";
 
 export const INDICADORES: { valor: Indicador; rotulo: string }[] = [
   { valor: "idosos_60_mais", rotulo: "Idosos 60+" },
-  { valor: "idosos_80_mais", rotulo: "Idosos 80+" },
+  { valor: "idosos_70_mais", rotulo: "Idosos 70+" },
   { valor: "criancas_0_4", rotulo: "Crianças 0–4" },
   { valor: "criancas_0_14", rotulo: "Crianças 0–14" },
 ];
@@ -48,7 +48,7 @@ export interface ItemVulneravel {
   criancas_0_4?: number | null;
   criancas_0_14?: number | null;
   idosos_60_mais?: number | null;
-  idosos_80_mais?: number | null;
+  idosos_70_mais?: number | null;
   total?: number | null;
   suprimido?: Partial<Record<string, boolean>> | null;
   deficiencia?: null;
