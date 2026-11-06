@@ -25,6 +25,7 @@ surgiram na matriz (`docs/matriz-prd-codigo.md`). As decisões do dono do produt
 | P-16 | As premissas do simulador (PRD §8.1) são as certas? Quem fornece o boletim climático do COP? | Cliente e COP | RF-23 a RF-28 |
 | P-17 | Quem informa que uma unidade de saúde fechou ou foi danificada? O CNES serve como cadastro das unidades? | Vigilância e gerências dos distritos | RF-14, RF-04 |
 | P-18 | Que dados exigem registro de quem **leu** (além de quem alterou)? Só a camada de vulneráveis? | Cliente e encarregado de dados | RNF-01, RNF-03 |
+| P-19 | Trocar a senha do neondb_owner antes do Gate 1 ou antes de qualquer dado não público; credencial exposta no histórico de uma sessão em 06/11/2026. | Dono do produto | RNF-01, RNF-12 |
 
 ## 2. Decisões do dono do produto (Gate 0)
 
