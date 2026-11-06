@@ -195,6 +195,7 @@ def test_impacto_nulo_sem_fonte_e_estrutura_pronta_para_somar():
     assert sim.impacto_pessoas("sem_dados", v) is None
     i = sim.impacto_pessoas("alerta", v)
     assert i["total_pessoas"] == 2000 and i["equipamentos_saude"] == 4
+    assert i["idosos_60_mais"] == 1200 and i["criancas_0_14"] == 800 and i["deficiencia"] is None
     assert sim.impacto_pessoas("alerta", sim.Vulneraveis())["total_pessoas"] is None
 
 
@@ -235,3 +236,28 @@ def test_distrito_herda_confianca_baixa_e_motivo():
 def test_insuficiente_continua_insuficiente_com_premissa_nula():
     r = sim.classificar_bairro(prem(acum=None), PAR, sim.Historico(None, None))
     assert r.confianca == "insuficiente"
+
+
+def test_pessoas_em_alerta_soma_so_bairros_em_alerta_ou_critico_e_marca_parcial():
+    vul = {
+        "a": sim.Vulneraveis(idosos=100, criancas=50),
+        "b": sim.Vulneraveis(idosos=None, criancas=70),
+        "c": sim.Vulneraveis(idosos=999, criancas=999),
+    }
+    est = {"a": "alerta", "b": "critico", "c": "atencao", "d": "sem_dados"}
+    r = sim.pessoas_em_alerta(est, vul)
+    assert r["bairros_em_alerta"] == 2
+    assert r["idosos_60_mais"] == 100 and r["criancas_0_14"] == 120 and r["parcial"] is True
+
+
+def test_pessoas_em_alerta_sem_bairro_em_alerta_e_zero_medido_e_sem_fonte_e_nulo():
+    assert sim.pessoas_em_alerta({"a": "atencao"}, {"a": sim.Vulneraveis(idosos=5, criancas=5)}) == {
+        "bairros_em_alerta": 0,
+        "idosos_60_mais": 0,
+        "criancas_0_14": 0,
+        "parcial": False,
+        "criterio": sim.pessoas_em_alerta({}, {})["criterio"],
+    }
+    assert sim.pessoas_em_alerta({"a": "alerta"}, None) is None
+    todos_nulos = sim.pessoas_em_alerta({"a": "alerta"}, {"a": sim.Vulneraveis()})
+    assert todos_nulos["idosos_60_mais"] is None and todos_nulos["parcial"] is True

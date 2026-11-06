@@ -20,7 +20,7 @@ from sqlalchemy.orm import Session
 from climasense.dominio import simulador as dom
 from climasense.dominio.evento import RegistroInvalido
 from climasense.infra.modelos_sql import Usuario
-from climasense.servicos import cenarios, estagios, fluxo, prioridade_vulnerabilidade
+from climasense.servicos import cenarios, estagios, fluxo, prioridade_vulnerabilidade, vulnerabilidade
 
 ALVO = "cenario"
 FONTE_OCORRENCIAS = prioridade_vulnerabilidade.FONTE
@@ -82,8 +82,8 @@ def _estatico(db: Session) -> dict:
 
 
 def vulneraveis_por_territorio(db: Session) -> dict[str, dom.Vulneraveis] | None:
-    """Gancho da Etapa 6: idosos e crianças (IBGE) e equipamentos de saúde por bairro. `None` = sem fonte."""
-    return None
+    """Idosos e crianças (IBGE) e equipamentos de saúde (CNES) por bairro e distrito. `None` = sem fonte."""
+    return vulnerabilidade.vulneraveis_por_territorio(db)
 
 
 # ------------------------------------------------------------------ simulação
@@ -109,6 +109,9 @@ def simular(db: Session, p: dom.Premissas, agora: datetime) -> dict:
         "por_classe": dom.resumo_por_classe(list(por_bairro.values())),
         "pressao_abrigos": dom.pressao_abrigos(p),
         "impacto_pessoas_aviso": dom.MOTIVO_IMPACTO_PENDENTE if vul is None else None,
+        "pessoas_vulneraveis_em_alerta": dom.pessoas_em_alerta(
+            {b: r.estagio_sugerido for b, r in por_bairro.items()}, vul
+        ),
     }
     return {
         "itens": itens,

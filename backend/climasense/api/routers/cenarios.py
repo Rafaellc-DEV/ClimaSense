@@ -200,9 +200,12 @@ class PedidoSimulacao(BaseModel):
 
 
 class ImpactoPessoas(BaseModel):
-    idosos: int | None
-    criancas: int | None
+    idosos_60_mais: int | None = Field(description="Pessoas residentes; null = sem dado ou suprimido (RN-13)")
+    criancas_0_14: int | None
     equipamentos_saude: int | None
+    deficiencia: None = Field(
+        description="Sem dado público por bairro (Censo 2022 só por área de ponderação)"
+    )
     total_pessoas: int | None
     criterio: str
 
@@ -218,8 +221,18 @@ class ItemSimulacao(BaseModel):
     confianca: Literal["alta", "media", "baixa", "insuficiente"]
     motivos: list[str] = Field(description="De 1 a 3 frases curtas")
     impacto_pessoas: ImpactoPessoas | None = Field(
-        description="null até a população vulnerável ser integrada (Etapa 6)"
+        description="null sem a fonte de população vulnerável ou sem estágio de atenção ou mais"
     )
+
+
+class PessoasEmAlerta(BaseModel):
+    bairros_em_alerta: int
+    idosos_60_mais: int | None
+    criancas_0_14: int | None
+    parcial: bool = Field(
+        description="true = algum bairro em alerta ficou sem número (sem dado ou suprimido)"
+    )
+    criterio: str
 
 
 class ResumoSimulacao(BaseModel):
@@ -228,6 +241,10 @@ class ResumoSimulacao(BaseModel):
     )
     pressao_abrigos: str | None
     impacto_pessoas_aviso: str | None
+    pessoas_vulneraveis_em_alerta: PessoasEmAlerta | None = Field(
+        default=None,
+        description="Idosos e crianças residentes em bairros em alerta ou acima; contagem, não probabilidade",
+    )
 
 
 class Simulacao(BaseModel):

@@ -61,6 +61,14 @@ class Meta(BaseModel):
         description="Contagens por território abaixo deste valor (e maiores que zero) saem nulas e com "
         "suprimido=true (RNF-03, RN-13)",
     )
+    ano: int | None = Field(default=None, description="Camadas de população: ano de referência do dado")
+    deficiencia: str | None = Field(
+        default=None, description="Camada de vulneráveis: por que não há dado de deficiência por bairro"
+    )
+    cobertura: dict | None = Field(
+        default=None,
+        description="Camada de áreas de risco: regionais e bairros com dado, total e se a cobertura é parcial",
+    )
 
 
 class RespostaDados(BaseModel, Generic[T]):

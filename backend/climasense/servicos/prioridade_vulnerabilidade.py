@@ -1,8 +1,9 @@
 """Prioridade por vulnerabilidade (RF-06, RF-22): onde já houve mais atendimentos da Defesa Civil.
 
 Ordena distritos e bairros pelo histórico real de ocorrências (`silver.ocorrencias`, por tipo), sem inventar dado.
-Não é probabilidade (RN-06): só posição e contagem. A Etapa 6 soma idosos e crianças (IBGE) acrescentando um
-componente em `CRITERIOS` e as colunas na consulta; o texto de `criterio` vem desses componentes.
+Não é probabilidade (RN-06): só posição e contagem. Idosos e crianças (IBGE, Etapa 6) aparecem nos itens para
+exibição, mas NÃO entram na ordem: como combinar os dois critérios é a pergunta P-22 do cliente. O texto de
+`criterio` vem de `CRITERIOS`.
 Sem carga bem-sucedida da fonte, não há ordenação (RN-01); zero medido continua zero (RN-02).
 """
 
@@ -11,10 +12,10 @@ from __future__ import annotations
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
-from climasense.servicos import cenarios
+from climasense.servicos import cenarios, vulnerabilidade
 
 FONTE = "recife-alagamento"
-# Componentes do critério, em ordem de peso. Etapa 6: acrescentar aqui o de população vulnerável (IBGE).
+# Componentes do critério, em ordem de peso (só o histórico; população vulnerável aguarda a P-22).
 CRITERIOS = ("atendimentos de alagamento e deslizamento",)
 
 _SQL = """
@@ -36,6 +37,12 @@ def _desde(db: Session) -> int | None:
         ),
         {"f": FONTE},
     ).scalar()
+
+
+def _populacao(vul: dict, territorio_id: str) -> dict:
+    """Idosos 60+ e crianças 0-14 residentes, só para exibir; nulo = sem dado ou suprimido."""
+    v = vul.get(territorio_id)
+    return {"idosos_60_mais": v.idosos if v else None, "criancas_0_14": v.criancas if v else None}
 
 
 def _posicoes(itens: list[dict]) -> list[dict]:
@@ -61,6 +68,7 @@ def listar(db: Session, nivel: str | None = None) -> dict | None:
     if cenarios.ocorrencias(db, "recife") is None:
         return None
     desde = _desde(db)
+    vul = vulnerabilidade.vulneraveis_por_territorio(db) or {}
     criterio = "mais " + " e ".join(CRITERIOS) + (f" desde {desde}" if desde else "")
     nomes = dict(
         db.execute(text("select id, nome_exibicao from app.territorios where tipo = 'distrito'")).all()
@@ -74,6 +82,7 @@ def listar(db: Session, nivel: str | None = None) -> dict | None:
             "ocorrencias_alagamento": b["alagamento"],
             "ocorrencias_deslizamento": b["deslizamento"],
             "criterio": criterio,
+            **_populacao(vul, b["territorio_id"]),
         }
         for b in bairros
         if b["pai_id"] in nomes
@@ -86,6 +95,7 @@ def listar(db: Session, nivel: str | None = None) -> dict | None:
             "ocorrencias_alagamento": 0,
             "ocorrencias_deslizamento": 0,
             "criterio": criterio,
+            **_populacao(vul, ds),
         }
         for ds, n in nomes.items()
     }

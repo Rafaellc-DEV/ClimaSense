@@ -20,10 +20,12 @@ from climasense.api.erros import ErroClimaSense
 from climasense.api.esquemas_decisao import Prioridades
 from climasense.api.routers.publico import vigentes
 from climasense.config import Configuracao
+from climasense.dominio import vulnerabilidade as dom_vulnerabilidade
 from climasense.dominio.papeis import Permissao
+from climasense.dominio.recorte import RecorteInvalido, granularidade, validar_territorio
 from climasense.dominio.territorio import normalizar_busca
 from climasense.infra.postgres import obter_sessao
-from climasense.servicos import cenarios, decisao, prioridade_vulnerabilidade
+from climasense.servicos import cenarios, decisao, prioridade_vulnerabilidade, vulnerabilidade
 from climasense.servicos import fontes as servico_fontes
 from climasense.servicos import territorio as servico_territorio
 from climasense.territorio import carga, mapa_portatil
@@ -186,6 +188,13 @@ class ItemPrioridade(BaseModel):
     ocorrencias_alagamento: int
     ocorrencias_deslizamento: int
     criterio: str = Field(description="Por que esta ordem, em texto")
+    idosos_60_mais: int | None = Field(
+        default=None,
+        description="Residentes com 60 anos ou mais (IBGE); só exibição, não entra na ordem (P-22)",
+    )
+    criancas_0_14: int | None = Field(
+        default=None, description="Residentes de 0 a 14 anos (IBGE); só exibição"
+    )
 
 
 class PrioridadeVulnerabilidade(BaseModel):
@@ -215,9 +224,156 @@ def prioridade_por_vulnerabilidade(
             dados_insuficientes=r is None,
             avisos=[
                 "Prioridade é a ordem do histórico de atendimentos, não uma chance de alagar (RN-06).",
-                "Ainda não considera idosos e crianças (IBGE).",
+                "A ordem não considera idosos e crianças (IBGE): eles aparecem só para consulta (pergunta P-22).",
             ]
             + (["Fonte sem carga: nenhum território é ordenado."] if r is None else []),
+        ),
+    )
+
+
+# ------------------------------------------------------------------ camadas de vulnerabilidade (RF-02 a RF-04, RF-07)
+class ItemVulneraveis(BaseModel):
+    bairro_id: str
+    nome: str
+    distrito_id: str | None
+    criancas_0_4: int | None
+    criancas_0_14: int | None
+    idosos_60_mais: int | None
+    idosos_80_mais: int | None
+    total: int | None
+    suprimido: dict[str, bool] = Field(
+        description="Por campo: true = oculto (IBGE ou menos de supressao_minima)"
+    )
+    deficiencia: None = Field(description="Sem dado público por bairro (veja meta.deficiencia)")
+
+
+class Vulneraveis(BaseModel):
+    itens: list[ItemVulneraveis]
+
+
+class EquipamentoResumo(BaseModel):
+    cnes: str
+    nome: str
+    tipo: str | None
+
+
+class ResumoVulnerabilidade(BaseModel):
+    idosos_60_mais: int | None = Field(description="Residentes; null = sem dado ou suprimido")
+    criancas_0_14: int | None
+    equipamentos: list[EquipamentoResumo]
+    equipamentos_em_area_de_risco: int | None = Field(description="null = sem a camada de áreas de risco")
+    abrigos: int = Field(description="Abrigos cadastrados no território (abertos ou não)")
+    areas_risco: int | None = Field(description="Áreas de risco mapeadas no território; null = sem a camada")
+    cobertura_risco_parcial: bool = Field(
+        description="true = nem todo bairro tem área de risco mapeada: ausência não é segurança (RN-01)"
+    )
+
+
+def _geo_vazio() -> dict:
+    return {"type": "FeatureCollection", "features": []}
+
+
+@router.get(
+    "/camadas/equipamentos-saude",
+    response_model=RespostaDados[dict],
+    summary="Equipamentos de saúde (CNES) como pontos no mapa",
+)
+def camada_equipamentos(
+    _: Contexto = Depends(consultar), db: Session = Depends(obter_sessao), agora: datetime = Depends(relogio)
+) -> RespostaDados[dict]:
+    colecao = vulnerabilidade.camada_equipamentos(db)
+    return RespostaDados(
+        dados=colecao if colecao is not None else _geo_vazio(),
+        meta=Meta(
+            fontes=[servico_fontes.meta(db, vulnerabilidade.FONTE_EQUIPAMENTOS, agora)],
+            recorte=RecorteMeta(territorio_id="recife", granularidade="municipio"),
+            dados_insuficientes=colecao is None,
+            avisos=[vulnerabilidade.falta(vulnerabilidade.FONTE_EQUIPAMENTOS)] if colecao is None else [],
+        ),
+    )
+
+
+@router.get(
+    "/camadas/vulneraveis",
+    response_model=RespostaDados[Vulneraveis],
+    summary="Idosos e crianças por bairro (Censo 2022), com supressão de células pequenas",
+)
+def camada_vulneraveis(
+    _: Contexto = Depends(consultar),
+    db: Session = Depends(obter_sessao),
+    config: Configuracao = Depends(configuracao),
+    agora: datetime = Depends(relogio),
+) -> RespostaDados[Vulneraveis]:
+    r = vulnerabilidade.camada_vulneraveis(db, config.supressao_minima)
+    return RespostaDados(
+        dados=Vulneraveis(itens=r["itens"] if r else []),
+        meta=Meta(
+            fontes=[servico_fontes.meta(db, vulnerabilidade.FONTE_POPULACAO, agora)],
+            recorte=RecorteMeta(territorio_id="recife", granularidade="bairro"),
+            dados_insuficientes=r is None,
+            avisos=[vulnerabilidade.falta(vulnerabilidade.FONTE_POPULACAO)]
+            if r is None
+            else ["Contagem de pessoas residentes, não probabilidade (RN-06)."],
+            supressao_minima=config.supressao_minima,
+            ano=r["ano"] if r else None,
+            deficiencia=dom_vulnerabilidade.FALTA_DEFICIENCIA,
+        ),
+    )
+
+
+@router.get(
+    "/camadas/areas-risco",
+    response_model=RespostaDados[dict],
+    summary="Áreas de risco mapeadas pela Prefeitura (com a cobertura, que pode ser parcial)",
+)
+def camada_areas_risco(
+    _: Contexto = Depends(consultar), db: Session = Depends(obter_sessao), agora: datetime = Depends(relogio)
+) -> RespostaDados[dict]:
+    r = vulnerabilidade.camada_areas_risco(db)
+    return RespostaDados(
+        dados=r[0] if r else _geo_vazio(),
+        meta=Meta(
+            fontes=[servico_fontes.meta(db, vulnerabilidade.FONTE_RISCO, agora)],
+            recorte=RecorteMeta(territorio_id="recife", granularidade="municipio"),
+            dados_insuficientes=r is None,
+            avisos=[r[1]["texto"]] if r else [vulnerabilidade.falta(vulnerabilidade.FONTE_RISCO)],
+            cobertura=r[1] if r else None,
+        ),
+    )
+
+
+@router.get(
+    "/{territorio_id}/resumo-vulnerabilidade",
+    response_model=RespostaDados[ResumoVulnerabilidade],
+    summary="Cruzamento do território: idosos, crianças, equipamentos, abrigos e áreas de risco (RF-04, RF-07)",
+)
+def resumo_vulnerabilidade(
+    territorio_id: str,
+    _: Contexto = Depends(consultar),
+    db: Session = Depends(obter_sessao),
+    config: Configuracao = Depends(configuracao),
+    agora: datetime = Depends(relogio),
+) -> RespostaDados[ResumoVulnerabilidade]:
+    try:
+        validar_territorio(territorio_id)
+    except RecorteInvalido as erro:
+        raise ErroClimaSense(422, str(erro)) from None
+    if (
+        territorio_id != "recife"
+        and not db.execute(text("select 1 from app.territorios where id = :i"), {"i": territorio_id}).first()
+    ):
+        raise ErroClimaSense(404, f"Território “{territorio_id}” não existe.")
+    r = vulnerabilidade.resumo_territorio(db, territorio_id, config.supressao_minima)
+    com_dado = r.pop("_fontes_com_dado")
+    r.pop("_ano")
+    return RespostaDados(
+        dados=ResumoVulnerabilidade(**r),
+        meta=Meta(
+            fontes=[servico_fontes.meta(db, f, agora) for f in com_dado],
+            recorte=RecorteMeta(territorio_id=territorio_id, granularidade=granularidade(territorio_id)),
+            dados_insuficientes=not any(com_dado.values()),
+            avisos=[vulnerabilidade.falta(f) for f, tem in com_dado.items() if not tem],
+            supressao_minima=config.supressao_minima,
         ),
     )
 

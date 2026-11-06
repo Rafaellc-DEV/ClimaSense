@@ -47,7 +47,7 @@ ESCADA = dom.ESCADA
 FRACAO_SENSIVEL = 0.8
 MOTIVO_SEM_DESLIZAMENTO = "sem histórico de deslizamento na base"
 MOTIVO_SEM_ALAGAMENTO = "sem histórico de ocorrências de alagamento na base"
-MOTIVO_IMPACTO_PENDENTE = "Dados insuficientes: população vulnerável ainda não integrada (Etapa 6)"
+MOTIVO_IMPACTO_PENDENTE = "Dados insuficientes: falta a fonte ibge-censo-2022-bairro (população por faixa etária) e cnes-equipamentos"
 MAX_MOTIVOS = 3
 MOTIVO_SEM_ACUMULADA = "sem chuva acumulada informada"
 MOTIVO_SEM_MARE = "sem maré informada"
@@ -75,7 +75,7 @@ class Historico:
 
 @dataclass(frozen=True)
 class Vulneraveis:
-    """Reservado à Etapa 6 (IBGE e equipamentos de saúde). Campo `None` = sem fonte."""
+    """Idosos 60+, crianças 0-14 (IBGE) e equipamentos de saúde (CNES) do território. Campo `None` = sem fonte."""
 
     idosos: int | None = None
     criancas: int | None = None
@@ -347,17 +347,43 @@ def pressao_abrigos(p: Premissas) -> str | None:
 
 
 def impacto_pessoas(estagio: Classe, vulneraveis: Vulneraveis | None) -> dict | None:
-    """Pessoas e equipamentos expostos no território quando o estágio sugerido é atenção ou mais. `None` enquanto
-    não houver fonte de população vulnerável (Etapa 6) ou sem estágio. Soma só o que tem fonte."""
+    """Pessoas residentes e equipamentos no território quando o estágio sugerido é atenção ou mais (contagem, não
+    probabilidade, RN-06). `None` sem fonte de população vulnerável ou sem estágio. Campo sem fonte ou suprimido
+    fica nulo; deficiência não tem dado público por bairro (PRD §8.2)."""
     if vulneraveis is None or estagio in ("sem_dados", "observacao"):
         return None
     partes = [v for v in (vulneraveis.idosos, vulneraveis.criancas) if v is not None]
     return {
-        "idosos": vulneraveis.idosos,
-        "criancas": vulneraveis.criancas,
+        "idosos_60_mais": vulneraveis.idosos,
+        "criancas_0_14": vulneraveis.criancas,
         "equipamentos_saude": vulneraveis.equipamentos_saude,
+        "deficiencia": None,
         "total_pessoas": sum(partes) if partes else None,
-        "criterio": "população do território, exposta quando o estágio sugerido é atenção ou mais",
+        "criterio": "população residente do território, exposta quando o estágio sugerido é atenção ou mais",
+    }
+
+
+def pessoas_em_alerta(estagios: dict[str, Classe], vulneraveis: dict[str, Vulneraveis] | None) -> dict | None:
+    """Pessoas vulneráveis residentes nos bairros em alerta ou acima (PRD §8.2): idosos 60+ e crianças 0-14, somando
+    só os números publicados. `parcial` = algum bairro em alerta ficou sem número. `None` sem fonte."""
+    if vulneraveis is None:
+        return None
+    em_alerta = [b for b, e in estagios.items() if e in ("alerta", "critico")]
+    vs = [vulneraveis.get(b) for b in em_alerta]
+    idosos = [v.idosos if v else None for v in vs]
+    criancas = [v.criancas if v else None for v in vs]
+    if not em_alerta:
+        soma_i, soma_c, parcial = 0, 0, False
+    else:
+        soma_i = sum(x for x in idosos if x is not None) if any(x is not None for x in idosos) else None
+        soma_c = sum(x for x in criancas if x is not None) if any(x is not None for x in criancas) else None
+        parcial = any(x is None for x in idosos + criancas)
+    return {
+        "bairros_em_alerta": len(em_alerta),
+        "idosos_60_mais": soma_i,
+        "criancas_0_14": soma_c,
+        "parcial": parcial,
+        "criterio": "pessoas residentes em bairros com estágio sugerido alerta ou crítico (contagem, não probabilidade)",
     }
 
 
