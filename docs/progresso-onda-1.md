@@ -160,3 +160,29 @@ erro da API e sem rolagem horizontal.
 - Ações gravam `tipo: "outro"` porque a API ainda exige o campo; registros antigos "Boletim emitido: ..." aparecem em
   "Concluídas e canceladas".
 - `docs/matriz-prd-codigo.md` e `docs/funcionalidades-equipe.md` ainda citam rotas do painel antigo.
+
+## Fechamento da Onda 1 — revisões (06/11/2026)
+
+**qa-ux**: nenhum P0. Fase 1: RF 20 atendidos e 9 parciais (Gate 0: 6 atendidos); RNF 8 atendidos, 3 parciais e 1 não
+atendido (RNF-07, disponibilidade). E2E contra a API real 14/14 (escritas interceptadas). Backend 1080, frontend 218.
+P1 abertos:
+1. "Pessoas abrigadas 0" e "abrigos abertos 0" por ausência de registro (Situação, Relatório, Simulador): deve ser
+   "Dados insuficientes" (RN-02) — backend-api e frontend-equipe.
+2. A Saúde abre a janela de leptospirose pela declaração de teste "Crítico" do DS I (04/11), que foi retirada; a
+   janela precisa ignorar declarações encerradas — backend-api.
+3. `/boletim` leva mais de 5 s (RNF-06) — backend-api.
+4. Estágio oficial do COP sempre "Dados insuficientes" até alguém informar (P-21).
+
+**seguranca-lgpd**: nenhum crítico; os achados do Gate 0 foram corrigidos (vacinação fora dos bancos, papel da
+aplicação sem posse nem DDL, somente-inclusão com gatilho, supressão, docs e health em produção, chaves FUNC_*,
+login por IP, gitleaks, auditoria de leitura, prazo de guarda). Abertos:
+- Alto: P-20 (a API ainda carrega a URL do dono para disparar o ETL, `api/routers/fontes.py:113`) e P-19 (senha do
+  `neondb_owner` exposta numa sessão).
+- Médio: `climasense_app` tem UPDATE/DELETE em `app.revisoes`, `app.tentativas_login` e `app.territorios` sem uso;
+  a senha do arquivo cifrado da vacinação está em texto puro na mesma pasta do arquivo.
+- Baixo: limite de tentativas por conta independente de IP; `SUPRESSAO_MINIMA` aceita 1; total em `/saude/bairros`
+  com um só bairro suprimido; fixture do CNES com códigos reais de consultórios de pessoa física; entradas sem limite
+  (`resultado` em `POST /cenarios`, corpo da requisição, datas do boletim, paginação, cache do `/health`); leitura
+  das camadas de vulneráveis sem auditoria; texto livre sem checagem no servidor; 2 moderadas do react-router.
+- Não rodou no Neon: `sincronizar-frescor` (limites em `app.fontes` divergem do TOML) e `limpar-retencao` (hoje não
+  há o que apagar).
