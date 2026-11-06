@@ -26,6 +26,7 @@ TABELAS = {
         "estagio_parametros",
         "estagio_declaracoes",
         "estagio_oficial",
+        "cenarios",
         "abrigos",
         "abrigo_atualizacoes",
         "acoes_resposta",
