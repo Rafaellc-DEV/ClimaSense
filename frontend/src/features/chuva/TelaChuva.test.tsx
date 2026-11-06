@@ -46,13 +46,10 @@ const sazonal = {
 function base() {
   return {
     "/auth/eu": usuarioTeste(),
-    "/painel/resumo": {
-      contadores: { avaliacoes: 0, comunicados: 0 },
-      fontes: [
-        { id: "open-meteo-historico", nome: "ERA5", status: "atualizada", ultima_atualizacao: AGORA },
-        { id: "open-meteo-previsao", nome: "Previsão", status: "atualizada", ultima_atualizacao: AGORA },
-      ],
-    },
+    "/fontes": [
+      { id: "open-meteo-historico", nome: "ERA5", status: "atualizada", ultima_atualizacao: AGORA },
+      { id: "open-meteo-previsao", nome: "Previsão", status: "atualizada", ultima_atualizacao: AGORA },
+    ],
     "/estagios?nivel=distrito": {
       itens: [
         distrito("ds-1", "Distrito Sanitário I", 3, 8),

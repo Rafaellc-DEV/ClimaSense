@@ -33,7 +33,6 @@ const agravo = (a: string, nome: string, fonte_id: string, casos: number | null,
 function api() {
   return {
     "/auth/eu": usuarioTeste(),
-    "/painel/resumo": { contadores: { avaliacoes: 0, comunicados: 0 }, fontes: [] },
     "/saude/resumo": {
       dados: {
         agravos: [

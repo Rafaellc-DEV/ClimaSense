@@ -41,6 +41,36 @@ function ItemAbrigo({ a }: { a: Abrigo }) {
   );
 }
 
+const ABRIGOS_VISIVEIS = 3;
+
+/** No máximo 3 abrigos à vista (abertos primeiro); o resto fica recolhido em “Ver os N abrigos”. */
+function ListaAbrigosPainel({ lista }: { lista: Abrigo[] }) {
+  const ordenados = [...lista].sort(
+    (a, b) => Number(b.aberto) - Number(a.aberto) || a.nome.localeCompare(b.nome, "pt-BR"),
+  );
+  const primeiros = ordenados.slice(0, ABRIGOS_VISIVEIS);
+  const resto = ordenados.slice(ABRIGOS_VISIVEIS);
+  return (
+    <>
+      <ul className={estilos.abrigos}>
+        {primeiros.map((a) => (
+          <ItemAbrigo key={a.id} a={a} />
+        ))}
+      </ul>
+      {resto.length > 0 && (
+        <details className={estilos.maisAbrigos}>
+          <summary>Ver os {ordenados.length} abrigos</summary>
+          <ul className={estilos.abrigos}>
+            {resto.map((a) => (
+              <ItemAbrigo key={a.id} a={a} />
+            ))}
+          </ul>
+        </details>
+      )}
+    </>
+  );
+}
+
 export interface PropsPainel {
   item: ItemEstagio;
   abrigos: { lista: Abrigo[]; carregando: boolean; erro: Error | null; aoTentar: () => void };
@@ -221,11 +251,7 @@ export function PainelTerritorio({
             {doTerritorio.length === 0 ? (
               <p>Nenhum abrigo cadastrado {ehDistrito ? "neste distrito" : "neste bairro"}.</p>
             ) : (
-              <ul className={estilos.abrigos}>
-                {doTerritorio.map((a) => (
-                  <ItemAbrigo key={a.id} a={a} />
-                ))}
-              </ul>
+              <ListaAbrigosPainel lista={doTerritorio} />
             )}
             {proximos.length > 0 && (
               <>

@@ -24,15 +24,33 @@ const abrigos = {
   totais: { abrigos_abertos: 1, pessoas_abrigadas: 42, desabrigados: 50, atualizado_em: AGORA },
 };
 
+const totaisSit = {
+  abrigos_abertos: 1,
+  abrigos_cadastrados: 1,
+  pessoas_abrigadas: 42,
+  desabrigados: 50,
+  parcial: false,
+  abertos_sem_contagem: 0,
+  atualizado_em: AGORA,
+  atualizado_por_nome: "Mari Siqueira",
+};
+
 function base() {
   return {
     "/auth/eu": usuarioTeste(),
-    "/painel/resumo": { contadores: { avaliacoes: 0, comunicados: 0 }, fontes: [] },
     "/territorios": [
       { id: "ds-1", tipo: "distrito", nome_exibicao: "Distrito Sanitário 1", pai_id: "recife" },
       { id: "bairro-afogados", tipo: "bairro", nome_exibicao: "Afogados", pai_id: "ds-1" },
     ],
     "/abrigos": abrigos,
+    "/abrigos/situacao": {
+      dados: {
+        cidade: totaisSit,
+        distritos: [],
+        ocupacao_atualizada_em: AGORA,
+      },
+      meta: { fontes: [] },
+    },
   };
 }
 
@@ -41,43 +59,41 @@ afterEach(() => {
   clienteConsultas.clear();
 });
 
-test("totais no topo e a lista com hora e autor da última atualização", async () => {
+test("a lista tem hora e autor da última atualização, pessoas abrigadas e desabrigados", async () => {
   simularApi(base());
-  window.history.pushState({}, "", "/app/abrigos");
+  window.history.pushState({}, "", "/app/situacao");
   render(<App />);
-  const totais = await screen.findByRole("region", { name: "Totais" });
-  expect(
-    within(await within(totais).findByRole("group", { name: "Abrigos abertos" })).getByText("1"),
-  ).toBeInTheDocument();
-  // ocupação e desabrigados saíram: sem fonte pública e sem contagem pela equipe
-  expect(within(totais).queryByRole("group", { name: "Desabrigados" })).not.toBeInTheDocument();
-  expect(within(totais).queryByRole("group", { name: "Pessoas abrigadas" })).not.toBeInTheDocument();
   expect(await screen.findByRole("rowheader", { name: /Escola Municipal Afogados/ })).toBeInTheDocument();
-  expect(screen.getByText("80 pessoas")).toBeInTheDocument();
+  expect(screen.getByText("de 80 vagas")).toBeInTheDocument();
+  expect(screen.getAllByText("42").length).toBeGreaterThan(0);
+  expect(screen.getAllByText("50").length).toBeGreaterThan(0);
   expect(screen.getByText("por Mari Siqueira")).toBeInTheDocument();
 });
 
-test("atualização rápida manda só aberto ou fechado e a observação", async () => {
+test("atualização rápida manda aberto ou fechado, pessoas abrigadas, desabrigados e a observação", async () => {
   const pedidos = simularApi(base(), { "/abrigos/ab-1": { ...abrigos.itens[0], aberto: false } });
-  window.history.pushState({}, "", "/app/abrigos");
+  window.history.pushState({}, "", "/app/situacao");
   render(<App />);
   const u = userEvent.setup();
   await u.click(await screen.findByRole("button", { name: /Atualizar Escola Municipal Afogados/ }));
   const dialogo = await screen.findByRole("dialog", { name: /Atualizar Escola Municipal Afogados/ });
-  expect(within(dialogo).queryByLabelText("Desabrigados atendidos")).not.toBeInTheDocument();
+  const abrigadas = within(dialogo).getByLabelText(/Pessoas abrigadas/);
+  await u.clear(abrigadas);
+  await u.type(abrigadas, "55");
+  await u.clear(within(dialogo).getByLabelText(/Desabrigados atendidos/));
   await u.click(within(dialogo).getByRole("radio", { name: "Fechado" }));
   await u.click(within(dialogo).getByRole("button", { name: "Salvar" }));
   await waitFor(() =>
     expect(pedidos.find((p) => p.metodo === "PATCH")).toMatchObject({
       url: expect.stringContaining("/abrigos/ab-1"),
-      corpo: { aberto: false, observacao: null },
+      corpo: { aberto: false, pessoas_abrigadas: 55, desabrigados: null, observacao: null },
     }),
   );
 });
 
 test("cadastro pede nome e bairro antes de enviar", async () => {
   const pedidos = simularApi(base(), { "/abrigos": { status: 201, corpo: { id: "ab-2" } } });
-  window.history.pushState({}, "", "/app/abrigos");
+  window.history.pushState({}, "", "/app/situacao");
   render(<App />);
   const u = userEvent.setup();
   await u.click(await screen.findByRole("button", { name: "Cadastrar abrigo" }));
@@ -105,11 +121,12 @@ test("cadastro pede nome e bairro antes de enviar", async () => {
 test("sem o endpoint de abrigos (404), nada de zero: a tela diz que ainda não está disponível", async () => {
   const b = base() as Record<string, unknown>;
   delete b["/abrigos"];
+  delete b["/abrigos/situacao"];
   simularApi(b);
-  window.history.pushState({}, "", "/app/abrigos");
+  window.history.pushState({}, "", "/app/situacao");
   render(<App />);
-  expect(await screen.findByText("Ainda não disponível.")).toBeInTheDocument();
-  expect(screen.queryByRole("group", { name: "Abrigos abertos" })).not.toBeInTheDocument();
+  expect((await screen.findAllByText("Ainda não disponível.")).length).toBeGreaterThan(0);
+  expect(screen.queryByText(/^\d+$/)).not.toBeInTheDocument();
 });
 
 test("local que ninguém informou é “Sem informação”, não “Fechado” (RN-01); e a contagem diz que nenhum está aberto", async () => {
@@ -129,7 +146,7 @@ test("local que ninguém informou é “Sem informação”, não “Fechado” 
       totais: { abrigos_abertos: 0, pessoas_abrigadas: null, desabrigados: null },
     },
   });
-  window.history.pushState({}, "", "/app/abrigos");
+  window.history.pushState({}, "", "/app/situacao");
   render(<App />);
   expect(await screen.findByText("Sem informação")).toBeInTheDocument();
   expect(screen.queryByText("Fechado")).not.toBeInTheDocument();
@@ -139,7 +156,7 @@ test("local que ninguém informou é “Sem informação”, não “Fechado” 
 
 test("“Só abertos” sem nenhum aberto explica o que fazer e leva de volta a todos os locais", async () => {
   simularApi({ ...base(), "/abrigos?aberto=true": { itens: [], totais: { abrigos_abertos: 0 } } });
-  window.history.pushState({}, "", "/app/abrigos");
+  window.history.pushState({}, "", "/app/situacao");
   render(<App />);
   const u = userEvent.setup();
   await u.click(await screen.findByRole("radio", { name: "Só abertos" }));
@@ -151,7 +168,7 @@ test("“Só abertos” sem nenhum aberto explica o que fazer e leva de volta a 
 
 test("Editar dados manda só capacidade, endereço e observação (PATCH), sem ocupação", async () => {
   const pedidos = simularApi(base(), { "/abrigos/ab-1": abrigos.itens[0] });
-  window.history.pushState({}, "", "/app/abrigos");
+  window.history.pushState({}, "", "/app/situacao");
   render(<App />);
   const u = userEvent.setup();
   await u.click(await screen.findByRole("button", { name: /Editar dados de Escola Municipal Afogados/ }));
@@ -173,7 +190,7 @@ test("Editar dados manda só capacidade, endereço e observação (PATCH), sem o
 test("sem capacidade: “sem dado” e “Informar” abre o mesmo diálogo; quem só consulta não vê", async () => {
   const sem = { ...abrigos, itens: [{ ...abrigos.itens[0], capacidade: null }] };
   simularApi({ ...base(), "/abrigos": sem });
-  window.history.pushState({}, "", "/app/abrigos");
+  window.history.pushState({}, "", "/app/situacao");
   render(<App />);
   const u = userEvent.setup();
   await u.click(await screen.findByRole("button", { name: /Informar capacidade de Escola/ }));
@@ -196,7 +213,7 @@ test("o histórico mostra capacidade e endereço quando mudaram", async () => {
       },
     ],
   });
-  window.history.pushState({}, "", "/app/abrigos");
+  window.history.pushState({}, "", "/app/situacao");
   render(<App />);
   const u = userEvent.setup();
   await u.click(await screen.findByRole("button", { name: /Histórico de Escola Municipal Afogados/ }));

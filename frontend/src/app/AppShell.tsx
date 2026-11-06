@@ -1,27 +1,21 @@
 import { useEffect, useState, type ReactNode } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import {
-  CloudRain,
+  ClipboardList,
   Database,
   FlaskConical,
-  FileText,
   HeartPulse,
   LogOut,
-  Megaphone,
   Map as MapIcon,
   Menu,
-  NotebookPen,
   Settings,
   Siren,
-  Tent,
   X,
 } from "lucide-react";
 import { Link, Navigate, NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { Marca } from "@/design-system/componentes/Marca";
 import rios from "@/assets/tracos/rios.svg?raw";
-import type { Esquemas } from "@/lib/api";
-import { enderecoInicial, funcionalidadeLigada } from "@/lib/funcionalidades";
-import { useConsulta } from "@/lib/consultas";
+import { enderecoInicial } from "@/lib/funcionalidades";
 import { useSessao } from "@/lib/sessao";
 import { PAPEIS } from "@/textos/glossario";
 import { AMBIENTE_DEMO } from "./ambiente";
@@ -36,49 +30,28 @@ interface ItemMenu {
   rotulo: string;
   icone: ReactNode;
   permissao?: string;
-  contador?: "comunicados";
   fim?: boolean;
 }
 
 /**
- * Oito itens, cada um responde a uma dor da equipe, na ordem do dia a dia: o mapa, o que fazer agora, a chuva, o registro, os
- * abrigos, a saúde depois da chuva, o aviso à população e o boletim. Fontes e Administração ficam no rodapé.
+ * As cinco telas do PRD (§7), na ordem do dia a dia: o mapa, a situação do evento, a saúde, as ações e o simulador.
+ * Fontes e Administração ficam no rodapé. Chuva, Abrigos, Registro e Boletim viraram parte destas telas (rotas
+ * antigas redirecionam, ver App.tsx).
  */
-const TODOS_PRINCIPAIS: ItemMenu[] = [
+const PRINCIPAIS: ItemMenu[] = [
   { para: "/app", rotulo: "Mapa", icone: <MapIcon />, fim: true },
-  { para: "/app/situacao", rotulo: "Situação", icone: <Siren /> },
-  { para: "/app/chuva", rotulo: "Chuva", icone: <CloudRain /> },
+  { para: "/app/situacao", rotulo: "Situação do evento", icone: <Siren /> },
+  { para: "/app/saude", rotulo: "Saúde", icone: <HeartPulse /> },
+  { para: "/app/acoes", rotulo: "Ações", icone: <ClipboardList /> },
   { para: "/app/simulador", rotulo: "Simulador", icone: <FlaskConical /> },
-  { para: "/app/registro", rotulo: "Registro do evento", icone: <NotebookPen /> },
-  { para: "/app/abrigos", rotulo: "Abrigos", icone: <Tent /> },
-  { para: "/app/saude", rotulo: "Saúde depois da chuva", icone: <HeartPulse /> },
-  { para: "/app/comunicados", rotulo: "Comunicados", icone: <Megaphone />, contador: "comunicados" },
-  { para: "/app/boletim", rotulo: "Boletim", icone: <FileText /> },
 ];
-/** Itens de funcionalidades desligadas por chave (ADR 0011) não entram no menu. */
-const principais = () =>
-  TODOS_PRINCIPAIS.filter((i) => i.para !== "/app/comunicados" || funcionalidadeLigada("comunicados"));
 const RODAPE: ItemMenu[] = [
   { para: "/app/fontes", rotulo: "Fontes", icone: <Database /> },
   { para: "/app/admin", rotulo: "Administração", icone: <Settings />, permissao: "administrar" },
 ];
 
-function Contador({ n }: { n: number }) {
-  if (n <= 0) return null;
-  return (
-    <span className={estilos.contador} aria-label={`${n} aguardando a sua revisão`}>
-      {n}
-    </span>
-  );
-}
-
 function Navegacao({ aoEscolher }: { aoEscolher?: () => void }) {
   const { pode } = useSessao();
-  const resumo = useConsulta<Esquemas["ResumoPainel"]>("/painel/resumo", {
-    enabled: funcionalidadeLigada("comunicados"),
-  });
-  const contar = (i: ItemMenu) => (i.contador ? (resumo.data?.contadores[i.contador] ?? 0) : 0);
-
   const lista = (itens: ItemMenu[], classe?: string) => (
     <ul className={[estilos.grupo, classe].filter(Boolean).join(" ")}>
       {itens
@@ -90,7 +63,6 @@ function Navegacao({ aoEscolher }: { aoEscolher?: () => void }) {
                 {i.icone}
               </span>
               <span className={estilos.rotuloItem}>{i.rotulo}</span>
-              <Contador n={contar(i)} />
             </NavLink>
           </li>
         ))}
@@ -99,7 +71,7 @@ function Navegacao({ aoEscolher }: { aoEscolher?: () => void }) {
 
   return (
     <nav aria-label="Menu principal" className={estilos.nav}>
-      <div className={estilos.bloco}>{lista(principais())}</div>
+      <div className={estilos.bloco}>{lista(PRINCIPAIS)}</div>
       <div className={`${estilos.bloco} ${estilos.blocoRodape}`}>{lista(RODAPE, estilos.grupoRodape)}</div>
     </nav>
   );

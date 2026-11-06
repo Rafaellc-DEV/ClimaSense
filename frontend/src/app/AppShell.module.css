@@ -172,19 +172,6 @@
   flex: 1;
   line-height: 1.25;
 }
-.contador {
-  min-width: 28px;
-  height: 28px;
-  padding: 0 8px;
-  display: inline-grid;
-  place-items: center;
-  border-radius: var(--r-pilula);
-  background: var(--sup-sol);
-  color: #0e2433;
-  font-size: var(--t-apoio);
-  font-weight: 800;
-  font-variant-numeric: tabular-nums;
-}
 .conta {
   margin-top: auto;
   display: flex;

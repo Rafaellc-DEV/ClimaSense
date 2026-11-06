@@ -135,6 +135,8 @@
 .colunaMapa,
 .colunaLateral {
   display: grid;
+  /* uma coluna que nunca passa da largura da tela (sem isso o conteúdo largo estica a faixa) */
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--e-4);
   min-width: 0;
 }
@@ -593,4 +595,21 @@
 }
 .legendaFonteTxt {
   margin: 0;
+}
+
+/* abrigos além dos 3 primeiros ficam recolhidos */
+.maisAbrigos {
+  display: grid;
+  gap: var(--e-2);
+}
+.maisAbrigos summary {
+  display: flex;
+  align-items: center;
+  min-height: var(--alvo);
+  font-weight: 700;
+  color: var(--cs-mare);
+  cursor: pointer;
+}
+.maisAbrigos[open] summary {
+  margin-bottom: var(--e-2);
 }

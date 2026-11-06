@@ -58,17 +58,14 @@ const RESUMO_SAUDE = {
 function base() {
   return {
     "/auth/eu": usuarioTeste(),
-    "/painel/resumo": {
-      contadores: { avaliacoes: 0, comunicados: 0 },
-      fontes: [
-        {
-          id: "infodengue",
-          nome: "InfoDengue",
-          status: "atualizada",
-          ultima_atualizacao: "2026-11-05T12:00:00Z",
-        },
-      ],
-    },
+    "/fontes": [
+      {
+        id: "infodengue",
+        nome: "InfoDengue",
+        status: "atualizada",
+        ultima_atualizacao: "2026-11-05T12:00:00Z",
+      },
+    ],
     "/saude/resumo": RESUMO_SAUDE,
     "/territorios": [
       { id: "ds-6", tipo: "distrito", nome_exibicao: "Distrito Sanitário VI", pai_id: "recife" },

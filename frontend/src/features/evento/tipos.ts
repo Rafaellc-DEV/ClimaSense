@@ -86,6 +86,30 @@ export interface TotaisAbrigos {
   abertos_sem_contagem?: number | null;
 }
 
+/** Totais da situação do evento (`GET /abrigos/situacao`): null = sem registro, nunca zero (RN-01, RN-02). */
+export interface TotaisSituacao {
+  abrigos_abertos: number | null;
+  abrigos_cadastrados: number;
+  pessoas_abrigadas: number | null;
+  desabrigados: number | null;
+  /** true: há abrigo aberto sem contagem; a soma é parcial. */
+  parcial: boolean;
+  abertos_sem_contagem: number;
+  atualizado_em: string | null;
+  atualizado_por_nome?: string | null;
+}
+
+export interface SituacaoDistrito extends TotaisSituacao {
+  distrito_id: string;
+  distrito_nome: string;
+}
+
+export interface SituacaoEvento {
+  cidade: TotaisSituacao;
+  distritos: SituacaoDistrito[];
+  ocupacao_atualizada_em: string | null;
+}
+
 export interface Abrigo {
   id: string | number;
   nome: string;
@@ -118,6 +142,7 @@ export interface Acao {
   id: string | number;
   territorio_id: string;
   territorio_nome?: string | null;
+  distrito_id?: string | null;
   tipo: string;
   descricao: string;
   responsavel?: string | null;
@@ -127,7 +152,18 @@ export interface Acao {
   criada_em?: string | null;
   atualizada_em?: string | null;
   autor_nome?: string | null;
+  atualizado_por_nome?: string | null;
+  /** Obsoleto (PRD §5): a tela não usa. */
   licao_aprendida?: string | null;
+}
+
+/** Um passo do histórico de uma ação (`GET /acoes/{id}`). */
+export interface EventoAcao {
+  id: number | string;
+  em: string;
+  autor_nome: string;
+  situacao: SituacaoAcao;
+  texto: string;
 }
 
 /** Entrada do histórico de um abrigo: os campos que mudaram, quando e por quem. */

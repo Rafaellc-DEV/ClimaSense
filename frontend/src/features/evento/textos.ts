@@ -37,12 +37,13 @@ export function diaMes(iso: string): string {
   return formatarData(s).slice(0, 5);
 }
 
-export type FonteResumo = Esquemas["ResumoPainel"]["fontes"][number];
+/** Uma fonte de `GET /fontes`: nome, situação e hora da última carga (o `/painel/resumo` foi aposentado). */
+export type FonteResumo = Pick<Esquemas["Fonte"], "id" | "nome" | "status" | "ultima_atualizacao">;
 
 /** Fontes do painel (nome, situação e hora da última carga), para o rodapé de cada tela. */
 export function useFontesResumo() {
-  const r = useConsultaViva<Esquemas["ResumoPainel"]>("/painel/resumo");
-  const lista = r.data?.fontes ?? [];
+  const r = useConsultaViva<FonteResumo[]>("/fontes");
+  const lista = Array.isArray(r.data) ? r.data : [];
   return {
     consulta: r,
     lista,

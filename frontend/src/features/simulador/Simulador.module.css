@@ -254,3 +254,12 @@
     position: static;
   }
 }
+
+.linkChuva {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--e-2);
+  min-height: var(--alvo);
+  font-weight: 700;
+  color: var(--cs-mare);
+}

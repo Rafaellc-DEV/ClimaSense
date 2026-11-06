@@ -548,7 +548,6 @@ export function EditorComunicado() {
   const [rascunho, setRascunho] = useState<Valores | null>(null);
   const atualizar = (d: Detalhe) => {
     cliente.setQueryData([`/comunicados/${id}`], d);
-    void cliente.invalidateQueries({ queryKey: ["/painel/resumo"] });
     void cliente.invalidateQueries({ queryKey: ["/comunicados"] });
     setEditando(false);
     setRascunho(null);

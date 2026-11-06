@@ -1,13 +1,11 @@
 import { useId, useMemo, useState, type FormEvent } from "react";
 import { History, Pencil, Plus, RefreshCw } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
-import { CabecalhoTela } from "@/app/AppShell";
 import { useAviso } from "@/design-system/componentes/Aviso";
 import { Botao } from "@/design-system/componentes/Botao";
 import { AreaTexto, Campo } from "@/design-system/componentes/Campo";
 import { Dialogo } from "@/design-system/componentes/Dialogo";
 import { CarregandoLista } from "@/design-system/componentes/Esqueleto";
-import { Indicador } from "@/design-system/componentes/Indicador";
 import { Painel } from "@/design-system/componentes/Painel";
 import { Pilula } from "@/design-system/componentes/Pilula";
 import { Segmentado } from "@/design-system/componentes/Segmentado";
@@ -16,21 +14,14 @@ import { ListaAdaptavel } from "@/features/fluxo/ListaAdaptavel";
 import {
   EstadoConsulta,
   invalidarPrefixo,
-  numeroOuNulo,
   SelecaoTerritorio,
   useNomeTerritorio,
 } from "@/features/evento/Evento";
-import {
-  listaDe,
-  totaisDe,
-  type Abrigo,
-  type HistoricoAbrigo,
-  type TotaisAbrigos,
-} from "@/features/evento/tipos";
+import { listaDe, type Abrigo, type HistoricoAbrigo } from "@/features/evento/tipos";
 import { consulta, enviar, ErroApi } from "@/lib/api";
-import { useConsulta, useConsultaViva, ultimaAtualizacao } from "@/lib/consultas";
-import { fontesDe, type FonteMeta } from "@/lib/frescor";
-import { fontesDado } from "@/design-system/componentes/EstadoDados";
+import { useConsulta, useConsultaViva } from "@/lib/consultas";
+import { fontesDe } from "@/lib/frescor";
+import { fontesDado, LegendaFonte } from "@/design-system/componentes/EstadoDados";
 import { formatarDataHora, formatarNumero, quandoRelativo } from "@/lib/formatos";
 import { useSessao } from "@/lib/sessao";
 import { normalizar } from "@/features/landing/abrigosPublicos";
@@ -42,53 +33,6 @@ function inteiro(v: string): number | null {
   if (v.trim() === "") return null;
   const n = Number(v);
   return Number.isInteger(n) && n >= 0 ? n : Number.NaN;
-}
-
-/**
- * Números do topo dos abrigos: quantos estão abertos e quantos locais existem. Ocupação e desabrigados saíram:
- * não há fonte pública e a equipe não fará essa contagem (decisão do cliente, 05/11/2026).
- */
-export function TotaisAbrigosIndicadores({
-  totais,
-  carregando,
-  locais,
-  fontes = [],
-}: {
-  totais: TotaisAbrigos | null;
-  carregando?: boolean;
-  locais?: number;
-  /** `meta.fontes` da resposta: com ela, cada número mostra a hora e o selo “Desatualizado” (RF-19). */
-  fontes?: FonteMeta[];
-}) {
-  const hora = totais?.atualizado_em ?? null;
-  const semCadastro = totais?.abrigos_cadastrados === 0;
-  return (
-    <>
-      <Indicador
-        rotulo="Abrigos abertos"
-        carregando={carregando}
-        valor={semCadastro ? null : numeroOuNulo(totais?.abrigos_abertos)}
-        explicacao={semCadastro ? "Nenhum local cadastrado ainda." : undefined}
-        fonte={
-          fontes.length > 0
-            ? fontesDado(fontes)
-            : [{ nome: "Feed do COP e registro da equipe", atualizadoEm: hora }]
-        }
-      />
-      {locais !== undefined && (
-        <Indicador
-          rotulo="Locais que podem virar abrigo"
-          carregando={carregando}
-          valor={locais}
-          fonte={
-            fontes.length > 0
-              ? fontesDado(fontes)
-              : [{ nome: "Dados Abertos do Recife e Plano de Contingência", atualizadoEm: null }]
-          }
-        />
-      )}
-    </>
-  );
 }
 
 const POR_PAGINA = 20;
@@ -115,15 +59,18 @@ function frasesDeMudanca(h: HistoricoComMudancas): string[] {
   return frases;
 }
 
-/** F3: onde estão os abrigos e quais estão abertos, com cadastro e atualização rápida. */
-export function TelaAbrigos() {
+/**
+ * Lista de abrigos da Situação do evento (RF-08, RF-09): abertos primeiro, com “Atualizar” (aberto ou fechado, pessoas
+ * abrigadas, desabrigados atendidos e observação), “Editar dados” (capacidade e endereço) e histórico. É registro
+ * manual da equipe, com hora e autor (PRD §9). Os totais ficam no topo da tela, calculados pela API.
+ */
+export function ListaAbrigos() {
   const { pode } = useSessao();
   const podeEditar = pode("editar");
   const [filtro, setFiltro] = useState<"todos" | "abertos">("todos");
   const r = useConsultaViva<unknown>(`/abrigos${consulta({ aberto: filtro === "abertos" ? "true" : null })}`);
   const nome = useNomeTerritorio();
   const todos = listaDe<Abrigo>(r.data);
-  const totais = totaisDe(r.data);
   // com ~200 locais cadastrados, a lista precisa de busca, distrito e páginas; os abertos vêm sempre primeiro
   const [busca, setBusca] = useState("");
   const [distrito, setDistrito] = useState("");
@@ -152,50 +99,33 @@ export function TelaAbrigos() {
 
   return (
     <>
-      <CabecalhoTela
-        titulo="Abrigos"
-        atualizadoEm={ultimaAtualizacao(r)}
-        proposito="Onde ficam os locais que podem virar abrigo e quais estão abertos agora. Capacidade e endereço são informados pela equipe (ligação ou visita); não vêm de nenhuma API."
-        acoes={
-          podeEditar && (
-            <Botao icone={<Plus />} onClick={() => setCadastrar(true)}>
-              Cadastrar abrigo
-            </Botao>
-          )
-        }
-      />
       <div className={estilos.pagina}>
-        {r.isError ? (
+        {r.isError && (
           <EstadoConsulta erro={r.error} oQue="o registro de abrigos" aoTentar={() => r.refetch()} />
-        ) : (
-          <section aria-labelledby="ab-totais" className={estilos.totais}>
-            <h2 id="ab-totais" className="so-leitor">
-              Totais
-            </h2>
-            <TotaisAbrigosIndicadores
-              totais={totais}
-              carregando={r.isPending}
-              fontes={fontesDe(r.data)}
-              locais={filtro === "todos" ? todos.length : undefined}
-            />
-          </section>
         )}
 
         {!r.isError && (
           <Painel
             id="ab-lista"
-            titulo={filtro === "abertos" ? "Abrigos abertos" : "Locais cadastrados"}
+            titulo={filtro === "abertos" ? "Abrigos abertos" : "Abrigos e locais cadastrados"}
             acoes={
-              <Segmentado
-                rotulo="Mostrar"
-                rotuloOculto
-                opcoes={[
-                  { valor: "todos", rotulo: "Todos" },
-                  { valor: "abertos", rotulo: "Só abertos" },
-                ]}
-                valor={filtro}
-                aoMudar={setFiltro}
-              />
+              <span className={estilos.acoesLista}>
+                {podeEditar && (
+                  <Botao variante="secundario" icone={<Plus />} onClick={() => setCadastrar(true)}>
+                    Cadastrar abrigo
+                  </Botao>
+                )}
+                <Segmentado
+                  rotulo="Mostrar"
+                  rotuloOculto
+                  opcoes={[
+                    { valor: "todos", rotulo: "Todos" },
+                    { valor: "abertos", rotulo: "Só abertos" },
+                  ]}
+                  valor={filtro}
+                  aoMudar={setFiltro}
+                />
+              </span>
             }
           >
             {todos.length > 0 && (
@@ -318,52 +248,63 @@ export function TelaAbrigos() {
                 {
                   chave: "aberto",
                   titulo: "Situação",
-                  celula: (a) =>
-                    a.aberto ? (
-                      <Pilula tom="info">Aberto</Pilula>
-                    ) : a.status_fonte === null ? (
-                      // ninguém informou ainda: não é “fechado” (RN-01)
-                      <Pilula tom="neutro">Sem informação</Pilula>
-                    ) : (
-                      <Pilula tom="neutro">Fechado</Pilula>
-                    ),
-                },
-                {
-                  chave: "capacidade",
-                  titulo: "Capacidade",
-                  numerica: true,
-                  celula: (a) =>
-                    a.capacidade !== null && a.capacidade !== undefined ? (
-                      `${formatarNumero(a.capacidade)} pessoas`
-                    ) : (
-                      <span className={estilos.semDado}>
-                        sem dado
-                        {podeEditar && (
-                          <button type="button" className={estilos.informar} onClick={() => setEditar(a)}>
-                            Informar<span className="so-leitor"> capacidade de {a.nome}</span>
-                          </button>
+                  celula: (a) => {
+                    const quando = a.status_fonte === undefined ? a.atualizado_em : a.status_informado_em;
+                    const autor = a.atualizado_por_nome ?? a.atualizado_por;
+                    return (
+                      <span className={estilos.abrigo}>
+                        {a.aberto ? (
+                          <Pilula tom="info">Aberto</Pilula>
+                        ) : a.status_fonte === null ? (
+                          // ninguém informou ainda: não é “fechado” (RN-01)
+                          <Pilula tom="neutro">Sem informação</Pilula>
+                        ) : (
+                          <Pilula tom="neutro">Fechado</Pilula>
                         )}
+                        <small>{quando ? quandoRelativo(quando) : "sem hora"}</small>
+                        {autor && <small>por {autor}</small>}
                       </span>
-                    ),
+                    );
+                  },
                 },
                 {
-                  chave: "quando",
-                  titulo: "Atualizado",
-                  semQuebra: true,
+                  chave: "abrigadas",
+                  titulo: "Pessoas abrigadas",
+                  numerica: true,
                   celula: (a) => (
                     <span className={estilos.abrigo}>
-                      {(a.status_fonte === undefined ? a.atualizado_em : a.status_informado_em)
-                        ? quandoRelativo(
-                            (a.status_fonte === undefined
-                              ? a.atualizado_em
-                              : a.status_informado_em) as string,
-                          )
-                        : "sem dado"}
-                      {(a.atualizado_por_nome ?? a.atualizado_por) && (
-                        <small>por {a.atualizado_por_nome ?? a.atualizado_por}</small>
+                      {a.pessoas_abrigadas !== null && a.pessoas_abrigadas !== undefined ? (
+                        formatarNumero(a.pessoas_abrigadas)
+                      ) : (
+                        <span className={estilos.semDado}>sem dado</span>
                       )}
+                      <small>
+                        {a.capacidade !== null && a.capacidade !== undefined ? (
+                          `de ${formatarNumero(a.capacidade)} vagas`
+                        ) : (
+                          <span className={estilos.semDado}>
+                            vagas sem dado
+                            {podeEditar && (
+                              <button type="button" className={estilos.informar} onClick={() => setEditar(a)}>
+                                Informar<span className="so-leitor"> capacidade de {a.nome}</span>
+                              </button>
+                            )}
+                          </span>
+                        )}
+                      </small>
                     </span>
                   ),
+                },
+                {
+                  chave: "desabrigados",
+                  titulo: "Desabrigados",
+                  numerica: true,
+                  celula: (a) =>
+                    a.desabrigados !== null && a.desabrigados !== undefined ? (
+                      formatarNumero(a.desabrigados)
+                    ) : (
+                      <span className={estilos.semDado}>sem dado</span>
+                    ),
                 },
                 {
                   chave: "acoes",
@@ -394,6 +335,11 @@ export function TelaAbrigos() {
                 Mostrar mais {Math.min(POR_PAGINA, itens.length - quantos)}
               </Botao>
             )}
+            <LegendaFonte fontes={fontesDado(fontesDe(r.data))}>
+              {fontesDe(r.data).length === 0 && (
+                <span>Fonte: feed do COP (abertura) e registro da equipe (pessoas, com hora e autor).</span>
+              )}
+            </LegendaFonte>
           </Painel>
         )}
       </div>
@@ -427,17 +373,37 @@ function useSalvar(aoFechar: () => void) {
   return { erro, setErro, ocupado, salvar };
 }
 
-/** Atualização rápida: aberto ou fechado e uma observação. Dois campos, um botão. */
+/**
+ * Atualização rápida (registro manual da equipe, PRD §9): aberto ou fechado, pessoas abrigadas, desabrigados
+ * atendidos e uma observação. Campo em branco quer dizer “sem informação”, não zero (RN-01, RN-02).
+ */
 function DialogoAtualizar({ abrigo, aoFechar }: { abrigo: Abrigo; aoFechar: () => void }) {
   const [aberto, setAberto] = useState(abrigo.aberto ? "sim" : "nao");
+  const [abrigadas, setAbrigadas] = useState(abrigo.pessoas_abrigadas?.toString() ?? "");
+  const [desabrigados, setDesabrigados] = useState(abrigo.desabrigados?.toString() ?? "");
   const [obs, setObs] = useState(abrigo.observacao ?? "");
+  const [faltas, setFaltas] = useState<{ abrigadas?: string; desabrigados?: string }>({});
   const { erro, ocupado, salvar } = useSalvar(aoFechar);
 
   function enviarForm(e: FormEvent) {
     e.preventDefault();
+    const pessoas = inteiro(abrigadas);
+    const sem = inteiro(desabrigados);
+    const invalido = "Use um número inteiro, sem pontos nem letras.";
+    const f = {
+      abrigadas: Number.isNaN(pessoas) ? invalido : undefined,
+      desabrigados: Number.isNaN(sem) ? invalido : undefined,
+    };
+    setFaltas(f);
+    if (f.abrigadas || f.desabrigados) return;
     void salvar(
       `/abrigos/${encodeURIComponent(String(abrigo.id))}`,
-      { aberto: aberto === "sim", observacao: obs.trim() || null },
+      {
+        aberto: aberto === "sim",
+        pessoas_abrigadas: pessoas,
+        desabrigados: sem,
+        observacao: obs.trim() || null,
+      },
       "PATCH",
       "Abrigo atualizado.",
     );
@@ -470,6 +436,28 @@ function DialogoAtualizar({ abrigo, aoFechar }: { abrigo: Abrigo; aoFechar: () =
           valor={aberto}
           aoMudar={setAberto}
         />
+        <div className={estilos.duplaCampos}>
+          <Campo
+            rotulo="Pessoas abrigadas"
+            type="number"
+            inputMode="numeric"
+            min={0}
+            value={abrigadas}
+            onChange={(e) => setAbrigadas(e.target.value)}
+            erro={faltas.abrigadas}
+            ajuda="Deixe em branco se não souber."
+          />
+          <Campo
+            rotulo="Desabrigados atendidos"
+            type="number"
+            inputMode="numeric"
+            min={0}
+            value={desabrigados}
+            onChange={(e) => setDesabrigados(e.target.value)}
+            erro={faltas.desabrigados}
+            ajuda="Deixe em branco se não souber."
+          />
+        </div>
         <AreaTexto
           privacidade
           rotulo="Observação (opcional)"
@@ -693,6 +681,12 @@ function DialogoHistorico({ abrigo, aoFechar }: { abrigo: Abrigo; aoFechar: () =
                 <span className={estilos.mudancas}>
                   {h.aberto !== undefined && h.aberto !== null && (
                     <span>{h.aberto ? "Aberto" : "Fechado"}</span>
+                  )}
+                  {h.pessoas_abrigadas !== undefined && h.pessoas_abrigadas !== null && (
+                    <span>Pessoas abrigadas: {h.pessoas_abrigadas}</span>
+                  )}
+                  {h.desabrigados !== undefined && h.desabrigados !== null && (
+                    <span>Desabrigados atendidos: {h.desabrigados}</span>
                   )}
                   {frasesDeMudanca(h).map((f) => (
                     <span key={f}>{f}</span>

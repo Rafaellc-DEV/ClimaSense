@@ -1,4 +1,4 @@
-import { render, screen, waitFor, within } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { App } from "@/app/App";
 import { AGORA, simularApi, usuarioTeste } from "@/features/evento/testes";
@@ -67,7 +67,20 @@ const boletim = {
       },
       abertos: [{ id: "a1", nome: "Escola Ibura", bairro_nome: "Ibura", capacidade: 80 }],
     },
-    acoes_em_andamento: [],
+    acoes_em_andamento: [
+      {
+        id: "r1",
+        territorio_id: "bairro-ibura",
+        territorio_nome: "Ibura",
+        tipo: "outro",
+        descricao: "Equipe no Ibura.",
+        responsavel: "Defesa Civil",
+        situacao: "em_andamento",
+        inicio_em: AGORA,
+        criada_em: AGORA,
+        autor_nome: "Mari Lima",
+      },
+    ],
   },
   meta: { fontes: [], avisos: [] },
 };
@@ -110,36 +123,17 @@ const saude = {
 function base() {
   return {
     "/auth/eu": usuarioTeste(),
-    "/painel/resumo": {
-      contadores: { avaliacoes: 0, comunicados: 0 },
-      fontes: [
-        {
-          id: "apac-chuva",
-          nome: "Chuva observada nos pluviômetros (APAC)",
-          status: "atualizada",
-          ultima_atualizacao: AGORA,
-        },
-        { id: "inmet", nome: "Estação planejada", status: "planejada", ultima_atualizacao: null },
-      ],
-    },
+    "/fontes": [
+      {
+        id: "apac-chuva",
+        nome: "Chuva observada nos pluviômetros (APAC)",
+        status: "atualizada",
+        ultima_atualizacao: AGORA,
+      },
+      { id: "inmet", nome: "Estação planejada", status: "planejada", ultima_atualizacao: null },
+    ],
     "/boletim": boletim,
     "/saude/resumo": { dados: saude },
-    "/acoes": {
-      itens: [
-        {
-          id: "r1",
-          territorio_id: "bairro-ibura",
-          territorio_nome: "Ibura",
-          tipo: "outro",
-          descricao: "Equipe no Ibura.",
-          situacao: "concluida",
-          inicio_em: AGORA,
-          criada_em: AGORA,
-          autor_nome: "Mari Lima",
-        },
-      ],
-    },
-    "/estagios/historico": [],
   };
 }
 
@@ -150,9 +144,9 @@ afterEach(() => {
 
 test("documento com marca, número, resumo, destaques e as seções fixas; só a situação declarada", async () => {
   simularApi(base());
-  window.history.pushState({}, "", "/app/boletim");
+  window.history.pushState({}, "", "/app/acoes/relatorio");
   render(<App />);
-  const folha = await screen.findByRole("article", { name: "Boletim situacional" });
+  const folha = await screen.findByRole("article", { name: "Relatório executivo — Secretaria de Saúde" });
   expect(within(folha).getByRole("img", { name: "ClimaSense" })).toBeInTheDocument();
   expect(within(folha).getByText("Vigilância em Saúde · Recife/PE")).toBeInTheDocument();
   expect(within(folha).getByText(/^BOL-\d{4}-\d{4}-\d{4}$/)).toBeInTheDocument();
@@ -171,11 +165,11 @@ test("documento com marca, número, resumo, destaques e as seções fixas; só a
   expect(within(situacao).getByText("sem declaração")).toBeInTheDocument();
   expect(within(situacao).queryByText("Atenção")).not.toBeInTheDocument();
 
-  for (const s of ["Chuva e maré", "Abrigos abertos", "Saúde", "Registro do evento"])
+  for (const s of ["Chuva e maré", "Abrigos abertos", "Saúde", "Ações da equipe"])
     expect(within(folha).getByRole("region", { name: s })).toBeInTheDocument();
   expect(within(folha).getByText(/Escola Ibura, Ibura \(capacidade 80\)/)).toBeInTheDocument();
   expect(await within(folha).findByText("Nível 2, amarelo")).toBeInTheDocument();
-  expect(await within(folha).findByText(/Equipe no Ibura\./)).toBeInTheDocument();
+  expect(await within(folha).findByText(/Equipe no Ibura/)).toBeInTheDocument();
   expect(within(folha).getByText("De onde vêm os números")).toBeInTheDocument();
   expect(
     within(folha).getByText(/Chuva observada nos pluviômetros \(APAC\), atualizada hoje/),
@@ -184,36 +178,30 @@ test("documento com marca, número, resumo, destaques e as seções fixas; só a
   expect(within(folha).queryByText(/Desabrigados|ocupação/i)).not.toBeInTheDocument();
 });
 
-test("imprimir chama o navegador e guarda a emissão; copiar manda o texto para o WhatsApp", async () => {
-  const pedidos = simularApi(base(), { "/acoes": { status: 201, corpo: {} } });
+test("imprimir chama o navegador; copiar manda o texto para o WhatsApp, sem criar registro", async () => {
+  const pedidos = simularApi(base());
   const imprimir = vi.fn();
   vi.stubGlobal("print", imprimir);
-  window.history.pushState({}, "", "/app/boletim");
+  window.history.pushState({}, "", "/app/acoes/relatorio");
   render(<App />);
   const u = userEvent.setup();
   const escrever = vi.spyOn(navigator.clipboard, "writeText").mockResolvedValue();
   await screen.findByRole("region", { name: "Resumo" });
   await u.click(screen.getByRole("button", { name: "Imprimir / salvar PDF" }));
   expect(imprimir).toHaveBeenCalled();
-  await waitFor(() =>
-    expect((pedidos.find((p) => p.metodo === "POST")?.corpo as { descricao: string }).descricao).toMatch(
-      /^Boletim emitido: BOL-/,
-    ),
-  );
   await u.click(screen.getByRole("button", { name: "Copiar para WhatsApp" }));
   const texto = escrever.mock.calls[0][0];
-  expect(texto).toMatch(/^\*Boletim situacional ClimaSense\* BOL-/);
+  expect(texto).toMatch(/^\*Relatório executivo ClimaSense — Secretaria de Saúde\* BOL-/);
   expect(texto).toContain("- DS I: sem declaração");
   expect(texto).toContain("Confira na APAC e no Cemaden.");
-  // a emissão é registrada uma vez só
-  expect(pedidos.filter((p) => p.metodo === "POST")).toHaveLength(1);
+  expect(pedidos.filter((p) => p.metodo === "POST")).toHaveLength(0);
 });
 
 test("sem a rota de saúde (404), a seção Saúde diz que ainda não está disponível", async () => {
   const b = base() as Record<string, unknown>;
   delete b["/saude/resumo"];
   simularApi(b);
-  window.history.pushState({}, "", "/app/boletim");
+  window.history.pushState({}, "", "/app/acoes/relatorio");
   render(<App />);
   const saudeSecao = await screen.findByRole("region", { name: "Saúde" });
   expect(await within(saudeSecao).findByText("Ainda não disponível.")).toBeInTheDocument();
@@ -236,9 +224,9 @@ test("bairros de cada distrito, em ordem alfabética, só na página e não no t
       { id: "b-3", tipo: "bairro", nome_exibicao: "Boa Vista", pai_id: "ds-1" },
     ],
   });
-  window.history.pushState({}, "", "/app/boletim");
+  window.history.pushState({}, "", "/app/acoes/relatorio");
   render(<App />);
-  const folha = await screen.findByRole("article", { name: "Boletim situacional" });
+  const folha = await screen.findByRole("article", { name: "Relatório executivo — Secretaria de Saúde" });
   expect(await within(folha).findByText("Bairros: Areias, Ibura")).toBeInTheDocument();
   expect(within(folha).getByText("Bairros: Boa Vista")).toBeInTheDocument();
   await userEvent.setup().click(screen.getByText("Ver o texto para o WhatsApp"));
@@ -249,7 +237,7 @@ test("bairros de cada distrito, em ordem alfabética, só na página e não no t
 
 test("sem a lista de territórios, a linha de bairros some e o boletim continua inteiro", async () => {
   simularApi(base());
-  window.history.pushState({}, "", "/app/boletim");
+  window.history.pushState({}, "", "/app/acoes/relatorio");
   render(<App />);
   const situacao = await screen.findByRole("region", { name: "Situação por distrito" });
   expect(within(situacao).queryByText(/^Bairros:/)).not.toBeInTheDocument();

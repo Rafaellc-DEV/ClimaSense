@@ -20,8 +20,7 @@ const Mapa = carregar(() => import("@/features/mapa/TelaMapa"), "TelaMapa");
 const Situacao = carregar(() => import("@/features/situacao/TelaSituacao"), "TelaSituacao");
 const Chuva = carregar(() => import("@/features/chuva/TelaChuva"), "TelaChuva");
 const Simulador = carregar(() => import("@/features/simulador/TelaSimulador"), "TelaSimulador");
-const Registro = carregar(() => import("@/features/registro/TelaRegistro"), "TelaRegistro");
-const Abrigos = carregar(() => import("@/features/abrigos/TelaAbrigos"), "TelaAbrigos");
+const Acoes = carregar(() => import("@/features/acoes/TelaAcoes"), "TelaAcoes");
 const Saude = carregar(() => import("@/features/saude/TelaSaude"), "TelaSaude");
 const Boletim = carregar(() => import("@/features/boletim/TelaBoletim"), "TelaBoletim");
 const Comunicados = carregar(() => import("@/features/comunicados/ListaComunicados"), "ListaComunicados");
@@ -39,19 +38,22 @@ function RedirecionarEquipe() {
 }
 
 /**
- * Telas que saíram do menu levam para a tela nova que ficou com o conteúdo delas, sem 404. Endereço desconhecido
- * dentro de /app volta para a Situação.
+ * Telas que saíram do menu levam para a tela nova que ficou com o conteúdo delas, sem 404: Registro do evento virou
+ * Ações, Abrigos virou parte da Situação do evento e o Boletim virou o Relatório executivo dentro de Ações. A Chuva
+ * segue em /app/chuva, com link a partir do Simulador. Endereço desconhecido dentro de /app volta para o Mapa.
  */
 function antigas(): [string, string][] {
   return [
     ["painel", "/app/situacao"],
-    ["estagios", "/app/situacao"],
+    ["estagios", "/app"],
+    ["registro", "/app/acoes"],
+    ["abrigos", "/app/situacao"],
+    ["boletim", "/app/acoes/relatorio"],
     ["mapa", "/app"],
     ["avaliacoes/*", "/app"],
     ["avaliacoes", "/app"],
     ["cenarios", "/app/chuva"],
     ["series", "/app/chuva?aba=historico"],
-    ["acoes", "/app/registro"],
     // comunicados desligados (ADR 0011): o endereço não existe mais; quem tinha o favorito cai na Situação
     ...(funcionalidadeLigada("comunicados")
       ? []
@@ -87,10 +89,9 @@ export function App() {
                   <Route path="situacao" element={<Situacao />} />
                   <Route path="chuva" element={<Chuva />} />
                   <Route path="simulador" element={<Simulador />} />
-                  <Route path="registro" element={<Registro />} />
-                  <Route path="abrigos" element={<Abrigos />} />
+                  <Route path="acoes" element={<Acoes />} />
+                  <Route path="acoes/relatorio" element={<Boletim />} />
                   <Route path="saude" element={<Saude />} />
-                  <Route path="boletim" element={<Boletim />} />
                   {antigas().map(([de, para]) => (
                     <Route key={de} path={de} element={<Navigate to={para} replace />} />
                   ))}

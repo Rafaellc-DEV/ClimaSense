@@ -106,7 +106,6 @@ const abrigo = (id: string, nome: string, bairro: string, distrito: string, aber
 function base(extra: Record<string, unknown> = {}, permissoes = ["consultar", "editar"]) {
   return {
     "/auth/eu": usuarioTeste(permissoes),
-    "/painel/resumo": { contadores: { avaliacoes: 0, comunicados: 0 }, fontes: [] },
     "/estagios/oficial": { dados: null, meta: { fontes: [] } },
     "/estagios?nivel=distrito": { dados: { itens: [] }, meta: { fontes: [] } },
     "/estagios?nivel=bairro": {
@@ -180,12 +179,15 @@ test("regras: o declarado vale; sem declaração, o sugerido; sem nenhum, sem da
   ]);
 });
 
-test("/app abre o Mapa; o menu tem Mapa primeiro e a Situação continua acessível", async () => {
+test("/app abre o Mapa; o menu tem Mapa primeiro e a Situação do evento continua acessível", async () => {
   await abrir(base());
   const menu = (await screen.findAllByRole("navigation", { name: "Menu principal" }))[0];
   const links = within(menu).getAllByRole("link");
   expect(links[0]).toHaveTextContent("Mapa");
-  expect(within(menu).getByRole("link", { name: "Situação" })).toHaveAttribute("href", "/app/situacao");
+  expect(within(menu).getByRole("link", { name: "Situação do evento" })).toHaveAttribute(
+    "href",
+    "/app/situacao",
+  );
 });
 
 test("sem estágio do COP: Dados insuficientes, nunca observação, e o botão para informar", async () => {

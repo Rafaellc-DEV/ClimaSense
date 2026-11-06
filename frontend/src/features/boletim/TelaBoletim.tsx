@@ -1,18 +1,18 @@
 import { useRef } from "react";
 import { Copy, Printer } from "lucide-react";
+import { Link } from "react-router-dom";
 import { useTerritorios } from "@/app/FiltroFrase";
 import { CabecalhoTela } from "@/design-system/componentes/CabecalhoTela";
 import { useAviso } from "@/design-system/componentes/Aviso";
 import { Botao } from "@/design-system/componentes/Botao";
 import { CarregandoLista } from "@/design-system/componentes/Esqueleto";
 import { Marca } from "@/design-system/componentes/Marca";
-import { consulta, enviar, ErroApi, type Esquemas } from "@/lib/api";
+import { consulta, ErroApi, type Esquemas } from "@/lib/api";
 import { INTERVALO, useConsultaViva, ultimaAtualizacao } from "@/lib/consultas";
 import { juntarFontes } from "@/lib/frescor";
 import { fontesDado, TextoFonte } from "@/design-system/componentes/EstadoDados";
 import { diaNoRecife, formatarData, formatarHora, formatarMm, formatarNumero } from "@/lib/formatos";
 import { noProduto } from "@/lib/fontes";
-import { useSessao } from "@/lib/sessao";
 import { infoEstagio } from "@/features/evento/estagios";
 import { EstadoConsulta, MensagemPronta } from "@/features/evento/Evento";
 import {
@@ -23,13 +23,16 @@ import {
   quandoAs,
   useFontesResumo,
 } from "@/features/evento/textos";
-import { listaDe, type Acao } from "@/features/evento/tipos";
-import { eventoAtual, montarLinha, PREFIXO_BOLETIM, type Declaracao } from "@/features/registro/linhaTempo";
-import { corpoRegistro } from "@/features/registro/TelaRegistro";
+import type { Acao, SituacaoEvento } from "@/features/evento/tipos";
 import { dadosDe, NIVEL_ALERTA, type ResumoSaude } from "@/features/saude/tipos";
 import estilos from "./Boletim.module.css";
 
-type Boletim = Esquemas["Boletim"];
+/** O contrato do relatório executivo ganhou campos; os que o OpenAPI gerado ainda não traz ficam opcionais. */
+type Boletim = Omit<Esquemas["Boletim"], "abrigos"> & {
+  abrigos: Esquemas["Boletim"]["abrigos"] & { situacao?: SituacaoEvento | null };
+  periodo?: { desde: string; ate: string } | null;
+  acoes_concluidas?: Acao[] | null;
+};
 type Distrito = Boletim["estagios"][number];
 
 /** BOL-2026-1105-1700: ano, mês e dia, hora e minuto da emissão (hora do Recife). */
@@ -103,7 +106,7 @@ function fraseAbrigosSaude(
 }
 
 /** Destaques em tópicos, só com o que existe nos dados. */
-function destaques(b: Boletim | undefined, saude: ResumoSaude | undefined, registros: number): string[] {
+function destaques(b: Boletim | undefined, saude: ResumoSaude | undefined, emAndamento: number): string[] {
   const s: string[] = [];
   if (b) {
     for (const d of b.estagios) {
@@ -135,27 +138,24 @@ function destaques(b: Boletim | undefined, saude: ResumoSaude | undefined, regis
     else if (a.variacao_4s_pct !== null && a.variacao_4s_pct >= 10)
       s.push(`${a.nome}: casos subiram ${formatarNumero(a.variacao_4s_pct)}% em 4 semanas.`);
   }
-  if (registros > 0)
-    s.push(`${registros} ${registros === 1 ? "registro" : "registros"} no evento em andamento.`);
+  if (emAndamento > 0)
+    s.push(`${emAndamento} ${emAndamento === 1 ? "ação em andamento" : "ações em andamento"}.`);
   return s.slice(0, 6);
 }
 
 /**
- * Boletim situacional: documento de uma página com a marca, número e seções fixas. Imprime limpo (“Salvar como
- * PDF”) e copia o texto para o WhatsApp. A situação é só a declarada pela equipe.
+ * Relatório executivo (RF-17) para a Secretaria de Saúde: documento de uma página com a marca, número e seções fixas,
+ * a partir do boletim situacional. Imprime limpo (“Salvar como PDF”) e copia o texto. A situação é só a declarada pela
+ * equipe.
  */
 export function TelaBoletim() {
-  const { pode } = useSessao();
   const avisar = useAviso();
   const emitido = useRef(new Date()).current;
   const numero = numeroBoletim(emitido);
-  const registrado = useRef(false);
   const r = useConsultaViva<Esquemas["RespostaDados_Boletim_"]>(
     `/boletim${consulta({ territorio_id: "recife" })}`,
   );
   const saudeR = useConsultaViva<unknown>("/saude/resumo", INTERVALO.saude);
-  const acoes = useConsultaViva<unknown>("/acoes");
-  const historico = useConsultaViva<unknown>("/estagios/historico");
   const fontes = useFontesResumo();
   const territorios = useTerritorios();
   const bairrosDe = (distritoId: string): string[] =>
@@ -164,21 +164,21 @@ export function TelaBoletim() {
       .map((t) => t.nome_exibicao)
       .sort((a, c) => a.localeCompare(c, "pt-BR"));
 
-  const b = r.data?.dados;
+  const b = r.data?.dados as Boletim | undefined;
   const saude = dadosDe<ResumoSaude>(saudeR.data);
   const distritos = [...(b?.estagios ?? [])].sort(ordemPorNome);
-  const { atual } = eventoAtual(montarLinha(listaDe<Acao>(acoes.data), listaDe<Declaracao>(historico.data)));
-  const registros = atual.filter((e) => e.tipo === "registro");
-  const doEvento = atual.filter((e) => e.tipo !== "boletim");
+  const emAndamento = b?.acoes_em_andamento ?? [];
+  const concluidas = b?.acoes_concluidas ?? [];
+  const situacaoAbrigos = b?.abrigos.situacao?.cidade;
   const resumo = b
     ? [fraseSituacao(distritos), fraseChuva(b.chuva), fraseAbrigosSaude(b, saude, saudeR.isError)]
     : [];
-  const topicos = destaques(b, saude, registros.length);
+  const topicos = destaques(b, saude, emAndamento.length);
   const fontesMeta = fontesDado(juntarFontes(r.data, saudeR.data));
   const fontesAtivas = fontes.lista.filter((f) => f.status !== "planejada").filter(noProduto);
 
   const texto = [
-    `*Boletim situacional ClimaSense* ${numero}`,
+    `*Relatório executivo ClimaSense — Secretaria de Saúde* ${numero}`,
     `Vigilância em Saúde, Recife/PE. Emitido ${formatarData(emitido)} às ${formatarHora(emitido)}.`,
     "",
     ...resumo,
@@ -195,19 +195,9 @@ export function TelaBoletim() {
     "Fonte: ClimaSense / Vigidesastres. Confira na APAC e no Cemaden. Defesa Civil: 199.",
   ].join("\n");
 
-  /** Guarda a emissão na linha do tempo do evento (uma vez por número). Falha não impede imprimir nem copiar. */
-  function registrarEmissao() {
-    if (registrado.current || !pode("editar") || !b) return;
-    registrado.current = true;
-    void enviar("/acoes", corpoRegistro(`${PREFIXO_BOLETIM} ${numero}`, "")).catch(() => {
-      registrado.current = false;
-    });
-  }
-
   async function copiar() {
     try {
       await navigator.clipboard.writeText(texto);
-      registrarEmissao();
       avisar({ titulo: "Texto copiado.", texto: "Cole no grupo de WhatsApp." });
     } catch (x) {
       avisar({
@@ -222,21 +212,16 @@ export function TelaBoletim() {
     <>
       <div className={estilos.naoImprimir}>
         <CabecalhoTela
-          titulo="Boletim"
-          proposito="O resumo do evento em uma página, para a gerência e os distritos."
-          atualizadoEm={ultimaAtualizacao(r, saudeR, acoes, historico)}
+          titulo="Relatório executivo — Secretaria de Saúde"
+          proposito="O resumo do evento em uma página, para a Secretaria de Saúde. Imprima ou copie o texto."
+          voltar={<Link to="/app/acoes">Voltar para Ações</Link>}
+          atualizadoEm={ultimaAtualizacao(r, saudeR)}
           acoes={
             <>
               <Botao variante="secundario" icone={<Copy />} onClick={copiar} disabled={!b}>
                 Copiar para WhatsApp
               </Botao>
-              <Botao
-                icone={<Printer />}
-                onClick={() => {
-                  registrarEmissao();
-                  window.print();
-                }}
-              >
+              <Botao icone={<Printer />} onClick={() => window.print()}>
                 Imprimir / salvar PDF
               </Botao>
             </>
@@ -261,9 +246,12 @@ export function TelaBoletim() {
 
         <div className={estilos.tituloBloco}>
           <h2 id="bo-titulo" className={estilos.titulo}>
-            Boletim situacional
+            Relatório executivo — Secretaria de Saúde
           </h2>
-          <p className={estilos.subtitulo}>Chuvas, desastres e saúde · consolidado automaticamente</p>
+          <p className={estilos.subtitulo}>
+            Chuvas, desastres e saúde · consolidado automaticamente
+            {b?.periodo ? ` · ${formatarData(b.periodo.desde)} a ${formatarData(b.periodo.ate)}` : ""}
+          </p>
         </div>
 
         {r.isPending && <CarregandoLista linhas={4} altura="2rem" texto="Montando o boletim…" />}
@@ -373,6 +361,20 @@ export function TelaBoletim() {
               )}
             </section>
 
+            {situacaoAbrigos && (
+              <p className={estilos.nota}>
+                Pessoas abrigadas:{" "}
+                {situacaoAbrigos.pessoas_abrigadas === null
+                  ? "dados insuficientes"
+                  : formatarNumero(situacaoAbrigos.pessoas_abrigadas)}
+                . Desabrigados:{" "}
+                {situacaoAbrigos.desabrigados === null
+                  ? "dados insuficientes"
+                  : formatarNumero(situacaoAbrigos.desabrigados)}
+                {situacaoAbrigos.parcial ? " (soma parcial)" : ""}.
+              </p>
+            )}
+
             <section className={estilos.secao} aria-labelledby="bo-saude">
               <h3 id="bo-saude">Saúde</h3>
               {saudeR.isPending && <CarregandoLista linhas={2} altura="1.5rem" />}
@@ -422,19 +424,23 @@ export function TelaBoletim() {
             </section>
 
             <section className={estilos.secao} aria-labelledby="bo-registro">
-              <h3 id="bo-registro">Registro do evento</h3>
-              {acoes.isError ? (
-                <p>Registro indisponível agora.</p>
-              ) : doEvento.length === 0 ? (
-                <p>Nada registrado no evento em andamento.</p>
+              <h3 id="bo-registro">Ações da equipe</h3>
+              {emAndamento.length === 0 && concluidas.length === 0 ? (
+                <p>Nenhuma ação registrada no período.</p>
               ) : (
                 <ul className={estilos.registros}>
-                  {doEvento.slice(0, 8).map((e) => (
-                    <li key={e.id}>
-                      <time dateTime={e.em}>{quandoAs(e.em)}</time> {e.territorio && <b>{e.territorio}: </b>}
-                      {e.texto}
-                    </li>
-                  ))}
+                  {[
+                    ...emAndamento.map((a) => ["Em andamento", a] as const),
+                    ...concluidas.map((a) => ["Concluída", a] as const),
+                  ]
+                    .slice(0, 12)
+                    .map(([rotulo, a]) => (
+                      <li key={a.id}>
+                        <b>{a.territorio_nome}</b> ({rotulo}): {a.descricao}
+                        {a.responsavel ? `. Responsável: ${a.responsavel}` : ""}
+                        {a.inicio_em ? `. Desde ${quandoAs(a.inicio_em)}` : ""}.
+                      </li>
+                    ))}
                 </ul>
               )}
             </section>

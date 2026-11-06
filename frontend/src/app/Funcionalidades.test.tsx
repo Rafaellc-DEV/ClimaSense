@@ -10,8 +10,6 @@ afterEach(() => {
   clienteConsultas.clear();
 });
 
-const RESUMO = { contadores: { avaliacoes: 0, comunicados: 0 }, fontes: [] };
-
 test("todas as chaves vêm desligadas por padrão", () => {
   for (const f of [
     "landingPublica",
@@ -36,7 +34,7 @@ describe("chaves desligadas", () => {
   });
 
   test("com sessão, / leva à área da equipe", async () => {
-    simularApi({ "/auth/eu": usuarioTeste(), "/painel/resumo": RESUMO });
+    simularApi({ "/auth/eu": usuarioTeste() });
     window.history.pushState({}, "", "/");
     render(<App />);
     expect(await screen.findByRole("heading", { level: 1, name: "Mapa" })).toBeInTheDocument();
@@ -44,7 +42,7 @@ describe("chaves desligadas", () => {
   });
 
   test("o endereço de um aviso público e o de comunicados não existem: redirecionam", async () => {
-    simularApi({ "/auth/eu": usuarioTeste(), "/painel/resumo": RESUMO });
+    simularApi({ "/auth/eu": usuarioTeste() });
     window.history.pushState({}, "", "/app/comunicados/novo");
     render(<App />);
     expect(await screen.findByRole("heading", { level: 1, name: "Mapa" })).toBeInTheDocument();
@@ -62,14 +60,14 @@ describe("chaves desligadas", () => {
 });
 
 describe("chaves ligadas", () => {
-  test("a landing volta em / e o menu volta a ter Comunicados", async () => {
+  test("a landing volta em / e os comunicados continuam fora do menu (PRD §5)", async () => {
     vi.stubEnv("VITE_FUNC_LANDING_PUBLICA", "1");
     vi.stubEnv("VITE_FUNC_COMUNICADOS", "1");
     expect(enderecoInicial()).toBe("/");
-    simularApi({ "/auth/eu": usuarioTeste(), "/painel/resumo": RESUMO, "/comunicados": { itens: [] } });
+    simularApi({ "/auth/eu": usuarioTeste(), "/comunicados": { itens: [] } });
     window.history.pushState({}, "", "/app/saude");
     render(<App />);
     const menu = (await screen.findAllByRole("navigation", { name: "Menu principal" }))[0];
-    expect(within(menu).getByRole("link", { name: /Comunicados/ })).toBeInTheDocument();
+    expect(within(menu).queryByRole("link", { name: /Comunicados/ })).not.toBeInTheDocument();
   });
 });

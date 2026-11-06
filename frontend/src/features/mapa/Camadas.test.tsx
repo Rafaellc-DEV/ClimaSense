@@ -75,7 +75,6 @@ const abrigo = (id: string, nome: string, aberto: boolean, lat: number | null) =
 function base(extra: Record<string, unknown> = {}) {
   return {
     "/auth/eu": usuarioTeste(),
-    "/painel/resumo": { contadores: { avaliacoes: 0, comunicados: 0 }, fontes: [] },
     "/estagios/oficial": { dados: null, meta: { fontes: [] } },
     "/estagios?nivel=distrito": { dados: { itens: [] }, meta: { fontes: [] } },
     "/estagios?nivel=bairro": { dados: { itens: bairros }, meta: { fontes: [] } },

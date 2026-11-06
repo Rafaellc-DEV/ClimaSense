@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Save, X } from "lucide-react";
+import { CloudRain, Save, X } from "lucide-react";
+import { Link } from "react-router-dom";
 import { token, useTemaAtual } from "@/charts/tema";
 import { Botao } from "@/design-system/componentes/Botao";
 import { CabecalhoTela } from "@/design-system/componentes/CabecalhoTela";
@@ -241,7 +242,14 @@ export function TelaSimulador() {
         titulo="Simulador"
         proposito="Mude a chuva, a maré ou os abrigos e veja quais bairros ficam mais expostos. O mapa se atualiza sozinho."
         atualizadoEm={atuais.dataUpdatedAt}
-        acoes={<Experimental />}
+        acoes={
+          <>
+            <Link to="/app/chuva" className={estilos.linkChuva}>
+              <CloudRain aria-hidden="true" size={20} /> Previsão e histórico de chuva
+            </Link>
+            <Experimental />
+          </>
+        }
       />
       <div className={estilos.pagina}>
         <PainelPremissas
@@ -700,11 +708,11 @@ function ListaPorClasse({
   return (
     <Painel
       id="sim-lista"
-      titulo="Bairros, do mais exposto ao menos"
-      dica="É o mesmo resultado do mapa, em lista. Bairros sem dado ficam no fim, sem classe."
+      titulo="Territórios, do mais exposto ao menos"
+      dica="É o mesmo resultado do mapa, em lista, com bairros e distritos sanitários. Territórios sem dado ficam no fim, sem classe."
     >
       {itens.length === 0 ? (
-        <p className={estilosMapa.apagado}>Os bairros aparecem aqui quando o cenário for calculado.</p>
+        <p className={estilosMapa.apagado}>Os territórios aparecem aqui quando o cenário for calculado.</p>
       ) : (
         <>
           <ul className={estilosMapa.prioritarios}>
@@ -718,7 +726,10 @@ function ListaPorClasse({
                     aria-pressed={selecionado === i.territorio_id}
                     onClick={() => aoEscolher(i.territorio_id)}
                   >
-                    <span className={estilos.itemNome}>{i.nome}</span>
+                    <span className={estilos.itemNome}>
+                      {i.nome}
+                      {i.nivel === "distrito" && <small> Distrito sanitário</small>}
+                    </span>
                     {o === null ? (
                       <Pilula nivel="insuficiente" pequena>
                         Dados insuficientes
@@ -735,7 +746,7 @@ function ListaPorClasse({
           </ul>
           {itens.length > LIMITE && (
             <Botao variante="discreto" onClick={() => setTodos((t) => !t)} aria-expanded={todos}>
-              {todos ? "Mostrar só os primeiros" : `Ver todos os ${itens.length} bairros`}
+              {todos ? "Mostrar só os primeiros" : `Ver todos os ${itens.length} territórios`}
             </Botao>
           )}
         </>
