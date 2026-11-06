@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
+from climasense.api.auditoria_leitura import LEITURA_BOLETIM, auditar_leitura
 from climasense.api.autorizacao import Contexto, exige, relogio
 from climasense.api.envelope import Meta, RecorteMeta, RespostaDados
 from climasense.api.routers.abrigos import Abrigo, TotaisAbrigos
@@ -21,7 +22,11 @@ from climasense.servicos import estagios
 from climasense.servicos import fontes as servico_fontes
 from climasense.servicos.territorio import TerritorioUsado, no_maximo_distrito
 
-router = APIRouter(prefix="/boletim", tags=["Evento de chuva"])
+router = APIRouter(
+    prefix="/boletim",
+    tags=["Evento de chuva"],
+    dependencies=[Depends(auditar_leitura(LEITURA_BOLETIM))],  # RNF-01: quem leu qual rota
+)
 consultar = exige(Permissao.CONSULTAR)
 
 
