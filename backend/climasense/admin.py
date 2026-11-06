@@ -3,6 +3,8 @@
     python -m climasense.admin criar-admin
     python -m climasense.admin criar-equipe equipe.csv [--senhas-em tmp/senhas-equipe.txt]
     python -m climasense.admin criar-papel-app [--env caminho/.env]
+    python -m climasense.admin limpar-retencao
+    python -m climasense.admin sincronizar-frescor
 
 criar-admin: cria o primeiro administrador com ADMIN_EMAIL e ADMIN_SENHA_INICIAL do .env (T3.7).
 criar-equipe: cria as contas listadas num CSV `nome;email;papeis` (papéis separados por vírgula) (T7.7).
@@ -11,6 +13,9 @@ criar-equipe: cria as contas listadas num CSV `nome;email;papeis` (papéis separ
 criar-papel-app: define a senha do papel de banco `climasense_app` (ADR 0014) com a URL do dono (DATABASE_URL_MIGRACOES,
   ou DATABASE_URL se ainda não houver) e grava no .env: DATABASE_URL (papel da aplicação) e DATABASE_URL_MIGRACOES (dono).
   Rode `alembic upgrade head` antes (a migração 0014 concede os privilégios). Rodar de novo troca a senha.
+limpar-retencao: apaga tentativas de login com mais de 90 dias e sessões expiradas há mais de 30 dias (ADR 0015;
+  RETENCAO_TENTATIVAS_LOGIN_DIAS e RETENCAO_SESSOES_DIAS). Usa a URL do dono; grava na auditoria só as quantidades.
+sincronizar-frescor: faz app.fontes.limite_desatualizacao_h seguir etl/frescor.toml (usa a URL do dono).
 Nenhuma senha é impressa. A troca é obrigatória no primeiro acesso. Rodar de novo não duplica.
 """
 
@@ -20,6 +25,7 @@ import argparse
 import csv
 import secrets
 import sys
+from datetime import UTC, datetime
 from pathlib import Path
 
 from email_validator import EmailNotValidError, validate_email
@@ -31,11 +37,13 @@ from climasense.dominio.senha import problemas_da_senha
 from climasense.infra.postgres import (
     criar_engine,
     engine_da_configuracao,
+    engine_do_dono,
     fabrica_sessoes,
     normalizar_url,
     url_do_dono,
 )
 from climasense.infra.repositorios.usuarios import RepositorioUsuarios
+from climasense.servicos import retencao
 from climasense.servicos.usuarios import ServicoUsuarios
 
 
@@ -143,8 +151,33 @@ def main(argv: list[str] | None = None) -> int:
         "criar-papel-app", help="Define a senha do papel de banco da aplicação e grava no .env"
     )
     pa.add_argument("--env", type=Path, default=RAIZ_REPOSITORIO / ".env")
+    sub.add_parser("limpar-retencao", help="Apaga tentativas de login e sessões além do prazo de guarda")
+    sub.add_parser("sincronizar-frescor", help="Alinha os limites de frescor do banco ao frescor.toml")
     args = parser.parse_args(argv)
     config = obter_configuracao()
+    if args.comando in ("limpar-retencao", "sincronizar-frescor"):
+        try:
+            with fabrica_sessoes(engine_do_dono(config))() as sessao:
+                if args.comando == "limpar-retencao":
+                    r = retencao.limpar(
+                        sessao,
+                        datetime.now(UTC),
+                        config.retencao_tentativas_login_dias,
+                        config.retencao_sessoes_dias,
+                    )
+                    print(
+                        f"Apagadas {r['tentativas_login']} tentativa(s) de login e {r['sessoes']} sessão(ões)."
+                    )
+                else:
+                    r = retencao.sincronizar_frescor(sessao)
+                    print(f"{r['fontes_alteradas']} fonte(s) com limite de frescor alterado.")
+        except ConfiguracaoAusente as erro:
+            print(f"Não foi possível executar: {erro}", file=sys.stderr)
+            return 1
+        except Exception as erro:  # noqa: BLE001 - a mensagem do driver pode conter a URL: só o tipo
+            print(f"Não foi possível executar ({type(erro).__name__}).", file=sys.stderr)
+            return 1
+        return 0
     if args.comando == "criar-papel-app":
         try:
             url_app, url_dono = definir_senha_do_papel_app(url_do_dono(config))

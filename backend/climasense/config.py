@@ -61,6 +61,10 @@ class Configuracao(BaseSettings):
     admin_senha_inicial: SecretStr | None = None
 
     supressao_minima: int = Field(default=5, ge=1)
+
+    # Prazo de guarda (RNF-03, ADR 0015): `python -m climasense.admin limpar-retencao`.
+    retencao_tentativas_login_dias: int = Field(default=90, ge=1)
+    retencao_sessoes_dias: int = Field(default=30, ge=1)
     map_tiles_url: str = "https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}"
 
     ana_usuario: str | None = None
