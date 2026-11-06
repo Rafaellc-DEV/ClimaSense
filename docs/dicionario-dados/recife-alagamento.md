@@ -56,3 +56,9 @@ Carga de 05/11/2026 (com deslizamento): 1.722 atendimentos de alagamento em 71 b
 - Deslizamento: o registro é da vistoria, não do momento do deslizamento; o grau de risco (`Grau_de_Risco`, R1–R4)
   não é usado nesta versão.
 - O conjunto que alimenta os estágios e o ML continua sendo só o de alagamento (`tipo = alagamento`).
+
+## Frescor
+
+- Limite: 1440 h (60 dias) (configurado em `backend/climasense/etl/frescor.toml`, chave `recife-alagamento`; lido por `climasense.etl.frescor`).
+- Motivo: publicacao com defasagem, diaria ou mensal.
+- Sem dado registrado, o indicador mostra "Dados insuficientes", nunca "em dia" (RN-01).

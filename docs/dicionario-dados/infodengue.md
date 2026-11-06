@@ -42,3 +42,9 @@
 - A estimativa é modelo, não contagem. O nível de alerta já incorpora clima, Rt e incidência; o ClimaSense não cria
   índice próprio.
 - Sem recorte por bairro. Não há chuva nos campos do InfoDengue: a chuva do gráfico vem do próprio ClimaSense.
+
+## Frescor
+
+- Limite: 192 h (8 dias) (configurado em `backend/climasense/etl/frescor.toml`, chave `infodengue`; lido por `climasense.etl.frescor`).
+- Motivo: publicacao por semana epidemiologica, mais um dia de folga.
+- Sem dado registrado, o indicador mostra "Dados insuficientes", nunca "em dia" (RN-01).

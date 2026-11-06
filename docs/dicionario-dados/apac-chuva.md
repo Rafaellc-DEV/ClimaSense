@@ -54,3 +54,9 @@ jan–abr/2026).
 
 - O acumulado de 24 h termina na última leitura de cada estação, não na hora exata da consulta.
 - Uma estação com defeito no tempo real pode inflar o máximo; a mediana fica ao lado para conferência.
+
+## Frescor
+
+- Limite: 1 h (configurado em `backend/climasense/etl/frescor.toml`, chave `apac-chuva`; lido por `climasense.etl.frescor`).
+- Motivo: as estacoes atualizam de forma sub-horaria; mais de 1 h indica estacao ou portal parado.
+- Sem dado registrado, o indicador mostra "Dados insuficientes", nunca "em dia" (RN-01).

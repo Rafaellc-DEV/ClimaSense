@@ -9,3 +9,9 @@
 | Variável | Tipo / unidade | Observação |
 |---|---|---|
 | `sea_level_height_msl` | m | Nível do mar previsto (modelo), ponto (-8,06; -34,86) |
+
+## Frescor
+
+- Limite: 24 h (configurado em `backend/climasense/etl/frescor.toml`, chave `open-meteo-mare`; lido por `climasense.etl.frescor`).
+- Motivo: coleta diaria de mare prevista para dias a frente.
+- Sem dado registrado, o indicador mostra "Dados insuficientes", nunca "em dia" (RN-01).

@@ -9,3 +9,9 @@
 | Variável | Tipo / unidade | Observação |
 |---|---|---|
 | `precipitation` | mm/h | Chuva horária, `tipo=derivada` (reanálise, não pluviômetro). Nulo continua nulo. |
+
+## Frescor
+
+- Limite: 192 h (8 dias) (configurado em `backend/climasense/etl/frescor.toml`, chave `open-meteo-historico`; lido por `climasense.etl.frescor`).
+- Motivo: a reanalise ERA5 chega com cerca de 7 dias de atraso, mais um dia de folga.
+- Sem dado registrado, o indicador mostra "Dados insuficientes", nunca "em dia" (RN-01).

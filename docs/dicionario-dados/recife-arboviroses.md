@@ -61,3 +61,9 @@ Bairro: o nome escrito é normalizado e casado com os 94 bairros oficiais pelo m
 - 2015 de chikungunya tem 68% das linhas sem bairro.
 - Os códigos de distrito 546 e 547 dos arquivos recentes não estão na "Tabela Distrito"; o distrito usado é o do
   bairro oficial, não o da fonte.
+
+## Frescor
+
+- Limite: 9600 h (400 dias) (configurado em `backend/climasense/etl/frescor.toml`, chave `recife-arboviroses`; lido por `climasense.etl.frescor`).
+- Motivo: publicacao anual.
+- Sem dado registrado, o indicador mostra "Dados insuficientes", nunca "em dia" (RN-01).

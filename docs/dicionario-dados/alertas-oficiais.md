@@ -45,3 +45,9 @@ descartado (`vencido:<origem>`), o resto vai para `fora_do_recife:<origem>`.
 validade: visto nas últimas 2 h), do nível mais alto para o mais baixo. Os filtros são municipais, então o mesmo
 aviso vale para todos os territórios do Recife; a tela deve sempre mostrar origem, hora e o link "confira na
 APAC/Cemaden" (F7).
+
+## Frescor
+
+- Limite: 1 h (configurado em `backend/climasense/etl/frescor.toml`, chave `alertas-oficiais`; lido por `climasense.etl.frescor`).
+- Motivo: alerta vigente precisa estar atual.
+- Sem dado registrado, o indicador mostra "Dados insuficientes", nunca "em dia" (RN-01).

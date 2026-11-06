@@ -49,3 +49,9 @@ atualizado_em, origem, fonte_url, tipo, capacidade}], atualizado_em, aviso}`. `a
 equipe informaram (nunca informado ≠ fechado); `aberto_fonte` é `cop`, `equipe` ou `null`. Sem nomes de servidores,
 autores, pessoas abrigadas ou desabrigados. O `aviso` orienta ligar para a Defesa Civil do Recife (0800 081 3400,
 gratuito, 24 h) ou de Pernambuco (199).
+
+## Frescor
+
+- Limite: 8760 h (365 dias) para o cadastro (`recife-abrigos`); 1 h para ocupacao e desabrigados (`recife-abrigos-ocupacao`, registro manual) (configurado em `backend/climasense/etl/frescor.toml`, chave `recife-abrigos`; lido por `climasense.etl.frescor`).
+- Motivo: o cadastro aberto e revisado raramente; ocupacao e lancada pela equipe e cada lancamento guarda hora e autor.
+- Sem dado registrado, o indicador mostra "Dados insuficientes", nunca "em dia" (RN-01).

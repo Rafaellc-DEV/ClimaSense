@@ -1,0 +1,30 @@
+# Limites de frescor por fonte (RF-19, RNF-05, PRD secao 9).
+# Valor = horas desde a ultima atualizacao bem-sucedida alem das quais o dado e "desatualizado".
+# Fonte ausente deste arquivo ou com valor 0 = sem limite definido (esta_desatualizado devolve None).
+# Alterar aqui, sem mexer em codigo. Cada valor esta justificado no dicionario de dados da fonte.
+
+[limites_h]
+# Previsao muda a cada hora; o modelo e reprocessado a cada 6 h.
+open-meteo-previsao = 6
+# Mare prevista para dias a frente; coleta diaria.
+open-meteo-mare = 24
+# Reanalise ERA5 chega com cerca de 7 dias de atraso; 8 dias tolera um dia de coleta perdida.
+open-meteo-historico = 192
+# Pluviometros APAC sao atualizados de forma sub-horaria; 1 h indica estacao ou portal parado.
+apac-chuva = 1
+# Alerta vigente precisa estar atual; ver outro alerta so depois de 1 h seria risco operacional.
+alertas-oficiais = 1
+# Cadastro de abrigos (dados abertos) e republicado raramente; revisao anual.
+recife-abrigos = 8760
+# Ocupacao e desabrigados: registro manual da equipe; hora de cada lancamento e obrigatoria.
+recife-abrigos-ocupacao = 1
+# Atendimentos da Defesa Civil: publicacao diaria/mensal com defasagem; 60 dias.
+recife-alagamento = 1440
+# InfoDengue publica por semana epidemiologica; 8 dias (semana mais folga de um dia).
+infodengue = 192
+# SINAN preliminar republicado pelo DATASUS a cada 1 a 3 semanas; 15 dias.
+sinan-leptospirose = 360
+# Arboviroses por bairro: publicacao anual; 400 dias.
+recife-arboviroses = 9600
+# Base territorial oficial e estatica, revisada periodicamente: sem limite.
+territorio-oficial = 0

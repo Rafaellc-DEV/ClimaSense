@@ -46,7 +46,7 @@ climasense = "climasense.__main__:main"
 include = ["climasense*"]
 
 [tool.setuptools.package-data]
-climasense = ["etl/gold/*.sql", "territorio/assets/**/*"]
+climasense = ["etl/frescor.toml", "etl/gold/*.sql", "territorio/assets/**/*"]
 
 [tool.ruff]
 line-length = 110

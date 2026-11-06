@@ -60,3 +60,9 @@ Descartes registrados: sintomas antes de 2015 (casos de 2014 notificados em 2015
 - Chuva e casos lado a lado são coincidência temporal descritiva, não causa.
 - `NDUPLIC_N` (marca de duplicidade do SINAN) não é usado como filtro: o significado dos códigos não foi
   confirmado; 5 de 331 notificações do Recife em 2026 têm `NDUPLIC_N = 1`.
+
+## Frescor
+
+- Limite: 360 h (15 dias) (configurado em `backend/climasense/etl/frescor.toml`, chave `sinan-leptospirose`; lido por `climasense.etl.frescor`).
+- Motivo: o DATASUS republica o preliminar a cada 1 a 3 semanas.
+- Sem dado registrado, o indicador mostra "Dados insuficientes", nunca "em dia" (RN-01).
