@@ -58,3 +58,28 @@ Branch `evolucao-prd-v2`, commits locais no nome do dono, sem push. Cada etapa t
   `DATABASE_URL_MIGRACOES` exportados no shell).
 - A limpeza do prazo de guarda é manual ou por agendador (não roda no ETL).
 - Revisão visual em celular e desktop pendente (fica para o `qa-ux`).
+
+## Etapa 2 — Estágio oficial do COP e mapa por bairro (06/11/2026)
+
+**O que mudou**
+- RF-01, RNF-04: não há fonte pública legível do estágio oficial da cidade (busca em `docs/pesquisa/estagio-oficial-cop.md`;
+  pergunta P-21 ao COP). O estágio oficial entra por registro auditado da equipe: `GET/POST /estagios/oficial`,
+  histórico somente-inclusão (`app.estagio_oficial`, migração 0015, aplicada no Neon). Sem registro: "Dados insuficientes".
+- RF-01, RF-07: `GET /territorios/bairros.geojson` com os 94 bairros (simplificado, ~96 KB, ETag).
+- RF-06, RF-22, RN-06: `GET /territorios/prioridade` ordena distritos e bairros pelo histórico de atendimentos da Defesa
+  Civil, com o critério escrito e sem percentual.
+- Frontend: a tela **Mapa** passa a ser a principal (`/app`); Situação em `/app/situacao`. Bairros coloridos pelo
+  estágio (declarado cheio, sugerido listrado, sem dado em hachura cinza), faixa do estágio do COP com "Informar",
+  painel do bairro (estágio, alertas com fonte/hora/território e APAC/Cemaden, abrigos, Declarar), prioritários e
+  lista de bairros como alternativa por teclado.
+
+**Testes**: backend 981 passed (unit + integration no Postgres local), ruff limpo; frontend lint, tsc, 204 testes e
+build verdes. Rotas novas conferidas na API real contra o Neon (94 bairros; prioridade com dados).
+
+**Pendências**
+- O Neon tem só ocorrências de alagamento (1.722 bairro-dia): foi carregado antes de o conector ler deslizamentos.
+  Sem deslizamento, a prioridade não reflete o DS VII (vulnerável a deslizamentos, segundo o cliente). A recarga de
+  `recife-alagamento` foi interrompida por um reinício de sessão (nada gravado) e foi relançada.
+- Duas execuções antigas de `recife-alagamento` ficaram como "em_andamento" em `app.etl_execucoes`.
+- Alertas oficiais são municipais (sem área própria): o painel diz "alerta do município do Recife".
+- `/estagios?nivel=bairro` leva ~4 s na API local; a previsão estava com 25 h (ETL de tempo real não rodou).
