@@ -1,9 +1,9 @@
-import { render, screen, waitFor, within } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { App } from "@/app/App";
 import { simularApi, usuarioTeste } from "@/features/evento/testes";
 import { clienteConsultas } from "@/lib/api";
-import { eventoAtual, montarLinha } from "./linhaTempo";
+import { eventoAtual, isoDeDiaHora, montarLinha } from "./linhaTempo";
 
 const acao = (id: string, descricao: string, em: string, extra = {}) => ({
   id,
@@ -99,6 +99,49 @@ test("registrar manda o texto com hora automática; sem território vale o Recif
     situacao: "concluida",
   });
   expect(typeof corpo.inicio_em).toBe("string");
+});
+
+test("o dia e a hora informados vão como inicio_em (Recife) e não podem ser futuro", async () => {
+  const pedidos = simularApi(base(), { "/acoes": { status: 201, corpo: {} } });
+  window.history.pushState({}, "", "/app/registro");
+  render(<App />);
+  const u = userEvent.setup();
+  await u.type(await screen.findByLabelText(/O que aconteceu\?/), "Alagamento no Ibura.");
+  fireEvent.change(screen.getByLabelText("Dia"), { target: { value: "2026-11-03" } });
+  fireEvent.change(screen.getByLabelText("Hora"), { target: { value: "22:10" } });
+  await u.click(screen.getByRole("button", { name: "Registrar" }));
+  await waitFor(() => expect(pedidos.some((p) => p.metodo === "POST")).toBe(true));
+  expect((pedidos.find((p) => p.metodo === "POST")?.corpo as Record<string, unknown>).inicio_em).toBe(
+    "2026-11-04T01:10:00.000Z",
+  );
+});
+
+test("data futura é recusada e nada é enviado", async () => {
+  const pedidos = simularApi(base(), { "/acoes": { status: 201, corpo: {} } });
+  window.history.pushState({}, "", "/app/registro");
+  render(<App />);
+  const u = userEvent.setup();
+  await u.type(await screen.findByLabelText(/O que aconteceu\?/), "Teste.");
+  fireEvent.change(screen.getByLabelText("Dia"), { target: { value: "2099-01-01" } });
+  await u.click(screen.getByRole("button", { name: "Registrar" }));
+  expect(await screen.findByText(/não podem ser no futuro/)).toBeInTheDocument();
+  expect(pedidos.some((p) => p.metodo === "POST")).toBe(false);
+});
+
+test("a linha do tempo ordena pelo horário do fato e mostra quando foi registrado", () => {
+  const l = montarLinha(
+    [
+      acao("a", "Fato antigo registrado agora.", "2026-11-03T22:10:00-03:00", {
+        criada_em: "2026-11-04T08:02:00-03:00",
+      }),
+      acao("b", "Fato recente.", "2026-11-04T07:00:00-03:00"),
+    ] as never,
+    [],
+  );
+  expect(l[0].texto).toBe("Fato recente.");
+  expect(l[1].registradoEm).toBe("2026-11-04T08:02:00-03:00");
+  expect(l[0].registradoEm).toBeNull();
+  expect(isoDeDiaHora("2026-11-03", "")).toBeNull();
 });
 
 test("encerrar o evento faz uma pergunta só e grava a lição", async () => {

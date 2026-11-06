@@ -1,0 +1,105 @@
+.raiz {
+  position: relative;
+  display: inline-flex;
+  vertical-align: middle;
+  margin-left: var(--e-1);
+}
+.botao {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  margin: -6px 0;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--cs-tinta-2);
+  cursor: pointer;
+}
+.botao:hover,
+.botao[aria-expanded="true"] {
+  color: var(--cs-mare);
+  background: var(--cs-mare-suave);
+}
+.painel {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + 6px);
+  left: -8px;
+  display: grid;
+  gap: var(--e-2);
+  width: min(20rem, 80vw);
+  padding: var(--e-3);
+  border-radius: var(--r-icone);
+  background: var(--cs-papel);
+  color: var(--cs-tinta);
+  box-shadow: var(--sombra-flutuante);
+  outline: 1px solid var(--cs-linha);
+  font-size: var(--t-apoio);
+  font-weight: 400;
+  text-align: left;
+}
+.painel[hidden] {
+  display: none;
+}
+.topo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--e-2);
+}
+.fechar {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  margin: -4px -4px -4px 0;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--cs-tinta-2);
+  cursor: pointer;
+}
+.apoio {
+  color: var(--cs-tinta-2);
+}
+.lista {
+  display: grid;
+  gap: 2px;
+  max-height: 16rem;
+  margin: 0;
+  padding: 0 var(--e-1) 0 0;
+  list-style: none;
+  overflow-y: auto;
+}
+.lista li {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--e-3);
+  padding: 4px 0;
+  border-bottom: var(--borda);
+}
+.lista b {
+  font-variant-numeric: tabular-nums;
+}
+.semRegistro {
+  color: var(--cs-tinta-2);
+  font-style: italic;
+}
+/* celular: folha na base da tela, nunca alarga a página */
+@media (max-width: 640px) {
+  .raiz {
+    position: static;
+  }
+  .painel {
+    position: fixed;
+    inset: auto var(--e-3) var(--e-3) var(--e-3);
+    width: auto;
+    max-height: 70vh;
+  }
+  .lista {
+    max-height: 45vh;
+  }
+}

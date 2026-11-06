@@ -166,6 +166,14 @@
 .tabela b[data-nivel="informativo"] {
   background: var(--n-info-bg);
 }
+.tabela .bairrosDoDistrito {
+  display: block;
+  margin-top: 2px;
+  font-size: 0.75rem;
+  font-weight: 400;
+  line-height: 1.4;
+  color: #6b7280;
+}
 .apagado {
   color: var(--cs-tinta-2);
 }

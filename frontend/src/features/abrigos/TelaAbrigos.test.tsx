@@ -148,3 +148,58 @@ test("“Só abertos” sem nenhum aberto explica o que fazer e leva de volta a 
   await u.click(screen.getByRole("button", { name: "Ver todos os locais" }));
   expect(await screen.findByRole("rowheader", { name: /Escola Municipal Afogados/ })).toBeInTheDocument();
 });
+
+test("Editar dados manda só capacidade, endereço e observação (PATCH), sem ocupação", async () => {
+  const pedidos = simularApi(base(), { "/abrigos/ab-1": abrigos.itens[0] });
+  window.history.pushState({}, "", "/app/abrigos");
+  render(<App />);
+  const u = userEvent.setup();
+  await u.click(await screen.findByRole("button", { name: /Editar dados de Escola Municipal Afogados/ }));
+  const dialogo = await screen.findByRole("dialog", { name: /Editar dados de Escola Municipal Afogados/ });
+  const cap = within(dialogo).getByLabelText("Capacidade em pessoas");
+  await u.clear(cap);
+  await u.type(cap, "120");
+  await u.type(within(dialogo).getByLabelText("Observação"), "Confirmado por ligação em 04/11.");
+  await u.click(within(dialogo).getByRole("button", { name: "Salvar" }));
+  await waitFor(() => expect(pedidos.find((p) => p.metodo === "PATCH")).toBeTruthy());
+  const corpo = pedidos.find((p) => p.metodo === "PATCH")?.corpo as Record<string, unknown>;
+  expect(corpo).toEqual({
+    capacidade: 120,
+    endereco: "Rua Exemplo, 10",
+    observacao: "Confirmado por ligação em 04/11.",
+  });
+});
+
+test("sem capacidade: “sem dado” e “Informar” abre o mesmo diálogo; quem só consulta não vê", async () => {
+  const sem = { ...abrigos, itens: [{ ...abrigos.itens[0], capacidade: null }] };
+  simularApi({ ...base(), "/abrigos": sem });
+  window.history.pushState({}, "", "/app/abrigos");
+  render(<App />);
+  const u = userEvent.setup();
+  await u.click(await screen.findByRole("button", { name: /Informar capacidade de Escola/ }));
+  expect(await screen.findByRole("dialog", { name: /Editar dados de/ })).toBeInTheDocument();
+});
+
+test("o histórico mostra capacidade e endereço quando mudaram", async () => {
+  simularApi({
+    ...base(),
+    "/abrigos/ab-1/historico": [
+      {
+        id: 1,
+        em: AGORA,
+        autor_nome: "Mari Siqueira",
+        aberto: true,
+        alteracoes: {
+          capacidade: { de: null, para: 120 },
+          endereco: { de: "Rua A", para: "Rua B, 20" },
+        },
+      },
+    ],
+  });
+  window.history.pushState({}, "", "/app/abrigos");
+  render(<App />);
+  const u = userEvent.setup();
+  await u.click(await screen.findByRole("button", { name: /Histórico de Escola Municipal Afogados/ }));
+  expect(await screen.findByText("Capacidade: de sem dado para 120 pessoas")).toBeInTheDocument();
+  expect(screen.getByText("Endereço: de Rua A para Rua B, 20")).toBeInTheDocument();
+});

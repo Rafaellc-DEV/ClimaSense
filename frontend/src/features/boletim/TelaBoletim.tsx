@@ -1,5 +1,6 @@
 import { useRef } from "react";
 import { Copy, Printer } from "lucide-react";
+import { useTerritorios } from "@/app/FiltroFrase";
 import { CabecalhoTela } from "@/design-system/componentes/CabecalhoTela";
 import { useAviso } from "@/design-system/componentes/Aviso";
 import { Botao } from "@/design-system/componentes/Botao";
@@ -154,6 +155,12 @@ export function TelaBoletim() {
   const acoes = useConsulta<unknown>("/acoes");
   const historico = useConsulta<unknown>("/estagios/historico");
   const fontes = useFontesResumo();
+  const territorios = useTerritorios();
+  const bairrosDe = (distritoId: string): string[] =>
+    (territorios.data ?? [])
+      .filter((t) => t.tipo === "bairro" && t.pai_id === distritoId)
+      .map((t) => t.nome_exibicao)
+      .sort((a, c) => a.localeCompare(c, "pt-BR"));
 
   const b = r.data?.dados;
   const saude = dadosDe<ResumoSaude>(saudeR.data);
@@ -290,7 +297,14 @@ export function TelaBoletim() {
                 <tbody>
                   {distritos.map((d) => (
                     <tr key={d.territorio_id}>
-                      <th scope="row">{d.territorio_nome}</th>
+                      <th scope="row">
+                        {d.territorio_nome}
+                        {bairrosDe(d.territorio_id).length > 0 && (
+                          <small className={estilos.bairrosDoDistrito}>
+                            Bairros: {bairrosDe(d.territorio_id).join(", ")}
+                          </small>
+                        )}
+                      </th>
                       <td>
                         {d.declarado ? (
                           <b data-nivel={infoEstagio(d.declarado.estagio).nivel}>

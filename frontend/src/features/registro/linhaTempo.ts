@@ -3,6 +3,7 @@
  * e os boletins emitidos. Enquanto o backend não tem “evento” nem “boletim emitido” próprios, os dois viram registros
  * de /acoes com um texto fixo no começo (ver PREFIXO_BOLETIM e ENCERRAMENTO).
  */
+import { diaNoRecife, formatarHora } from "@/lib/formatos";
 import { infoEstagio } from "@/features/evento/estagios";
 import { nomeCurto } from "@/features/evento/textos";
 import type { Acao } from "@/features/evento/tipos";
@@ -32,7 +33,23 @@ export interface Entrada {
   territorio?: string | null;
   estagio?: string;
   licao?: string | null;
+  /** Quando a pessoa registrou, se for bem depois do fato (`em`). */
+  registradoEm?: string | null;
 }
+
+/** Dia e hora digitados (fuso do Recife, UTC-3, sem horário de verão) viram ISO. Vazio ou inválido: null. */
+export function isoDeDiaHora(dia: string, hora: string): string | null {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dia) || !/^\d{2}:\d{2}$/.test(hora)) return null;
+  const d = new Date(`${dia}T${hora}:00-03:00`);
+  return Number.isNaN(d.getTime()) ? null : d.toISOString();
+}
+
+/** Valores iniciais dos campos Dia e Hora: agora, no fuso do Recife. */
+export function agoraNoRecife(agora: Date = new Date()): { dia: string; hora: string } {
+  return { dia: diaNoRecife(agora), hora: formatarHora(agora).replace("h", ":") };
+}
+
+const MARGEM_REGISTRO_MS = 10 * 60 * 1000;
 
 const momento = (a: Acao) => a.inicio_em ?? a.criada_em ?? a.atualizada_em ?? "";
 
@@ -43,11 +60,15 @@ function deAcao(a: Acao): Entrada {
     : d.startsWith(ENCERRAMENTO)
       ? "encerramento"
       : "registro";
+  const fato = momento(a);
+  const feito = a.criada_em ?? null;
+  const tardio = !!feito && !!a.inicio_em && Date.parse(feito) - Date.parse(fato) > MARGEM_REGISTRO_MS;
   const geral = !a.territorio_id || a.territorio_id === "recife";
   return {
     id: `acao-${a.id}`,
-    em: momento(a),
+    em: fato,
     tipo,
+    registradoEm: tardio ? feito : null,
     texto: tipo === "boletim" ? d.slice(PREFIXO_BOLETIM.length).trim() : d,
     autor: a.autor_nome,
     territorio: geral ? null : a.territorio_nome ?? a.territorio_id,

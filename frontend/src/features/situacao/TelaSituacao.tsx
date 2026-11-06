@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { ArrowRight, ChevronDown, CircleOff, Megaphone, MessageCircle } from "lucide-react";
+import { ArrowRight, Megaphone } from "lucide-react";
 import { Link } from "react-router-dom";
 import { CabecalhoTela } from "@/design-system/componentes/CabecalhoTela";
 import { useAviso } from "@/design-system/componentes/Aviso";
@@ -14,7 +14,7 @@ import { useConsulta } from "@/lib/consultas";
 import { formatarNumero } from "@/lib/formatos";
 import { useSessao } from "@/lib/sessao";
 import { ESTAGIOS, infoEstagio } from "@/features/evento/estagios";
-import { ConfiraOficial, EstadoConsulta, MensagemPronta, SeloEstagio } from "@/features/evento/Evento";
+import { ConfiraOficial, EstadoConsulta, MensagemPronta } from "@/features/evento/Evento";
 import { atualizada, listaEmFrase, nomeCurto, quandoAs, useFontesResumo } from "@/features/evento/textos";
 import {
   listaDe,
@@ -24,13 +24,16 @@ import {
   type MensagemWhatsApp,
 } from "@/features/evento/tipos";
 import { MapaSituacao } from "@/features/territorio/MapaSituacao";
+import { CartaoDistrito, type EstadoBairros } from "./CartaoDistrito";
 import { DialogoDeclarar, DialogoEncerrar, Parametros, pedeDecisao } from "./Declarar";
+import { ResumoTopo } from "./ResumoTopo";
+import { ordenarDistritos } from "./resumo";
 import estilos from "./Situacao.module.css";
 
 const porNome = (a: ItemEstagio, b: ItemEstagio) =>
   a.territorio_nome.localeCompare(b.territorio_nome, "pt-BR", { numeric: true });
 
-/** Motivos que aparecem em todos os distritos: ditos uma vez, acima da tabela, e não repetidos em cada linha. */
+/** Motivos que aparecem em todos os distritos: ditos uma vez, e não repetidos em cada cartão. */
 export function motivosComuns(itens: ItemEstagio[]): string[] {
   if (itens.length < 2) return [];
   const [primeiro, ...resto] = itens.map((i) => i.sugerido?.motivos ?? []);
@@ -38,7 +41,7 @@ export function motivosComuns(itens: ItemEstagio[]): string[] {
 }
 
 /** Falta comum quando todos os distritos estão sem dados pela mesma razão; senão `null`. */
-function faltaDeTodos(itens: ItemEstagio[]): string | null {
+export function faltaDeTodos(itens: ItemEstagio[]): string | null {
   if (itens.length === 0) return null;
   if (!itens.every((i) => infoEstagio(i.sugerido?.estagio) === ESTAGIOS.sem_dados)) return null;
   const faltas = new Set(itens.map((i) => (i.sugerido?.faltando ?? []).join(", ")));
@@ -69,37 +72,50 @@ export function fraseAgora(distritos: ItemEstagio[], bairros: ItemEstagio[]): st
 }
 
 /**
- * Situação (tela inicial): o que fazer agora, a tabela dos 8 distritos com declarada, sugerida, motivo e ação, os
- * bairros sob demanda, o mapa e os abrigos abertos. Responde à dor 1 (alerta da cidade, decisão por bairro) e à 2
- * (aviso aos distritos pelo WhatsApp).
+ * Situação (tela inicial): responde “onde eu preciso agir agora?”. Resumo no topo (distritos por situação, chuva e
+ * maré), os distritos que pedem decisão em destaque com os bairros que passam do distrito, os demais em cartões
+ * discretos, o mapa ligado aos cartões e os abrigos abertos.
  */
 export function TelaSituacao() {
   const { pode } = useSessao();
   const podeDeclarar = pode("editar");
   const distritos = useConsulta<unknown>(`/estagios${consulta({ nivel: "distrito" })}`);
-  const [abertos, setAbertos] = useState<Set<string>>(new Set());
-  const bairros = useConsulta<unknown>(`/estagios${consulta({ nivel: "bairro" })}`, {
-    enabled: abertos.size > 0,
-  });
+  const bairros = useConsulta<unknown>(`/estagios${consulta({ nivel: "bairro" })}`);
   const abrigos = useConsulta<unknown>(`/abrigos${consulta({ aberto: "true" })}`);
   const fontes = useFontesResumo();
   const avisar = useAviso();
 
   const itens = useMemo(() => listaDe<ItemEstagio>(distritos.data).sort(porNome), [distritos.data]);
   const itensBairro = useMemo(() => listaDe<ItemEstagio>(bairros.data).sort(porNome), [bairros.data]);
+  const ordenados = useMemo(() => ordenarDistritos(itens), [itens]);
+  const pedem = ordenados.filter(pedeDecisao);
+  const demais = ordenados.filter((d) => !pedeDecisao(d));
   const comuns = motivosComuns(itens);
   const falta = faltaDeTodos(itens);
+  const semAvisos =
+    itens.length > 0 &&
+    itens.every((i) => Array.isArray(i.alertas_oficiais) && i.alertas_oficiais.length === 0);
 
   const [declarar, setDeclarar] = useState<ItemEstagio[] | null>(null);
   const [retirar, setRetirar] = useState<ItemEstagio | null>(null);
   const [mensagem, setMensagem] = useState<MensagemWhatsApp | null>(null);
+  const [selecionado, setSelecionado] = useState<string | null>(null);
 
-  function alternar(id: string, abrir?: boolean) {
-    setAbertos((s) => {
-      const n = new Set(s);
-      if (abrir ?? !n.has(id)) n.add(id);
-      else n.delete(id);
-      return n;
+  const estadoBairros: EstadoBairros = {
+    carregando: bairros.isPending,
+    erro: bairros.isError ? bairros.error : null,
+    aoTentar: () => bairros.refetch(),
+    lista: itensBairro,
+  };
+
+  /** Do mapa para o cartão: destaca, rola até ele e leva o foco para o nome. */
+  function irParaCartao(id: string) {
+    setSelecionado(id);
+    requestAnimationFrame(() => {
+      const el = document.getElementById(`distrito-${id}`);
+      const reduz = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+      el?.scrollIntoView?.({ block: "center", behavior: reduz ? "auto" : "smooth" });
+      el?.querySelector<HTMLElement>("[data-nome]")?.focus({ preventScroll: true });
     });
   }
 
@@ -123,11 +139,28 @@ export function TelaSituacao() {
     .pop();
   const horaPrevisao = fontes.hora("open-meteo-previsao");
 
+  const cartao = (d: ItemEstagio, grande: boolean) => (
+    <CartaoDistrito
+      key={d.territorio_id}
+      item={d}
+      grande={grande}
+      comuns={comuns}
+      faltaComum={falta !== null}
+      selecionado={selecionado === d.territorio_id}
+      aoSelecionar={() => setSelecionado((s) => (s === d.territorio_id ? null : d.territorio_id))}
+      bairros={estadoBairros}
+      podeDeclarar={podeDeclarar}
+      aoDeclarar={(i) => setDeclarar([i])}
+      aoRetirar={setRetirar}
+      aoWhatsApp={whatsapp}
+    />
+  );
+
   return (
     <>
       <CabecalhoTela
         titulo="Situação"
-        proposito="Em que situação está cada distrito e o que pede a sua decisão."
+        proposito="Onde agir agora: a situação de cada distrito e dos bairros."
         acoes={
           podeDeclarar &&
           itens.length > 0 && (
@@ -159,95 +192,72 @@ export function TelaSituacao() {
           <ConfiraOficial sobreMare />
         </FaixaMare>
 
-        <Painel id="si-distritos" titulo="Situação por distrito">
-          {distritos.isPending && (
-            <CarregandoLista linhas={4} altura="3.5rem" texto="Carregando os distritos…" />
-          )}
-          {distritos.isError && (
-            <EstadoConsulta erro={distritos.error} oQue="as situações" aoTentar={() => distritos.refetch()} />
-          )}
-          {falta !== null && (
-            <EstadoDados tipo="insuficiente" titulo="Nenhum distrito tem dados para sugerir agora.">
-              Falta {falta}. Isso não quer dizer risco baixo.
-            </EstadoDados>
-          )}
-          {falta === null && comuns.length > 0 && (
-            <p className={estilos.comum}>
-              <b>Motivo igual para os {itens.length} distritos:</b> {comuns.join(" ")}
-            </p>
-          )}
-          {itens.length > 0 && (
-            <table className={estilos.tabela}>
-              <caption className="so-leitor">Situação declarada e sugerida em cada distrito</caption>
-              <thead>
-                <tr>
-                  <th scope="col">Distrito</th>
-                  <th scope="col">Declarada</th>
-                  <th scope="col">Sugerida</th>
-                  <th scope="col">Motivo</th>
-                  <th scope="col">
-                    <span className="so-leitor">Ações</span>
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {itens.map((d) => {
-                  const aberto = abertos.has(d.territorio_id);
-                  const filhos = itensBairro.filter((b) => b.distrito_id === d.territorio_id);
-                  return (
-                    <LinhaDistrito
-                      key={d.territorio_id}
-                      item={d}
-                      comuns={comuns}
-                      faltaComum={falta !== null}
-                      aberto={aberto}
-                      aoAlternar={() => alternar(d.territorio_id)}
-                      podeDeclarar={podeDeclarar}
-                      aoDeclarar={(i) => setDeclarar([i])}
-                      aoRetirar={setRetirar}
-                      aoWhatsApp={whatsapp}
-                      bairros={
-                        bairros.isPending ? (
-                          <CarregandoLista linhas={2} altura="2.5rem" texto="Carregando os bairros…" />
-                        ) : bairros.isError ? (
-                          <EstadoConsulta
-                            erro={bairros.error}
-                            oQue="as situações por bairro"
-                            aoTentar={() => bairros.refetch()}
-                          />
-                        ) : (
-                          <ListaBairros
-                            distrito={d}
-                            itens={filhos}
-                            podeDeclarar={podeDeclarar}
-                            aoDeclarar={(i) => setDeclarar([i])}
-                          />
-                        )
-                      }
-                    />
-                  );
-                })}
-              </tbody>
-            </table>
-          )}
-          <details className={estilos.comoSugere}>
-            <summary>Como o sistema sugere</summary>
-            <Parametros />
-          </details>
-        </Painel>
+        {distritos.isSuccess && itens.length > 0 && <ResumoTopo itens={itens} horaFonte={horaPrevisao} />}
 
-        <div className={estilos.duas}>
-          <MapaSituacao
-            distritos={itens}
-            selecionado={null}
-            aoEscolher={(id) => {
-              alternar(id, true);
-              requestAnimationFrame(
-                () => document.getElementById(`linha-${id}`)?.scrollIntoView({ block: "center" }),
-              );
-            }}
-          />
-          <AbrigosAbertos r={abrigos} />
+        <div className={estilos.corpo}>
+          <section className={estilos.distritos} aria-labelledby="si-distritos">
+            <h2 id="si-distritos" className={estilos.tituloSecao}>
+              Distritos
+            </h2>
+            {distritos.isPending && (
+              <CarregandoLista linhas={4} altura="7rem" texto="Carregando os distritos…" />
+            )}
+            {distritos.isError && (
+              <EstadoConsulta
+                erro={distritos.error}
+                oQue="as situações"
+                aoTentar={() => distritos.refetch()}
+              />
+            )}
+            {distritos.isSuccess && itens.length === 0 && (
+              <EstadoDados tipo="insuficiente" titulo="Nenhum distrito com situação calculada.">
+                Isso não quer dizer risco baixo. Confira a APAC e o Cemaden e declare pelo que a equipe sabe.
+              </EstadoDados>
+            )}
+            {falta !== null && (
+              <EstadoDados tipo="insuficiente" titulo="Nenhum distrito tem dados para sugerir agora.">
+                Falta {falta}. Isso não quer dizer risco baixo.
+              </EstadoDados>
+            )}
+
+            {itens.length > 0 && (
+              <div className={estilos.blocos}>
+                {pedem.length > 0 ? (
+                  <>
+                    <h3 className={estilos.subtitulo} data-pede="true">
+                      Pedem a sua decisão ({pedem.length})
+                    </h3>
+                    <div className={estilos.gradeGrande}>{pedem.map((d) => cartao(d, true))}</div>
+                    {demais.length > 0 && <h3 className={estilos.subtitulo}>Demais distritos</h3>}
+                  </>
+                ) : (
+                  falta === null && (
+                    <p className={estilos.nadaPede}>
+                      <b>Nenhum distrito pede decisão agora.</b> A sugestão do sistema não passa da situação
+                      em vigor.{semAvisos ? " Nenhum aviso oficial ativo." : ""}
+                    </p>
+                  )
+                )}
+                {demais.length > 0 && (
+                  <div className={estilos.grade}>{demais.map((d) => cartao(d, false))}</div>
+                )}
+                {falta === null && comuns.length > 0 && (
+                  <p className={estilos.comum}>
+                    <b>Vale para todos os {itens.length} distritos:</b> {comuns.join(" ")}
+                  </p>
+                )}
+              </div>
+            )}
+            <details className={estilos.comoSugere}>
+              <summary>Como o sistema sugere</summary>
+              <Parametros />
+            </details>
+          </section>
+
+          <div className={estilos.lateral}>
+            <MapaSituacao distritos={itens} selecionado={selecionado} aoEscolher={irParaCartao} />
+            <AbrigosAbertos r={abrigos} />
+          </div>
         </div>
 
         <p className={estilos.rodape}>
@@ -273,165 +283,6 @@ export function TelaSituacao() {
         </Dialogo>
       )}
     </>
-  );
-}
-
-/* ------------------------------------------------------------------ uma linha da tabela */
-function motivoDaLinha(i: ItemEstagio, comuns: string[], faltaComum: boolean): string | null {
-  if (infoEstagio(i.sugerido?.estagio) === ESTAGIOS.sem_dados)
-    return faltaComum ? null : `Falta ${(i.sugerido?.faltando ?? []).join(", ") || "insumo para sugerir"}.`;
-  const proprios = (i.sugerido?.motivos ?? []).filter((m) => !comuns.includes(m));
-  return proprios.length ? proprios.join(" ") : null;
-}
-
-function LinhaDistrito({
-  item: d,
-  comuns,
-  faltaComum,
-  aberto,
-  aoAlternar,
-  podeDeclarar,
-  aoDeclarar,
-  aoRetirar,
-  aoWhatsApp,
-  bairros,
-}: {
-  item: ItemEstagio;
-  comuns: string[];
-  faltaComum: boolean;
-  aberto: boolean;
-  aoAlternar: () => void;
-  podeDeclarar: boolean;
-  aoDeclarar: (i: ItemEstagio) => void;
-  aoRetirar: (i: ItemEstagio) => void;
-  aoWhatsApp: (i: ItemEstagio) => void;
-  bairros: React.ReactNode;
-}) {
-  const nome = nomeCurto(d.territorio_nome);
-  const pede = pedeDecisao(d);
-  const motivo = motivoDaLinha(d, comuns, faltaComum);
-  const idBairros = `bairros-${d.territorio_id}`;
-  return (
-    <>
-      <tr id={`linha-${d.territorio_id}`} data-pede={pede} className={estilos.linha}>
-        <th scope="row" className={estilos.celulaNome}>
-          <span className={estilos.nome} title={d.territorio_nome}>
-            {nome}
-          </span>
-          <button
-            type="button"
-            className={estilos.expandir}
-            aria-expanded={aberto}
-            aria-controls={idBairros}
-            onClick={aoAlternar}
-          >
-            <ChevronDown aria-hidden="true" size={18} />
-            Bairros<span className="so-leitor"> de {d.territorio_nome}</span>
-          </button>
-        </th>
-        <td data-rotulo="Declarada">
-          {d.declarado ? (
-            <span className={estilos.celulaSelo}>
-              <SeloEstagio estagio={d.declarado.estagio} pequena />
-              <small>
-                {d.declarado.autor_nome}, {quandoAs(d.declarado.declarado_em)}
-              </small>
-            </span>
-          ) : (
-            <span className={estilos.apagado}>sem declaração</span>
-          )}
-        </td>
-        <td data-rotulo="Sugerida">
-          <span className={estilos.celulaSelo}>
-            <SeloEstagio estagio={d.sugerido?.estagio} pequena />
-            {pede && <small className={estilos.acima}>acima da declarada</small>}
-          </span>
-        </td>
-        <td data-rotulo="Motivo" className={estilos.motivo} data-vazio={motivo === null}>
-          {motivo ?? <span className={estilos.apagado}>igual ao de cima</span>}
-        </td>
-        <td className={estilos.acoes}>
-          {podeDeclarar && (
-            <Botao variante={pede ? "principal" : "secundario"} onClick={() => aoDeclarar(d)}>
-              Declarar<span className="so-leitor"> situação de {d.territorio_nome}</span>
-            </Botao>
-          )}
-          {podeDeclarar && d.declarado && !d.declarado.herdado && (
-            <Botao variante="discreto" icone={<CircleOff />} onClick={() => aoRetirar(d)}>
-              Retirar<span className="so-leitor"> declaração de {d.territorio_nome}</span>
-            </Botao>
-          )}
-          <Botao variante="discreto" icone={<MessageCircle />} onClick={() => aoWhatsApp(d)}>
-            WhatsApp<span className="so-leitor"> para {d.territorio_nome}</span>
-          </Botao>
-        </td>
-      </tr>
-      {aberto && (
-        <tr className={estilos.linhaBairros}>
-          <td colSpan={5} id={idBairros}>
-            {bairros}
-          </td>
-        </tr>
-      )}
-    </>
-  );
-}
-
-/* ------------------------------------------------------------------ bairros de um distrito */
-function ListaBairros({
-  distrito,
-  itens,
-  podeDeclarar,
-  aoDeclarar,
-}: {
-  distrito: ItemEstagio;
-  itens: ItemEstagio[];
-  podeDeclarar: boolean;
-  aoDeclarar: (i: ItemEstagio) => void;
-}) {
-  if (itens.length === 0)
-    return <EstadoDados tipo="insuficiente" titulo="Nenhum bairro com situação calculada." />;
-  const ordenados = [...itens].sort(
-    (a, b) =>
-      Number(pedeDecisao(b)) - Number(pedeDecisao(a)) ||
-      infoEstagio(b.sugerido?.estagio).ordem - infoEstagio(a.sugerido?.estagio).ordem ||
-      porNome(a, b),
-  );
-  return (
-    <div className={estilos.bairros}>
-      <p className={estilos.detalhe}>
-        A previsão é do distrito: os {itens.length} bairros do {nomeCurto(distrito.territorio_nome)} usam a
-        mesma chuva. O que muda é o histórico de alagamento de cada um.
-      </p>
-      <ul className={estilos.gradeBairros} aria-label={`Bairros de ${distrito.territorio_nome}`}>
-        {ordenados.map((b) => {
-          const ocorr = b.sugerido?.insumos?.ocorrencias_historicas;
-          return (
-            <li key={b.territorio_id} data-pede={pedeDecisao(b)}>
-              <span className={estilos.nomeBairro}>{b.territorio_nome}</span>
-              <span className={estilos.celulaSelo}>
-                <SeloEstagio estagio={b.declarado?.estagio ?? b.sugerido?.estagio} pequena />
-                <small>
-                  {b.declarado ? (b.declarado.herdado ? "do distrito" : "declarada") : "sugerida"}
-                </small>
-              </span>
-              {typeof ocorr === "number" && ocorr > 0 && (
-                <small className={estilos.apagado}>
-                  {ocorr === 1
-                    ? "1 alagamento registrado"
-                    : `${formatarNumero(ocorr)} alagamentos registrados`}
-                </small>
-              )}
-              {podeDeclarar && (
-                <Botao variante="discreto" onClick={() => aoDeclarar(b)}>
-                  Declarar<span className="so-leitor"> situação de {b.territorio_nome}</span>
-                </Botao>
-              )}
-            </li>
-          );
-        })}
-      </ul>
-    </div>
   );
 }
 

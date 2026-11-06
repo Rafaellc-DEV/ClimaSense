@@ -1,5 +1,5 @@
 import { useId, useMemo, useState, type FormEvent } from "react";
-import { History, Plus, RefreshCw } from "lucide-react";
+import { History, Pencil, Plus, RefreshCw } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { CabecalhoTela } from "@/app/AppShell";
 import { useAviso } from "@/design-system/componentes/Aviso";
@@ -80,6 +80,28 @@ export function TotaisAbrigosIndicadores({
 
 const POR_PAGINA = 20;
 
+type Mudanca = { de?: unknown; para?: unknown };
+type HistoricoComMudancas = HistoricoAbrigo & {
+  capacidade?: number | null;
+  alteracoes?: Record<string, Mudanca> | null;
+};
+
+/** “Capacidade: de 80 para 120 pessoas”: só o que a API diz que mudou. */
+function frasesDeMudanca(h: HistoricoComMudancas): string[] {
+  const alt = h.alteracoes ?? {};
+  const valor = (v: unknown, unidade = "") =>
+    v === null || v === undefined || v === "" ? "sem dado" : `${v}${unidade}`;
+  const frases: string[] = [];
+  if (alt.capacidade)
+    frases.push(
+      `Capacidade: de ${valor(alt.capacidade.de)} para ${valor(alt.capacidade.para)}${
+        alt.capacidade.para ? " pessoas" : ""
+      }`,
+    );
+  if (alt.endereco) frases.push(`Endereço: de ${valor(alt.endereco.de)} para ${valor(alt.endereco.para)}`);
+  return frases;
+}
+
 /** F3: onde estão os abrigos e quais estão abertos, com cadastro e atualização rápida. */
 export function TelaAbrigos() {
   const { pode } = useSessao();
@@ -113,12 +135,13 @@ export function TelaAbrigos() {
   const [atualizar, setAtualizar] = useState<Abrigo | null>(null);
   const [cadastrar, setCadastrar] = useState(false);
   const [historico, setHistorico] = useState<Abrigo | null>(null);
+  const [editar, setEditar] = useState<Abrigo | null>(null);
 
   return (
     <>
       <CabecalhoTela
         titulo="Abrigos"
-        proposito="Onde ficam os locais que podem virar abrigo e quais estão abertos agora."
+        proposito="Onde ficam os locais que podem virar abrigo e quais estão abertos agora. Capacidade e endereço são informados pela equipe (ligação ou visita); não vêm de nenhuma API."
         acoes={
           podeEditar && (
             <Botao icone={<Plus />} onClick={() => setCadastrar(true)}>
@@ -264,6 +287,15 @@ export function TelaAbrigos() {
                       <small>
                         {nome(a.bairro_id ?? a.territorio_id, a.bairro_nome ?? a.territorio_nome)}
                         {a.endereco ? ` · ${a.endereco}` : ""}
+                        {!a.endereco && podeEditar && (
+                          <>
+                            {" · "}
+                            <span className={estilos.semDado}>sem endereço </span>
+                            <button type="button" className={estilos.informar} onClick={() => setEditar(a)}>
+                              Informar<span className="so-leitor"> endereço de {a.nome}</span>
+                            </button>
+                          </>
+                        )}
                       </small>
                     </span>
                   ),
@@ -286,9 +318,18 @@ export function TelaAbrigos() {
                   titulo: "Capacidade",
                   numerica: true,
                   celula: (a) =>
-                    a.capacidade !== null && a.capacidade !== undefined
-                      ? `${formatarNumero(a.capacidade)} pessoas`
-                      : "não informada",
+                    a.capacidade !== null && a.capacidade !== undefined ? (
+                      `${formatarNumero(a.capacidade)} pessoas`
+                    ) : (
+                      <span className={estilos.semDado}>
+                        sem dado
+                        {podeEditar && (
+                          <button type="button" className={estilos.informar} onClick={() => setEditar(a)}>
+                            Informar<span className="so-leitor"> capacidade de {a.nome}</span>
+                          </button>
+                        )}
+                      </span>
+                    ),
                 },
                 {
                   chave: "quando",
@@ -320,6 +361,11 @@ export function TelaAbrigos() {
                           Atualizar<span className="so-leitor"> {a.nome}</span>
                         </Botao>
                       )}
+                      {podeEditar && (
+                        <Botao variante="secundario" icone={<Pencil />} onClick={() => setEditar(a)}>
+                          Editar dados<span className="so-leitor"> de {a.nome}</span>
+                        </Botao>
+                      )}
                       <Botao variante="discreto" icone={<History />} onClick={() => setHistorico(a)}>
                         Histórico<span className="so-leitor"> de {a.nome}</span>
                       </Botao>
@@ -338,6 +384,7 @@ export function TelaAbrigos() {
       </div>
 
       {atualizar && <DialogoAtualizar abrigo={atualizar} aoFechar={() => setAtualizar(null)} />}
+      {editar && <DialogoEditarDados abrigo={editar} aoFechar={() => setEditar(null)} />}
       {cadastrar && <DialogoCadastrar aoFechar={() => setCadastrar(false)} />}
       {historico && <DialogoHistorico abrigo={historico} aoFechar={() => setHistorico(null)} />}
     </>
@@ -411,6 +458,76 @@ function DialogoAtualizar({ abrigo, aoFechar }: { abrigo: Abrigo; aoFechar: () =
         <AreaTexto
           rotulo="Observação (opcional)"
           rows={2}
+          value={obs}
+          onChange={(e) => setObs(e.target.value)}
+        />
+        {erro && (
+          <p className={estilos.erro} role="alert">
+            {erro}
+          </p>
+        )}
+      </form>
+    </Dialogo>
+  );
+}
+
+/** Dados que não vêm de API: a equipe liga ou vai ao local e informa aqui. Não mexe em aberto/fechado. */
+function DialogoEditarDados({ abrigo, aoFechar }: { abrigo: Abrigo; aoFechar: () => void }) {
+  const [cap, setCap] = useState(abrigo.capacidade?.toString() ?? "");
+  const [endereco, setEndereco] = useState(abrigo.endereco ?? "");
+  const [obs, setObs] = useState(abrigo.observacao ?? "");
+  const [erroCap, setErroCap] = useState<string>();
+  const { erro, ocupado, salvar } = useSalvar(aoFechar);
+
+  function enviarForm(e: FormEvent) {
+    e.preventDefault();
+    const capacidade = inteiro(cap);
+    if (Number.isNaN(capacidade)) {
+      setErroCap("Use um número inteiro, sem pontos nem letras.");
+      return;
+    }
+    setErroCap(undefined);
+    void salvar(
+      `/abrigos/${encodeURIComponent(String(abrigo.id))}`,
+      { capacidade, endereco: endereco.trim() || null, observacao: obs.trim() || null },
+      "PATCH",
+      "Dados do abrigo salvos.",
+    );
+  }
+
+  return (
+    <Dialogo
+      aberto
+      aoMudar={(a) => !a && aoFechar()}
+      titulo={`Editar dados de ${abrigo.nome}`}
+      descricao="Capacidade e endereço vêm de ligação ou visita ao local. A mudança fica no histórico, com a hora e o seu nome."
+      acoes={
+        <>
+          <Botao variante="secundario" onClick={aoFechar}>
+            Cancelar
+          </Botao>
+          <Botao type="submit" form="form-editar-abrigo" disabled={ocupado}>
+            {ocupado ? "Salvando…" : "Salvar"}
+          </Botao>
+        </>
+      }
+    >
+      <form id="form-editar-abrigo" className={estilos.form} onSubmit={enviarForm} noValidate>
+        <Campo
+          rotulo="Capacidade em pessoas"
+          type="number"
+          inputMode="numeric"
+          min={0}
+          value={cap}
+          onChange={(e) => setCap(e.target.value)}
+          erro={erroCap}
+          autoFocus
+        />
+        <Campo rotulo="Endereço" value={endereco} onChange={(e) => setEndereco(e.target.value)} />
+        <AreaTexto
+          rotulo="Observação"
+          ajuda="Ex.: contato: Fulano, tel. 81 9xxxx-xxxx, confirmado por ligação em 04/11."
+          rows={3}
           value={obs}
           onChange={(e) => setObs(e.target.value)}
         />
@@ -537,7 +654,7 @@ function DialogoCadastrar({ aoFechar }: { aoFechar: () => void }) {
 
 function DialogoHistorico({ abrigo, aoFechar }: { abrigo: Abrigo; aoFechar: () => void }) {
   const r = useConsulta<unknown>(`/abrigos/${encodeURIComponent(String(abrigo.id))}/historico`);
-  const itens = listaDe<HistoricoAbrigo>(r.data);
+  const itens = listaDe<HistoricoComMudancas>(r.data);
   return (
     <Dialogo aberto aoMudar={(a) => !a && aoFechar()} titulo={`Histórico de ${abrigo.nome}`}>
       {r.isPending && <CarregandoLista linhas={3} altura="3rem" texto="Carregando o histórico…" />}
@@ -559,6 +676,9 @@ function DialogoHistorico({ abrigo, aoFechar }: { abrigo: Abrigo; aoFechar: () =
                   {h.aberto !== undefined && h.aberto !== null && (
                     <span>{h.aberto ? "Aberto" : "Fechado"}</span>
                   )}
+                  {frasesDeMudanca(h).map((f) => (
+                    <span key={f}>{f}</span>
+                  ))}
                 </span>
                 {h.observacao && <q>{h.observacao}</q>}
               </li>

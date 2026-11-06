@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useId, useMemo, useState } from "react";
 import type { EChartsOption } from "echarts";
 import { CircleCheck, Droplets } from "lucide-react";
 import { QuadroGrafico } from "@/charts/QuadroGrafico";
@@ -7,13 +7,14 @@ import { CabecalhoTela } from "@/design-system/componentes/CabecalhoTela";
 import campo from "@/design-system/componentes/Campo.module.css";
 import { CarregandoLista } from "@/design-system/componentes/Esqueleto";
 import { EstadoDados } from "@/design-system/componentes/EstadoDados";
-import { Indicador } from "@/design-system/componentes/Indicador";
+import { Dica } from "@/design-system/componentes/Dica";
 import { Painel } from "@/design-system/componentes/Painel";
 import { Pilula } from "@/design-system/componentes/Pilula";
 import { Segmentado } from "@/design-system/componentes/Segmentado";
 import { consulta, ErroApi } from "@/lib/api";
 import { useConsulta } from "@/lib/consultas";
 import { diaNoRecife, formatarNumero, somarDias } from "@/lib/formatos";
+import { useTerritorios } from "@/app/FiltroFrase";
 import { distritoPorExtenso } from "@/textos/glossario";
 import { EstadoConsulta } from "@/features/evento/Evento";
 import { atualizada, diaMes, nomeCurto, useFontesResumo } from "@/features/evento/textos";
@@ -27,6 +28,8 @@ import {
   type ResumoSaude,
   type SerieSemanal,
 } from "./tipos";
+import { bairrosDoDistrito } from "./bairros";
+import { PopoverBairros } from "./PopoverBairros";
 import estilos from "./Saude.module.css";
 
 export const NOTA_TECNICA =
@@ -75,14 +78,19 @@ export function TelaSaude() {
               ))}
             </div>
           )}
+          {r?.agravos.some((a) => a.incompleta) && (
+            <p className={estilos.nota}>
+              Os últimos dias ainda estão chegando; o número da semana pode subir.
+            </p>
+          )}
         </section>
 
         {!indisponivel && <GraficoSemanal />}
         {!indisponivel && <RankingBairros />}
 
         <p className={estilos.limites}>
-          Leptospirose só tem dado do Recife inteiro, sem bairro. Dengue e chikungunya por bairro saem uma vez
-          por ano.
+          Limites: leptospirose só tem dado do Recife inteiro, sem bairro. Dengue e chikungunya por bairro
+          saem uma vez por ano.
         </p>
         <p className={estilos.rodape}>
           {fraseFontes(r?.agravos ?? [], (id) => fontes.lista.find((f) => f.id === id))} Chuva: ERA5,{" "}
@@ -111,6 +119,7 @@ function fraseFontes(
 
 /* ------------------------------------------------------------------ janela de leptospirose */
 function AvisoJanela({ janela }: { janela: NonNullable<ResumoSaude["janela_leptospirose"]> }) {
+  const onde = janela.territorios.map((t) => nomeCurto(t.nome)).join(", ");
   return (
     <section className={estilos.janela} aria-labelledby="sa-janela">
       <div className={estilos.janelaIcone} aria-hidden="true">
@@ -121,11 +130,10 @@ function AvisoJanela({ janela }: { janela: NonNullable<ResumoSaude["janela_lepto
           Janela de vigilância de leptospirose até {diaMes(janela.fim)}: 30 dias após o alagamento de{" "}
           {diaMes(janela.inicio)}
         </h2>
-        {(janela.motivo || janela.territorios.length > 0) && (
+        {(janela.motivo || onde) && (
           <p className={estilos.apoio}>
             {janela.motivo}
-            {janela.territorios.length > 0 &&
-              ` Onde: ${janela.territorios.map((t) => nomeCurto(t.nome)).join(", ")}.`}
+            {onde && ` Onde: ${onde}.`}
           </p>
         )}
         <ul className={estilos.checklist}>
@@ -137,11 +145,11 @@ function AvisoJanela({ janela }: { janela: NonNullable<ResumoSaude["janela_lepto
           ))}
         </ul>
         <p className={estilos.apoio}>
-          Segundo a{" "}
+          Fonte:{" "}
           <a href={NOTA_TECNICA} target="_blank" rel="noopener noreferrer">
             Nota Técnica 138/2022 do Ministério da Saúde<span className="so-leitor"> (abre em nova aba)</span>
           </a>
-          . A janela é um lembrete pela incubação, não uma chance de adoecer.
+          . É um lembrete pelo tempo de incubação, não uma chance de adoecer.
         </p>
       </div>
     </section>
@@ -149,48 +157,73 @@ function AvisoJanela({ janela }: { janela: NonNullable<ResumoSaude["janela_lepto
 }
 
 /* ------------------------------------------------------------------ KPIs */
+const PALAVRA_NIVEL: Record<number, string> = {
+  1: "situação normal",
+  2: "atenção",
+  3: "transmissão sustentada",
+  4: "muitos casos",
+};
+const EXPLICA_NIVEL =
+  "Nível de alerta do InfoDengue, de 1 a 4: 1 verde, situação normal; 2 amarelo, atenção; 3 laranja, transmissão sustentada; 4 vermelho, muitos casos. Combina casos, temperatura e chuva.";
+
+/** Uma frase simples: o que o número significa e se subiu ou desceu. Sem dado, nunca zero (RN-01). */
+export function fraseAgravo(item: ResumoAgravo | undefined): string {
+  if (!item || item.casos === null) return "Sem dado desta semana.";
+  const semana = item.ultima_semana ? ` na semana de ${diaMes(item.ultima_semana.inicio)}` : "";
+  const v = item.variacao_4s_pct;
+  const comparacao =
+    v === null || v === undefined
+      ? ""
+      : v >= 10
+        ? `, ${formatarNumero(v)}% a mais que nas 4 semanas anteriores`
+        : v <= -10
+          ? `, ${formatarNumero(Math.abs(v))}% a menos que nas 4 semanas anteriores`
+          : ", quase o mesmo das 4 semanas anteriores";
+  const nivel = item.nivel_alerta
+    ? ` Nível de alerta ${item.nivel_alerta} de 4: ${PALAVRA_NIVEL[item.nivel_alerta]}.`
+    : "";
+  return `${formatarNumero(item.casos)} ${
+    item.casos === 1 ? "caso" : "casos"
+  }${semana}${comparacao}.${nivel}`;
+}
+
 function CartaoAgravo({ agravo, item }: { agravo: Agravo; item: ResumoAgravo | undefined }) {
+  const id = useId();
   const nivel = item?.nivel_alerta ? NIVEL_ALERTA[item.nivel_alerta] : null;
-  const v = item?.variacao_4s_pct;
-  const semana = item?.ultima_semana;
+  const casos = item?.casos ?? null;
   return (
-    <Indicador
-      rotulo={`${item?.nome ?? NOME_AGRAVO[agravo]}${semana ? `, semana de ${diaMes(semana.inicio)}` : ""}`}
-      valor={item && item.casos !== null ? formatarNumero(item.casos) : null}
-      unidade={item?.casos === 1 ? "caso" : "casos"}
-      tendencia={
-        v === null || v === undefined
-          ? undefined
-          : {
-              sentido: v >= 10 ? "sobe" : v <= -10 ? "desce" : "estavel",
-              texto: `${v > 0 ? "+" : ""}${formatarNumero(v)}% em 4 semanas`,
-              efeito: v >= 10 ? "ruim" : "neutro",
-            }
-      }
-      explicacao={
-        item
-          ? [
-              item.incompleta &&
-                "A semana ainda está incompleta: casos chegam com atraso, número baixo não é queda.",
-              item.casos_estimados !== null &&
-                `Estimativa corrigida pelo atraso: ${formatarNumero(item.casos_estimados)} casos.`,
-            ]
-              .filter(Boolean)
-              .join(" ") || undefined
-          : "Sem dado deste agravo."
-      }
-      selo={
-        nivel ? (
-          <Pilula tom={nivel.tom} pequena>
-            {nivel.rotulo}
-          </Pilula>
-        ) : item?.incompleta ? (
-          <Pilula tom="neutro" pequena semMarca>
-            Semana incompleta
-          </Pilula>
-        ) : undefined
-      }
-    />
+    <div role="group" aria-labelledby={id} className={estilos.cartao} data-tom={nivel?.tom}>
+      <div className={estilos.cartaoTopo}>
+        <p id={id} className={estilos.cartaoRotulo}>
+          {item?.nome ?? NOME_AGRAVO[agravo]}
+        </p>
+        {nivel && (
+          <span className={estilos.nivel}>
+            <Pilula tom={nivel.tom} pequena>
+              {nivel.rotulo}
+            </Pilula>
+            <Dica texto={EXPLICA_NIVEL} rotulo="O que significa o nível" alinhar="fim" lado="abaixo" />
+          </span>
+        )}
+      </div>
+      {casos === null ? (
+        <p className={estilos.semDado}>Sem dado</p>
+      ) : (
+        <p className={estilos.numero}>
+          <span className="numeros">{formatarNumero(casos)}</span>
+          <span className={estilos.unidade}>{casos === 1 ? "caso" : "casos"}</span>
+        </p>
+      )}
+      <p className={estilos.frase}>{fraseAgravo(item)}</p>
+      {item?.incompleta && (
+        <p className={estilos.incompleta}>
+          Semana incompleta
+          {item.casos_estimados !== null &&
+            `: estimativa corrigida de ${formatarNumero(item.casos_estimados)}`}
+          .
+        </p>
+      )}
+    </div>
   );
 }
 
@@ -315,7 +348,7 @@ function GraficoSemanal() {
     <section className={estilos.bloco} aria-labelledby="sa-semanal">
       <div className={estilos.topoBloco}>
         <h2 id="sa-semanal" className={estilos.tituloBloco}>
-          Casos por semana e a chuva
+          Casos por semana e chuva: depois de chuva forte os casos sobem?
         </h2>
         <Segmentado
           rotulo="Agravo do gráfico"
@@ -328,6 +361,10 @@ function GraficoSemanal() {
           aoMudar={setAgravo}
         />
       </div>
+      <p className={estilos.legenda}>
+        Em cima, os casos de cada semana. Embaixo, a chuva da mesma semana. Linha tracejada: semana ainda
+        incompleta.
+      </p>
       {r.isPending && <CarregandoLista linhas={1} altura="20rem" texto="Carregando a série semanal…" />}
       {r.isError && <EstadoConsulta erro={r.error} oQue="a série semanal" aoTentar={() => r.refetch()} />}
       {r.isSuccess && !g && <EstadoDados tipo="insuficiente" titulo="Sem semanas com dado neste período." />}
@@ -364,6 +401,7 @@ function RankingBairros() {
   const [ano, setAno] = useState<number | null>(null);
   const [nivel, setNivel] = useState<"distrito" | "bairro">("distrito");
   const r = useConsulta<unknown>(`/saude/bairros${consulta({ agravo, ano: ano ?? undefined })}`);
+  const territorios = useTerritorios();
   const d = dadosDe<CasosBairros>(r.data);
   const linhas = useMemo(() => {
     if (!d) return [];
@@ -371,18 +409,22 @@ function RankingBairros() {
       nivel === "distrito"
         ? agruparPorDistrito(d.itens)
         : d.itens.map((i) => ({ id: i.bairro_id, nome: i.bairro_nome, casos: i.casos }));
+    // quem não tem registro vai ao fim, escrito "sem registro" (nunca zero)
     return base
-      .filter((b) => b.casos !== null)
-      .sort((a, b) => (b.casos ?? 0) - (a.casos ?? 0))
+      .sort((a, b) => (b.casos ?? -1) - (a.casos ?? -1) || a.nome.localeCompare(b.nome, "pt-BR"))
       .slice(0, 10);
   }, [d, nivel]);
   const maximo = Math.max(1, ...linhas.map((l) => l.casos ?? 0));
   const anos = d?.anos_disponiveis ?? [];
+  const comCasos = d?.itens.filter((i) => i.casos !== null) ?? [];
+  const total = comCasos.reduce((s, i) => s + (i.casos ?? 0), 0);
+  const nomeAgravo = NOME_AGRAVO[agravo].toLowerCase();
+  const anoTexto = d?.ano ?? ano;
 
   return (
     <Painel
       id="sa-ranking"
-      titulo={`Onde houve mais casos em ${d?.ano ?? ano ?? "um ano"}`}
+      titulo={`Onde houve mais casos em ${anoTexto ?? "um ano"}`}
       acoes={
         <div className={estilos.filtros}>
           <Segmentado
@@ -406,8 +448,8 @@ function RankingBairros() {
             aoMudar={setNivel}
           />
           {anos.length > 0 && (
-            <div className={campo.campo}>
-              <label htmlFor="sa-ano" className="so-leitor">
+            <div className={[campo.campo, estilos.ano].join(" ")}>
+              <label htmlFor="sa-ano" className={estilos.anoRotulo}>
                 Ano
               </label>
               <select
@@ -433,25 +475,53 @@ function RankingBairros() {
         <EstadoDados tipo="insuficiente" titulo="Sem casos por bairro neste ano." />
       )}
       {linhas.length > 0 && (
-        <ol
-          className={estilos.barras}
-          aria-label={`Casos de ${NOME_AGRAVO[agravo].toLowerCase()} por ${nivel}`}
-        >
-          {linhas.map((l) => (
-            <li key={l.id}>
-              <span>{l.nome}</span>
-              <span
-                className={estilos.barra}
-                style={{ width: `${Math.max(2, ((l.casos ?? 0) / maximo) * 100)}%` }}
-                aria-hidden="true"
-              />
-              <span className={estilos.valorBarra}>
-                {formatarNumero(l.casos)}
-                <span className="so-leitor"> casos</span>
-              </span>
-            </li>
-          ))}
-        </ol>
+        <>
+          <p className={estilos.totalAno}>
+            {comCasos.length > 0 ? (
+              <>
+                Total em {anoTexto}: <b>{formatarNumero(total)}</b> casos de {nomeAgravo} nos bairros com
+                registro.
+              </>
+            ) : (
+              `Nenhum bairro com registro de ${nomeAgravo} em ${anoTexto}.`
+            )}{" "}
+            {nivel === "distrito" && "Toque no (i) para ver os bairros de cada distrito."}
+          </p>
+          <ol className={estilos.barras} aria-label={`Casos de ${nomeAgravo} por ${nivel}`}>
+            {linhas.map((l) => (
+              <li key={l.id}>
+                <span className={estilos.nomeBarra}>
+                  {l.nome}
+                  {nivel === "distrito" && l.id !== "sem-distrito" && (
+                    <PopoverBairros
+                      distrito={l.nome}
+                      bairros={bairrosDoDistrito(l.id, territorios.data ?? [], d?.itens ?? [])}
+                      oQue={`Casos de ${nomeAgravo} em ${anoTexto}`}
+                    />
+                  )}
+                </span>
+                {l.casos === null ? (
+                  <>
+                    <span aria-hidden="true" />
+                    <span className={estilos.semRegistro}>sem registro</span>
+                  </>
+                ) : (
+                  <>
+                    <span
+                      className={estilos.barra}
+                      style={{ width: `${Math.max(2, (l.casos / maximo) * 100)}%` }}
+                      aria-hidden="true"
+                    />
+                    <span className={estilos.valorBarra}>
+                      {formatarNumero(l.casos)}
+                      <span className="so-leitor"> casos</span>
+                    </span>
+                  </>
+                )}
+              </li>
+            ))}
+          </ol>
+        </>
       )}
     </Painel>
   );

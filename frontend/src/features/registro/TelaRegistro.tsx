@@ -4,18 +4,26 @@ import { useQueryClient } from "@tanstack/react-query";
 import { CabecalhoTela } from "@/design-system/componentes/CabecalhoTela";
 import { useAviso } from "@/design-system/componentes/Aviso";
 import { Botao } from "@/design-system/componentes/Botao";
-import { AreaTexto } from "@/design-system/componentes/Campo";
+import { AreaTexto, Campo } from "@/design-system/componentes/Campo";
 import { Dialogo } from "@/design-system/componentes/Dialogo";
 import { CarregandoLista } from "@/design-system/componentes/Esqueleto";
 import { Painel } from "@/design-system/componentes/Painel";
 import { enviar, ErroApi } from "@/lib/api";
 import { useConsulta } from "@/lib/consultas";
-import { formatarData, formatarHora } from "@/lib/formatos";
+import { formatarData, formatarDataHora, formatarHora } from "@/lib/formatos";
 import { useSessao } from "@/lib/sessao";
 import { EstadoConsulta, invalidarPrefixo, SelecaoTerritorio } from "@/features/evento/Evento";
 import { quandoAs } from "@/features/evento/textos";
 import { listaDe, type Acao } from "@/features/evento/tipos";
-import { ENCERRAMENTO, eventoAtual, montarLinha, type Declaracao, type Entrada } from "./linhaTempo";
+import {
+  agoraNoRecife,
+  ENCERRAMENTO,
+  eventoAtual,
+  isoDeDiaHora,
+  montarLinha,
+  type Declaracao,
+  type Entrada,
+} from "./linhaTempo";
 import estilos from "./Registro.module.css";
 
 const ROTULO: Record<Entrada["tipo"], string> = {
@@ -31,7 +39,7 @@ const ICONE: Record<Entrada["tipo"], React.ReactNode> = {
   encerramento: <Flag />,
 };
 
-/** Grava um registro do evento em /acoes: hora automática, território opcional (vazio = Recife inteiro). */
+/** Grava um registro do evento em /acoes: dia e hora do fato (padrão: agora), território opcional (vazio = Recife inteiro). */
 export function corpoRegistro(texto: string, territorio: string, extra: Record<string, unknown> = {}) {
   return {
     territorio_id: territorio || "recife",
@@ -140,7 +148,15 @@ function Linha({ entradas }: { entradas: Entrada[] }) {
                   {e.territorio && <b>{e.territorio}: </b>}
                   {e.texto}
                 </p>
-                {e.autor && <p className={estilos.autor}>{e.autor}</p>}
+                {e.registradoEm ? (
+                  <p className={estilos.autor}>
+                    Fato de {formatarDataHora(e.em).replace(",", "")}, registrado em{" "}
+                    {formatarDataHora(e.registradoEm).replace(",", "")}
+                    {e.autor ? ` por ${e.autor}` : ""}
+                  </p>
+                ) : (
+                  e.autor && <p className={estilos.autor}>{e.autor}</p>
+                )}
               </div>
             </div>
           </li>
@@ -176,23 +192,37 @@ function useGravar(aoTerminar: () => void) {
 function CaixaRegistro() {
   const [texto, setTexto] = useState("");
   const [territorio, setTerritorio] = useState("");
+  const [momentoFato, setMomentoFato] = useState(() => agoraNoRecife());
+  const [erroQuando, setErroQuando] = useState<string>();
   const { ocupado, erro, setErro, gravar } = useGravar(() => {
     setTexto("");
     setTerritorio("");
+    setMomentoFato(agoraNoRecife());
   });
+  const maxDia = agoraNoRecife().dia;
   function registrar(e: FormEvent) {
     e.preventDefault();
     if (!texto.trim()) {
       setErro("Escreva o que aconteceu em uma frase.");
       return;
     }
-    void gravar(corpoRegistro(texto.trim(), territorio), "Registrado.");
+    const quando = isoDeDiaHora(momentoFato.dia, momentoFato.hora);
+    if (!quando) {
+      setErroQuando("Informe o dia e a hora em que aconteceu.");
+      return;
+    }
+    if (Date.parse(quando) > Date.now() + 60_000) {
+      setErroQuando("O dia e a hora não podem ser no futuro.");
+      return;
+    }
+    setErroQuando(undefined);
+    void gravar(corpoRegistro(texto.trim(), territorio, { inicio_em: quando }), "Registrado.");
   }
   return (
     <form className={estilos.caixa} onSubmit={registrar} noValidate aria-label="Novo registro">
       <AreaTexto
         rotulo="O que aconteceu?"
-        ajuda="A hora é a de agora. Pode colar o que chegou pelo WhatsApp."
+        ajuda="Pode colar o que chegou pelo WhatsApp."
         rows={2}
         maxLength={2000}
         value={texto}
@@ -202,6 +232,28 @@ function CaixaRegistro() {
         }}
         erro={erro}
       />
+      <div className={estilos.quando}>
+        <Campo
+          rotulo="Dia"
+          type="date"
+          value={momentoFato.dia}
+          max={maxDia}
+          onChange={(e) => {
+            setMomentoFato((m) => ({ ...m, dia: e.target.value }));
+            setErroQuando(undefined);
+          }}
+          erro={erroQuando}
+        />
+        <Campo
+          rotulo="Hora"
+          type="time"
+          value={momentoFato.hora}
+          onChange={(e) => {
+            setMomentoFato((m) => ({ ...m, hora: e.target.value }));
+            setErroQuando(undefined);
+          }}
+        />
+      </div>
       <div className={estilos.linhaCaixa}>
         <div className={estilos.territorio}>
           <SelecaoTerritorio

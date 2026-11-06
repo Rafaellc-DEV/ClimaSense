@@ -225,3 +225,33 @@ test("sem a rota de saúde (404), a seção Saúde diz que ainda não está disp
 test("o número do boletim é a data e a hora da emissão no Recife", () => {
   expect(numeroBoletim(new Date("2026-11-05T20:00:00Z"))).toBe("BOL-2026-1105-1700");
 });
+
+test("bairros de cada distrito, em ordem alfabética, só na página e não no texto do WhatsApp", async () => {
+  simularApi({
+    ...base(),
+    "/territorios": [
+      { id: "ds-5", tipo: "distrito", nome_exibicao: "Distrito Sanitário V", pai_id: "recife" },
+      { id: "b-2", tipo: "bairro", nome_exibicao: "Ibura", pai_id: "ds-5" },
+      { id: "b-1", tipo: "bairro", nome_exibicao: "Areias", pai_id: "ds-5" },
+      { id: "b-3", tipo: "bairro", nome_exibicao: "Boa Vista", pai_id: "ds-1" },
+    ],
+  });
+  window.history.pushState({}, "", "/app/boletim");
+  render(<App />);
+  const folha = await screen.findByRole("article", { name: "Boletim situacional" });
+  expect(await within(folha).findByText("Bairros: Areias, Ibura")).toBeInTheDocument();
+  expect(within(folha).getByText("Bairros: Boa Vista")).toBeInTheDocument();
+  await userEvent.setup().click(screen.getByText("Ver o texto para o WhatsApp"));
+  const caixa = (await screen.findByLabelText("Texto para o WhatsApp")) as HTMLTextAreaElement;
+  expect(caixa.value).toContain("DS V");
+  expect(caixa.value).not.toContain("Areias");
+});
+
+test("sem a lista de territórios, a linha de bairros some e o boletim continua inteiro", async () => {
+  simularApi(base());
+  window.history.pushState({}, "", "/app/boletim");
+  render(<App />);
+  const situacao = await screen.findByRole("region", { name: "Situação por distrito" });
+  expect(within(situacao).queryByText(/^Bairros:/)).not.toBeInTheDocument();
+  expect(within(situacao).getByText("Distrito Sanitário V")).toBeInTheDocument();
+});

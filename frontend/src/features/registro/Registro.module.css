@@ -20,6 +20,16 @@
   align-items: end;
   gap: var(--e-3);
 }
+.quando {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: start;
+  gap: var(--e-3);
+}
+.quando > * {
+  flex: 0 1 11rem;
+  min-width: 0;
+}
 .territorio {
   flex: 1 1 16rem;
   min-width: 0;

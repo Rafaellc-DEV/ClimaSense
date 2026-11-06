@@ -97,7 +97,7 @@
 }
 .barras li {
   display: grid;
-  grid-template-columns: minmax(7rem, 12rem) minmax(0, 1fr) 6ch;
+  grid-template-columns: minmax(7rem, 12rem) minmax(0, 1fr) 6.5rem;
   align-items: center;
   gap: var(--e-3);
   font-size: var(--t-apoio);
@@ -137,10 +137,129 @@
     padding: var(--e-4);
   }
   .barras li {
-    grid-template-columns: minmax(6rem, 8rem) minmax(0, 1fr) 5ch;
+    grid-template-columns: minmax(6.5rem, 9rem) minmax(0, 1fr) 5rem;
     gap: var(--e-2);
   }
   .filtros {
     justify-content: flex-start;
   }
+}
+
+.nomeBarra {
+  min-width: 0;
+}
+.semRegistro {
+  color: var(--cs-tinta-2);
+  font-style: italic;
+  text-align: right;
+  white-space: nowrap;
+}
+.totalAno {
+  margin: 0 0 var(--e-3);
+  font-size: var(--t-apoio);
+  color: var(--cs-tinta-2);
+}
+.totalAno b {
+  color: var(--cs-tinta);
+}
+.ano {
+  flex-direction: row;
+  align-items: center;
+  gap: var(--e-2);
+}
+.anoRotulo {
+  font-size: var(--t-apoio);
+  font-weight: 600;
+  color: var(--cs-tinta-2);
+}
+.legenda,
+.nota {
+  margin: 0;
+  font-size: var(--t-apoio);
+  color: var(--cs-tinta-2);
+}
+.nota {
+  margin-top: var(--e-3);
+}
+.cartao {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--e-2);
+  min-width: 0;
+  padding: var(--e-5);
+  border-radius: var(--r-painel);
+  background: var(--cs-papel);
+  box-shadow: var(--sombra-cartao);
+  --cor-nivel: var(--n-insuf);
+}
+.cartao::before {
+  content: "";
+  position: absolute;
+  inset: 0 var(--e-5) auto;
+  height: 4px;
+  border-radius: 0 0 4px 4px;
+  background: var(--cor-nivel);
+}
+.cartao[data-tom="sucesso"] {
+  --cor-nivel: var(--n-sem);
+}
+.cartao[data-tom="atencao"] {
+  --cor-nivel: var(--n-atencao);
+}
+.cartao[data-tom="alerta"] {
+  --cor-nivel: var(--n-alerta);
+}
+.cartao[data-tom="critico"] {
+  --cor-nivel: var(--n-critico);
+}
+.cartaoTopo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--e-2);
+}
+.cartaoRotulo {
+  margin: 0;
+  font-family: var(--fonte-titulo);
+  font-weight: 700;
+  color: var(--cs-tinta-2);
+}
+.nivel {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+.numero {
+  display: flex;
+  align-items: baseline;
+  gap: var(--e-2);
+  margin: 0;
+  font-family: var(--fonte-titulo);
+  font-size: 2.5rem;
+  font-weight: 800;
+  line-height: 1.1;
+  color: var(--cs-mare);
+}
+.unidade {
+  font-size: var(--t-corpo);
+  font-weight: 600;
+  color: var(--cs-tinta-2);
+}
+.semDado {
+  margin: 0;
+  font-family: var(--fonte-titulo);
+  font-size: var(--t-4);
+  font-weight: 700;
+  color: var(--cs-tinta-2);
+}
+.frase {
+  margin: 0;
+  line-height: 1.45;
+}
+.incompleta {
+  margin: 0;
+  font-size: var(--t-apoio);
+  color: var(--cs-tinta-2);
 }

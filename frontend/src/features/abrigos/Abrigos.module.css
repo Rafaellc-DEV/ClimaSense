@@ -118,3 +118,20 @@
   font-weight: 600;
   color: var(--cs-tinta-2);
 }
+
+.semDado {
+  color: var(--cs-tinta-2);
+  font-weight: 400;
+}
+.informar {
+  min-height: 24px;
+  margin-left: var(--e-2);
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-weight: 700;
+  color: var(--cs-mangue);
+  text-decoration: underline;
+  cursor: pointer;
+}
