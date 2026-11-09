@@ -21,6 +21,9 @@ repos:
       - id: detect-private-key
       - id: end-of-file-fixer
         exclude: ^data/
+      - id: mixed-line-ending
+        args: [--fix=lf]
+        exclude: ^data/
   - repo: local
     hooks:
       # o mesmo Prettier do projeto (frontend/package.json), para o hook e o `npm run lint` não brigarem
