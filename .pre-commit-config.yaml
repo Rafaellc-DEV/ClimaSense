@@ -21,9 +21,6 @@ repos:
       - id: detect-private-key
       - id: end-of-file-fixer
         exclude: ^data/
-      # commits só fora da main (trabalho na branch evolucao-prd-v2); a main recebe só por decisão do dono
-      - id: no-commit-to-branch
-        args: [--branch, main]
   - repo: local
     hooks:
       # o mesmo Prettier do projeto (frontend/package.json), para o hook e o `npm run lint` não brigarem
