@@ -3,6 +3,8 @@
 - **Situação:** aceita
 - **Data:** 06/11/2026
 - **Base:** RNF-01, RNF-12; achado de segurança 4 (a API conectava como dono do banco); ADR 0010 decisão 7
+- **Nota (06/11/2026):** `abrigo_atualizacoes` sai na migração 0019 e `acao_eventos` perde a chave estrangeira; ver
+  ADR 0016.
 
 ## Contexto
 

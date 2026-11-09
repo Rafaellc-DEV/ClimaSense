@@ -1,5 +1,8 @@
 # Estágio operacional oficial da cidade (COP/Defesa Civil): busca de fonte (T2.1, RF-01)
 
+> **Nota de 06/11/2026:** abrigos saíram do escopo do produto (PRD v3, ADR 0016); o feed de abrigos ativos do COP
+> citado abaixo não é mais lido. As menções ficam como histórico da pesquisa.
+
 Data da busca: 2026-11-06. Chamadas reais, sem autenticação.
 
 ## Conclusão

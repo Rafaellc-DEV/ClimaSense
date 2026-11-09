@@ -22,17 +22,17 @@ Convenções: o envelope `{dados, meta}` traz fontes, recorte, cobertura, amostr
 | POST | `/api/v1/admin/usuarios/{usuario_id}/redefinir-senha` | administrador | features/admin | objeto direto |
 | POST | `/api/v1/admin/login/liberar` | administrador | (nenhuma ainda) | objeto direto |
 | GET | `/api/v1/territorios` | analista | app, features/evento | lista direta |
-| GET | `/api/v1/territorios/distritos.geojson` | analista | features/mapa, features/simulador, features/territorio | objeto direto |
-| GET | `/api/v1/territorios/hidrografia.geojson` | analista | features/territorio | objeto direto |
+| GET | `/api/v1/territorios/distritos.geojson` | analista | features/mapa, features/simulador | objeto direto |
+| GET | `/api/v1/territorios/hidrografia.geojson` | analista | (nenhuma ainda) | objeto direto |
 | GET | `/api/v1/territorios/bairros.geojson` | analista | features/mapa, features/simulador | objeto direto |
 | GET | `/api/v1/territorios/indicadores` | analista | (nenhuma ainda) | envelope `{dados, meta}` |
-| GET | `/api/v1/territorios/prioridade` | analista | features/mapa, features/simulador | envelope `{dados, meta}` |
+| GET | `/api/v1/territorios/prioridade` | analista | features/acoes, features/mapa | envelope `{dados, meta}` |
 | GET | `/api/v1/territorios/camadas/equipamentos-saude` | analista | features/mapa | envelope `{dados, meta}` |
 | GET | `/api/v1/territorios/camadas/vulneraveis` | analista | features/mapa | envelope `{dados, meta}` |
 | GET | `/api/v1/territorios/camadas/areas-risco` | analista | features/mapa | envelope `{dados, meta}` |
 | GET | `/api/v1/territorios/{territorio_id}/resumo-vulnerabilidade` | analista | features/mapa | envelope `{dados, meta}` |
 | GET | `/api/v1/territorios/prioridades` | analista | (nenhuma ainda) | envelope `{dados, meta}` |
-| GET | `/api/v1/fontes` | analista | features/evento, features/fontes | lista direta |
+| GET | `/api/v1/fontes` | analista | features/evento, features/fontes, features/situacao | lista direta |
 | GET | `/api/v1/fontes/{fonte_id}` | analista | features/fontes | objeto direto |
 | GET | `/api/v1/fontes/{fonte_id}/execucoes` | analista | features/fontes | lista direta |
 | POST | `/api/v1/etl/execucoes` | administrador | features/fontes | sem corpo |
@@ -40,43 +40,46 @@ Convenções: o envelope `{dados, meta}` traz fontes, recorte, cobertura, amostr
 | GET | `/api/v1/series` | analista | (nenhuma ainda) | envelope `{dados, meta}` |
 | GET | `/api/v1/series/referencia` | analista | (nenhuma ainda) | envelope `{dados, meta}` |
 | GET | `/api/v1/series/sazonalidade` | analista | features/chuva | envelope `{dados, meta}` |
-| GET | `/api/v1/cenarios/estimativa` | analista | features/chuva | envelope `{dados, meta}` |
+| GET | `/api/v1/cenarios/estimativa` | analista | features/chuva, features/situacao | envelope `{dados, meta}` |
 | GET | `/api/v1/cenarios/premissas-atuais` | analista | features/simulador | envelope `{dados, meta}` |
 | POST | `/api/v1/cenarios/simular` | analista | features/simulador | envelope `{dados, meta}` |
 | GET | `/api/v1/cenarios` | analista | features/simulador | envelope `{dados, meta}` |
 | POST | `/api/v1/cenarios` | analista | features/simulador | envelope `{dados, meta}` |
-| GET | `/api/v1/cenarios/{cenario_id}` | analista | features/chuva, features/simulador | envelope `{dados, meta}` |
-| GET | `/api/v1/painel/resumo` | analista | features/comunicados, features/evento | objeto direto |
-| GET | `/api/v1/admin/auditoria` | administrador | features/admin | objeto direto |
+| GET | `/api/v1/cenarios/{cenario_id}` | analista | features/chuva, features/simulador, features/situacao | envelope `{dados, meta}` |
+| GET | `/api/v1/painel/resumo` | analista | features/evento | objeto direto |
+| GET | `/api/v1/admin/auditoria` | administrador | features/acoes, features/admin | objeto direto |
 | GET | `/api/v1/admin/etl/execucoes` | administrador | features/admin | lista direta |
 | PATCH | `/api/v1/admin/fontes/{fonte_id}` | administrador | (nenhuma ainda) | objeto direto |
 | GET | `/api/v1/estagios` | analista | features/chuva, features/mapa, features/situacao | envelope `{dados, meta}` |
 | POST | `/api/v1/estagios` | analista | features/chuva, features/mapa, features/situacao | lista direta |
-| GET | `/api/v1/estagios/oficial` | analista | features/mapa | envelope `{dados, meta}` |
-| POST | `/api/v1/estagios/oficial` | analista | features/mapa | envelope `{dados, meta}` |
+| GET | `/api/v1/estagios/oficial` | analista | features/mapa, features/situacao | envelope `{dados, meta}` |
+| POST | `/api/v1/estagios/oficial` | analista | features/mapa, features/situacao | envelope `{dados, meta}` |
 | GET | `/api/v1/estagios/oficial/historico` | analista | (nenhuma ainda) | envelope `{dados, meta}` |
-| GET | `/api/v1/estagios/historico` | analista | features/boletim, features/registro | lista direta |
-| GET | `/api/v1/estagios/parametros` | analista | features/chuva, features/evento, features/situacao | objeto direto |
-| PUT | `/api/v1/estagios/parametros` | coordenação | features/chuva, features/evento, features/situacao | objeto direto |
+| GET | `/api/v1/estagios/historico` | analista | (nenhuma ainda) | lista direta |
+| GET | `/api/v1/estagios/parametros` | analista | features/chuva, features/evento, features/simulador, features/situacao | objeto direto |
+| PUT | `/api/v1/estagios/parametros` | coordenação | features/chuva, features/evento, features/simulador, features/situacao | objeto direto |
 | GET | `/api/v1/estagios/parametros/historico` | analista | (nenhuma ainda) | lista direta |
 | POST | `/api/v1/estagios/mensagem` | analista | features/situacao | objeto direto |
 | POST | `/api/v1/estagios/mensagem/uso` | analista | features/evento | sem corpo |
-| GET | `/api/v1/abrigos` | analista | features/abrigos, features/mapa, features/situacao | objeto direto |
-| POST | `/api/v1/abrigos` | analista | features/abrigos, features/mapa, features/situacao | objeto direto |
-| GET | `/api/v1/abrigos/situacao` | analista | (nenhuma ainda) | envelope `{dados, meta}` |
-| GET | `/api/v1/abrigos/{abrigo_id}` | analista | features/abrigos | objeto direto |
-| PATCH | `/api/v1/abrigos/{abrigo_id}` | analista | features/abrigos | objeto direto |
-| GET | `/api/v1/abrigos/{abrigo_id}/historico` | analista | features/abrigos | lista direta |
-| GET | `/api/v1/acoes` | analista | features/boletim, features/registro | objeto direto |
-| POST | `/api/v1/acoes` | analista | features/boletim, features/registro | objeto direto |
-| GET | `/api/v1/acoes/{acao_id}` | analista | (nenhuma ainda) | objeto direto |
-| PATCH | `/api/v1/acoes/{acao_id}` | analista | (nenhuma ainda) | objeto direto |
-| GET | `/api/v1/boletim` | analista | features/abrigos, features/boletim, features/registro, features/situacao | envelope `{dados, meta}` |
+| GET | `/api/v1/acoes` | analista | features/acoes | objeto direto |
+| POST | `/api/v1/acoes` | analista | features/acoes | objeto direto |
+| GET | `/api/v1/acoes/{acao_id}` | analista | features/acoes | objeto direto |
+| PATCH | `/api/v1/acoes/{acao_id}` | analista | features/acoes | objeto direto |
+| DELETE | `/api/v1/acoes/{acao_id}` | analista | features/acoes | sem corpo |
+| GET | `/api/v1/eventos` | analista | (nenhuma ainda) | objeto direto |
+| POST | `/api/v1/eventos` | analista | (nenhuma ainda) | objeto direto |
+| GET | `/api/v1/eventos/{evento_id}` | analista | (nenhuma ainda) | objeto direto |
+| POST | `/api/v1/eventos/{evento_id}/itens` | analista | (nenhuma ainda) | objeto direto |
+| POST | `/api/v1/eventos/{evento_id}/encerrar` | analista | features/fluxo | objeto direto |
+| POST | `/api/v1/eventos/{evento_id}/aprovar` | analista | features/fluxo | objeto direto |
+| GET | `/api/v1/eventos/{evento_id}/relatorio` | analista | (nenhuma ainda) | objeto direto |
+| GET | `/api/v1/boletim` | analista | features/acoes, features/boletim, features/situacao | envelope `{dados, meta}` |
 | GET | `/api/v1/boletim/texto` | analista | (nenhuma ainda) | objeto direto |
 | GET | `/api/v1/risco-alagamento` | analista | (nenhuma ainda) | envelope `{dados, meta}` |
 | GET | `/api/v1/saude/resumo` | analista | features/boletim, features/saude | envelope `{dados, meta}` |
 | GET | `/api/v1/saude/semanal` | analista | features/saude | envelope `{dados, meta}` |
-| GET | `/api/v1/saude/bairros` | analista | features/saude | envelope `{dados, meta}` |
+| GET | `/api/v1/saude/bairros` | analista | (nenhuma ainda) | envelope `{dados, meta}` |
+| GET | `/api/v1/situacao/chuva` | analista | (nenhuma ainda) | envelope `{dados, meta}` |
 | GET | `/api/v1/ocorrencias/historico` | analista | (nenhuma ainda) | envelope `{dados, meta}` |
 
 ## Detalhe por grupo
@@ -322,7 +325,7 @@ Convenções: o envelope `{dados, meta}` traz fontes, recorte, cobertura, amostr
 
 - **Resumo:** Consultar a auditoria (somente leitura)
 - **Papel mínimo:** administrador
-- **Telas que usam:** features/admin
+- **Telas que usam:** features/acoes, features/admin
 - **Resposta:** objeto direto
 - **Parâmetros:** `usuario_id`, `acao`, `inicio`, `fim`, `pagina`, `por_pagina`
 - **Exemplo (gerado do esquema, valores ilustrativos):**
@@ -419,7 +422,7 @@ Convenções: o envelope `{dados, meta}` traz fontes, recorte, cobertura, amostr
 
 - **Resumo:** Os 8 distritos sanitários (GeoJSON)
 - **Papel mínimo:** analista
-- **Telas que usam:** features/mapa, features/simulador, features/territorio
+- **Telas que usam:** features/mapa, features/simulador
 - **Resposta:** objeto direto
 - **Exemplo (gerado do esquema, valores ilustrativos):**
 
@@ -431,7 +434,7 @@ Convenções: o envelope `{dados, meta}` traz fontes, recorte, cobertura, amostr
 
 - **Resumo:** Faixas marginais dos recursos hídricos (geometria simplificada)
 - **Papel mínimo:** analista
-- **Telas que usam:** features/territorio
+- **Telas que usam:** nenhuma ainda
 - **Resposta:** objeto direto
 - **Exemplo (gerado do esquema, valores ilustrativos):**
 
@@ -508,7 +511,7 @@ Convenções: o envelope `{dados, meta}` traz fontes, recorte, cobertura, amostr
 
 - **Resumo:** Prioridade por vulnerabilidade: onde já houve mais atendimentos da Defesa Civil (não é probabilidade)
 - **Papel mínimo:** analista
-- **Telas que usam:** features/mapa, features/simulador
+- **Telas que usam:** features/acoes, features/mapa
 - **Resposta:** envelope `{dados, meta}`
 - **Parâmetros:** `nivel`
 - **Exemplo (gerado do esquema, valores ilustrativos):**
@@ -725,7 +728,7 @@ Convenções: o envelope `{dados, meta}` traz fontes, recorte, cobertura, amostr
 
 #### `GET /api/v1/territorios/{territorio_id}/resumo-vulnerabilidade`
 
-- **Resumo:** Cruzamento do território: idosos, crianças, equipamentos, abrigos e áreas de risco (RF-04, RF-07)
+- **Resumo:** Cruzamento do território: idosos, crianças, equipamentos e áreas de risco (RF-04, RF-07)
 - **Papel mínimo:** analista
 - **Telas que usam:** features/mapa
 - **Resposta:** envelope `{dados, meta}`
@@ -745,7 +748,6 @@ Convenções: o envelope `{dados, meta}` traz fontes, recorte, cobertura, amostr
         }
       ],
       "equipamentos_em_area_de_risco": 0,
-      "abrigos": 0,
       "areas_risco": 0,
       "cobertura_risco_parcial": true
     },
@@ -863,7 +865,7 @@ Convenções: o envelope `{dados, meta}` traz fontes, recorte, cobertura, amostr
 
 - **Resumo:** Fontes com status (atualizada, desatualizada, com falha, planejada)
 - **Papel mínimo:** analista
-- **Telas que usam:** features/evento, features/fontes
+- **Telas que usam:** features/evento, features/fontes, features/situacao
 - **Resposta:** lista direta
 - **Exemplo (gerado do esquema, valores ilustrativos):**
 
@@ -1163,7 +1165,7 @@ Convenções: o envelope `{dados, meta}` traz fontes, recorte, cobertura, amostr
 
 - **Resumo:** Estimativa experimental por distrito: previsão, maré e prioridade (antiga GET /cenarios)
 - **Papel mínimo:** analista
-- **Telas que usam:** features/chuva
+- **Telas que usam:** features/chuva, features/situacao
 - **Resposta:** envelope `{dados, meta}`
 - **Parâmetros:** `territorio_id`, `horizonte_h`
 - **Exemplo (gerado do esquema, valores ilustrativos):**
@@ -1235,7 +1237,7 @@ Convenções: o envelope `{dados, meta}` traz fontes, recorte, cobertura, amostr
 
 #### `GET /api/v1/cenarios/premissas-atuais`
 
-- **Resumo:** Premissas sugeridas pelas fontes reais (previsão, maré, chuva medida e abrigos)
+- **Resumo:** Premissas sugeridas pelas fontes reais (previsão, maré e chuva medida)
 - **Papel mínimo:** analista
 - **Telas que usam:** features/simulador
 - **Resposta:** envelope `{dados, meta}`
@@ -1248,9 +1250,7 @@ Convenções: o envelope `{dados, meta}` traz fontes, recorte, cobertura, amostr
       "duracao_h": 0.0,
       "chuva_acumulada_mm": 0.0,
       "mare_m": 0.0,
-      "horizonte_h": 0,
-      "abrigos_abertos": 0,
-      "capacidade_abrigos": 0
+      "horizonte_h": 0
     },
     "meta": {
       "fontes": [
@@ -1319,42 +1319,39 @@ Convenções: o envelope `{dados, meta}` traz fontes, recorte, cobertura, amostr
             "deficiencia": null,
             "total_pessoas": 0,
             "criterio": "texto"
+          },
+          "arboviroses": {
+            "agravos": [],
+            "classe_impacto": "baixa",
+            "agravos_em_destaque": []
           }
         }
       ],
       "resumo": {
         "por_classe": {},
-        "pressao_abrigos": "texto",
         "impacto_pessoas_aviso": "texto",
+        "arboviroses": {
+          "experimental": true,
+          "contexto": true,
+          "aviso": "texto",
+          "granularidade_semanal": "municipio",
+          "granularidade_anual": "distrito",
+          "fontes": [
+            {}
+          ]
+        },
+        "ordem_de_atencao_distritos": [
+          {
+            "distrito_id": "texto",
+            "nome": "texto",
+            "estagio_sugerido": "sem_dados",
+            "classe_arboviroses": "baixa",
+            "agravos_em_destaque": []
+          }
+        ],
         "pessoas_vulneraveis_em_alerta": {
           "bairros_em_alerta": 0,
-          "idosos_60_mais": 0,
-          "criancas_0_14": 0,
-          "parcial": true,
-          "criterio": "texto"
-        }
-      },
-      "experimental": true,
-      "calculado_em": "2026-10-15T20:00:00Z",
-      "tempo_calculo_ms": 0
-    },
-    "meta": {
-      "fontes": [
-        {
-          "id": "texto",
-          "nome": "texto",
-          "tipo": "observada",
-          "atualizado_em": "2026-10-15T20:00:00Z",
-          "status": "atualizada",
-          "limite_frescor_h": 0.0,
-          "desatualizado": true
-        }
-      ],
-      "recorte": {
-        "territorio_id": "texto",
-        "inicio": "2026-10-15",
-        "fim": "2026-10-15",
-        
+          "idosos_
     ...(cortado)
   ```
 
@@ -1375,8 +1372,7 @@ Convenções: o envelope `{dados, meta}` traz fontes, recorte, cobertura, amostr
         "autor_nome": "texto",
         "criado_em": "2026-10-15T20:00:00Z",
         "resumo": {
-          "por_classe": {},
-          "pressao_abrigos": "texto"
+          "por_classe": {}
         }
       }
     ],
@@ -1432,17 +1428,14 @@ Convenções: o envelope `{dados, meta}` traz fontes, recorte, cobertura, amostr
       "autor_nome": "texto",
       "criado_em": "2026-10-15T20:00:00Z",
       "resumo": {
-        "por_classe": {},
-        "pressao_abrigos": "texto"
+        "por_classe": {}
       },
       "premissas": {
         "chuva_prevista_mm": 0.0,
         "duracao_h": 0.0,
         "chuva_acumulada_mm": 0.0,
         "mare_m": 0.0,
-        "horizonte_h": 0,
-        "abrigos_abertos": 0,
-        "capacidade_abrigos": 0
+        "horizonte_h": 0
       },
       "resultado": {
         "itens": [
@@ -1456,13 +1449,24 @@ Convenções: o envelope `{dados, meta}` traz fontes, recorte, cobertura, amostr
             "estagio_sugerido": "sem_dados",
             "confianca": "alta",
             "motivos": [],
-            "impacto_pessoas": {}
+            "impacto_pessoas": {},
+            "arboviroses": {}
           }
         ],
         "resumo": {
           "por_classe": {},
-          "pressao_abrigos": "texto",
           "impacto_pessoas_aviso": "texto",
+          "arboviroses": {
+            "experimental": true,
+            "contexto": true,
+            "aviso": "texto",
+            "granularidade_semanal": "municipio",
+            "granularidade_anual": "distrito",
+            "fontes": []
+          },
+          "ordem_de_atencao_distritos": [
+            {}
+          ],
           "pessoas_vulneraveis_em_alerta": {
             "bairros_em_alerta": 0,
             "idosos_60_mais": 0,
@@ -1470,19 +1474,7 @@ Convenções: o envelope `{dados, meta}` traz fontes, recorte, cobertura, amostr
             "parcial": true,
             "criterio": "texto"
           }
-        },
-        "experimental": true,
-        "calculado_em": "2026-10-15T20:00:00Z",
-        "tempo_calculo_ms": 0,
-        "fontes": [
-          {}
-        ]
-      }
-    },
-    "meta": {
-      "fontes": [
-        {
-          "id":
+       
     ...(cortado)
   ```
 
@@ -1490,7 +1482,7 @@ Convenções: o envelope `{dados, meta}` traz fontes, recorte, cobertura, amostr
 
 - **Resumo:** Abrir um cenário salvo
 - **Papel mínimo:** analista
-- **Telas que usam:** features/chuva, features/simulador
+- **Telas que usam:** features/chuva, features/simulador, features/situacao
 - **Resposta:** envelope `{dados, meta}`
 - **Parâmetros:** `cenario_id*`
 - **Exemplo (gerado do esquema, valores ilustrativos):**
@@ -1503,17 +1495,14 @@ Convenções: o envelope `{dados, meta}` traz fontes, recorte, cobertura, amostr
       "autor_nome": "texto",
       "criado_em": "2026-10-15T20:00:00Z",
       "resumo": {
-        "por_classe": {},
-        "pressao_abrigos": "texto"
+        "por_classe": {}
       },
       "premissas": {
         "chuva_prevista_mm": 0.0,
         "duracao_h": 0.0,
         "chuva_acumulada_mm": 0.0,
         "mare_m": 0.0,
-        "horizonte_h": 0,
-        "abrigos_abertos": 0,
-        "capacidade_abrigos": 0
+        "horizonte_h": 0
       },
       "resultado": {
         "itens": [
@@ -1527,13 +1516,24 @@ Convenções: o envelope `{dados, meta}` traz fontes, recorte, cobertura, amostr
             "estagio_sugerido": "sem_dados",
             "confianca": "alta",
             "motivos": [],
-            "impacto_pessoas": {}
+            "impacto_pessoas": {},
+            "arboviroses": {}
           }
         ],
         "resumo": {
           "por_classe": {},
-          "pressao_abrigos": "texto",
           "impacto_pessoas_aviso": "texto",
+          "arboviroses": {
+            "experimental": true,
+            "contexto": true,
+            "aviso": "texto",
+            "granularidade_semanal": "municipio",
+            "granularidade_anual": "distrito",
+            "fontes": []
+          },
+          "ordem_de_atencao_distritos": [
+            {}
+          ],
           "pessoas_vulneraveis_em_alerta": {
             "bairros_em_alerta": 0,
             "idosos_60_mais": 0,
@@ -1541,19 +1541,7 @@ Convenções: o envelope `{dados, meta}` traz fontes, recorte, cobertura, amostr
             "parcial": true,
             "criterio": "texto"
           }
-        },
-        "experimental": true,
-        "calculado_em": "2026-10-15T20:00:00Z",
-        "tempo_calculo_ms": 0,
-        "fontes": [
-          {}
-        ]
-      }
-    },
-    "meta": {
-      "fontes": [
-        {
-          "id":
+       
     ...(cortado)
   ```
 
@@ -1563,7 +1551,7 @@ Convenções: o envelope `{dados, meta}` traz fontes, recorte, cobertura, amostr
 
 - **Resumo:** Avisos, revisões pendentes, territórios e fontes
 - **Papel mínimo:** analista
-- **Telas que usam:** features/comunicados, features/evento
+- **Telas que usam:** features/evento
 - **Resposta:** objeto direto
 - **Exemplo (gerado do esquema, valores ilustrativos):**
 
@@ -1592,12 +1580,6 @@ Convenções: o envelope `{dados, meta}` traz fontes, recorte, cobertura, amostr
         "publico": "texto"
       }
     ],
-    "abrigos": {
-      "abrigos_abertos": 0,
-      "pessoas_abrigadas": 0,
-      "desabrigados": 0,
-      "atualizado_em": "2026-10-15T20:00:00Z"
-    },
     "pode_revisar": true,
     "aguardando_revisao": [
       {
@@ -1733,7 +1715,7 @@ Convenções: o envelope `{dados, meta}` traz fontes, recorte, cobertura, amostr
 
 - **Resumo:** Estágio oficial da cidade dado pelo COP (registro da equipe); null sem registro
 - **Papel mínimo:** analista
-- **Telas que usam:** features/mapa
+- **Telas que usam:** features/mapa, features/situacao
 - **Resposta:** envelope `{dados, meta}`
 - **Exemplo (gerado do esquema, valores ilustrativos):**
 
@@ -1787,7 +1769,7 @@ Convenções: o envelope `{dados, meta}` traz fontes, recorte, cobertura, amostr
 
 - **Resumo:** Registrar o estágio oficial informado pelo COP (analista ou acima; auditado; só inclusão)
 - **Papel mínimo:** analista
-- **Telas que usam:** features/mapa
+- **Telas que usam:** features/mapa, features/situacao
 - **Resposta:** envelope `{dados, meta}`
 - **Exemplo (gerado do esquema, valores ilustrativos):**
 
@@ -1897,7 +1879,7 @@ Convenções: o envelope `{dados, meta}` traz fontes, recorte, cobertura, amostr
 
 - **Resumo:** Declarações de estágio, mais recentes primeiro
 - **Papel mínimo:** analista
-- **Telas que usam:** features/boletim, features/registro
+- **Telas que usam:** nenhuma ainda
 - **Resposta:** lista direta
 - **Parâmetros:** `territorio_id`, `desde`, `ate`
 - **Exemplo (gerado do esquema, valores ilustrativos):**
@@ -1924,7 +1906,7 @@ Convenções: o envelope `{dados, meta}` traz fontes, recorte, cobertura, amostr
 
 - **Resumo:** Limiares atuais do estágio sugerido
 - **Papel mínimo:** analista
-- **Telas que usam:** features/chuva, features/evento, features/situacao
+- **Telas que usam:** features/chuva, features/evento, features/simulador, features/situacao
 - **Resposta:** objeto direto
 - **Exemplo (gerado do esquema, valores ilustrativos):**
 
@@ -1956,7 +1938,7 @@ Convenções: o envelope `{dados, meta}` traz fontes, recorte, cobertura, amostr
 
 - **Resumo:** Alterar os limiares (coordenação e administrador)
 - **Papel mínimo:** coordenação
-- **Telas que usam:** features/chuva, features/evento, features/situacao
+- **Telas que usam:** features/chuva, features/evento, features/simulador, features/situacao
 - **Resposta:** objeto direto
 - **Exemplo (gerado do esquema, valores ilustrativos):**
 
@@ -2039,279 +2021,11 @@ Convenções: o envelope `{dados, meta}` traz fontes, recorte, cobertura, amostr
 - **Telas que usam:** features/evento
 - **Resposta:** sem corpo
 
-#### `GET /api/v1/abrigos`
-
-- **Resumo:** Abrigos com os totais de abertos, abrigados e desabrigados
-- **Papel mínimo:** analista
-- **Telas que usam:** features/abrigos, features/mapa, features/situacao
-- **Resposta:** objeto direto
-- **Parâmetros:** `aberto`, `distrito_id`
-- **Exemplo (gerado do esquema, valores ilustrativos):**
-
-  ```json
-  {
-    "itens": [
-      {
-        "id": "00000000-0000-0000-0000-000000000000",
-        "nome": "texto",
-        "bairro_id": "texto",
-        "bairro_nome": "texto",
-        "distrito_id": "texto",
-        "distrito_nome": "texto",
-        "endereco": "texto",
-        "capacidade": 0,
-        "aberto": true,
-        "pessoas_abrigadas": 0,
-        "desabrigados": 0,
-        "observacao": "texto",
-        "latitude": 0.0,
-        "longitude": 0.0,
-        "origem": "manual",
-        "criado_em": "2026-10-15T20:00:00Z",
-        "atualizado_em": "2026-10-15T20:00:00Z",
-        "atualizado_por_nome": "texto",
-        "status_fonte": "equipe",
-        "status_informado_em": "2026-10-15T20:00:00Z"
-      }
-    ],
-    "totais": {
-      "abrigos_abertos": 0,
-      "abrigos_cadastrados": 0,
-      "pessoas_abrigadas": 0,
-      "desabrigados": 0,
-      "abertos_sem_contagem": 0,
-      "atualizado_em": "2026-10-15T20:00:00Z"
-    },
-    "meta": {
-      "fontes": [
-        {
-          "id": "texto",
-          "nome": "texto",
-          "tipo": "observada",
-          "atualizado_em": "2026-10-15T20:00:00Z",
-          "status": "atualizada",
-          "limite_frescor_h": 0.0,
-          "desatualizado": true
-        }
-      ],
-      "recorte": {
-        "territorio_id": "texto",
-        "inicio": "2026-10-15",
-        "fim": "2026-10-15",
-        "granularidade": "municipio"
-      },
-      "cobertura_pct": 0.0,
-      "amostra": {
-        "n": 0,
-        "total_fonte": 0
-      },
-      "avisos": [
-        "t
-    ...(cortado)
-  ```
-
-#### `POST /api/v1/abrigos`
-
-- **Resumo:** Cadastrar abrigo
-- **Papel mínimo:** analista
-- **Telas que usam:** features/abrigos, features/mapa, features/situacao
-- **Resposta:** objeto direto
-- **Exemplo (gerado do esquema, valores ilustrativos):**
-
-  ```json
-  {
-    "id": "00000000-0000-0000-0000-000000000000",
-    "nome": "texto",
-    "bairro_id": "texto",
-    "bairro_nome": "texto",
-    "distrito_id": "texto",
-    "distrito_nome": "texto",
-    "endereco": "texto",
-    "capacidade": 0,
-    "aberto": true,
-    "pessoas_abrigadas": 0,
-    "desabrigados": 0,
-    "observacao": "texto",
-    "latitude": 0.0,
-    "longitude": 0.0,
-    "origem": "manual",
-    "criado_em": "2026-10-15T20:00:00Z",
-    "atualizado_em": "2026-10-15T20:00:00Z",
-    "atualizado_por_nome": "texto",
-    "status_fonte": "equipe",
-    "status_informado_em": "2026-10-15T20:00:00Z"
-  }
-  ```
-
-#### `GET /api/v1/abrigos/situacao`
-
-- **Resumo:** Situação do evento: abrigos abertos, abrigados e desabrigados na cidade e por distrito
-- **Papel mínimo:** analista
-- **Telas que usam:** nenhuma ainda
-- **Resposta:** envelope `{dados, meta}`
-- **Exemplo (gerado do esquema, valores ilustrativos):**
-
-  ```json
-  {
-    "dados": {
-      "cidade": {
-        "abrigos_abertos": 0,
-        "abrigos_cadastrados": 0,
-        "pessoas_abrigadas": 0,
-        "desabrigados": 0,
-        "parcial": true,
-        "abertos_sem_contagem": 0,
-        "atualizado_em": "2026-10-15T20:00:00Z",
-        "atualizado_por_nome": "texto"
-      },
-      "distritos": [
-        {
-          "abrigos_abertos": 0,
-          "abrigos_cadastrados": 0,
-          "pessoas_abrigadas": 0,
-          "desabrigados": 0,
-          "parcial": true,
-          "abertos_sem_contagem": 0,
-          "atualizado_em": "2026-10-15T20:00:00Z",
-          "atualizado_por_nome": "texto",
-          "distrito_id": "texto",
-          "distrito_nome": "texto"
-        }
-      ],
-      "ocupacao_atualizada_em": "2026-10-15T20:00:00Z"
-    },
-    "meta": {
-      "fontes": [
-        {
-          "id": "texto",
-          "nome": "texto",
-          "tipo": "observada",
-          "atualizado_em": "2026-10-15T20:00:00Z",
-          "status": "atualizada",
-          "limite_frescor_h": 0.0,
-          "desatualizado": true
-        }
-      ],
-      "recorte": {
-        "territorio_id": "texto",
-        "inicio": "2026-10-15",
-        "fim": "2026-10-15",
-        "granularidade": "municipio"
-      },
-      "cobertura_pct": 0.0,
-      "amostra": {
-        "n": 0,
-        "total_fonte": 0
-      },
-      "avisos": [
-        "texto"
-      ],
-      "fonte_por_premissa": {},
-      "dados_insuficientes": true,
-      "supressao_minima": 0,
-      "ano": 0,
-      "deficiencia": "te
-    ...(cortado)
-  ```
-
-#### `GET /api/v1/abrigos/{abrigo_id}`
-
-- **Resumo:** Detalhe do abrigo
-- **Papel mínimo:** analista
-- **Telas que usam:** features/abrigos
-- **Resposta:** objeto direto
-- **Parâmetros:** `abrigo_id*`
-- **Exemplo (gerado do esquema, valores ilustrativos):**
-
-  ```json
-  {
-    "id": "00000000-0000-0000-0000-000000000000",
-    "nome": "texto",
-    "bairro_id": "texto",
-    "bairro_nome": "texto",
-    "distrito_id": "texto",
-    "distrito_nome": "texto",
-    "endereco": "texto",
-    "capacidade": 0,
-    "aberto": true,
-    "pessoas_abrigadas": 0,
-    "desabrigados": 0,
-    "observacao": "texto",
-    "latitude": 0.0,
-    "longitude": 0.0,
-    "origem": "manual",
-    "criado_em": "2026-10-15T20:00:00Z",
-    "atualizado_em": "2026-10-15T20:00:00Z",
-    "atualizado_por_nome": "texto",
-    "status_fonte": "equipe",
-    "status_informado_em": "2026-10-15T20:00:00Z"
-  }
-  ```
-
-#### `PATCH /api/v1/abrigos/{abrigo_id}`
-
-- **Resumo:** Atualizar abrigo (gera histórico)
-- **Papel mínimo:** analista
-- **Telas que usam:** features/abrigos
-- **Resposta:** objeto direto
-- **Parâmetros:** `abrigo_id*`
-- **Exemplo (gerado do esquema, valores ilustrativos):**
-
-  ```json
-  {
-    "id": "00000000-0000-0000-0000-000000000000",
-    "nome": "texto",
-    "bairro_id": "texto",
-    "bairro_nome": "texto",
-    "distrito_id": "texto",
-    "distrito_nome": "texto",
-    "endereco": "texto",
-    "capacidade": 0,
-    "aberto": true,
-    "pessoas_abrigadas": 0,
-    "desabrigados": 0,
-    "observacao": "texto",
-    "latitude": 0.0,
-    "longitude": 0.0,
-    "origem": "manual",
-    "criado_em": "2026-10-15T20:00:00Z",
-    "atualizado_em": "2026-10-15T20:00:00Z",
-    "atualizado_por_nome": "texto",
-    "status_fonte": "equipe",
-    "status_informado_em": "2026-10-15T20:00:00Z"
-  }
-  ```
-
-#### `GET /api/v1/abrigos/{abrigo_id}/historico`
-
-- **Resumo:** Atualizações do abrigo, mais recentes primeiro
-- **Papel mínimo:** analista
-- **Telas que usam:** features/abrigos
-- **Resposta:** lista direta
-- **Parâmetros:** `abrigo_id*`
-- **Exemplo (gerado do esquema, valores ilustrativos):**
-
-  ```json
-  [
-    {
-      "id": 0,
-      "em": "2026-10-15T20:00:00Z",
-      "autor_nome": "texto",
-      "aberto": true,
-      "capacidade": 0,
-      "pessoas_abrigadas": 0,
-      "desabrigados": 0,
-      "observacao": "texto",
-      "alteracoes": {}
-    }
-  ]
-  ```
-
 #### `GET /api/v1/acoes`
 
 - **Resumo:** Linha do tempo das ações por território, situação e período
 - **Papel mínimo:** analista
-- **Telas que usam:** features/boletim, features/registro
+- **Telas que usam:** features/acoes
 - **Resposta:** objeto direto
 - **Parâmetros:** `territorio_id`, `situacao`, `desde`, `ate`, `ordem`
 - **Exemplo (gerado do esquema, valores ilustrativos):**
@@ -2323,7 +2037,9 @@ Convenções: o envelope `{dados, meta}` traz fontes, recorte, cobertura, amostr
         "id": "00000000-0000-0000-0000-000000000000",
         "territorio_id": "texto",
         "territorio_nome": "texto",
+        "territorio_nivel": "municipio",
         "distrito_id": "texto",
+        "distrito_nome": "texto",
         "tipo": "orientacao",
         "tipo_rotulo": "texto",
         "descricao": "texto",
@@ -2356,7 +2072,7 @@ Convenções: o envelope `{dados, meta}` traz fontes, recorte, cobertura, amostr
 
 - **Resumo:** Registrar ação de resposta
 - **Papel mínimo:** analista
-- **Telas que usam:** features/boletim, features/registro
+- **Telas que usam:** features/acoes
 - **Resposta:** objeto direto
 - **Exemplo (gerado do esquema, valores ilustrativos):**
 
@@ -2365,7 +2081,9 @@ Convenções: o envelope `{dados, meta}` traz fontes, recorte, cobertura, amostr
     "id": "00000000-0000-0000-0000-000000000000",
     "territorio_id": "texto",
     "territorio_nome": "texto",
+    "territorio_nivel": "municipio",
     "distrito_id": "texto",
+    "distrito_nome": "texto",
     "tipo": "orientacao",
     "tipo_rotulo": "texto",
     "descricao": "texto",
@@ -2396,7 +2114,7 @@ Convenções: o envelope `{dados, meta}` traz fontes, recorte, cobertura, amostr
 
 - **Resumo:** Detalhe da ação com a linha do tempo
 - **Papel mínimo:** analista
-- **Telas que usam:** nenhuma ainda
+- **Telas que usam:** features/acoes
 - **Resposta:** objeto direto
 - **Parâmetros:** `acao_id*`
 - **Exemplo (gerado do esquema, valores ilustrativos):**
@@ -2406,7 +2124,9 @@ Convenções: o envelope `{dados, meta}` traz fontes, recorte, cobertura, amostr
     "id": "00000000-0000-0000-0000-000000000000",
     "territorio_id": "texto",
     "territorio_nome": "texto",
+    "territorio_nivel": "municipio",
     "distrito_id": "texto",
+    "distrito_nome": "texto",
     "tipo": "orientacao",
     "tipo_rotulo": "texto",
     "descricao": "texto",
@@ -2437,7 +2157,7 @@ Convenções: o envelope `{dados, meta}` traz fontes, recorte, cobertura, amostr
 
 - **Resumo:** Atualizar situação, descrição ou lição aprendida
 - **Papel mínimo:** analista
-- **Telas que usam:** nenhuma ainda
+- **Telas que usam:** features/acoes
 - **Resposta:** objeto direto
 - **Parâmetros:** `acao_id*`
 - **Exemplo (gerado do esquema, valores ilustrativos):**
@@ -2447,7 +2167,9 @@ Convenções: o envelope `{dados, meta}` traz fontes, recorte, cobertura, amostr
     "id": "00000000-0000-0000-0000-000000000000",
     "territorio_id": "texto",
     "territorio_nome": "texto",
+    "territorio_nivel": "municipio",
     "distrito_id": "texto",
+    "distrito_nome": "texto",
     "tipo": "orientacao",
     "tipo_rotulo": "texto",
     "descricao": "texto",
@@ -2474,11 +2196,19 @@ Convenções: o envelope `{dados, meta}` traz fontes, recorte, cobertura, amostr
   }
   ```
 
+#### `DELETE /api/v1/acoes/{acao_id}`
+
+- **Resumo:** Excluir ação em qualquer situação (auditado: quem, quando e o que foi excluído)
+- **Papel mínimo:** analista
+- **Telas que usam:** features/acoes
+- **Resposta:** sem corpo
+- **Parâmetros:** `acao_id*`
+
 #### `GET /api/v1/boletim`
 
 - **Resumo:** Retrato consolidado do evento para a página do boletim
 - **Papel mínimo:** analista
-- **Telas que usam:** features/abrigos, features/boletim, features/registro, features/situacao
+- **Telas que usam:** features/acoes, features/boletim, features/situacao
 - **Resposta:** envelope `{dados, meta}`
 - **Parâmetros:** `territorio_id`, `desde`, `ate`
 - **Exemplo (gerado do esquema, valores ilustrativos):**
@@ -2553,6 +2283,386 @@ Convenções: o envelope `{dados, meta}` traz fontes, recorte, cobertura, amostr
     "texto": "texto",
     "wa_me_url": "texto"
   }
+  ```
+
+### Histórico de eventos
+
+#### `GET /api/v1/eventos`
+
+- **Resumo:** Listar eventos de chuva registrados
+- **Papel mínimo:** analista
+- **Telas que usam:** nenhuma ainda
+- **Resposta:** objeto direto
+- **Parâmetros:** `situacao`
+- **Exemplo (gerado do esquema, valores ilustrativos):**
+
+  ```json
+  {
+    "itens": [
+      {
+        "id": "00000000-0000-0000-0000-000000000000",
+        "nome": "texto",
+        "inicio_em": "2026-10-15T20:00:00Z",
+        "fim_em": "2026-10-15T20:00:00Z",
+        "situacao": "aberto",
+        "situacao_rotulo": "texto",
+        "retrospectivo": true,
+        "distritos_afetados": [
+          "texto"
+        ],
+        "situacao_final": "texto",
+        "pendencias": "texto",
+        "duracao_horas": 0.0,
+        "aguarda_aprovacao": true,
+        "aberto_por_nome": "texto",
+        "aberto_em": "2026-10-15T20:00:00Z",
+        "encerrado_por_nome": "texto",
+        "encerrado_em": "2026-10-15T20:00:00Z",
+        "aprovado_por_nome": "texto",
+        "aprovado_em": "2026-10-15T20:00:00Z"
+      }
+    ],
+    "contagens": {},
+    "total": 0
+  }
+  ```
+
+#### `POST /api/v1/eventos`
+
+- **Resumo:** Abrir evento de chuva
+- **Papel mínimo:** analista
+- **Telas que usam:** nenhuma ainda
+- **Resposta:** objeto direto
+- **Exemplo (gerado do esquema, valores ilustrativos):**
+
+  ```json
+  {
+    "id": "00000000-0000-0000-0000-000000000000",
+    "nome": "texto",
+    "inicio_em": "2026-10-15T20:00:00Z",
+    "fim_em": "2026-10-15T20:00:00Z",
+    "situacao": "aberto",
+    "situacao_rotulo": "texto",
+    "retrospectivo": true,
+    "distritos_afetados": [
+      "texto"
+    ],
+    "situacao_final": "texto",
+    "pendencias": "texto",
+    "duracao_horas": 0.0,
+    "aguarda_aprovacao": true,
+    "aberto_por_nome": "texto",
+    "aberto_em": "2026-10-15T20:00:00Z",
+    "encerrado_por_nome": "texto",
+    "encerrado_em": "2026-10-15T20:00:00Z",
+    "aprovado_por_nome": "texto",
+    "aprovado_em": "2026-10-15T20:00:00Z",
+    "distritos": [
+      {
+        "id": "texto",
+        "nome": "texto"
+      }
+    ],
+    "linha_do_tempo": [
+      {
+        "id": 0,
+        "tipo": "comunicado",
+        "tipo_rotulo": "texto",
+        "texto": "texto",
+        "fonte": "texto",
+        "estagio": "observacao",
+        "equipes_mobilizadas": 0,
+        "ocorrido_em": "2026-10-15T20:00:00Z",
+        "registrado_em": "2026-10-15T20:00:00Z",
+        "autor_nome": "texto"
+      }
+    ]
+  }
+  ```
+
+#### `GET /api/v1/eventos/{evento_id}`
+
+- **Resumo:** Abrir um evento com a linha do tempo
+- **Papel mínimo:** analista
+- **Telas que usam:** nenhuma ainda
+- **Resposta:** objeto direto
+- **Parâmetros:** `evento_id*`
+- **Exemplo (gerado do esquema, valores ilustrativos):**
+
+  ```json
+  {
+    "id": "00000000-0000-0000-0000-000000000000",
+    "nome": "texto",
+    "inicio_em": "2026-10-15T20:00:00Z",
+    "fim_em": "2026-10-15T20:00:00Z",
+    "situacao": "aberto",
+    "situacao_rotulo": "texto",
+    "retrospectivo": true,
+    "distritos_afetados": [
+      "texto"
+    ],
+    "situacao_final": "texto",
+    "pendencias": "texto",
+    "duracao_horas": 0.0,
+    "aguarda_aprovacao": true,
+    "aberto_por_nome": "texto",
+    "aberto_em": "2026-10-15T20:00:00Z",
+    "encerrado_por_nome": "texto",
+    "encerrado_em": "2026-10-15T20:00:00Z",
+    "aprovado_por_nome": "texto",
+    "aprovado_em": "2026-10-15T20:00:00Z",
+    "distritos": [
+      {
+        "id": "texto",
+        "nome": "texto"
+      }
+    ],
+    "linha_do_tempo": [
+      {
+        "id": 0,
+        "tipo": "comunicado",
+        "tipo_rotulo": "texto",
+        "texto": "texto",
+        "fonte": "texto",
+        "estagio": "observacao",
+        "equipes_mobilizadas": 0,
+        "ocorrido_em": "2026-10-15T20:00:00Z",
+        "registrado_em": "2026-10-15T20:00:00Z",
+        "autor_nome": "texto"
+      }
+    ]
+  }
+  ```
+
+#### `POST /api/v1/eventos/{evento_id}/itens`
+
+- **Resumo:** Registrar item na linha do tempo (comunicado, estágio, ação ou observação)
+- **Papel mínimo:** analista
+- **Telas que usam:** nenhuma ainda
+- **Resposta:** objeto direto
+- **Parâmetros:** `evento_id*`
+- **Exemplo (gerado do esquema, valores ilustrativos):**
+
+  ```json
+  {
+    "id": "00000000-0000-0000-0000-000000000000",
+    "nome": "texto",
+    "inicio_em": "2026-10-15T20:00:00Z",
+    "fim_em": "2026-10-15T20:00:00Z",
+    "situacao": "aberto",
+    "situacao_rotulo": "texto",
+    "retrospectivo": true,
+    "distritos_afetados": [
+      "texto"
+    ],
+    "situacao_final": "texto",
+    "pendencias": "texto",
+    "duracao_horas": 0.0,
+    "aguarda_aprovacao": true,
+    "aberto_por_nome": "texto",
+    "aberto_em": "2026-10-15T20:00:00Z",
+    "encerrado_por_nome": "texto",
+    "encerrado_em": "2026-10-15T20:00:00Z",
+    "aprovado_por_nome": "texto",
+    "aprovado_em": "2026-10-15T20:00:00Z",
+    "distritos": [
+      {
+        "id": "texto",
+        "nome": "texto"
+      }
+    ],
+    "linha_do_tempo": [
+      {
+        "id": 0,
+        "tipo": "comunicado",
+        "tipo_rotulo": "texto",
+        "texto": "texto",
+        "fonte": "texto",
+        "estagio": "observacao",
+        "equipes_mobilizadas": 0,
+        "ocorrido_em": "2026-10-15T20:00:00Z",
+        "registrado_em": "2026-10-15T20:00:00Z",
+        "autor_nome": "texto"
+      }
+    ]
+  }
+  ```
+
+#### `POST /api/v1/eventos/{evento_id}/encerrar`
+
+- **Resumo:** Encerrar o evento com situação final e pendências (falta a aprovação de outra pessoa)
+- **Papel mínimo:** analista
+- **Telas que usam:** features/fluxo
+- **Resposta:** objeto direto
+- **Parâmetros:** `evento_id*`
+- **Exemplo (gerado do esquema, valores ilustrativos):**
+
+  ```json
+  {
+    "id": "00000000-0000-0000-0000-000000000000",
+    "nome": "texto",
+    "inicio_em": "2026-10-15T20:00:00Z",
+    "fim_em": "2026-10-15T20:00:00Z",
+    "situacao": "aberto",
+    "situacao_rotulo": "texto",
+    "retrospectivo": true,
+    "distritos_afetados": [
+      "texto"
+    ],
+    "situacao_final": "texto",
+    "pendencias": "texto",
+    "duracao_horas": 0.0,
+    "aguarda_aprovacao": true,
+    "aberto_por_nome": "texto",
+    "aberto_em": "2026-10-15T20:00:00Z",
+    "encerrado_por_nome": "texto",
+    "encerrado_em": "2026-10-15T20:00:00Z",
+    "aprovado_por_nome": "texto",
+    "aprovado_em": "2026-10-15T20:00:00Z",
+    "distritos": [
+      {
+        "id": "texto",
+        "nome": "texto"
+      }
+    ],
+    "linha_do_tempo": [
+      {
+        "id": 0,
+        "tipo": "comunicado",
+        "tipo_rotulo": "texto",
+        "texto": "texto",
+        "fonte": "texto",
+        "estagio": "observacao",
+        "equipes_mobilizadas": 0,
+        "ocorrido_em": "2026-10-15T20:00:00Z",
+        "registrado_em": "2026-10-15T20:00:00Z",
+        "autor_nome": "texto"
+      }
+    ]
+  }
+  ```
+
+#### `POST /api/v1/eventos/{evento_id}/aprovar`
+
+- **Resumo:** Aprovar a situação final (RN-05: outra pessoa, que não abriu nem encerrou o evento)
+- **Papel mínimo:** analista
+- **Telas que usam:** features/fluxo
+- **Resposta:** objeto direto
+- **Parâmetros:** `evento_id*`
+- **Exemplo (gerado do esquema, valores ilustrativos):**
+
+  ```json
+  {
+    "id": "00000000-0000-0000-0000-000000000000",
+    "nome": "texto",
+    "inicio_em": "2026-10-15T20:00:00Z",
+    "fim_em": "2026-10-15T20:00:00Z",
+    "situacao": "aberto",
+    "situacao_rotulo": "texto",
+    "retrospectivo": true,
+    "distritos_afetados": [
+      "texto"
+    ],
+    "situacao_final": "texto",
+    "pendencias": "texto",
+    "duracao_horas": 0.0,
+    "aguarda_aprovacao": true,
+    "aberto_por_nome": "texto",
+    "aberto_em": "2026-10-15T20:00:00Z",
+    "encerrado_por_nome": "texto",
+    "encerrado_em": "2026-10-15T20:00:00Z",
+    "aprovado_por_nome": "texto",
+    "aprovado_em": "2026-10-15T20:00:00Z",
+    "distritos": [
+      {
+        "id": "texto",
+        "nome": "texto"
+      }
+    ],
+    "linha_do_tempo": [
+      {
+        "id": 0,
+        "tipo": "comunicado",
+        "tipo_rotulo": "texto",
+        "texto": "texto",
+        "fonte": "texto",
+        "estagio": "observacao",
+        "equipes_mobilizadas": 0,
+        "ocorrido_em": "2026-10-15T20:00:00Z",
+        "registrado_em": "2026-10-15T20:00:00Z",
+        "autor_nome": "texto"
+      }
+    ]
+  }
+  ```
+
+#### `GET /api/v1/eventos/{evento_id}/relatorio`
+
+- **Resumo:** Relatório executivo do evento, só com dados reais; cada bloco com fonte e hora
+- **Papel mínimo:** analista
+- **Telas que usam:** nenhuma ainda
+- **Resposta:** objeto direto
+- **Parâmetros:** `evento_id*`
+- **Exemplo (gerado do esquema, valores ilustrativos):**
+
+  ```json
+  {
+    "gerado_em": "2026-10-15T20:00:00Z",
+    "periodo": {
+      "inicio_em": "2026-10-15T20:00:00Z",
+      "fim_em": "2026-10-15T20:00:00Z",
+      "desde": "2026-10-15",
+      "ate": "2026-10-15",
+      "em_andamento": true
+    },
+    "aviso": "texto",
+    "evento": {
+      "fonte": "texto",
+      "atualizado_em": "2026-10-15T20:00:00Z",
+      "suficiente": true,
+      "motivo": "texto",
+      "id": "00000000-0000-0000-0000-000000000000",
+      "nome": "texto",
+      "situacao": "aberto",
+      "situacao_rotulo": "texto",
+      "retrospectivo": true,
+      "inicio_em": "2026-10-15T20:00:00Z",
+      "fim_em": "2026-10-15T20:00:00Z",
+      "duracao_horas": 0.0,
+      "aberto_por_nome": "texto",
+      "aberto_em": "2026-10-15T20:00:00Z",
+      "encerrado_por_nome": "texto",
+      "encerrado_em": "2026-10-15T20:00:00Z",
+      "aprovado_por_nome": "texto",
+      "aprovado_em": "2026-10-15T20:00:00Z",
+      "aprovado": true
+    },
+    "comunicados": {
+      "fonte": "texto",
+      "atualizado_em": "2026-10-15T20:00:00Z",
+      "suficiente": true,
+      "motivo": "texto",
+      "itens": [
+        {}
+      ]
+    },
+    "equipes_mobilizadas": {
+      "fonte": "texto",
+      "atualizado_em": "2026-10-15T20:00:00Z",
+      "suficiente": true,
+      "motivo": "texto",
+      "maior_numero": 0,
+      "registros": [
+        {}
+      ]
+    },
+    "distritos_afetados": {
+      "fonte": "texto",
+      "atualizado_em": "2026-10-15T20:00:00Z",
+      "suficiente": true,
+      "motivo": "texto",
+      "com
+    ...(cortado)
   ```
 
 ### Risco de alagamento (experimental)
@@ -2643,6 +2753,13 @@ Convenções: o envelope `{dados, meta}` traz fontes, recorte, cobertura, amostr
           "agravo": "dengue",
           "nome": "texto",
           "fonte_id": "texto",
+          "utilizavel": true,
+          "ultima_semana_com_dado": {
+            "ano": 0,
+            "semana": 0,
+            "inicio": "2026-10-15"
+          },
+          "motivo": "texto",
           "ultima_semana": {
             "ano": 0,
             "semana": 0,
@@ -2692,18 +2809,7 @@ Convenções: o envelope `{dados, meta}` traz fontes, recorte, cobertura, amostr
         "territorio_id": "texto",
         "inicio": "2026-10-15",
         "fim": "2026-10-15",
-        "granularidade": "municipio"
-      },
-      "cobertura_pct": 0.0,
-      "amostra": {
-        "n": 0,
-        "total_fonte": 0
-      },
-      "avisos": [
-        "texto"
-      ],
-      "fonte_por_premissa": {},
-      "
+        "granularidade": 
     ...(cortado)
   ```
 
@@ -2741,7 +2847,8 @@ Convenções: o envelope `{dados, meta}` traz fontes, recorte, cobertura, amostr
           "chuva_mm": 0.0,
           "dias_com_dado": 0
         }
-      ]
+      ],
+      "motivo": "texto"
     },
     "meta": {
       "fontes": [
@@ -2783,7 +2890,7 @@ Convenções: o envelope `{dados, meta}` traz fontes, recorte, cobertura, amostr
 
 - **Resumo:** Casos confirmados de dengue ou chikungunya por bairro de residência em um ano (histórico)
 - **Papel mínimo:** analista
-- **Telas que usam:** features/saude
+- **Telas que usam:** nenhuma ainda
 - **Resposta:** envelope `{dados, meta}`
 - **Parâmetros:** `agravo`, `ano`
 - **Exemplo (gerado do esquema, valores ilustrativos):**
@@ -2911,4 +3018,78 @@ Convenções: o envelope `{dados, meta}` traz fontes, recorte, cobertura, amostr
       "cobertura": {}
     }
   }
+  ```
+
+### Situação
+
+#### `GET /api/v1/situacao/chuva`
+
+- **Resumo:** Chuva medida por distrito, estações sem leitura e série prevista de chuva e maré
+- **Papel mínimo:** analista
+- **Telas que usam:** nenhuma ainda
+- **Resposta:** envelope `{dados, meta}`
+- **Exemplo (gerado do esquema, valores ilustrativos):**
+
+  ```json
+  {
+    "dados": {
+      "gerado_em": "2026-10-15T20:00:00Z",
+      "distritos": [
+        {
+          "territorio_id": "texto",
+          "territorio_nome": "texto",
+          "chuva_24h_mm": 0.0,
+          "chuva_72h_mm": 0.0,
+          "fonte_chuva": "texto",
+          "lida_em": "2026-10-15T20:00:00Z",
+          "estacoes_total": 0,
+          "estacoes_com_leitura": 0,
+          "estacoes_sem_leitura": 0,
+          "medicao_propria": true,
+          "motivo": "texto"
+        }
+      ],
+      "maior_24h": {
+        "territorio_id": "texto",
+        "territorio_nome": "texto",
+        "mm": 0.0
+      },
+      "maior_72h": {
+        "territorio_id": "texto",
+        "territorio_nome": "texto",
+        "mm": 0.0
+      },
+      "estacoes": {
+        "total": 0,
+        "com_leitura": 0,
+        "sem_leitura": 0,
+        "lida_em": "2026-10-15T20:00:00Z"
+      },
+      "observada": {
+        "fonte": "texto",
+        "janela_h": 0,
+        "serie": [
+          {
+            "t": "2026-10-15T20:00:00Z",
+            "municipio_mm": 0.0,
+            "distritos": {}
+          }
+        ],
+        "motivo": "texto"
+      },
+      "previsao": {
+        "horizonte_h": 0,
+        "previsao_emitida_em": "2026-10-15T20:00:00Z",
+        "mare_emitida_em": "2026-10-15T20:00:00Z",
+        "emissoes_na_faixa": 0,
+        "faixa_disponivel": true,
+        "chuva": [
+          {
+            "t": "2026-10-15T20:00:00Z",
+            "valor": 0.0,
+            "min": 0.0,
+            "max": 0.0
+          }
+        ],
+    ...(cortado)
   ```

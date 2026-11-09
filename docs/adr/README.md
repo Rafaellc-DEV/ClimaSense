@@ -15,3 +15,9 @@
 | [0011](0011-chave-funcionalidade-landing-comunicados.md) | Landing pública e comunicados desligados por chave de funcionalidade | proposta (Gate 0) |
 | [0012](0012-pastas-por-agente.md) | Pastas de cada agente na estrutura real | proposta (Gate 0) |
 | [0013](0013-hospedagem.md) | Hospedagem: nuvem gerenciada para dados públicos; definitiva antes de dado não público | hipótese |
+| [0014](0014-papel-de-banco-da-aplicacao.md) | Papel de banco da aplicação sem poder de dono | aceita |
+| [0015](0015-prazo-de-guarda.md) | Prazo de guarda e limites de frescor | aceita |
+| [0016](0016-escopo-sem-abrigos-foco-chuva-mare-arboviroses.md) | Escopo sem abrigos; foco em chuva, maré, cenário e arboviroses | proposta |
+| [0017](0017-ampliacao-escopo-hidrologia-territorio-saude-historico.md) | Ampliação de escopo: hidrologia, território, saúde durante o evento e histórico de eventos | proposta |
+
+Próximo número livre: **0018**.

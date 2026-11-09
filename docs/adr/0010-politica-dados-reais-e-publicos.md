@@ -4,6 +4,7 @@
 - **Data:** 06/11/2026
 - **Requisitos:** RNF-10, RNF-03, RNF-12, RF-03, RF-19
 - **Reafirma:** ADR 0008 (somente dados reais). Regras de negócio: RN-01, RN-02, RN-13.
+- **Nota (06/11/2026):** os trechos sobre abrigos foram superados; ver ADR 0016.
 
 ## Contexto
 

@@ -1,4 +1,13 @@
 > **Em conflito, vale `docs/PRD.md`.** Este documento é anterior ao PRD (06/11/2026) e fica como histórico.
+>
+> **Mudança de escopo de 06/11/2026 (PRD v3, ADR 0016):** abrigos saíram do produto. Não valem mais: a dor 4 como
+> métrica do painel, F3 (abrigos e desabrigados), os abrigos no boletim (F5), as rotas `/abrigos` (§4), a fonte
+> `recife-abrigos` (§7) e as métricas 3, 4 e 6 (§8) no que dependem de abrigo. A Situação do evento mostra o estágio
+> oficial do COP, a chuva e a maré; o simulador mostra, por distrito, as arboviroses (dengue, chikungunya, zika) como
+> contexto. As ações podem ser excluídas em qualquer situação e registradas por cidade, distrito ou bairro.
+>
+> **Ampliação de escopo de 06/11/2026 (PRD v4, ADR 0017):** entram RF-35 a RF-42 do PRD. O histórico de eventos com
+> relatório executivo volta ao escopo (RF-41, na tela Ações); lições aprendidas (F4) continuam fora.
 
 # Foco: chuvas, decisão rápida e o dia a dia do Vigidesastres
 
@@ -32,6 +41,7 @@ a um dia.
 - **Vacinação** não foi pedida pelo cliente e foi **removida** do produto: ETL, API, telas, mapa e o estudo de ML
   (migração `0009`). Só o legado do projeto antigo no Neon continua intocado (seção 6).
 - O ML do produto passa a ser **chuva e alagamento** (`docs/ml/risco-alagamento.md`).
+- **Abrigos** (06/11/2026) saíram do produto: código, ETL, tabelas (migração `0019`) e telas (PRD v3, ADR 0016).
 
 ## 3. Funcionalidades da próxima onda
 
@@ -68,6 +78,8 @@ a um dia.
 - Nada é enviado automaticamente. Sem integração com a API do WhatsApp nesta onda.
 
 ### F3. Abrigos e desabrigados
+
+> **Fora do escopo desde 06/11/2026 (PRD v3, ADR 0016).** Mantido abaixo só como histórico.
 
 - Cadastro de abrigo: nome, bairro, endereço, capacidade, aberto (sim/não), pessoas abrigadas, desabrigados atendidos,
   observação, atualizado em, por quem. Cada atualização guarda histórico.

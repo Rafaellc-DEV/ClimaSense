@@ -1,4 +1,12 @@
 > **Em conflito, vale `docs/PRD.md`.** Este documento é anterior ao PRD (06/11/2026) e fica como histórico.
+>
+> **Mudança de escopo de 06/11/2026 (PRD v3, ADR 0016):** abrigos (locais, abertos, ocupação, desabrigados,
+> capacidade, atendimento nos abrigos) saíram do produto. O foco é chuva, maré, cenário e arboviroses por distrito.
+> Onde este documento citar abrigos, vale o PRD. As regras RN-xx continuam valendo.
+>
+> **Ampliação de escopo de 06/11/2026 (PRD v4, ADR 0017):** entram RF-35 a RF-42 do PRD (hidrologia, meteorologia
+> observada, cobertura territorial, cruzamento de camadas, saúde durante o evento, central de alertas, histórico de
+> eventos, metadados). Os IDs `RF-xx` deste documento (ex.: RF-12.10, RF-15.1) não são os do PRD.
 
 # ClimaSense — Especificação de Requisitos (`requirements.md`)
 
@@ -330,6 +338,8 @@ Todas as funcionalidades do mapa atual (`Desktop/AVD`, Aula 07) DEVEM continuar 
 ### RF-15 — Indicadores de saúde ligados a desastres · **PODE** · pendente de fonte
 
 Leptospirose, acidentes por animais peçonhentos e registro de atendimentos nos abrigos. Nenhum tem fonte integrada ainda; até lá a tela mostra “Dados insuficientes” (RN-01). A vacinação COVID-19 do ETL antigo **não** é indicador do produto (decisão de 04/11).
+
+> **06/11/2026:** "registro nos abrigos" saiu do escopo (PRD v3, ADR 0016). Arboviroses por distrito entram como contexto do simulador (PRD RF-33, RF-34).
 
 | ID | Critério de aceite |
 |---|---|

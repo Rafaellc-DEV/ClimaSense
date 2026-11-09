@@ -3,6 +3,7 @@
 - **Situação:** aceita
 - **Data:** 06/11/2026
 - **Base:** RNF-03, RNF-01, RF-19; ADR 0014 (papel do dono para manutenção)
+- **Nota (06/11/2026):** as chaves `recife-abrigos` e `recife-abrigos-ocupacao` saíram do `frescor.toml`; ver ADR 0016.
 
 ## Decisão
 

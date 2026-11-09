@@ -1,5 +1,8 @@
 # Fontes públicas candidatas: população vulnerável, equipamentos de saúde e áreas de risco
 
+> **Nota de 06/11/2026:** abrigos saíram do escopo do produto (PRD v3, ADR 0016). As menções a abrigos abaixo ficam
+> como histórico da pesquisa.
+
 Pesquisa de 06/11/2026 (Onda 0, agente `arquiteto`). Consultei só metadados e listagens; **nada foi carregado** no
 Atlas nem no Neon. Coluna "Verificação": o que de fato respondeu na consulta.
 

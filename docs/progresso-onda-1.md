@@ -186,3 +186,77 @@ login por IP, gitleaks, auditoria de leitura, prazo de guarda). Abertos:
   das camadas de vulneráveis sem auditoria; texto livre sem checagem no servidor; 2 moderadas do react-router.
 - Não rodou no Neon: `sincronizar-frescor` (limites em `app.fontes` divergem do TOML) e `limpar-retencao` (hoje não
   há o que apagar).
+
+## Mudança de escopo de 06/11/2026
+
+Pedido direto do dono do projeto, registrado no ADR 0016 (proposta; aprovação em D-13) e no `docs/PRD.md` v3.
+
+**O que mudou**
+- Sai tudo de abrigos: abrigos abertos, ocupação, pessoas abrigadas, desabrigados, capacidade, camada do mapa, ETL
+  (`recife-abrigos`, cadastro e feed de ativos do COP), situação de abrigos e pressão nos abrigos do simulador. Código
+  removido do backend e do frontend; `data/abrigos/` e o verbete do dicionário apagados. RF-08 removido; a parte de
+  abrigos de RF-02, RF-07 e RF-13 saiu; P-02 encerrada.
+- Migração 0019: apaga `app.abrigos`, `app.abrigo_atualizacoes` e a fonte `recife-abrigos`; tira a chave estrangeira
+  de `app.acao_eventos` para permitir excluir a ação. Testada só no Postgres local (`test_migracao_0019.py`).
+- RF-09: a Situação do evento mostra o estágio oficial do COP, a chuva (24 h medida e prevista) e o nível da maré.
+- RF-15: ação na cidade, no distrito ou no bairro; `DELETE /acoes/{acao_id}` em qualquer situação, auditado como
+  `acao_resposta_excluida` (sem descrição nem responsável); a linha do tempo fica guardada.
+- RF-33, RF-34 (novos): `POST /cenarios/simular` devolve por distrito o bloco `arboviroses` (série semanal do
+  município pelo InfoDengue; total anual de confirmados por distrito pela Prefeitura; zika "Dados insuficientes";
+  classe baixa/média/alta em terços entre distritos, relativa e provisória) e `ordem_de_atencao_distritos` (estágio
+  sugerido pela chuva simulada, depois arboviroses). Contexto, não previsão causal; selo "Experimental".
+- Documentação: PRD v3, matriz, perguntas P-27 a P-31 e D-13 a D-15, avisos nas `specs/`, `apis-e-etl.md`,
+  dicionário de dados, `funcionalidades-equipe.md`, `ESTRATEGIA-AGENTES.md`, notas nos ADRs 0010, 0014 e 0015 e nas
+  pesquisas; `docs/api-gestao.md` regenerado por `scripts/gerar_mapa_api.py`.
+
+**Pendências**
+- **Para o dono:** aplicar a 0019 no Neon (antes, decidir se exporta os registros de abrigo) e depois rodar
+  `sincronizar-frescor`; decidir o destino das coleções bronze `recife_abrigos` e `recife_abrigos_ativos` no Atlas,
+  que ficam órfãs (P-31).
+- `CLAUDE.md` ainda diz "próximo número: 0015" (o próximo livre é 0017) e `.claude/agents/backend-api.md` e
+  `qa-ux.md` ainda citam abrigos (D-14, D-15).
+- A tela do Simulador ainda não mostra as arboviroses nem a ordem de atenção (só a API devolve).
+- Perguntas ao cliente: zika sem série (P-27), arboviroses por distrito só anuais (P-28), critério de classe e ordem
+  de atenção (P-29), guarda do histórico de ação excluída (P-30).
+
+## Ampliação de escopo e pesquisas de 06/11/2026
+
+Pedido direto do dono do projeto: foco em funcionalidades novas, a partir de cinco dores do cliente e de cinco
+pesquisas de fontes reais (só GET públicos, sem criar conta). Registrado no ADR 0017 (proposta; aprovação em D-16) e
+no `docs/PRD.md` v4. Só documentação mudou; nenhum código, banco ou contrato de API.
+
+**Pesquisas** (`docs/pesquisa/`)
+- `api-hidrologia.md`: a API da APAC expõe nível de rios e reservatórios com limiares oficiais; o serviço legado da
+  ANA responde sem token. Só uma estação de nível tem o Recife no cadastro (Capibaribe, São Lourenço da Mata, a
+  montante). Não há estação de nível dentro da cidade, nem SACE do SGB para o Capibaribe, nem sensor de canal aberto.
+- `api-meteorologia.md`: a chuva de 24 h e 72 h por estação já chega pelo `apac-chuva`; não há série horária histórica
+  medida para o Recife; temperatura medida só com token do INMET; umidade do solo só como modelo (Open-Meteo, cujo
+  plano gratuito é para uso não comercial).
+- `api-territorial.md`: a suscetibilidade a deslizamento do SGB cobre os 94 bairros; os atendimentos da Defesa Civil
+  trazem grau R1 a R4 (86 bairros com R3 ou R4); há camadas de alagamento de 2026; deficiência por bairro não existe;
+  os atendimentos de 2025 e 2026 não estão no portal.
+- `api-epidemiologia.md`: nenhuma fonte pública mostra casos de doença nos dias do evento; SAMU (mensal) e SISAGUA
+  (cerca de 1 semana) são as mais rápidas, como demanda de urgência e qualidade da água; o resto só com convênio.
+- `api-operacional.md`: estágio e comunicados do COP só por registro da equipe; Atlas Digital de Desastres para
+  eventos antigos com danos; histórico de alertas só o que o ETL guardar.
+
+**O que mudou**
+- ADR 0017: entram RF-35 a RF-42, por fonte real; não entram raspagem de rede social, S2iD direto, EM-DAT, microdados
+  individuais, base da Celpe com nome de cliente, CadÚnico individual e a API `/arboviroses` do Ministério da Saúde.
+  Abrigos continuam fora: o texto do pedido citava abrigos, e o ADR 0016 prevalece.
+- PRD v4: §5 (o histórico de eventos entra; lições aprendidas continuam fora), §7.8 (RF-35 a RF-42 com fase e tela),
+  §9 (fontes novas com cadência real e o que não existe), RNF-03, §11, §12, §13 e §14. Nenhuma tela nova (D-17).
+- Matriz: §2.1 com RF-35 a RF-42 (todos "em construção", veredito "adaptar") e o que cada um reaproveita; conflitos
+  10 a 12 na §5.
+- Perguntas P-32 a P-54 e decisões D-16 a D-21 em `docs/perguntas-abertas.md`; avisos das `specs/` atualizados.
+
+**Pendências**
+- **Para o dono:** aprovar o ADR 0017 e o PRD v4 (D-16), o encaixe nas cinco telas (D-17), a ordem de construção
+  (D-18) e a regra para fontes sem termos (D-19).
+- **Para o dono (LGPD):** o arquivo `cad.csv` (cerca de 72 MB, microdado do Cadastro Único) está na raiz do
+  repositório, fora do Git mas sem regra no `.gitignore` (D-20).
+- **Para o cliente:** licenças e termos (P-32 a P-34, P-46, P-51), acessos (P-35 a P-37), extratos de saúde (P-38 a
+  P-40), regras do evento (P-43, P-44) e o aviso sobre a base da Celpe (P-45).
+- `CLAUDE.md` deve dizer "próximo número: 0018" (D-21); sugestões para `.claude/agents/` no relatório do arquiteto.
+- Nenhum conector novo foi escrito: `apac-rios`, `sgb-suscetibilidade`, `samu-recife`, `sisagua` e `atlas-desastres`
+  ficam para o `etl-dados` depois da aprovação.

@@ -1,5 +1,8 @@
 # Auditoria de UX da área da equipe
 
+> **Nota de 06/11/2026:** abrigos saíram do escopo do produto (PRD v3, ADR 0016). As propostas sobre abrigos abaixo
+> ficam como histórico e não devem ser implementadas.
+
 > Pesquisa e proposta de produto de 05/11/2026. Base: `specs/foco-chuvas.md`, `docs/funcionalidades-equipe.md`,
 > personas de `specs/requirements.md` (seção 3), a entrevista com o Vigidesastres (23/10/2026), a avaliação do dono
 > do produto e capturas reais das 12 telas (Edge, 1440 px, conta `gestor@climasense.dev`, dados de 05/11/2026 17h).

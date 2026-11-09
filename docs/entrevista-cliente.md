@@ -2,6 +2,10 @@
 
 Respostas registradas pelo dono do produto em 06/11/2026. Base do `docs/PRD.md`.
 
+> **Nota de 06/11/2026 (depois da entrevista):** o dono do projeto tirou abrigos do escopo (PRD v3, ADR 0016). A
+> resposta 4 (abrigos abertos e desabrigados) fica registrada como foi dita; o painel passa a focar em chuva, maré,
+> cenário e arboviroses por distrito.
+
 1. **Prefere um alerta que não se confirma ou um que o sistema não alertou?** Que não se confirma.
 2. **Prioridades:** priorizam os distritos mais vulneráveis. O distrito sanitário 7, por exemplo, é extremamente
    vulnerável, principalmente a deslizamentos. Apesar disso, teve poucas ocorrências na última grande chuva, o que

@@ -1,5 +1,8 @@
 # Saúde e chuva: arboviroses, leptospirose e outros agravos
 
+> **Nota de 06/11/2026:** abrigos saíram do escopo do produto (PRD v3, ADR 0016). As menções a abrigos abaixo ficam
+> como histórico da pesquisa.
+
 > Pesquisa de 05/11/2026 para o Vigidesastres (Vigilância em Saúde do Recife). Responde à pergunta do cliente:
 > **como ligar a chuva e o alagamento aos agravos à saúde de um jeito útil para agir depois do evento?**
 > Complementa `specs/foco-chuvas.md` (seção 7, linha "SINAN") e `docs/funcionalidades-equipe.md` (seção 4).

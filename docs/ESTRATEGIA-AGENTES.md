@@ -31,7 +31,7 @@ Salve este documento como `docs/ESTRATEGIA-AGENTES.md` e o PRD como `docs/PRD.md
 | Agente | Missão | Pastas que pode editar | Modelo sugerido | Escreve código? |
 | --- | --- | --- | --- | --- |
 | `arquiteto` | Matriz PRD contra código, ADRs novos, perguntas abertas, `CLAUDE.md`, definições dos agentes | `docs/`, `.claude/`, `CLAUDE.md` | opus | Só documentação |
-| `backend-api` | Rotas, domínio (estágios, abrigos, ações, cenários, boletim), autenticação, migrações | `backend/climasense/api/`, `dominio/`, `auth/`, `infra/`, `backend/alembic/` | sonnet | Sim |
+| `backend-api` | Rotas, domínio (estágios, ações, cenários com arboviroses por distrito, boletim), autenticação, migrações | `backend/climasense/api/`, `dominio/`, `auth/`, `infra/`, `backend/alembic/` | sonnet | Sim |
 | `etl-dados` | Conectores de fontes, importação manual, frescor dos dados, dicionário de dados | `backend/climasense/etl/`, `docs/dicionario-dados/` | sonnet | Sim |
 | `ml-risco` | Estudo e modelo de risco, critérios de publicação, selo experimental | `backend/climasense/ml/`, `docs/ml/` | opus | Sim |
 | `frontend-equipe` | Telas da equipe, mapa, simulador, celular, simplicidade | `frontend/src/` | sonnet | Sim |
@@ -45,10 +45,10 @@ O que antes era `geo-risco` fica em `backend-api` (domínio de território e est
 | Agente | Requisitos do PRD |
 | --- | --- |
 | `arquiteto` | Matriz de todos os requisitos; RNF-02 e RNF-12 (decisões de hospedagem) |
-| `backend-api` | RF-01, RF-08, RF-09, RF-15 a RF-18, RF-22, RF-27, RF-29, RF-30, RF-31 (texto da mensagem), RNF-01, RNF-03 |
+| `backend-api` | RF-01, RF-09, RF-15 a RF-18, RF-22, RF-27, RF-29, RF-30, RF-31 (texto da mensagem), RF-33 e RF-34 (cálculo), RNF-01, RNF-03 |
 | `etl-dados` | RF-05, RF-11, RF-12, RF-13, RF-14, RF-19 (frescor), RF-32, RNF-04, RNF-05, RNF-10 |
 | `ml-risco` | Seção 8.4 do PRD, RNF-09, RF-23 (parte do cálculo) |
-| `frontend-equipe` | RF-01 a RF-10 (telas), RF-19, RF-20, RF-21, RF-23 a RF-28, RF-31 (botões), RNF-08 |
+| `frontend-equipe` | RF-01 a RF-10 (telas; RF-08 removido na v3), RF-19, RF-20, RF-21, RF-23 a RF-28, RF-33 e RF-34 (tela do Simulador), RF-31 (botões), RNF-08 |
 | `seguranca-lgpd` | RNF-01, RNF-02, RNF-03, RNF-10, RNF-12 (revisão) |
 | `qa-ux` | Todos, com foco em RF-20, RNF-06, RNF-08 e RNF-11 |
 
@@ -75,7 +75,7 @@ As tarefas saem das linhas "adaptar" da matriz. Os candidatos mais prováveis, a
 
 | Agente | Tarefa candidata |
 | --- | --- |
-| `backend-api` | Chave de funcionalidade que desliga landing e comunicados (RF de escopo); estágio sugerido e declarado com justificativa (RF-29, RF-30); mensagem de WhatsApp (RF-31); desabrigados por distrito (RF-08, RF-09); relatório a partir do Boletim (RF-17) |
+| `backend-api` | Chave de funcionalidade que desliga landing e comunicados (RF de escopo); estágio sugerido e declarado com justificativa (RF-29, RF-30); mensagem de WhatsApp (RF-31); situação do evento (RF-09; a parte de desabrigados saiu em 06/11/2026, ADR 0016); relatório a partir do Boletim (RF-17) |
 | `etl-dados` | Origem, hora e território em todo alerta (RF-32); frescor por fonte (RF-19); importação manual onde não há API (RNF-04) |
 | `frontend-equipe` | Ajustes de simplicidade (RF-20); telas Mapa, Situação e Ações conforme a matriz; botões Copiar e Abrir no WhatsApp |
 
@@ -93,7 +93,7 @@ Ao fim da onda, `seguranca-lgpd` e `qa-ux` revisam o que mudou.
 
 | Agente | Tarefa |
 | --- | --- |
-| `etl-dados` | Conectores de saúde que ainda faltam (animais peçonhentos, atendimento nos abrigos), quando houver fonte; senão, a tela mostra "Dados insuficientes" |
+| `etl-dados` | Conectores de saúde que ainda faltam (animais peçonhentos, zika, arboviroses semanais por distrito; atendimento nos abrigos saiu em 06/11/2026), quando houver fonte; senão, a tela mostra "Dados insuficientes" |
 | `frontend-equipe` | Tela Saúde conforme RF-11 a RF-14 |
 | `ml-risco` | Reavaliar o modelo de alagamento contra a regra simples; estudo de deslizamento só se houver ocorrências com bairro e data; manter o selo experimental |
 
@@ -194,7 +194,7 @@ Ao terminar, liste os arquivos criados e as decisões que precisam da aprovaçã
 ```markdown
 ---
 name: backend-api
-description: Implementa rotas, regras de domínio, autenticação e migrações do backend da ClimaSense (estágios, abrigos, ações, cenários, boletim). Use para tarefas do backend ligadas a um ID do PRD.
+description: Implementa rotas, regras de domínio, autenticação e migrações do backend da ClimaSense (estágios, ações, cenários, boletim). Use para tarefas do backend ligadas a um ID do PRD.
 tools: Read, Write, Edit, Bash, Glob, Grep
 model: sonnet
 ---
@@ -319,7 +319,7 @@ model: sonnet
 Você garante que o que foi construído atende ao PRD. Escreva apenas em `backend/tests/` e `frontend/tests/`.
 
 Responsabilidades:
-- Testes ponta a ponta (Playwright) dos fluxos: ver o mapa, ver abrigos e desabrigados, declarar estágio, registrar ação, gerar relatório, rodar simulação.
+- Testes ponta a ponta (Playwright) dos fluxos: ver o mapa, ver a situação do evento (estágio oficial, chuva e maré), declarar estágio, registrar ação, gerar relatório, rodar simulação.
 - Matriz de rastreabilidade: para cada `RF-xx` e `RNF-xx` da fase atual, atendido, parcial ou não atendido, com a evidência.
 - Revisão de simplicidade com a checagem da seção 6 de `docs/ESTRATEGIA-AGENTES.md`.
 - Conferir que nenhum teste ou tela usa dado simulado como se fosse real.
