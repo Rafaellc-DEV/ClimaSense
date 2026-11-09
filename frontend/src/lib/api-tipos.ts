@@ -11,7 +11,7 @@ export interface paths {
       path?: never;
       cookie?: never;
     };
-    /** Estado da API e dos bancos */
+    /** Estado da API e dos bancos (em produção, só ok ou falha) */
     get: operations["health_api_v1_health_get"];
     put?: never;
     post?: never;
@@ -175,6 +175,23 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/v1/admin/login/liberar": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Liberar um e-mail e/ou IP bloqueados no login (auditado) */
+    post: operations["liberar_api_v1_admin_login_liberar_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/api/v1/territorios": {
     parameters: {
       query?: never;
@@ -226,6 +243,23 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/v1/territorios/bairros.geojson": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Os 94 bairros (GeoJSON simplificado, ids iguais aos de /estagios) */
+    get: operations["bairros_geojson_api_v1_territorios_bairros_geojson_get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/api/v1/territorios/indicadores": {
     parameters: {
       query?: never;
@@ -235,6 +269,91 @@ export interface paths {
     };
     /** Valor por distrito para colorir o mapa */
     get: operations["indicadores_api_v1_territorios_indicadores_get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/territorios/prioridade": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Prioridade por vulnerabilidade: onde já houve mais atendimentos da Defesa Civil (não é probabilidade) */
+    get: operations["prioridade_por_vulnerabilidade_api_v1_territorios_prioridade_get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/territorios/camadas/equipamentos-saude": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Equipamentos de saúde (CNES) como pontos no mapa */
+    get: operations["camada_equipamentos_api_v1_territorios_camadas_equipamentos_saude_get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/territorios/camadas/vulneraveis": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Idosos e crianças por bairro (Censo 2022), com supressão de células pequenas */
+    get: operations["camada_vulneraveis_api_v1_territorios_camadas_vulneraveis_get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/territorios/camadas/areas-risco": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Áreas de risco mapeadas pela Prefeitura (com a cobertura, que pode ser parcial) */
+    get: operations["camada_areas_risco_api_v1_territorios_camadas_areas_risco_get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/territorios/{territorio_id}/resumo-vulnerabilidade": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Cruzamento do território: idosos, crianças, equipamentos e áreas de risco (RF-04, RF-07) */
+    get: operations["resumo_vulnerabilidade_api_v1_territorios__territorio_id__resumo_vulnerabilidade_get"];
     put?: never;
     post?: never;
     delete?: never;
@@ -515,6 +634,57 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/v1/cenarios/estimativa": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Estimativa experimental por distrito: previsão, maré e prioridade (antiga GET /cenarios) */
+    get: operations["estimativa_api_v1_cenarios_estimativa_get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/cenarios/premissas-atuais": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Premissas sugeridas pelas fontes reais (previsão, maré e chuva medida) */
+    get: operations["premissas_atuais_api_v1_cenarios_premissas_atuais_get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/cenarios/simular": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Simular um cenário por regras: classe de alagamento e deslizamento por bairro e distrito */
+    post: operations["simular_api_v1_cenarios_simular_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/api/v1/cenarios": {
     parameters: {
       query?: never;
@@ -522,8 +692,26 @@ export interface paths {
       path?: never;
       cookie?: never;
     };
-    /** Cenário experimental: previsão, maré e prioridade */
-    get: operations["cenarios_api_v1_cenarios_get"];
+    /** Cenários salvos, mais recente primeiro */
+    get: operations["listar_api_v1_cenarios_get"];
+    put?: never;
+    /** Salvar o cenário (analista ou acima; auditado; o servidor recalcula o resultado) */
+    post: operations["salvar_api_v1_cenarios_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/cenarios/{cenario_id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Abrir um cenário salvo */
+    get: operations["abrir_api_v1_cenarios__cenario_id__get"];
     put?: never;
     post?: never;
     delete?: never;
@@ -825,40 +1013,6 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  "/api/v1/painel/situacao": {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    /** Situação agora: chuva recente, pico previsto, maré, risco e frescor */
-    get: operations["situacao_agora_api_v1_painel_situacao_get"];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  "/api/v1/painel/acoes": {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    /** O que fazer agora: fila curta por urgência (revisões, publicações, avisos, fontes, territórios) */
-    get: operations["acoes_agora_api_v1_painel_acoes_get"];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
   "/api/v1/admin/auditoria": {
     parameters: {
       query?: never;
@@ -917,11 +1071,46 @@ export interface paths {
       path?: never;
       cookie?: never;
     };
-    /** Estágio sugerido (experimental) e declarado de cada distrito ou bairro */
+    /** Estágio sugerido (experimental) e declarado de cada distrito ou bairro, com o oficial do COP */
     get: operations["listar_api_v1_estagios_get"];
     put?: never;
     /** Declarar o estágio de um ou mais territórios (ato humano, auditado, sem revisão) */
     post: operations["declarar_api_v1_estagios_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/estagios/oficial": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Estágio oficial da cidade dado pelo COP (registro da equipe); null sem registro */
+    get: operations["oficial_api_v1_estagios_oficial_get"];
+    put?: never;
+    /** Registrar o estágio oficial informado pelo COP (analista ou acima; auditado; só inclusão) */
+    post: operations["registrar_oficial_api_v1_estagios_oficial_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/estagios/oficial/historico": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Histórico do estágio oficial, mais recente primeiro */
+    get: operations["historico_oficial_api_v1_estagios_oficial_historico_get"];
+    put?: never;
+    post?: never;
     delete?: never;
     options?: never;
     head?: never;
@@ -1014,59 +1203,6 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  "/api/v1/abrigos": {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    /** Abrigos com os totais de abertos, abrigados e desabrigados */
-    get: operations["listar_api_v1_abrigos_get"];
-    put?: never;
-    /** Cadastrar abrigo */
-    post: operations["criar_api_v1_abrigos_post"];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  "/api/v1/abrigos/{abrigo_id}": {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    /** Detalhe do abrigo */
-    get: operations["detalhe_api_v1_abrigos__abrigo_id__get"];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    /** Atualizar abrigo (gera histórico) */
-    patch: operations["atualizar_api_v1_abrigos__abrigo_id__patch"];
-    trace?: never;
-  };
-  "/api/v1/abrigos/{abrigo_id}/historico": {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    /** Atualizações do abrigo, mais recentes primeiro */
-    get: operations["historico_api_v1_abrigos__abrigo_id__historico_get"];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
   "/api/v1/acoes": {
     parameters: {
       query?: never;
@@ -1096,7 +1232,8 @@ export interface paths {
     get: operations["detalhe_api_v1_acoes__acao_id__get"];
     put?: never;
     post?: never;
-    delete?: never;
+    /** Excluir ação em qualquer situação (auditado: quem, quando e o que foi excluído) */
+    delete: operations["excluir_api_v1_acoes__acao_id__delete"];
     options?: never;
     head?: never;
     /** Atualizar situação, descrição ou lição aprendida */
@@ -1154,70 +1291,78 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/v1/saude/resumo": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Dengue, chikungunya e leptospirose na última semana e a janela de vigilância de leptospirose */
+    get: operations["resumo_api_v1_saude_resumo_get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/saude/semanal": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Série semanal de um agravo no Recife com a chuva semanal ao lado */
+    get: operations["semanal_api_v1_saude_semanal_get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/saude/bairros": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Casos confirmados de dengue ou chikungunya por bairro de residência em um ano (histórico) */
+    get: operations["bairros_api_v1_saude_bairros_get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/ocorrencias/historico": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Onde já aconteceu: atendimentos de alagamento ou deslizamento da Defesa Civil por bairro */
+    get: operations["historico_ocorrencias_api_v1_ocorrencias_historico_get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
 }
 export type webhooks = Record<string, never>;
 export interface components {
   schemas: {
-    /** Abrigo */
-    Abrigo: {
-      /**
-       * Id
-       * Format: uuid
-       */
-      id: string;
-      /** Nome */
-      nome: string;
-      /** Bairro Id */
-      bairro_id: string;
-      /** Bairro Nome */
-      bairro_nome: string;
-      /** Distrito Id */
-      distrito_id: string | null;
-      /** Distrito Nome */
-      distrito_nome: string | null;
-      /** Endereco */
-      endereco: string | null;
-      /** Capacidade */
-      capacidade: number | null;
-      /** Aberto */
-      aberto: boolean;
-      /** Pessoas Abrigadas */
-      pessoas_abrigadas: number | null;
-      /** Desabrigados */
-      desabrigados: number | null;
-      /** Observacao */
-      observacao: string | null;
-      /** Latitude */
-      latitude: number | null;
-      /** Longitude */
-      longitude: number | null;
-      /**
-       * Origem
-       * @enum {string}
-       */
-      origem: "manual" | "dados-abertos";
-      /**
-       * Criado Em
-       * Format: date-time
-       */
-      criado_em: string;
-      /**
-       * Atualizado Em
-       * Format: date-time
-       */
-      atualizado_em: string;
-      /**
-       * Atualizado Por Nome
-       * @description null só em carga automática dos Dados Abertos
-       */
-      atualizado_por_nome: string | null;
-    };
-    /** AbrigosBoletim */
-    AbrigosBoletim: {
-      totais: components["schemas"]["climasense__api__routers__abrigos__TotaisAbrigos"];
-      /** Abertos */
-      abertos: components["schemas"]["Abrigo"][];
-    };
     /** Acao */
     Acao: {
       /**
@@ -1225,12 +1370,25 @@ export interface components {
        * Format: uuid
        */
       id: string;
-      /** Territorio Id */
+      /**
+       * Territorio Id
+       * @description Município (recife), distrito ou bairro onde a ação acontece
+       */
       territorio_id: string;
       /** Territorio Nome */
       territorio_nome: string;
-      /** Distrito Id */
+      /**
+       * Territorio Nivel
+       * @enum {string}
+       */
+      territorio_nivel: "municipio" | "distrito" | "bairro";
+      /**
+       * Distrito Id
+       * @description Distrito do território (o próprio, se for distrito ou município)
+       */
       distrito_id: string;
+      /** Distrito Nome */
+      distrito_nome: string;
       /**
        * Tipo
        * @enum {string}
@@ -1253,8 +1411,12 @@ export interface components {
       inicio_em: string | null;
       /** Fim Em */
       fim_em: string | null;
-      /** Licao Aprendida */
-      licao_aprendida: string | null;
+      /**
+       * Licao Aprendida
+       * @deprecated
+       * @description Obsoleto: lições aprendidas estão fora do escopo (PRD §5)
+       */
+      licao_aprendida?: string | null;
       /**
        * Criada Em
        * Format: date-time
@@ -1270,33 +1432,50 @@ export interface components {
       /** Atualizado Por Nome */
       atualizado_por_nome: string;
     };
-    /** AcaoAgora */
-    AcaoAgora: {
+    /** AgravoDistrito */
+    AgravoDistrito: {
       /**
-       * Urgencia
+       * Agravo
        * @enum {string}
        */
-      urgencia: "alta" | "media" | "baixa";
-      /** Tipo */
-      tipo: string;
-      /** Titulo */
-      titulo: string;
-      /** Detalhe */
-      detalhe: string;
-      /** Endereco */
-      endereco: string;
-    };
-    /** AcoesAgora */
-    AcoesAgora: {
+      agravo: "dengue" | "chikungunya" | "zika";
+      /** Nome */
+      nome: string;
+      /** @description Semana epidemiológica mais recente com dado (município: a fonte semanal não abre por distrito) */
+      semana_recente: components["schemas"]["PontoSemanal"] | null;
       /**
-       * Gerado Em
-       * Format: date-time
+       * Serie Semanal
+       * @description Últimas 8 semanas, em ordem cronológica (município)
        */
-      gerado_em: string;
-      /** Itens */
-      itens: components["schemas"]["AcaoAgora"][];
-      /** Nota */
-      nota?: string | null;
+      serie_semanal: components["schemas"]["PontoSemanal"][];
+      /**
+       * Ano Distrito
+       * @description Último ano publicado por distrito; null = sem a fonte
+       */
+      ano_distrito: number | null;
+      /**
+       * Casos Ano Distrito
+       * @description Confirmados no ano, soma dos bairros do distrito; null = sem dado ou suprimido (RN-13)
+       */
+      casos_ano_distrito: number | null;
+      /** Casos Ano Suprimido */
+      casos_ano_suprimido: boolean;
+      /**
+       * Classe Impacto
+       * @description Terços do total anual entre os distritos: ordem de atenção, nunca probabilidade (RN-06). null = sem dado (Dados insuficientes, RN-01)
+       */
+      classe_impacto: ("baixa" | "media" | "alta") | null;
+      /** Dados Insuficientes */
+      dados_insuficientes: boolean;
+      /**
+       * Motivo
+       * @description Quando faltar dado: 'Dados insuficientes: falta a fonte ...'
+       */
+      motivo: string | null;
+      /** Fonte Semanal */
+      fonte_semanal: string;
+      /** Fonte Anual */
+      fonte_anual: string;
     };
     /** AjusteFonte */
     AjusteFonte: {
@@ -1343,31 +1522,34 @@ export interface components {
       /** Total Fonte */
       total_fonte?: number | null;
     };
-    /** AtualizacaoAbrigo */
-    AtualizacaoAbrigo: {
-      /** Id */
-      id: number;
+    /** AndamentoDistrito */
+    AndamentoDistrito: {
+      /** Distrito Id */
+      distrito_id: string;
+      /** Distrito Nome */
+      distrito_nome: string;
       /**
-       * Em
-       * Format: date-time
+       * Contagens
+       * @description Ações por situação neste distrito (RF-16)
        */
-      em: string;
-      /** Autor Nome */
-      autor_nome: string | null;
-      /** Aberto */
-      aberto: boolean;
-      /** Capacidade */
-      capacidade: number | null;
-      /** Pessoas Abrigadas */
-      pessoas_abrigadas: number | null;
-      /** Desabrigados */
-      desabrigados: number | null;
-      /** Observacao */
-      observacao: string | null;
-      /** Alteracoes */
-      alteracoes: {
-        [key: string]: unknown;
+      contagens: {
+        [key: string]: number;
       };
+    };
+    /** ArbovirosesDistrito */
+    ArbovirosesDistrito: {
+      /** Agravos */
+      agravos: components["schemas"]["AgravoDistrito"][];
+      /**
+       * Classe Impacto
+       * @description Maior classe entre os agravos com dado
+       */
+      classe_impacto: ("baixa" | "media" | "alta") | null;
+      /**
+       * Agravos Em Destaque
+       * @description Agravos com classe alta neste distrito
+       */
+      agravos_em_destaque: string[];
     };
     /** AvisoPublico */
     AvisoPublico: {
@@ -1412,6 +1594,61 @@ export interface components {
       /** Distrito Id */
       distrito_id: string | null;
     };
+    /** BairroAgravo */
+    BairroAgravo: {
+      /** Bairro Id */
+      bairro_id: string;
+      /** Bairro Nome */
+      bairro_nome: string;
+      /** Distrito Id */
+      distrito_id: string | null;
+      /**
+       * Casos
+       * @description Casos confirmados de residentes do bairro no ano; null quando suprimido (de 1 a 4, RNF-03)
+       */
+      casos: number | null;
+      /**
+       * Notificados
+       * @description Notificados no ano; null quando suprimido
+       */
+      notificados: number | null;
+      /**
+       * Suprimido
+       * @description true = há contagem entre 1 e supressao_minima - 1 escondida (RN-13)
+       * @default false
+       */
+      suprimido: boolean;
+    };
+    /** BairrosSaude */
+    BairrosSaude: {
+      /**
+       * Agravo
+       * @enum {string}
+       */
+      agravo: "dengue" | "chikungunya";
+      /** Ano */
+      ano: number | null;
+      /** Itens */
+      itens: components["schemas"]["BairroAgravo"][];
+      /** Anos Disponiveis */
+      anos_disponiveis: number[];
+      /** Total Confirmados */
+      total_confirmados: number | null;
+      /**
+       * Confirmados Sem Bairro
+       * @description Confirmados sem bairro oficial: no total, fora do mapa. Null quando suprimido: com algum bairro suprimido, este valor e o total revelariam a célula por diferença
+       */
+      confirmados_sem_bairro: number | null;
+      /**
+       * Sem Bairro Suprimido
+       * @default false
+       */
+      sem_bairro_suprimido: boolean;
+      /** Total Notificados */
+      total_notificados: number | null;
+      /** Fonte Atualizada Em */
+      fonte_atualizada_em?: string | null;
+    };
     /** Boletim */
     Boletim: {
       /** Territorio Id */
@@ -1429,9 +1666,30 @@ export interface components {
       territorios_em_atencao: components["schemas"]["TerritorioEmAtencao"][];
       chuva: components["schemas"]["ChuvaBoletim"];
       mare: components["schemas"]["MareBoletim"];
-      abrigos: components["schemas"]["AbrigosBoletim"];
-      /** Acoes Em Andamento */
+      /**
+       * Acoes Em Andamento
+       * @description Em andamento agora, distritos mais vulneráveis primeiro (RF-22)
+       */
       acoes_em_andamento: components["schemas"]["Acao"][];
+      /** @description Período do relatório executivo (RF-17) */
+      periodo: components["schemas"]["PeriodoBoletim"];
+      /** @description Estágio oficial do COP para a cidade (não há oficial por distrito); null = sem registro */
+      estagio_oficial: components["schemas"]["EstagioOficial"] | null;
+      /**
+       * Acoes Concluidas
+       * @description Concluídas dentro do período
+       */
+      acoes_concluidas: components["schemas"]["Acao"][];
+      /**
+       * Acoes Por Distrito
+       * @description Ações do período por distrito e situação
+       */
+      acoes_por_distrito: components["schemas"]["AndamentoDistrito"][];
+      /**
+       * Saude
+       * @description Agravos na última semana com dado, no município
+       */
+      saude: components["schemas"]["ResumoAgravo"][];
     };
     /** CelulaSazonal */
     CelulaSazonal: {
@@ -1466,6 +1724,44 @@ export interface components {
       /** Registro Id */
       registro_id: number;
     };
+    /** CenarioListado */
+    CenarioListado: {
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string;
+      /** Nome */
+      nome: string;
+      /** Autor Nome */
+      autor_nome: string;
+      /**
+       * Criado Em
+       * Format: date-time
+       */
+      criado_em: string;
+      resumo: components["schemas"]["ResumoSalvo"];
+    };
+    /** CenarioSalvo */
+    CenarioSalvo: {
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string;
+      /** Nome */
+      nome: string;
+      /** Autor Nome */
+      autor_nome: string;
+      /**
+       * Criado Em
+       * Format: date-time
+       */
+      criado_em: string;
+      resumo: components["schemas"]["ResumoSalvo"];
+      premissas: components["schemas"]["PedidoSimulacao"];
+      resultado: components["schemas"]["ResultadoSalvo"];
+    };
     /** ChuvaBoletim */
     ChuvaBoletim: {
       /** Chuva 24H Mm */
@@ -1483,36 +1779,17 @@ export interface components {
       /** Previsao Emitida Em */
       previsao_emitida_em: string | null;
     };
-    /** ChuvaRecente */
-    ChuvaRecente: {
-      /** Janela H */
-      janela_h: number;
+    /** ChuvaSemana */
+    ChuvaSemana: {
       /**
-       * Status
-       * @enum {string}
+       * Inicio
+       * Format: date
        */
-      status: "ok" | "dados_insuficientes";
-      /** Acumulado Mm */
-      acumulado_mm: number | null;
-      /** Horas Com Dado */
-      horas_com_dado: number;
-      /** Cobertura Pct */
-      cobertura_pct: number;
-      /** Referencia Mm */
-      referencia_mm: number | null;
-      /** Razao Referencia Pct */
-      razao_referencia_pct: number | null;
-      /** Comparacao */
-      comparacao: string | null;
-      /**
-       * Ate Em
-       * Format: date-time
-       */
-      ate_em: string;
-      /** Fontes Usadas */
-      fontes_usadas: string[];
-      /** Nota */
-      nota: string | null;
+      inicio: string;
+      /** Chuva Mm */
+      chuva_mm: number | null;
+      /** Dias Com Dado */
+      dias_com_dado: number;
     };
     /** Conta */
     Conta: {
@@ -1575,7 +1852,7 @@ export interface components {
        * Estagio
        * @enum {string}
        */
-      estagio: "observacao" | "atencao" | "alerta" | "critico";
+      estagio: "observacao" | "atencao" | "alerta" | "critico" | "encerrado";
       /** Rotulo */
       rotulo: string;
       /** Justificativa */
@@ -1635,12 +1912,25 @@ export interface components {
        * Format: uuid
        */
       id: string;
-      /** Territorio Id */
+      /**
+       * Territorio Id
+       * @description Município (recife), distrito ou bairro onde a ação acontece
+       */
       territorio_id: string;
       /** Territorio Nome */
       territorio_nome: string;
-      /** Distrito Id */
+      /**
+       * Territorio Nivel
+       * @enum {string}
+       */
+      territorio_nivel: "municipio" | "distrito" | "bairro";
+      /**
+       * Distrito Id
+       * @description Distrito do território (o próprio, se for distrito ou município)
+       */
       distrito_id: string;
+      /** Distrito Nome */
+      distrito_nome: string;
       /**
        * Tipo
        * @enum {string}
@@ -1663,8 +1953,12 @@ export interface components {
       inicio_em: string | null;
       /** Fim Em */
       fim_em: string | null;
-      /** Licao Aprendida */
-      licao_aprendida: string | null;
+      /**
+       * Licao Aprendida
+       * @deprecated
+       * @description Obsoleto: lições aprendidas estão fora do escopo (PRD §5)
+       */
+      licao_aprendida?: string | null;
       /**
        * Criada Em
        * Format: date-time
@@ -1776,6 +2070,15 @@ export interface components {
         };
       };
     };
+    /** EquipamentoResumo */
+    EquipamentoResumo: {
+      /** Cnes */
+      cnes: string;
+      /** Nome */
+      nome: string;
+      /** Tipo */
+      tipo: string | null;
+    };
     /** EstadoPublico */
     EstadoPublico: {
       /** Avisos Ativos */
@@ -1809,6 +2112,38 @@ export interface components {
       origem: string;
       sugerido: components["schemas"]["Sugerido"];
       declarado: components["schemas"]["Declarado"] | null;
+    };
+    /**
+     * EstagioOficial
+     * @description Estágio da cidade dado pelo COP, registrado pela equipe (RF-01). Não é a sugestão nem a declaração.
+     */
+    EstagioOficial: {
+      /**
+       * Estagio
+       * @enum {string}
+       */
+      estagio: "observacao" | "atencao" | "alerta" | "critico";
+      /**
+       * Informado Em
+       * Format: date-time
+       * @description Hora em que o COP informou o estágio
+       */
+      informado_em: string;
+      /**
+       * Registrado Em
+       * Format: date-time
+       * @description Hora em que a equipe registrou no ClimaSense
+       */
+      registrado_em: string;
+      /** Autor Nome */
+      autor_nome: string;
+      /** Observacao */
+      observacao: string | null;
+      /**
+       * Fonte
+       * @description Sempre 'COP (informado pela equipe)' até haver feed
+       */
+      fonte: string;
     };
     /** Estatisticas */
     Estatisticas: {
@@ -1911,7 +2246,7 @@ export interface components {
     Evidencia: {
       /**
        * Tipo
-       * @description mapa | serie | cenario | fonte | vacinacao
+       * @description mapa | serie | cenario | fonte
        */
       tipo: string;
       /** Descricao */
@@ -2022,13 +2357,6 @@ export interface components {
       /** Descricao */
       descricao: string;
     };
-    /** FatorRisco */
-    FatorRisco: {
-      /** Nome */
-      nome: string;
-      /** Descricao */
-      descricao: string;
-    };
     /** Fonte */
     Fonte: {
       /** Id */
@@ -2049,6 +2377,27 @@ export interface components {
       ultima_atualizacao: string | null;
       /** Limite Desatualizacao H */
       limite_desatualizacao_h: number;
+      /**
+       * Limite Frescor H
+       * @description Limite de frescor (RF-19); null = sem limite
+       */
+      limite_frescor_h?: number | null;
+      /**
+       * Desatualizado
+       * @description null = sem dado ou sem limite (RN-01)
+       */
+      desatualizado?: boolean | null;
+    };
+    /** FonteArboviroses */
+    FonteArboviroses: {
+      /** Id */
+      id: string;
+      /** Nome */
+      nome: string;
+      /** Atualizado Em */
+      atualizado_em: string | null;
+      /** Status */
+      status: string;
     };
     /** FonteMeta */
     FonteMeta: {
@@ -2068,6 +2417,16 @@ export interface components {
        * @enum {string}
        */
       status: "atualizada" | "desatualizada" | "com_falha" | "planejada";
+      /**
+       * Limite Frescor H
+       * @description Idade máxima aceita do dado, em horas; null = fonte sem limite definido
+       */
+      limite_frescor_h?: number | null;
+      /**
+       * Desatualizado
+       * @description true = passou do limite; false = em dia; null = sem dado ou sem limite (nunca 'em dia' por falta de dado, RN-01)
+       */
+      desatualizado?: boolean | null;
     };
     /** FontePublica */
     FontePublica: {
@@ -2094,6 +2453,10 @@ export interface components {
       status: string;
       /** Ultima Atualizacao */
       ultima_atualizacao: string | null;
+      /** Limite Frescor H */
+      limite_frescor_h?: number | null;
+      /** Desatualizado */
+      desatualizado?: boolean | null;
     };
     /** FraseLonga */
     FraseLonga: {
@@ -2104,25 +2467,49 @@ export interface components {
       /** Inicio */
       inicio: string;
     };
-    /** FrescorFonte */
-    FrescorFonte: {
-      /** Fonte Id */
-      fonte_id: string;
-      /** Nome */
-      nome: string;
-      /** Status */
-      status: string;
-      /** Ultimo Sucesso */
-      ultimo_sucesso: string | null;
-      /** Idade H */
-      idade_h: number | null;
-      /** Limite H */
-      limite_h: number;
-    };
     /** HTTPValidationError */
     HTTPValidationError: {
       /** Detail */
       detail?: components["schemas"]["ValidationError"][];
+    };
+    /** HistoricoOcorrencias */
+    HistoricoOcorrencias: {
+      /**
+       * Tipo
+       * @enum {string}
+       */
+      tipo: "alagamento" | "deslizamento";
+      /** Itens */
+      itens: components["schemas"]["OcorrenciaBairro"][];
+      /** Total Registros */
+      total_registros: number;
+      /** Bairros Com Registro */
+      bairros_com_registro: number;
+      /** Periodo Inicio */
+      periodo_inicio: string | null;
+      /** Periodo Fim */
+      periodo_fim: string | null;
+    };
+    /** ImpactoPessoas */
+    ImpactoPessoas: {
+      /**
+       * Idosos 60 Mais
+       * @description Pessoas residentes; null = sem dado ou suprimido (RN-13)
+       */
+      idosos_60_mais: number | null;
+      /** Criancas 0 14 */
+      criancas_0_14: number | null;
+      /** Equipamentos Saude */
+      equipamentos_saude: number | null;
+      /**
+       * Deficiencia
+       * @description Sem dado público por bairro (Censo 2022 só por área de ponderação)
+       */
+      deficiencia: null;
+      /** Total Pessoas */
+      total_pessoas: number | null;
+      /** Criterio */
+      criterio: string;
     };
     /** InsumosEstagio */
     InsumosEstagio: {
@@ -2181,62 +2568,6 @@ export interface components {
        */
       alertas_oficiais?: components["schemas"]["AlertaOficial"][];
     };
-    /** ItemPrioridade */
-    ItemPrioridade: {
-      /** Posicao */
-      posicao: number;
-      /** Territorio Id */
-      territorio_id: string;
-      /** Territorio Nome */
-      territorio_nome: string;
-      /**
-       * Tipo
-       * @enum {string}
-       */
-      tipo: "distrito" | "bairro";
-      /** Distrito Id */
-      distrito_id: string;
-      /**
-       * Nivel
-       * @enum {string}
-       */
-      nivel: "sem_indicacao" | "atencao" | "alerta" | "critico" | "dados_insuficientes";
-      /** Rotulo */
-      rotulo: string;
-      /**
-       * Nivel Estimador
-       * @enum {string}
-       */
-      nivel_estimador: "sem_indicacao" | "atencao" | "alerta" | "critico" | "dados_insuficientes";
-      /** Nivel Equipe */
-      nivel_equipe: string | null;
-      /**
-       * Experimental
-       * @default true
-       * @constant
-       */
-      experimental: true;
-      /**
-       * Confianca
-       * @enum {string}
-       */
-      confianca: "media" | "baixa" | "insuficiente";
-      /** Motivos */
-      motivos: components["schemas"]["MotivoPrioridade"][];
-      /** Notas Qualidade */
-      notas_qualidade: string[];
-      /** Evidencias */
-      evidencias: components["schemas"]["EvidenciaPrioridade"][];
-      janela_atencao: components["schemas"]["JanelaRisco"] | null;
-      /** Acumulado Previsto Mm */
-      acumulado_previsto_mm: number | null;
-      /** Limite Atencao Mm */
-      limite_atencao_mm: number | null;
-      /** Limite Alerta Mm */
-      limite_alerta_mm: number | null;
-      /** Ocorrencias Historicas */
-      ocorrencias_historicas: number | null;
-    };
     /** ItemRevisao */
     ItemRevisao: {
       /** Tipo */
@@ -2268,6 +2599,81 @@ export interface components {
       /** Fatores */
       fatores: string[];
     };
+    /** ItemSimulacao */
+    ItemSimulacao: {
+      /** Territorio Id */
+      territorio_id: string;
+      /** Nome */
+      nome: string;
+      /**
+       * Nivel
+       * @enum {string}
+       */
+      nivel: "bairro" | "distrito";
+      /** Distrito Id */
+      distrito_id: string;
+      /**
+       * Classe Alagamento
+       * @enum {string}
+       */
+      classe_alagamento: "sem_dados" | "observacao" | "atencao" | "alerta" | "critico";
+      /**
+       * Classe Deslizamento
+       * @enum {string}
+       */
+      classe_deslizamento: "sem_dados" | "observacao" | "atencao" | "alerta" | "critico";
+      /**
+       * Estagio Sugerido
+       * @description Apoio à decisão; não é o estágio oficial nem o declarado
+       * @enum {string}
+       */
+      estagio_sugerido: "sem_dados" | "observacao" | "atencao" | "alerta" | "critico";
+      /**
+       * Confianca
+       * @enum {string}
+       */
+      confianca: "alta" | "media" | "baixa" | "insuficiente";
+      /**
+       * Motivos
+       * @description De 1 a 3 frases curtas
+       */
+      motivos: string[];
+      /** @description null sem a fonte de população vulnerável ou sem estágio de atenção ou mais */
+      impacto_pessoas: components["schemas"]["ImpactoPessoas"] | null;
+      /** @description Só nos itens de distrito; contexto, não previsão (RN-11) */
+      arboviroses?: components["schemas"]["ArbovirosesDistrito"] | null;
+    };
+    /** ItemVulneraveis */
+    ItemVulneraveis: {
+      /** Bairro Id */
+      bairro_id: string;
+      /** Nome */
+      nome: string;
+      /** Distrito Id */
+      distrito_id: string | null;
+      /** Criancas 0 4 */
+      criancas_0_4: number | null;
+      /** Criancas 0 14 */
+      criancas_0_14: number | null;
+      /** Idosos 60 Mais */
+      idosos_60_mais: number | null;
+      /** Idosos 70 Mais */
+      idosos_70_mais: number | null;
+      /** Total */
+      total: number | null;
+      /**
+       * Suprimido
+       * @description Por campo: true = oculto (IBGE ou menos de supressao_minima)
+       */
+      suprimido: {
+        [key: string]: boolean;
+      };
+      /**
+       * Deficiencia
+       * @description Sem dado público por bairro (veja meta.deficiencia)
+       */
+      deficiencia: null;
+    };
     /** JanelaAtencao */
     JanelaAtencao: {
       /**
@@ -2281,6 +2687,37 @@ export interface components {
        */
       fim: string;
     };
+    /** JanelaLeptospirose */
+    JanelaLeptospirose: {
+      /** Ativa */
+      ativa: boolean;
+      /**
+       * Inicio
+       * Format: date
+       */
+      inicio: string;
+      /**
+       * Fim
+       * Format: date
+       */
+      fim: string;
+      /**
+       * Dia Da Janela
+       * @description Dia 1 = data do primeiro gatilho; null se encerrada
+       */
+      dia_da_janela: number | null;
+      /**
+       * Atencao Maior
+       * @description Entre o 5º e o 14º dia desde o último gatilho (incubação média)
+       */
+      atencao_maior: boolean;
+      /** Motivo */
+      motivo: string;
+      /** Origens */
+      origens: ("estagio" | "ocorrencia" | "chuva")[];
+      /** Territorios */
+      territorios: components["schemas"]["TerritorioJanela"][];
+    };
     /** JanelaRisco */
     JanelaRisco: {
       /**
@@ -2293,6 +2730,13 @@ export interface components {
        * Format: date-time
        */
       fim: string;
+    };
+    /** Liberacao */
+    Liberacao: {
+      /** Email */
+      email: string | null;
+      /** Ip */
+      ip: string | null;
     };
     /** Limiares */
     Limiares: {
@@ -2330,12 +2774,6 @@ export interface components {
       /** Min Observacoes */
       min_observacoes: number;
     };
-    /** ListaAbrigos */
-    ListaAbrigos: {
-      /** Itens */
-      itens: components["schemas"]["Abrigo"][];
-      totais: components["schemas"]["climasense__api__routers__abrigos__TotaisAbrigos"];
-    };
     /** ListaAcoes */
     ListaAcoes: {
       /** Itens */
@@ -2346,6 +2784,13 @@ export interface components {
       };
       /** Total */
       total: number;
+      /** Por Distrito */
+      por_distrito: components["schemas"]["AndamentoDistrito"][];
+      /**
+       * Ordenado Por Prioridade
+       * @description true quando `ordem=prioridade` foi aplicada (distritos mais vulneráveis primeiro, RF-22)
+       */
+      ordenado_por_prioridade: boolean;
     };
     /** ListaAvaliacoes */
     ListaAvaliacoes: {
@@ -2395,24 +2840,6 @@ export interface components {
       /** Emitida Em */
       emitida_em: string | null;
     };
-    /** MarePrevista */
-    MarePrevista: {
-      /**
-       * Status
-       * @enum {string}
-       */
-      status: "ok" | "dados_insuficientes";
-      /** Maxima M */
-      maxima_m: number | null;
-      /** Maxima Em */
-      maxima_em: string | null;
-      /** Emitida Em */
-      emitida_em: string | null;
-      /** Fonte Id */
-      fonte_id: string;
-      /** Nota */
-      nota: string | null;
-    };
     /** Medida */
     Medida: {
       /** Chave */
@@ -2460,10 +2887,89 @@ export interface components {
        */
       avisos: string[];
       /**
+       * Fonte Por Premissa
+       * @description Simulador: id estável da fonte de cada premissa (chuva_prevista_mm etc.)
+       */
+      fonte_por_premissa?: {
+        [key: string]: string;
+      } | null;
+      /**
        * Dados Insuficientes
        * @default false
        */
       dados_insuficientes: boolean;
+      /**
+       * Supressao Minima
+       * @description Contagens por território abaixo deste valor (e maiores que zero) saem nulas e com suprimido=true (RNF-03, RN-13)
+       */
+      supressao_minima?: number | null;
+      /**
+       * Ano
+       * @description Camadas de população: ano de referência do dado
+       */
+      ano?: number | null;
+      /**
+       * Deficiencia
+       * @description Camada de vulneráveis: por que não há dado de deficiência por bairro
+       */
+      deficiencia?: string | null;
+      /**
+       * Cobertura
+       * @description Camada de áreas de risco: regionais e bairros com dado, total e se a cobertura é parcial
+       */
+      cobertura?: {
+        [key: string]: unknown;
+      } | null;
+    };
+    /** MetaEstagios */
+    MetaEstagios: {
+      /** Fontes */
+      fontes: components["schemas"]["FonteMeta"][];
+      recorte?: components["schemas"]["RecorteMeta"] | null;
+      /** Cobertura Pct */
+      cobertura_pct?: number | null;
+      amostra?: components["schemas"]["Amostra"] | null;
+      /**
+       * Avisos
+       * @default []
+       */
+      avisos: string[];
+      /**
+       * Fonte Por Premissa
+       * @description Simulador: id estável da fonte de cada premissa (chuva_prevista_mm etc.)
+       */
+      fonte_por_premissa?: {
+        [key: string]: string;
+      } | null;
+      /**
+       * Dados Insuficientes
+       * @default false
+       */
+      dados_insuficientes: boolean;
+      /**
+       * Supressao Minima
+       * @description Contagens por território abaixo deste valor (e maiores que zero) saem nulas e com suprimido=true (RNF-03, RN-13)
+       */
+      supressao_minima?: number | null;
+      /**
+       * Ano
+       * @description Camadas de população: ano de referência do dado
+       */
+      ano?: number | null;
+      /**
+       * Deficiencia
+       * @description Camada de vulneráveis: por que não há dado de deficiência por bairro
+       */
+      deficiencia?: string | null;
+      /**
+       * Cobertura
+       * @description Camada de áreas de risco: regionais e bairros com dado, total e se a cobertura é parcial
+       */
+      cobertura?: {
+        [key: string]: unknown;
+      } | null;
+      /** @description Estágio oficial vigente; null = sem registro (Dados insuficientes, RN-01) */
+      estagio_oficial?: components["schemas"]["EstagioOficial"] | null;
     };
     /** ModeloRisco */
     ModeloRisco: {
@@ -2510,6 +3016,45 @@ export interface components {
       /** Papeis */
       papeis: string[];
     };
+    /** OcorrenciaBairro */
+    OcorrenciaBairro: {
+      /** Bairro Id */
+      bairro_id: string;
+      /** Bairro Nome */
+      bairro_nome: string;
+      /** Distrito Id */
+      distrito_id: string | null;
+      /** Registros */
+      registros: number;
+      /** Dias Com Registro */
+      dias_com_registro: number;
+      /**
+       * Primeiro Registro
+       * Format: date
+       */
+      primeiro_registro: string;
+      /**
+       * Ultimo Registro
+       * Format: date
+       */
+      ultimo_registro: string;
+    };
+    /** OrdemDistrito */
+    OrdemDistrito: {
+      /** Distrito Id */
+      distrito_id: string;
+      /** Nome */
+      nome: string;
+      /**
+       * Estagio Sugerido
+       * @enum {string}
+       */
+      estagio_sugerido: "sem_dados" | "observacao" | "atencao" | "alerta" | "critico";
+      /** Classe Arboviroses */
+      classe_arboviroses: ("baixa" | "media" | "alta") | null;
+      /** Agravos Em Destaque */
+      agravos_em_destaque: string[];
+    };
     /** PaginaAuditoria */
     PaginaAuditoria: {
       /** Itens */
@@ -2545,35 +3090,12 @@ export interface components {
       /** Atualizado Por Nome */
       atualizado_por_nome: string | null;
     };
-    /** PedidoAbrigo */
-    PedidoAbrigo: {
-      /** Nome */
-      nome: string;
-      /** Bairro Id */
-      bairro_id: string;
-      /** Endereco */
-      endereco?: string | null;
-      /** Capacidade */
-      capacidade?: number | null;
-      /**
-       * Aberto
-       * @default false
-       */
-      aberto: boolean;
-      /** Pessoas Abrigadas */
-      pessoas_abrigadas?: number | null;
-      /** Desabrigados */
-      desabrigados?: number | null;
-      /** Observacao */
-      observacao?: string | null;
-      /** Latitude */
-      latitude?: number | null;
-      /** Longitude */
-      longitude?: number | null;
-    };
     /** PedidoAcao */
     PedidoAcao: {
-      /** Territorio Id */
+      /**
+       * Territorio Id
+       * @description recife, um distrito (ds-1 a ds-8) ou um bairro; precisa existir
+       */
       territorio_id: string;
       /**
        * Tipo
@@ -2597,31 +3119,12 @@ export interface components {
       inicio_em?: string | null;
       /** Fim Em */
       fim_em?: string | null;
-      /** Licao Aprendida */
+      /**
+       * Licao Aprendida
+       * @deprecated
+       * @description Obsoleto (PRD §5): não usar
+       */
       licao_aprendida?: string | null;
-    };
-    /** PedidoAtualizacaoAbrigo */
-    PedidoAtualizacaoAbrigo: {
-      /** Nome */
-      nome?: string | null;
-      /** Bairro Id */
-      bairro_id?: string | null;
-      /** Endereco */
-      endereco?: string | null;
-      /** Capacidade */
-      capacidade?: number | null;
-      /** Aberto */
-      aberto?: boolean | null;
-      /** Pessoas Abrigadas */
-      pessoas_abrigadas?: number | null;
-      /** Desabrigados */
-      desabrigados?: number | null;
-      /** Observacao */
-      observacao?: string | null;
-      /** Latitude */
-      latitude?: number | null;
-      /** Longitude */
-      longitude?: number | null;
     };
     /** PedidoAtualizacaoAcao */
     PedidoAtualizacaoAcao: {
@@ -2635,7 +3138,11 @@ export interface components {
       inicio_em?: string | null;
       /** Fim Em */
       fim_em?: string | null;
-      /** Licao Aprendida */
+      /**
+       * Licao Aprendida
+       * @deprecated
+       * @description Obsoleto (PRD §5): não usar
+       */
       licao_aprendida?: string | null;
     };
     /** PedidoAvaliacao */
@@ -2707,7 +3214,7 @@ export interface components {
        * Estagio
        * @enum {string}
        */
-      estagio: "observacao" | "atencao" | "alerta" | "critico";
+      estagio: "observacao" | "atencao" | "alerta" | "critico" | "encerrado";
       /** Justificativa */
       justificativa: string;
     };
@@ -2721,12 +3228,34 @@ export interface components {
       /** Senha */
       senha: string;
     };
+    /** PedidoEstagioOficial */
+    PedidoEstagioOficial: {
+      /**
+       * Estagio
+       * @enum {string}
+       */
+      estagio: "observacao" | "atencao" | "alerta" | "critico";
+      /**
+       * Informado Em
+       * @description Hora do COP com fuso; sem ela vale a do registro
+       */
+      informado_em?: string | null;
+      /** Observacao */
+      observacao?: string | null;
+    };
     /** PedidoExecucao */
     PedidoExecucao: {
       /** Fonte Id */
       fonte_id: string;
       /** Limite */
       limite?: number | null;
+    };
+    /** PedidoLiberacao */
+    PedidoLiberacao: {
+      /** Email */
+      email?: string | null;
+      /** Ip */
+      ip?: string | null;
     };
     /** PedidoMensagem */
     PedidoMensagem: {
@@ -2776,6 +3305,50 @@ export interface components {
       /** Ocorrencias Bairro Minimo */
       ocorrencias_bairro_minimo?: number | null;
     };
+    /** PedidoSalvar */
+    PedidoSalvar: {
+      /**
+       * Nome
+       * @description Nome curto; não escreva dado de pessoas
+       */
+      nome: string;
+      premissas: components["schemas"]["PedidoSimulacao"];
+      /**
+       * Resultado
+       * @description Ignorado: o servidor recalcula e guarda o próprio resultado
+       */
+      resultado?: {
+        [key: string]: unknown;
+      } | null;
+    };
+    /** PedidoSimulacao */
+    PedidoSimulacao: {
+      /**
+       * Chuva Prevista Mm
+       * @description Volume previsto, em mm, durante a duração
+       */
+      chuva_prevista_mm: number;
+      /**
+       * Duracao H
+       * @description Duração da chuva prevista, em horas (até 72)
+       */
+      duracao_h: number;
+      /**
+       * Chuva Acumulada Mm
+       * @description Chuva dos 3 dias anteriores, em mm; null = desconhecida (RN-01)
+       */
+      chuva_acumulada_mm: number | null;
+      /**
+       * Mare M
+       * @description Nível previsto da maré junto do pico, em m; null = desconhecido
+       */
+      mare_m: number | null;
+      /**
+       * Horizonte H
+       * @description Próximas horas do cenário
+       */
+      horizonte_h: number;
+    };
     /** PedidoTrocaSenha */
     PedidoTrocaSenha: {
       /** Senha Atual */
@@ -2806,31 +3379,34 @@ export interface components {
       /** Evidencias */
       evidencias?: components["schemas"]["Evidencia"][];
     };
-    /** PicoPrevisto */
-    PicoPrevisto: {
-      /** Horizonte H */
-      horizonte_h: number;
+    /** PeriodoBoletim */
+    PeriodoBoletim: {
       /**
-       * Status
-       * @enum {string}
+       * Desde
+       * Format: date
        */
-      status: "ok" | "dados_insuficientes";
-      /** Valor Mm */
-      valor_mm: number | null;
-      /** Em */
-      em: string | null;
-      /** Maior 24H Mm */
-      maior_24h_mm: number | null;
-      /** Limite Atencao Mm */
-      limite_atencao_mm: number | null;
-      /** Limite Alerta Mm */
-      limite_alerta_mm: number | null;
-      /** Emitida Em */
-      emitida_em: string | null;
-      /** Fonte Id */
-      fonte_id: string;
-      /** Nota */
-      nota: string | null;
+      desde: string;
+      /**
+       * Ate
+       * Format: date
+       */
+      ate: string;
+    };
+    /** PessoasEmAlerta */
+    PessoasEmAlerta: {
+      /** Bairros Em Alerta */
+      bairros_em_alerta: number;
+      /** Idosos 60 Mais */
+      idosos_60_mais: number | null;
+      /** Criancas 0 14 */
+      criancas_0_14: number | null;
+      /**
+       * Parcial
+       * @description true = algum bairro em alerta ficou sem número (sem dado ou suprimido)
+       */
+      parcial: boolean;
+      /** Criterio */
+      criterio: string;
     };
     /** PontoChuva */
     PontoChuva: {
@@ -2856,6 +3432,35 @@ export interface components {
       /** Valor */
       valor: number | null;
     };
+    /** PontoSemanal */
+    PontoSemanal: {
+      /** Ano */
+      ano: number;
+      /** Semana */
+      semana: number;
+      /**
+       * Inicio
+       * Format: date
+       */
+      inicio: string;
+      /**
+       * Casos
+       * @description null = suprimido (1 a 4 casos, RN-13)
+       */
+      casos: number | null;
+      /** Suprimido */
+      suprimido: boolean;
+      /**
+       * Incompleta
+       * @description true = semana ainda sujeita a atraso de notificação
+       */
+      incompleta: boolean;
+      /**
+       * Nivel Alerta
+       * @description Nível 1 a 4 do InfoDengue (município); null = sem dado
+       */
+      nivel_alerta: number | null;
+    };
     /** PontoSerie */
     PontoSerie: {
       /**
@@ -2869,6 +3474,41 @@ export interface components {
       dias: number;
       /** Dias Com Dado */
       dias_com_dado: number;
+    };
+    /**
+     * PremissasAtuais
+     * @description Valores sugeridos a partir das fontes reais; `null` = a fonte falta (Dados insuficientes).
+     */
+    PremissasAtuais: {
+      /**
+       * Chuva Prevista Mm
+       * @description Maior chuva prevista em 24 h entre os distritos (Open-Meteo)
+       */
+      chuva_prevista_mm: number | null;
+      /** Duracao H */
+      duracao_h: number | null;
+      /**
+       * Chuva Acumulada Mm
+       * @description Chuva medida nas últimas 72 h (APAC), maior entre os distritos
+       */
+      chuva_acumulada_mm: number | null;
+      /**
+       * Mare M
+       * @description Maré máxima prevista no horizonte (Open-Meteo)
+       */
+      mare_m: number | null;
+      /** Horizonte H */
+      horizonte_h: number;
+    };
+    /** PrioridadeVulnerabilidade */
+    PrioridadeVulnerabilidade: {
+      /** Itens */
+      itens: components["schemas"]["climasense__api__routers__territorios__ItemPrioridade"][];
+      /**
+       * Desde
+       * @description Ano do primeiro atendimento na base
+       */
+      desde: number | null;
     };
     /** Prioridades */
     Prioridades: {
@@ -2889,7 +3529,7 @@ export interface components {
       /** Resumo */
       resumo: string;
       /** Itens */
-      itens: components["schemas"]["ItemPrioridade"][];
+      itens: components["schemas"]["climasense__api__esquemas_decisao__ItemPrioridade"][];
     };
     /** RecorteMeta */
     RecorteMeta: {
@@ -2936,9 +3576,19 @@ export interface components {
         [key: string]: unknown;
       };
     };
+    /** RespostaDados[BairrosSaude] */
+    RespostaDados_BairrosSaude_: {
+      dados: components["schemas"]["BairrosSaude"];
+      meta: components["schemas"]["Meta"];
+    };
     /** RespostaDados[Boletim] */
     RespostaDados_Boletim_: {
       dados: components["schemas"]["Boletim"];
+      meta: components["schemas"]["Meta"];
+    };
+    /** RespostaDados[CenarioSalvo] */
+    RespostaDados_CenarioSalvo_: {
+      dados: components["schemas"]["CenarioSalvo"];
       meta: components["schemas"]["Meta"];
     };
     /** RespostaDados[Cenario] */
@@ -2946,14 +3596,29 @@ export interface components {
       dados: components["schemas"]["Cenario"];
       meta: components["schemas"]["Meta"];
     };
+    /** RespostaDados[EstagioOficial] */
+    RespostaDados_EstagioOficial_: {
+      dados: components["schemas"]["EstagioOficial"];
+      meta: components["schemas"]["Meta"];
+    };
     /** RespostaDados[Estatisticas] */
     RespostaDados_Estatisticas_: {
       dados: components["schemas"]["Estatisticas"];
       meta: components["schemas"]["Meta"];
     };
-    /** RespostaDados[ListaEstagios] */
-    RespostaDados_ListaEstagios_: {
-      dados: components["schemas"]["ListaEstagios"];
+    /** RespostaDados[HistoricoOcorrencias] */
+    RespostaDados_HistoricoOcorrencias_: {
+      dados: components["schemas"]["HistoricoOcorrencias"];
+      meta: components["schemas"]["Meta"];
+    };
+    /** RespostaDados[PremissasAtuais] */
+    RespostaDados_PremissasAtuais_: {
+      dados: components["schemas"]["PremissasAtuais"];
+      meta: components["schemas"]["Meta"];
+    };
+    /** RespostaDados[PrioridadeVulnerabilidade] */
+    RespostaDados_PrioridadeVulnerabilidade_: {
+      dados: components["schemas"]["PrioridadeVulnerabilidade"];
       meta: components["schemas"]["Meta"];
     };
     /** RespostaDados[Prioridades] */
@@ -2966,6 +3631,16 @@ export interface components {
       dados: components["schemas"]["Referencia"];
       meta: components["schemas"]["Meta"];
     };
+    /** RespostaDados[ResumoSaude] */
+    RespostaDados_ResumoSaude_: {
+      dados: components["schemas"]["ResumoSaude"];
+      meta: components["schemas"]["Meta"];
+    };
+    /** RespostaDados[ResumoVulnerabilidade] */
+    RespostaDados_ResumoVulnerabilidade_: {
+      dados: components["schemas"]["ResumoVulnerabilidade"];
+      meta: components["schemas"]["Meta"];
+    };
     /** RespostaDados[RiscoAlagamento] */
     RespostaDados_RiscoAlagamento_: {
       dados: components["schemas"]["RiscoAlagamento"];
@@ -2976,14 +3651,49 @@ export interface components {
       dados: components["schemas"]["Sazonalidade"];
       meta: components["schemas"]["Meta"];
     };
+    /** RespostaDados[SerieSaude] */
+    RespostaDados_SerieSaude_: {
+      dados: components["schemas"]["SerieSaude"];
+      meta: components["schemas"]["Meta"];
+    };
     /** RespostaDados[SerieTemporal] */
     RespostaDados_SerieTemporal_: {
       dados: components["schemas"]["SerieTemporal"];
       meta: components["schemas"]["Meta"];
     };
-    /** RespostaDados[SituacaoAgora] */
-    RespostaDados_SituacaoAgora_: {
-      dados: components["schemas"]["SituacaoAgora"];
+    /** RespostaDados[Simulacao] */
+    RespostaDados_Simulacao_: {
+      dados: components["schemas"]["Simulacao"];
+      meta: components["schemas"]["Meta"];
+    };
+    /** RespostaDados[Union[EstagioOficial, NoneType]] */
+    RespostaDados_Union_EstagioOficial__NoneType__: {
+      dados: components["schemas"]["EstagioOficial"] | null;
+      meta: components["schemas"]["Meta"];
+    };
+    /** RespostaDados[Vulneraveis] */
+    RespostaDados_Vulneraveis_: {
+      dados: components["schemas"]["Vulneraveis"];
+      meta: components["schemas"]["Meta"];
+    };
+    /** RespostaDados[dict] */
+    RespostaDados_dict_: {
+      /** Dados */
+      dados: {
+        [key: string]: unknown;
+      };
+      meta: components["schemas"]["Meta"];
+    };
+    /** RespostaDados[list[CenarioListado]] */
+    RespostaDados_list_CenarioListado__: {
+      /** Dados */
+      dados: components["schemas"]["CenarioListado"][];
+      meta: components["schemas"]["Meta"];
+    };
+    /** RespostaDados[list[EstagioOficial]] */
+    RespostaDados_list_EstagioOficial__: {
+      /** Dados */
+      dados: components["schemas"]["EstagioOficial"][];
       meta: components["schemas"]["Meta"];
     };
     /** RespostaDados[list[ValorDistrito]] */
@@ -2991,6 +3701,115 @@ export interface components {
       /** Dados */
       dados: components["schemas"]["ValorDistrito"][];
       meta: components["schemas"]["Meta"];
+    };
+    /** RespostaEstagios */
+    RespostaEstagios: {
+      dados: components["schemas"]["ListaEstagios"];
+      meta: components["schemas"]["MetaEstagios"];
+    };
+    /** ResultadoSalvo */
+    ResultadoSalvo: {
+      /** Itens */
+      itens: components["schemas"]["ItemSimulacao"][];
+      resumo: components["schemas"]["ResumoSimulacao"];
+      /**
+       * Experimental
+       * @default true
+       * @constant
+       */
+      experimental: true;
+      /**
+       * Calculado Em
+       * Format: date-time
+       */
+      calculado_em: string;
+      /** Tempo Calculo Ms */
+      tempo_calculo_ms: number;
+      /**
+       * Fontes
+       * @description Fontes e horas de atualização no momento de salvar
+       */
+      fontes?: {
+        [key: string]: unknown;
+      }[];
+    };
+    /** ResumoAgravo */
+    ResumoAgravo: {
+      /**
+       * Agravo
+       * @enum {string}
+       */
+      agravo: "dengue" | "chikungunya" | "leptospirose";
+      /** Nome */
+      nome: string;
+      /** Fonte Id */
+      fonte_id: string;
+      /** @description null enquanto a fonte não tiver carga (RN-01) */
+      ultima_semana: components["schemas"]["SemanaRef"] | null;
+      /**
+       * Casos
+       * @description Casos notificados na última semana da série
+       */
+      casos: number | null;
+      /**
+       * Casos Estimados
+       * @description Nowcasting do InfoDengue; null na leptospirose
+       */
+      casos_estimados: number | null;
+      /**
+       * Confirmados
+       * @description Só leptospirose (SINAN)
+       */
+      confirmados?: number | null;
+      /** Rt */
+      rt?: number | null;
+      /**
+       * Variacao 4S Pct
+       * @description 4 últimas semanas utilizáveis contra as 4 anteriores; null sem base suficiente
+       */
+      variacao_4s_pct: number | null;
+      /**
+       * Nivel Alerta
+       * @description 1–4 do InfoDengue; null na leptospirose
+       */
+      nivel_alerta: number | null;
+      /** Incompleta */
+      incompleta: boolean | null;
+    };
+    /** ResumoArboviroses */
+    ResumoArboviroses: {
+      /**
+       * Experimental
+       * @default true
+       * @constant
+       */
+      experimental: true;
+      /**
+       * Contexto
+       * @default true
+       * @constant
+       */
+      contexto: true;
+      /**
+       * Aviso
+       * @description Deixa claro que arboviroses são contexto, não previsão causal da chuva
+       */
+      aviso: string;
+      /**
+       * Granularidade Semanal
+       * @constant
+       */
+      granularidade_semanal: "municipio";
+      /**
+       * Granularidade Anual
+       * @constant
+       */
+      granularidade_anual: "distrito";
+      /**
+       * Fontes
+       * @description Fonte e hora da última atualização (RF-19)
+       */
+      fontes: components["schemas"]["FonteArboviroses"][];
     };
     /** ResumoAvaliacao */
     ResumoAvaliacao: {
@@ -3078,7 +3897,6 @@ export interface components {
     ResumoPainel: {
       /** Avisos */
       avisos: components["schemas"]["AvisoPublico"][];
-      abrigos: components["schemas"]["climasense__api__routers__painel__TotaisAbrigos"];
       /** Pode Revisar */
       pode_revisar: boolean;
       /** Aguardando Revisao */
@@ -3088,6 +3906,75 @@ export interface components {
       /** Fontes */
       fontes: components["schemas"]["FonteSaude"][];
       contadores: components["schemas"]["Contadores"];
+    };
+    /** ResumoSalvo */
+    ResumoSalvo: {
+      /** Por Classe */
+      por_classe: {
+        [key: string]: {
+          [key: string]: number;
+        };
+      } | null;
+    };
+    /** ResumoSaude */
+    ResumoSaude: {
+      /** Agravos */
+      agravos: components["schemas"]["ResumoAgravo"][];
+      janela_leptospirose: components["schemas"]["JanelaLeptospirose"] | null;
+      /**
+       * Gerado Em
+       * Format: date-time
+       */
+      gerado_em: string;
+    };
+    /** ResumoSimulacao */
+    ResumoSimulacao: {
+      /**
+       * Por Classe
+       * @description Contagem de bairros por classe: alagamento, deslizamento e estagio_sugerido
+       */
+      por_classe: {
+        [key: string]: {
+          [key: string]: number;
+        };
+      };
+      /** Impacto Pessoas Aviso */
+      impacto_pessoas_aviso: string | null;
+      arboviroses?: components["schemas"]["ResumoArboviroses"] | null;
+      /**
+       * Ordem De Atencao Distritos
+       * @description Distritos do mais ao menos afetado pela chuva simulada; no empate, pela classe de arboviroses
+       */
+      ordem_de_atencao_distritos?: components["schemas"]["OrdemDistrito"][];
+      /** @description Idosos e crianças residentes em bairros em alerta ou acima; contagem, não probabilidade */
+      pessoas_vulneraveis_em_alerta?: components["schemas"]["PessoasEmAlerta"] | null;
+    };
+    /** ResumoVulnerabilidade */
+    ResumoVulnerabilidade: {
+      /**
+       * Idosos 60 Mais
+       * @description Residentes; null = sem dado ou suprimido
+       */
+      idosos_60_mais: number | null;
+      /** Criancas 0 14 */
+      criancas_0_14: number | null;
+      /** Equipamentos */
+      equipamentos: components["schemas"]["EquipamentoResumo"][];
+      /**
+       * Equipamentos Em Area De Risco
+       * @description null = sem a camada de áreas de risco
+       */
+      equipamentos_em_area_de_risco: number | null;
+      /**
+       * Areas Risco
+       * @description Áreas de risco mapeadas no território; null = sem a camada
+       */
+      areas_risco: number | null;
+      /**
+       * Cobertura Risco Parcial
+       * @description true = nem todo bairro tem área de risco mapeada: ausência não é segurança (RN-01)
+       */
+      cobertura_risco_parcial: boolean;
     };
     /** RiscoAlagamento */
     RiscoAlagamento: {
@@ -3104,50 +3991,6 @@ export interface components {
       modelo: components["schemas"]["ModeloRisco"] | null;
       /** Itens */
       itens: components["schemas"]["ItemRisco"][];
-    };
-    /** RiscoGeral */
-    RiscoGeral: {
-      /**
-       * Prioridade
-       * @enum {string}
-       */
-      prioridade: "sem_indicacao" | "atencao" | "alerta" | "critico" | "dados_insuficientes";
-      /** Rotulo */
-      rotulo: string;
-      /** Motivo */
-      motivo: string;
-      /** Fatores */
-      fatores: components["schemas"]["FatorRisco"][];
-      /** Limitacoes */
-      limitacoes: string[];
-      /**
-       * Qualidade
-       * @enum {string}
-       */
-      qualidade: "completa" | "parcial" | "insuficiente";
-      /**
-       * Confianca
-       * @enum {string}
-       */
-      confianca: "media" | "baixa" | "insuficiente";
-      janela_atencao: components["schemas"]["JanelaRisco"] | null;
-      /** Horizonte H */
-      horizonte_h: number;
-      /** Metodo */
-      metodo: string;
-      /** Versao Metodo */
-      versao_metodo: string;
-      /**
-       * Experimental
-       * @default true
-       * @constant
-       */
-      experimental: true;
-      /**
-       * Emitida Em
-       * Format: date-time
-       */
-      emitida_em: string;
     };
     /** RiscoML */
     RiscoML: {
@@ -3178,6 +4021,17 @@ export interface components {
         [key: string]: "ok" | "indisponivel" | "nao_configurado";
       };
     };
+    /**
+     * SaudeMinima
+     * @description Resposta sem login em produção: nada de ambiente, versão ou estado de dependências (RNF-02).
+     */
+    SaudeMinima: {
+      /**
+       * Status
+       * @enum {string}
+       */
+      status: "ok" | "falha";
+    };
     /** Sazonalidade */
     Sazonalidade: {
       /** Anos */
@@ -3185,10 +4039,65 @@ export interface components {
       /** Celulas */
       celulas: components["schemas"]["CelulaSazonal"][];
     };
+    /** SemanaRef */
+    SemanaRef: {
+      /** Ano */
+      ano: number;
+      /** Semana */
+      semana: number;
+      /**
+       * Inicio
+       * Format: date
+       */
+      inicio: string;
+    };
+    /** SemanaSaude */
+    SemanaSaude: {
+      /** Ano */
+      ano: number;
+      /** Semana */
+      semana: number;
+      /**
+       * Inicio
+       * Format: date
+       */
+      inicio: string;
+      /** Casos */
+      casos: number | null;
+      /** Confirmados */
+      confirmados?: number | null;
+      /** Casos Estimados */
+      casos_estimados: number | null;
+      /** Ic Inf */
+      ic_inf: number | null;
+      /** Ic Sup */
+      ic_sup: number | null;
+      /** Nivel Alerta */
+      nivel_alerta: number | null;
+      /** Incompleta */
+      incompleta: boolean;
+    };
     /** SenhaTemporaria */
     SenhaTemporaria: {
       /** Senha Temporaria */
       senha_temporaria: string;
+    };
+    /** SerieSaude */
+    SerieSaude: {
+      /**
+       * Agravo
+       * @enum {string}
+       */
+      agravo: "dengue" | "chikungunya" | "leptospirose";
+      /**
+       * Desde
+       * Format: date
+       */
+      desde: string;
+      /** Itens */
+      itens: components["schemas"]["SemanaSaude"][];
+      /** Chuva */
+      chuva: components["schemas"]["ChuvaSemana"][];
     };
     /** SerieTemporal */
     SerieTemporal: {
@@ -3211,24 +4120,24 @@ export interface components {
       /** Lacunas Dias */
       lacunas_dias: number;
     };
-    /** SituacaoAgora */
-    SituacaoAgora: {
-      /** Territorio Id */
-      territorio_id: string;
-      /** Territorio Nome */
-      territorio_nome: string;
+    /** Simulacao */
+    Simulacao: {
+      /** Itens */
+      itens: components["schemas"]["ItemSimulacao"][];
+      resumo: components["schemas"]["ResumoSimulacao"];
       /**
-       * Gerado Em
+       * Experimental
+       * @default true
+       * @constant
+       */
+      experimental: true;
+      /**
+       * Calculado Em
        * Format: date-time
        */
-      gerado_em: string;
-      chuva_24h: components["schemas"]["ChuvaRecente"];
-      chuva_72h: components["schemas"]["ChuvaRecente"];
-      pico: components["schemas"]["PicoPrevisto"];
-      mare: components["schemas"]["MarePrevista"];
-      risco: components["schemas"]["RiscoGeral"];
-      /** Frescor */
-      frescor: components["schemas"]["FrescorFonte"][];
+      calculado_em: string;
+      /** Tempo Calculo Ms */
+      tempo_calculo_ms: number;
     };
     /** Sugerido */
     Sugerido: {
@@ -3296,6 +4205,13 @@ export interface components {
       origem: string;
       /** Motivo */
       motivo: string;
+    };
+    /** TerritorioJanela */
+    TerritorioJanela: {
+      /** Id */
+      id: string;
+      /** Nome */
+      nome: string;
     };
     /** TerritorioRef */
     TerritorioRef: {
@@ -3420,40 +4336,102 @@ export interface components {
       /** Autor Nome */
       autor_nome: string;
     };
-    /** TotaisAbrigos */
-    climasense__api__routers__abrigos__TotaisAbrigos: {
-      /** Abrigos Abertos */
-      abrigos_abertos: number;
-      /** Abrigos Cadastrados */
-      abrigos_cadastrados: number;
-      /**
-       * Pessoas Abrigadas
-       * @description Soma nos abrigos abertos; null se nenhum informou (RN-02)
-       */
-      pessoas_abrigadas: number | null;
-      /**
-       * Desabrigados
-       * @description Soma de todos os abrigos, inclusive os já fechados
-       */
-      desabrigados: number | null;
-      /** Abertos Sem Contagem */
-      abertos_sem_contagem: number;
-      /** Atualizado Em */
-      atualizado_em: string | null;
+    /** Vulneraveis */
+    Vulneraveis: {
+      /** Itens */
+      itens: components["schemas"]["ItemVulneraveis"][];
     };
-    /**
-     * TotaisAbrigos
-     * @description Primeiras métricas no pico do evento (F3): só o que a equipe registrou; null = ninguém informou.
-     */
-    climasense__api__routers__painel__TotaisAbrigos: {
-      /** Abrigos Abertos */
-      abrigos_abertos: number;
-      /** Pessoas Abrigadas */
-      pessoas_abrigadas: number | null;
-      /** Desabrigados */
-      desabrigados: number | null;
-      /** Atualizado Em */
-      atualizado_em: string | null;
+    /** ItemPrioridade */
+    climasense__api__esquemas_decisao__ItemPrioridade: {
+      /** Posicao */
+      posicao: number;
+      /** Territorio Id */
+      territorio_id: string;
+      /** Territorio Nome */
+      territorio_nome: string;
+      /**
+       * Tipo
+       * @enum {string}
+       */
+      tipo: "distrito" | "bairro";
+      /** Distrito Id */
+      distrito_id: string;
+      /**
+       * Nivel
+       * @enum {string}
+       */
+      nivel: "sem_indicacao" | "atencao" | "alerta" | "critico" | "dados_insuficientes";
+      /** Rotulo */
+      rotulo: string;
+      /**
+       * Nivel Estimador
+       * @enum {string}
+       */
+      nivel_estimador: "sem_indicacao" | "atencao" | "alerta" | "critico" | "dados_insuficientes";
+      /** Nivel Equipe */
+      nivel_equipe: string | null;
+      /**
+       * Experimental
+       * @default true
+       * @constant
+       */
+      experimental: true;
+      /**
+       * Confianca
+       * @enum {string}
+       */
+      confianca: "media" | "baixa" | "insuficiente";
+      /** Motivos */
+      motivos: components["schemas"]["MotivoPrioridade"][];
+      /** Notas Qualidade */
+      notas_qualidade: string[];
+      /** Evidencias */
+      evidencias: components["schemas"]["EvidenciaPrioridade"][];
+      janela_atencao: components["schemas"]["JanelaRisco"] | null;
+      /** Acumulado Previsto Mm */
+      acumulado_previsto_mm: number | null;
+      /** Limite Atencao Mm */
+      limite_atencao_mm: number | null;
+      /** Limite Alerta Mm */
+      limite_alerta_mm: number | null;
+      /** Ocorrencias Historicas */
+      ocorrencias_historicas: number | null;
+    };
+    /** ItemPrioridade */
+    climasense__api__routers__territorios__ItemPrioridade: {
+      /** Territorio Id */
+      territorio_id: string;
+      /** Nome */
+      nome: string;
+      /**
+       * Nivel
+       * @enum {string}
+       */
+      nivel: "distrito" | "bairro";
+      /**
+       * Posicao
+       * @description 1 = mais atendimentos; empatados dividem a posição
+       */
+      posicao: number;
+      /** Ocorrencias Alagamento */
+      ocorrencias_alagamento: number;
+      /** Ocorrencias Deslizamento */
+      ocorrencias_deslizamento: number;
+      /**
+       * Criterio
+       * @description Por que esta ordem, em texto
+       */
+      criterio: string;
+      /**
+       * Idosos 60 Mais
+       * @description Residentes com 60 anos ou mais (IBGE); só exibição, não entra na ordem (P-22)
+       */
+      idosos_60_mais?: number | null;
+      /**
+       * Criancas 0 14
+       * @description Residentes de 0 a 14 anos (IBGE); só exibição
+       */
+      criancas_0_14?: number | null;
     };
   };
   responses: never;
@@ -3479,7 +4457,7 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          "application/json": components["schemas"]["Saude"];
+          "application/json": components["schemas"]["Saude"] | components["schemas"]["SaudeMinima"];
         };
       };
     };
@@ -3745,6 +4723,39 @@ export interface operations {
       };
     };
   };
+  liberar_api_v1_admin_login_liberar_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["PedidoLiberacao"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Liberacao"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
   listar_api_v1_territorios_get: {
     parameters: {
       query?: never;
@@ -3805,6 +4816,26 @@ export interface operations {
       };
     };
   };
+  bairros_geojson_api_v1_territorios_bairros_geojson_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+    };
+  };
   indicadores_api_v1_territorios_indicadores_get: {
     parameters: {
       query: {
@@ -3826,6 +4857,129 @@ export interface operations {
         };
         content: {
           "application/json": components["schemas"]["RespostaDados_list_ValorDistrito__"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  prioridade_por_vulnerabilidade_api_v1_territorios_prioridade_get: {
+    parameters: {
+      query?: {
+        /** @description distrito ou bairro; sem o parâmetro vêm os dois, cada um numerado */
+        nivel?: ("distrito" | "bairro") | null;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["RespostaDados_PrioridadeVulnerabilidade_"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  camada_equipamentos_api_v1_territorios_camadas_equipamentos_saude_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["RespostaDados_dict_"];
+        };
+      };
+    };
+  };
+  camada_vulneraveis_api_v1_territorios_camadas_vulneraveis_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["RespostaDados_Vulneraveis_"];
+        };
+      };
+    };
+  };
+  camada_areas_risco_api_v1_territorios_camadas_areas_risco_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["RespostaDados_dict_"];
+        };
+      };
+    };
+  };
+  resumo_vulnerabilidade_api_v1_territorios__territorio_id__resumo_vulnerabilidade_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        territorio_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["RespostaDados_ResumoVulnerabilidade_"];
         };
       };
       /** @description Validation Error */
@@ -4308,7 +5462,7 @@ export interface operations {
       };
     };
   };
-  cenarios_api_v1_cenarios_get: {
+  estimativa_api_v1_cenarios_estimativa_get: {
     parameters: {
       query?: {
         territorio_id?: string;
@@ -4328,6 +5482,143 @@ export interface operations {
         };
         content: {
           "application/json": components["schemas"]["RespostaDados_Cenario_"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  premissas_atuais_api_v1_cenarios_premissas_atuais_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["RespostaDados_PremissasAtuais_"];
+        };
+      };
+    };
+  };
+  simular_api_v1_cenarios_simular_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["PedidoSimulacao"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["RespostaDados_Simulacao_"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  listar_api_v1_cenarios_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["RespostaDados_list_CenarioListado__"];
+        };
+      };
+    };
+  };
+  salvar_api_v1_cenarios_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["PedidoSalvar"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["RespostaDados_CenarioSalvo_"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  abrir_api_v1_cenarios__cenario_id__get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        cenario_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["RespostaDados_CenarioSalvo_"];
         };
       };
       /** @description Validation Error */
@@ -5041,58 +6332,6 @@ export interface operations {
       };
     };
   };
-  situacao_agora_api_v1_painel_situacao_get: {
-    parameters: {
-      query?: {
-        /** @description recife, ds-1 a ds-8 (bairro vira o distrito) */
-        territorio_id?: string;
-      };
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["RespostaDados_SituacaoAgora_"];
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"];
-        };
-      };
-    };
-  };
-  acoes_agora_api_v1_painel_acoes_get: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["AcoesAgora"];
-        };
-      };
-    };
-  };
   auditoria_api_v1_admin_auditoria_get: {
     parameters: {
       query?: {
@@ -5214,7 +6453,7 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          "application/json": components["schemas"]["RespostaDados_ListaEstagios_"];
+          "application/json": components["schemas"]["RespostaEstagios"];
         };
       };
       /** @description Validation Error */
@@ -5257,6 +6496,79 @@ export interface operations {
         };
         content: {
           "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  oficial_api_v1_estagios_oficial_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["RespostaDados_Union_EstagioOficial__NoneType__"];
+        };
+      };
+    };
+  };
+  registrar_oficial_api_v1_estagios_oficial_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["PedidoEstagioOficial"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["RespostaDados_EstagioOficial_"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  historico_oficial_api_v1_estagios_oficial_historico_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["RespostaDados_list_EstagioOficial__"];
         };
       };
     };
@@ -5434,168 +6746,6 @@ export interface operations {
       };
     };
   };
-  listar_api_v1_abrigos_get: {
-    parameters: {
-      query?: {
-        aberto?: boolean | null;
-        distrito_id?: string | null;
-      };
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["ListaAbrigos"];
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"];
-        };
-      };
-    };
-  };
-  criar_api_v1_abrigos_post: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["PedidoAbrigo"];
-      };
-    };
-    responses: {
-      /** @description Successful Response */
-      201: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["Abrigo"];
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"];
-        };
-      };
-    };
-  };
-  detalhe_api_v1_abrigos__abrigo_id__get: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        abrigo_id: string;
-      };
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["Abrigo"];
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"];
-        };
-      };
-    };
-  };
-  atualizar_api_v1_abrigos__abrigo_id__patch: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        abrigo_id: string;
-      };
-      cookie?: never;
-    };
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["PedidoAtualizacaoAbrigo"];
-      };
-    };
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["Abrigo"];
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"];
-        };
-      };
-    };
-  };
-  historico_api_v1_abrigos__abrigo_id__historico_get: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        abrigo_id: string;
-      };
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["AtualizacaoAbrigo"][];
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"];
-        };
-      };
-    };
-  };
   listar_api_v1_acoes_get: {
     parameters: {
       query?: {
@@ -5603,6 +6753,8 @@ export interface operations {
         situacao?: ("planejada" | "em_andamento" | "concluida" | "cancelada") | null;
         desde?: string | null;
         ate?: string | null;
+        /** @description prioridade: distritos mais vulneráveis primeiro (ordem de /territorios/prioridade) */
+        ordem?: "recente" | "prioridade";
       };
       header?: never;
       path?: never;
@@ -5694,6 +6846,35 @@ export interface operations {
       };
     };
   };
+  excluir_api_v1_acoes__acao_id__delete: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        acao_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
   atualizar_api_v1_acoes__acao_id__patch: {
     parameters: {
       query?: never;
@@ -5734,6 +6915,10 @@ export interface operations {
       query?: {
         /** @description recife ou ds-1 a ds-8 (bairro vira o distrito) */
         territorio_id?: string;
+        /** @description Início do período (padrão: 7 dias até hoje) */
+        desde?: string | null;
+        /** @description Fim do período (padrão: hoje, no Recife) */
+        ate?: string | null;
       };
       header?: never;
       path?: never;
@@ -5765,6 +6950,8 @@ export interface operations {
     parameters: {
       query?: {
         territorio_id?: string;
+        desde?: string | null;
+        ate?: string | null;
       };
       header?: never;
       path?: never;
@@ -5810,6 +6997,123 @@ export interface operations {
         };
         content: {
           "application/json": components["schemas"]["RespostaDados_RiscoAlagamento_"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  resumo_api_v1_saude_resumo_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["RespostaDados_ResumoSaude_"];
+        };
+      };
+    };
+  };
+  semanal_api_v1_saude_semanal_get: {
+    parameters: {
+      query?: {
+        agravo?: "dengue" | "chikungunya" | "leptospirose";
+        /** @description AAAA-MM-DD; padrão: 104 semanas atrás */
+        desde?: string | null;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["RespostaDados_SerieSaude_"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  bairros_api_v1_saude_bairros_get: {
+    parameters: {
+      query?: {
+        agravo?: "dengue" | "chikungunya";
+        /** @description padrão: o último ano publicado */
+        ano?: number | null;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["RespostaDados_BairrosSaude_"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  historico_ocorrencias_api_v1_ocorrencias_historico_get: {
+    parameters: {
+      query?: {
+        tipo?: "alagamento" | "deslizamento";
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["RespostaDados_HistoricoOcorrencias_"];
         };
       };
       /** @description Validation Error */

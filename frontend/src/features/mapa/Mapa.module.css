@@ -1,134 +1,143 @@
 /* Mapa: faixa do COP, mapa dos bairros com legenda, painel do território, prioritários e lista. */
 .pagina {
   display: grid;
+  /* o cabeçalho da tela já deixa uma folga grande: o mapa sobe */
+  margin-top: calc(-1 * var(--e-4));
   grid-template-columns: minmax(0, 1fr);
   gap: var(--e-5);
 }
 
-/* ---------- faixa do estágio oficial (COP) */
-.oficial {
+/* ---------- faixa compacta do estágio oficial (COP) + chips de contagem */
+.faixaCop {
   display: grid;
   gap: var(--e-2);
-  justify-items: start;
+  padding: var(--e-2) var(--e-4);
+  border-radius: var(--r-painel);
+  border-left: 5px solid var(--cs-mare);
+  background: var(--cs-mare-suave);
+  color: var(--cs-tinta);
+}
+.copLinha {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--e-1) var(--e-4);
+}
+.copTitulo {
+  margin: 0;
+  font-family: var(--fonte-titulo);
+  font-size: var(--t-apoio);
+  font-weight: 800;
+  color: var(--cs-mare);
+}
+.copCarregando {
+  display: flex;
+  align-items: center;
+  gap: var(--e-2);
+  color: var(--cs-tinta-2);
+}
+.oficial {
+  display: flex;
+  flex: 1 1 18rem;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--e-1) var(--e-3);
+  min-width: 0;
+}
+.oficial > :global(p) {
+  margin: 0;
 }
 .oficialEstagio {
   margin: 0;
-  font-size: var(--t-3);
-}
-.oficialEstagio :global(span) {
-  font-size: 1.25rem;
-  padding: var(--e-2) var(--e-4);
 }
 .oficialFrase {
-  max-width: 28ch;
   margin: 0;
-  font-family: var(--fonte-titulo);
-  font-size: clamp(1.375rem, 1.1rem + 1.2vw, 1.875rem);
-  font-weight: 700;
-  line-height: 1.2;
-  color: var(--sup-sobre);
+  color: var(--cs-tinta);
 }
 .oficialQuem,
 .oficialFonte,
 .oficialObs {
-  max-width: 46ch;
   margin: 0;
-  font-size: var(--t-apoio);
-  color: var(--sup-sobre);
-}
-.oficialFonte {
-  color: var(--sup-sobre-2);
+  font-size: 0.9375rem;
+  color: var(--cs-tinta-2);
 }
 .oficialAcao {
-  margin-top: var(--e-3);
+  margin-left: auto;
+}
+.oficialAcao button {
+  min-height: 40px;
+  padding-block: 0;
+  font-size: 0.9375rem;
 }
 
-/* ---------- contagem de bairros por estágio: fileira de cartões dentro da faixa */
 .contagem {
-  display: grid;
-  gap: var(--e-2);
-  margin-top: var(--e-3);
-  color: var(--sup-sobre);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--e-1) var(--e-2);
+  padding-top: var(--e-2);
+  border-top: 1px solid var(--cs-linha);
+  color: var(--cs-tinta);
 }
-.contagem h3 {
-  margin: 0;
-  font-family: var(--fonte-titulo);
-  font-size: var(--t-apoio);
+.contagemTitulo {
+  font-size: 0.9375rem;
   font-weight: 700;
-  color: var(--sup-sobre-2);
+  color: var(--cs-tinta-2);
 }
 .contagem ul {
-  display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: var(--e-2);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--e-1) var(--e-2);
   margin: 0;
   padding: 0;
   list-style: none;
 }
 .contagem li {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  grid-template-areas: "n r" "d d";
-  column-gap: var(--e-2);
+  display: inline-flex;
   align-items: baseline;
-  padding: var(--e-2) var(--e-3);
-  border-top: 5px solid var(--n-insuf);
-  border-radius: var(--r-icone);
+  gap: 5px;
+  padding: 1px 10px;
+  border: 2px solid var(--n-insuf);
+  border-radius: var(--r-pilula);
   background: var(--cs-papel);
-  color: var(--cs-tinta);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  white-space: nowrap;
 }
 .contagem li b {
-  grid-area: n;
   font-family: var(--fonte-titulo);
-  font-size: var(--t-3);
   font-weight: 800;
-  line-height: 1;
-}
-.contagem li span {
-  grid-area: r;
-  font-weight: 700;
-}
-.contagem li small {
-  grid-area: d;
-  font-size: 0.875rem;
-  line-height: 1.3;
-  color: var(--cs-tinta-2);
-}
-.contagem li[data-zero="true"] b,
-.contagem li[data-zero="true"] span {
-  color: var(--cs-tinta-2);
-  font-weight: 600;
 }
 .contagem li[data-estagio="observacao"] {
-  border-top-color: var(--n-info);
+  border-color: var(--n-info);
 }
 .contagem li[data-estagio="atencao"] {
-  border-top-color: var(--n-atencao);
+  border-color: var(--n-atencao);
 }
 .contagem li[data-estagio="alerta"] {
-  border-top-color: var(--n-alerta);
+  border-color: var(--n-alerta);
 }
 .contagem li[data-estagio="critico"] {
-  border-top-color: var(--n-critico);
+  border-color: var(--n-critico);
 }
 .contagem li[data-estagio="sem_dados"] {
-  border-top-style: dashed;
+  border-style: dashed;
 }
 .contagemTotal,
 .contagemVazia {
   margin: 0;
-  font-size: 0.9375rem;
-  color: var(--sup-sobre-2);
+  font-size: 0.875rem;
+  color: var(--cs-tinta-2);
 }
 .contagemVazia {
   font-size: var(--t-apoio);
-  color: var(--sup-sobre);
+  color: var(--cs-tinta);
 }
 
 /* ---------- corpo: mapa à esquerda, painel e listas à direita */
 .corpo {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 26rem);
+  grid-template-columns: minmax(0, 1fr) minmax(0, 24rem);
   gap: var(--e-5);
   align-items: start;
 }
@@ -146,7 +155,7 @@
 }
 .mapa {
   position: relative;
-  height: clamp(420px, 68vh, 680px);
+  height: clamp(380px, calc(100vh - 21rem), 660px);
   border-radius: var(--r-painel);
   background: var(--cs-papel);
   box-shadow: var(--sombra-cartao);
@@ -317,7 +326,7 @@
 .dupla small,
 .numeros small,
 .alertas small,
-.abrigos small {
+.itens small {
   font-size: 0.9375rem;
   color: var(--cs-tinta-2);
 }
@@ -369,7 +378,7 @@
   gap: var(--e-2);
 }
 .alertas,
-.abrigos {
+.itens {
   display: grid;
   gap: var(--e-2);
   margin: 0;
@@ -377,7 +386,7 @@
   list-style: none;
 }
 .alertas li,
-.abrigos li {
+.itens li {
   display: grid;
   gap: 2px;
   padding: var(--e-2) var(--e-3);
@@ -387,16 +396,8 @@
 .alertas li {
   border-left: 5px solid var(--n-alerta);
 }
-.abrigoNome {
+.itemNome {
   font-weight: 700;
-}
-.abrigoSit {
-  font-size: 0.9375rem;
-  font-weight: 700;
-  color: var(--cs-tinta-2);
-}
-.abrigoSit[data-aberto="true"] {
-  color: var(--cs-mangue);
 }
 .emBreve {
   padding: var(--e-3);
@@ -530,14 +531,14 @@
     position: static;
   }
   .mapa {
-    height: clamp(340px, 58vh, 520px);
+    height: clamp(320px, 56vh, 520px);
   }
   /* no celular o painel é uma folha de baixo: o mapa continua à vista por trás */
   .painelCaixa {
     position: fixed;
     z-index: 1200;
     inset: auto 0 0 0;
-    max-height: 62vh;
+    max-height: 50vh;
     overflow-y: auto;
     overscroll-behavior: contain;
     border-radius: var(--r-painel) var(--r-painel) 0 0;
@@ -558,27 +559,10 @@
     border-bottom: var(--borda);
   }
   .corpo[data-com-painel="true"] {
-    padding-bottom: 62vh;
-  }
-}
-@media (max-width: 900px) {
-  .contagem ul {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    padding-bottom: 50vh;
   }
 }
 @media (max-width: 560px) {
-  .contagem ul {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-  .contagem li {
-    grid-template-columns: 1fr;
-    grid-template-areas: "n" "r" "d";
-    row-gap: 2px;
-    min-width: 0;
-  }
-  .contagem li span {
-    overflow-wrap: anywhere;
-  }
   .dupla {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -597,12 +581,139 @@
   margin: 0;
 }
 
-/* abrigos além dos 3 primeiros ficam recolhidos */
-.maisAbrigos {
-  display: grid;
-  gap: var(--e-2);
+/* ---------- controles acima do mapa: "Colorir por", chips dos distritos, avisos */
+.ferramentas {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--e-2) var(--e-4);
 }
-.maisAbrigos summary {
+.ferramentas > :global(button):last-child {
+  margin-left: auto;
+}
+.soLargo {
+  /* detalhe que o celular dispensa: a frase de antes já diz que falta o dado */
+}
+.colorir {
+  display: flex;
+  align-items: center;
+  gap: var(--e-2);
+  min-width: 0;
+}
+.colorir > span {
+  font-family: var(--fonte-titulo);
+  font-weight: 700;
+  color: var(--cs-tinta-2);
+  white-space: nowrap;
+}
+.colorirCurto {
+  display: none;
+}
+.avisoLinha {
+  margin: 0;
+  padding: var(--e-2) var(--e-3);
+  border-radius: var(--r-icone);
+  background: var(--cs-mare-suave);
+  color: var(--cs-tinta);
+  font-size: 0.9375rem;
+  line-height: 1.35;
+}
+.chips {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.chips ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.chip {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 6px;
+  min-height: var(--alvo-lista);
+  padding: 0 var(--e-3) 0 10px;
+  font-size: 0.9375rem;
+  border: 2px solid var(--cs-linha-forte);
+  border-radius: var(--r-pilula);
+  background: var(--cs-papel);
+  color: var(--cs-tinta);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity var(--mov-rapido);
+}
+.chip {
+  white-space: nowrap;
+}
+.chip:hover {
+  background: var(--cs-mare-suave);
+}
+.chip[aria-pressed="true"] {
+  border-color: var(--cs-tinta);
+  box-shadow: inset 0 0 0 1px var(--cs-tinta);
+  background: var(--cs-mare-suave);
+}
+.chip[data-esmaecido="true"] {
+  opacity: 0.6;
+}
+.chip:focus-visible {
+  outline: 3px solid var(--cs-foco);
+  outline-offset: 2px;
+}
+.chipCor {
+  display: inline-block;
+  flex: none;
+  width: 16px;
+  height: 16px;
+  margin-right: 2px;
+  border-radius: 50%;
+  background: var(--cs-papel);
+  box-shadow:
+    inset 0 0 0 2px var(--cs-tinta),
+    0 0 0 1px var(--cs-papel);
+}
+.painelTopo h2 .chipCor {
+  margin-right: var(--e-2);
+  vertical-align: baseline;
+}
+
+/* mapa: estados de carregamento úteis (nunca tela vazia) */
+.carregandoMapa {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+  color: var(--cs-tinta-2);
+}
+.carregandoValores {
+  position: absolute;
+  top: var(--e-3);
+  left: 50%;
+  z-index: 800;
+  transform: translateX(-50%);
+  margin: 0;
+  padding: var(--e-1) var(--e-3);
+  border-radius: var(--r-pilula);
+  background: var(--cs-papel);
+  box-shadow: var(--sombra-flutuante);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+/* camadas extras: recolhidas por padrão */
+.camadasRecolhidas {
+  padding: 0 var(--e-4);
+  border-radius: var(--r-painel);
+  background: var(--cs-papel);
+  box-shadow: var(--sombra-cartao);
+}
+.camadasRecolhidas > summary {
   display: flex;
   align-items: center;
   min-height: var(--alvo);
@@ -610,6 +721,162 @@
   color: var(--cs-mare);
   cursor: pointer;
 }
-.maisAbrigos[open] summary {
+.camadasRecolhidas[open] > summary {
   margin-bottom: var(--e-2);
+}
+.camadasRecolhidas > :global(fieldset) {
+  margin-bottom: var(--e-3);
+}
+
+/* painel: subir um nível, contagem do distrito e lista de bairros */
+.voltarNivel {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  min-height: 32px;
+  margin: 0 0 var(--e-1) -6px;
+  padding: 0 var(--e-2) 0 2px;
+  border: 0;
+  border-radius: var(--r-pilula);
+  background: transparent;
+  color: var(--cs-mare);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+.voltarNivel:hover {
+  background: var(--cs-mare-suave);
+}
+.miniContagem {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--e-1) var(--e-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--cs-tinta-2);
+}
+.miniContagem b {
+  color: var(--cs-tinta);
+}
+.bairrosDoDistrito {
+  display: grid;
+  gap: var(--e-1);
+  max-height: 20rem;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+}
+.bairrosDoDistrito button {
+  display: flex;
+  align-items: center;
+  gap: var(--e-2);
+  width: 100%;
+  min-height: var(--alvo-lista);
+  padding: var(--e-1) var(--e-2);
+  border: 0;
+  border-radius: var(--r-icone);
+  background: var(--cs-nevoa);
+  color: var(--cs-tinta);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.bairrosDoDistrito button:hover {
+  background: var(--cs-mare-suave);
+}
+.bairrosDoDistrito small {
+  color: var(--cs-tinta-2);
+}
+.maisDetalhe {
+  padding-top: var(--e-3);
+  border-top: var(--borda);
+}
+.maisDetalhe > summary {
+  min-height: var(--alvo-lista);
+  display: flex;
+  align-items: center;
+  font-weight: 700;
+  color: var(--cs-mare);
+  cursor: pointer;
+}
+.maisDetalhe .painel {
+  padding: var(--e-2) 0 0;
+  box-shadow: none;
+}
+
+.legenda small {
+  color: var(--cs-tinta-2);
+}
+
+/* ---------- celular: o mapa precisa aparecer logo, então cada bloco acima dele encolhe */
+@media (max-width: 640px) {
+  .pagina {
+    gap: var(--e-3);
+  }
+  .ferramentas {
+    flex-direction: column;
+    flex-wrap: nowrap;
+    align-items: stretch;
+    gap: var(--e-2);
+  }
+  .ferramentas > :global(button):last-child {
+    margin-left: 0;
+  }
+  .colorirLongo,
+  .soLargo,
+  .contagemTotal {
+    display: none;
+  }
+  .colorirCurto {
+    display: inline;
+  }
+  .colorir fieldset {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+  .colorir div div {
+    display: flex;
+    padding: 3px;
+  }
+  .colorir div label {
+    flex: 1 1 auto;
+    min-width: 0;
+    min-height: 40px;
+    padding: 0 6px;
+    font-size: 0.9375rem;
+  }
+  .chip {
+    min-height: 40px;
+  }
+  /* uma fileira só, que rola de lado */
+  .chips ul {
+    flex-wrap: nowrap;
+    padding-bottom: 2px;
+    overflow-x: auto;
+    scrollbar-width: thin;
+  }
+  .oficialAcao {
+    margin-left: 0;
+  }
+  .colunaMapa {
+    gap: var(--e-3);
+  }
+}
+
+.voltarNoMapa {
+  position: absolute;
+  top: var(--e-3);
+  left: var(--e-3);
+  z-index: 900;
+}
+.voltarNoMapa button {
+  min-height: 40px;
+  font-size: 0.9375rem;
+  background: var(--cs-papel);
+  box-shadow: var(--sombra-flutuante);
+}
+.mapa {
+  scroll-margin-top: 72px;
 }

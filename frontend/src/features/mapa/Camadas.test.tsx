@@ -11,23 +11,23 @@ vi.mock("@/map/MapaBairros", () => ({
     territorios,
     aoSelecionar,
     modo,
+    modoCor,
     areasRisco,
     equipamentos,
-    abrigos,
   }: {
     territorios: GeoJSON.FeatureCollection<GeoJSON.Geometry, { id: string; nome: string }>;
     aoSelecionar: (id: string) => void;
     modo?: string;
+    modoCor?: string;
     areasRisco?: { colecao: { features: unknown[] } } | null;
     equipamentos?: { colecao: { features: unknown[] } } | null;
-    abrigos?: unknown[] | null;
   }) => (
     <ul
       data-testid="mapa"
       data-modo={modo}
+      data-modo-cor={modoCor}
       data-areas={areasRisco ? areasRisco.colecao.features.length : "off"}
       data-equipamentos={equipamentos ? equipamentos.colecao.features.length : "off"}
-      data-abrigos={abrigos ? abrigos.length : "off"}
     >
       {territorios.features.map((f) => (
         <li key={f.properties.id}>
@@ -60,18 +60,6 @@ const bairros = [
   }),
 ];
 
-const abrigo = (id: string, nome: string, aberto: boolean, lat: number | null) => ({
-  id,
-  nome,
-  bairro_id: "bairro-ibura",
-  distrito_id: "ds-8",
-  aberto,
-  status_fonte: "equipe",
-  atualizado_em: AGORA,
-  latitude: lat,
-  longitude: lat === null ? null : -34.9,
-});
-
 function base(extra: Record<string, unknown> = {}) {
   return {
     "/auth/eu": usuarioTeste(),
@@ -88,7 +76,6 @@ function base(extra: Record<string, unknown> = {}) {
     },
     "/territorios/distritos.geojson": { type: "FeatureCollection", features: [] },
     "/territorios/prioridade": { dados: { itens: [] }, meta: { fontes: [] } },
-    "/abrigos": { itens: [], totais: {} },
     ...extra,
   };
 }
@@ -118,7 +105,6 @@ const resumoIbura = {
       { cnes: "222", nome: "UPA Ibura", tipo: "UPA" },
     ],
     equipamentos_em_area_de_risco: ["222"],
-    abrigos: 1,
     areas_risco: 7,
     cobertura_risco_parcial: true,
   },
@@ -155,7 +141,10 @@ describe("regras das camadas", () => {
 describe("Mapa: camadas e painel do bairro", () => {
   it("painel do bairro: idosos e crianças com fonte, < 5, deficiência insuficiente, equipamentos e cobertura parcial", async () => {
     await abrir(base({ "/territorios/bairro-ibura/resumo-vulnerabilidade": resumoIbura }));
-    await userEvent.setup().click(await screen.findByRole("button", { name: "mapa: Ibura" }));
+    const u = userEvent.setup();
+    const botao = await screen.findByRole("button", { name: "mapa: Ibura" });
+    await u.click(botao); // primeiro o distrito, depois o bairro
+    await u.click(botao);
     const painel = await screen.findByRole("complementary", { name: "Ibura" });
     expect(await within(painel).findByText("4.210")).toBeInTheDocument();
     expect(within(painel).getByText("< 5")).toBeInTheDocument();
@@ -179,7 +168,10 @@ describe("Mapa: camadas e painel do bairro", () => {
         },
       }),
     );
-    await userEvent.setup().click(await screen.findByRole("button", { name: "mapa: Ibura" }));
+    const u = userEvent.setup();
+    const botao = await screen.findByRole("button", { name: "mapa: Ibura" });
+    await u.click(botao); // primeiro o distrito, depois o bairro
+    await u.click(botao);
     const painel = await screen.findByRole("complementary", { name: "Ibura" });
     expect(await within(painel).findByText(/Falta a fonte IBGE, Censo 2022/)).toBeInTheDocument();
     expect(within(painel).queryByText("0")).not.toBeInTheDocument();
@@ -188,8 +180,8 @@ describe("Mapa: camadas e painel do bairro", () => {
   it("camadas: só o estágio ligado e nada é pedido à API até ligar", async () => {
     const pedidos = await abrir(base());
     const grupo = await screen.findByRole("group", { name: "Camadas do mapa" });
-    expect(within(grupo).getByRole("checkbox", { name: /Estágio dos bairros/ })).toBeChecked();
-    for (const nome of [/Equipamentos de saúde/, /População vulnerável/, /Áreas de risco/, /Abrigos/])
+    expect(within(grupo).queryByRole("checkbox", { name: /Estágio dos bairros/ })).not.toBeInTheDocument();
+    for (const nome of [/Equipamentos de saúde/, /População vulnerável/, /Áreas de risco/])
       expect(within(grupo).getByRole("checkbox", { name: nome })).not.toBeChecked();
     expect(pedidos.some((p) => p.url.includes("/camadas/"))).toBe(false);
     expect(await screen.findByTestId("mapa")).toHaveAttribute("data-equipamentos", "off");
@@ -313,7 +305,6 @@ describe("Mapa: camadas e painel do bairro", () => {
     );
     const u = userEvent.setup();
     await u.click(await screen.findByRole("checkbox", { name: /População vulnerável/ }));
-    expect(screen.getByRole("checkbox", { name: /Estágio dos bairros/ })).not.toBeChecked();
     await waitFor(() => expect(screen.getByTestId("mapa")).toHaveAttribute("data-modo", "populacao"));
     const grupo = screen.getByRole("group", { name: "População a mostrar" });
     expect(within(grupo).getByRole("radio", { name: "Idosos 60+" })).toBeChecked();
@@ -325,23 +316,9 @@ describe("Mapa: camadas e painel do bairro", () => {
     expect(legenda).toHaveTextContent("Crianças 0–14");
     expect(legenda).toHaveTextContent("< 5");
     expect(legenda).toHaveTextContent("Contagem, não percentual");
-    await u.click(screen.getByRole("checkbox", { name: /Estágio dos bairros/ }));
+    await u.click(screen.getByRole("checkbox", { name: /População vulnerável/ }));
     expect(screen.getByRole("checkbox", { name: /População vulnerável/ })).not.toBeChecked();
-  });
-
-  it("abrigos: só os que têm coordenadas aparecem no mapa", async () => {
-    await abrir(
-      base({
-        "/abrigos": {
-          itens: [abrigo("a1", "Escola do Ibura", true, -8.1), abrigo("a2", "Igreja da Cohab", false, null)],
-          totais: {},
-        },
-      }),
-    );
-    await userEvent.setup().click(await screen.findByRole("checkbox", { name: /Abrigos/ }));
-    await waitFor(() => expect(screen.getByTestId("mapa")).toHaveAttribute("data-abrigos", "1"));
-    expect(screen.getByRole("region", { name: "Legenda: Abrigos" })).toHaveTextContent(
-      "1 abrigos com localização, 1 abertos",
-    );
+    // desligada a população, o mapa volta à cor escolhida em "Colorir por" (padrão: distritos)
+    expect(screen.getByTestId("mapa")).toHaveAttribute("data-modo-cor", "distrito");
   });
 });

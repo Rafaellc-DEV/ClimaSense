@@ -10,7 +10,7 @@ const TELAS = [
   { rota: "/app/situacao", titulo: "Situação do evento" },
   { rota: "/app/saude", titulo: "Saúde depois da chuva" },
   { rota: "/app/acoes", titulo: "Ações" },
-  { rota: "/app/simulador", titulo: "Simulador" },
+  { rota: "/app/simulador", titulo: "Simulador de cenário" },
   { rota: "/app/acoes/relatorio", titulo: "Relatório executivo — Secretaria de Saúde" },
 ];
 
@@ -40,7 +40,9 @@ for (const largura of [1440, 375]) {
   });
 }
 
-test("dados reais, não simulados: nenhuma tela mostra texto de exemplo nem a vitrine (RNF-10)", async ({ page }) => {
+test("dados reais, não simulados: nenhuma tela mostra texto de exemplo nem a vitrine (RNF-10)", async ({
+  page,
+}) => {
   await entrar(page);
   for (const t of TELAS) {
     await page.goto(t.rota);

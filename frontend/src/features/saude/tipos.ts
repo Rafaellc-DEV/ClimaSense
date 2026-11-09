@@ -24,6 +24,10 @@ export interface ResumoAgravo {
   /** Nível de alerta do InfoDengue, 1 a 4. */
   nivel_alerta: 1 | 2 | 3 | 4 | null;
   incompleta: boolean;
+  /** O backend diz se a semana mais recente está dentro do limite útil. Ausente: a tela decide pelos 14 dias. */
+  utilizavel?: boolean;
+  /** Semana mais recente que tem dado (pode ser mais velha que `ultima_semana`). */
+  ultima_semana_com_dado?: SemanaRef | string | null;
 }
 
 export interface JanelaLeptospirose {

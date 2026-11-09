@@ -3,7 +3,15 @@ import { test } from "@playwright/test";
 import { entrar } from "../integrado/apoio";
 
 const LARGURAS = [375, 1440];
-const TELAS = ["/app", "/app/situacao", "/app/saude", "/app/acoes", "/app/simulador", "/app/acoes/relatorio", "/app/fontes"];
+const TELAS = [
+  "/app",
+  "/app/situacao",
+  "/app/saude",
+  "/app/acoes",
+  "/app/simulador",
+  "/app/acoes/relatorio",
+  "/app/fontes",
+];
 const PASTA = process.env.PASTA_CAPTURAS ?? "test-results/capturas";
 
 test("telas da equipe", async ({ page }) => {

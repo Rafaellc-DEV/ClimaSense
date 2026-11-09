@@ -1,14 +1,15 @@
 /** Textos curtos comuns às telas da equipe: nomes de distrito, listas em frase, horas e fontes. */
 import type { Esquemas } from "@/lib/api";
 import { useConsultaViva } from "@/lib/consultas";
+import { nomeDistrito } from "@/lib/distritos";
 import { formatarData, quandoRelativo } from "@/lib/formatos";
 
-/** “Distrito Sanitário V” → “DS V”. Bairro e outros nomes ficam como estão. */
+/** “Distrito Sanitário V” → “Distrito 5”. Bairro e outros nomes ficam como estão. */
 export function nomeCurto(nome: string): string {
-  return nome.replace(/^Distrito Sanit[aá]rio\s+/i, "DS ");
+  return nomeDistrito(nome);
 }
 
-/** “DS I”, “DS I e DS II”, “DS I, DS II e DS III”. */
+/** “Distrito 1”, “Distrito 1 e Distrito 2”. */
 export function listaEmFrase(nomes: string[]): string {
   if (nomes.length <= 1) return nomes[0] ?? "";
   return `${nomes.slice(0, -1).join(", ")} e ${nomes[nomes.length - 1]}`;

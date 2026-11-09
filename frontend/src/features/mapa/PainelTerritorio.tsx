@@ -1,14 +1,15 @@
-/** Painel do território escolhido no mapa (RF-07): estágio, alertas oficiais, abrigos e ações. */
+/** Painel do território escolhido no mapa (RF-07): estágio, alertas oficiais e ações. */
+import { nomeDoDistrito } from "@/map/paleta";
 import { useEffect, useRef } from "react";
-import { X } from "lucide-react";
+import { ChevronLeft, X } from "lucide-react";
 import { Botao } from "@/design-system/componentes/Botao";
 import { EstadoDados } from "@/design-system/componentes/EstadoDados";
-import { ConfiraOficial, EstadoConsulta, SeloEstagio } from "@/features/evento/Evento";
+import { ConfiraOficial, SeloEstagio } from "@/features/evento/Evento";
 import { ESTAGIOS, infoEstagio } from "@/features/evento/estagios";
 import { quandoAs } from "@/features/evento/textos";
-import type { Abrigo, ItemEstagio } from "@/features/evento/tipos";
+import type { ItemEstagio } from "@/features/evento/tipos";
+import { nomeDistrito } from "@/lib/distritos";
 import { formatarDataHora } from "@/lib/formatos";
-import { distritoPorExtenso } from "@/textos/glossario";
 import { ResumoBairro } from "./ResumoBairro";
 import { emVigor } from "./tipos";
 import estilos from "./Mapa.module.css";
@@ -23,70 +24,26 @@ type Alerta = {
   url?: string | null;
 };
 
-function situacaoAbrigo(a: Abrigo): string {
-  if (a.status_fonte === null || a.status_fonte === undefined) return "situação não informada";
-  return a.aberto ? "aberto" : "fechado";
-}
-
-function ItemAbrigo({ a }: { a: Abrigo }) {
-  return (
-    <li>
-      <span className={estilos.abrigoNome}>{a.nome}</span>
-      <span className={estilos.abrigoSit} data-aberto={a.status_fonte ? a.aberto : undefined}>
-        {situacaoAbrigo(a)}
-      </span>
-      {a.endereco && <small>{a.endereco}</small>}
-      {a.atualizado_em && <small>Atualizado {quandoAs(a.atualizado_em)}</small>}
-    </li>
-  );
-}
-
-const ABRIGOS_VISIVEIS = 3;
-
-/** No máximo 3 abrigos à vista (abertos primeiro); o resto fica recolhido em “Ver os N abrigos”. */
-function ListaAbrigosPainel({ lista }: { lista: Abrigo[] }) {
-  const ordenados = [...lista].sort(
-    (a, b) => Number(b.aberto) - Number(a.aberto) || a.nome.localeCompare(b.nome, "pt-BR"),
-  );
-  const primeiros = ordenados.slice(0, ABRIGOS_VISIVEIS);
-  const resto = ordenados.slice(ABRIGOS_VISIVEIS);
-  return (
-    <>
-      <ul className={estilos.abrigos}>
-        {primeiros.map((a) => (
-          <ItemAbrigo key={a.id} a={a} />
-        ))}
-      </ul>
-      {resto.length > 0 && (
-        <details className={estilos.maisAbrigos}>
-          <summary>Ver os {ordenados.length} abrigos</summary>
-          <ul className={estilos.abrigos}>
-            {resto.map((a) => (
-              <ItemAbrigo key={a.id} a={a} />
-            ))}
-          </ul>
-        </details>
-      )}
-    </>
-  );
-}
-
 export interface PropsPainel {
   item: ItemEstagio;
-  abrigos: { lista: Abrigo[]; carregando: boolean; erro: Error | null; aoTentar: () => void };
   podeDeclarar: boolean;
   aoDeclarar: (i: ItemEstagio) => void;
   aoRetirar: (i: ItemEstagio) => void;
   aoFechar: () => void;
+  /** Sem cabeçalho nem resumo do bairro: usado dentro do painel do distrito (que já tem os dois). */
+  semTopo?: boolean;
+  /** Volta do bairro para o distrito dele (nível acima). */
+  voltarDistrito?: { rotulo: string; aoClicar: () => void };
 }
 
 export function PainelTerritorio({
   item,
-  abrigos,
   podeDeclarar,
   aoDeclarar,
   aoRetirar,
   aoFechar,
+  semTopo,
+  voltarDistrito,
 }: PropsPainel) {
   const titulo = useRef<HTMLHeadingElement>(null);
   useEffect(() => titulo.current?.focus({ preventScroll: true }), [item.territorio_id]);
@@ -98,35 +55,30 @@ export function PainelTerritorio({
   const alertas = item.alertas_oficiais as Alerta[] | undefined;
   const ehDistrito = item.nivel === "distrito";
   const distritoId = ehDistrito ? item.territorio_id : item.distrito_id;
-  const doTerritorio = abrigos.lista.filter((a) =>
-    ehDistrito ? a.distrito_id === item.territorio_id : a.bairro_id === item.territorio_id,
-  );
-  const proximos = abrigos.lista
-    .filter(
-      (a) => !ehDistrito && distritoId && a.distrito_id === distritoId && a.bairro_id !== item.territorio_id,
-    )
-    .sort((a, b) => Number(b.aberto) - Number(a.aberto) || a.nome.localeCompare(b.nome, "pt-BR"))
-    .slice(0, 5);
 
   return (
     <aside className={estilos.painel} aria-labelledby="painel-nome">
-      <header className={estilos.painelTopo}>
-        <div>
-          <h2 id="painel-nome" ref={titulo} tabIndex={-1}>
-            {item.territorio_nome}
-          </h2>
-          <p className={estilos.painelDistrito}>
-            {ehDistrito
-              ? "Distrito sanitário"
-              : distritoId
-                ? distritoPorExtenso(distritoId)
-                : "Distrito não informado"}
-          </p>
-        </div>
-        <button type="button" className={estilos.fechar} onClick={aoFechar} aria-label="Fechar o painel">
-          <X aria-hidden="true" size={24} />
-        </button>
-      </header>
+      {!semTopo && (
+        <header className={estilos.painelTopo}>
+          <div>
+            {voltarDistrito && (
+              <button type="button" className={estilos.voltarNivel} onClick={voltarDistrito.aoClicar}>
+                <ChevronLeft aria-hidden="true" size={18} />
+                {voltarDistrito.rotulo}
+              </button>
+            )}
+            <h2 id="painel-nome" ref={titulo} tabIndex={-1}>
+              {nomeDistrito(item.territorio_nome)}
+            </h2>
+            <p className={estilos.painelDistrito}>
+              {ehDistrito ? "Distrito" : distritoId ? nomeDoDistrito(distritoId) : "Distrito não informado"}
+            </p>
+          </div>
+          <button type="button" className={estilos.fechar} onClick={aoFechar} aria-label="Fechar o painel">
+            <X aria-hidden="true" size={24} />
+          </button>
+        </header>
+      )}
 
       <section className={estilos.bloco} aria-labelledby="painel-estagio">
         <h3 id="painel-estagio">Estágio</h3>
@@ -241,40 +193,16 @@ export function PainelTerritorio({
         <ConfiraOficial />
       </section>
 
-      <section className={estilos.bloco} aria-labelledby="painel-abrigos">
-        <h3 id="painel-abrigos">Abrigos</h3>
-        {abrigos.carregando && <p className={estilos.apagado}>Carregando os abrigos…</p>}
-        {abrigos.erro && <EstadoConsulta erro={abrigos.erro} oQue="os abrigos" aoTentar={abrigos.aoTentar} />}
-        {!abrigos.carregando && !abrigos.erro && (
-          <>
-            <small className={estilos.fonteLinha}>Fonte: cadastro de abrigos (equipe e COP)</small>
-            {doTerritorio.length === 0 ? (
-              <p>Nenhum abrigo cadastrado {ehDistrito ? "neste distrito" : "neste bairro"}.</p>
-            ) : (
-              <ListaAbrigosPainel lista={doTerritorio} />
-            )}
-            {proximos.length > 0 && (
-              <>
-                <h4>Outros abrigos do mesmo distrito</h4>
-                <ul className={estilos.abrigos}>
-                  {proximos.map((a) => (
-                    <ItemAbrigo key={a.id} a={a} />
-                  ))}
-                </ul>
-              </>
-            )}
-          </>
-        )}
-      </section>
-
       {ehDistrito ? (
-        <section className={estilos.bloco} aria-labelledby="painel-vulneravel">
-          <h3 id="painel-vulneravel">População vulnerável e equipamentos de saúde</h3>
-          <p className={estilos.apagado}>
-            Esses números são por bairro. Escolha um bairro deste distrito para ver idosos, crianças, unidades
-            de saúde e áreas de risco.
-          </p>
-        </section>
+        semTopo ? null : (
+          <section className={estilos.bloco} aria-labelledby="painel-vulneravel">
+            <h3 id="painel-vulneravel">População vulnerável e equipamentos de saúde</h3>
+            <p className={estilos.apagado}>
+              Esses números são por bairro. Escolha um bairro deste distrito para ver idosos, crianças,
+              unidades de saúde e áreas de risco.
+            </p>
+          </section>
+        )
       ) : (
         <ResumoBairro territorioId={item.territorio_id} />
       )}

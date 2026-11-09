@@ -8,6 +8,7 @@ import { EstadoDados, LegendaFonte, fontesDado } from "@/design-system/component
 import { Painel } from "@/design-system/componentes/Painel";
 import { EstadoConsulta, SeloEstagio } from "@/features/evento/Evento";
 import { listaDe, type ItemEstagio } from "@/features/evento/tipos";
+import { nomeDistrito } from "@/lib/distritos";
 import { formatarNumero } from "@/lib/formatos";
 import { fontesDe } from "@/lib/frescor";
 import { emVigor, semAcento, type ItemPrioridadeTerritorio } from "./tipos";
@@ -81,7 +82,7 @@ export function Prioritarios({
                   </span>
                   <span className={estilos.prioTextos}>
                     <b>
-                      {p.nome}
+                      {nomeDistrito(p.nome)}
                       <span className="so-leitor">, prioridade {p.posicao}. Mostrar no mapa</span>
                     </b>
                     <span className={estilos.prioNumeros}>

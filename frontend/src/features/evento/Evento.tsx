@@ -86,7 +86,7 @@ export function EstadoConsulta({
 }: {
   erro: Error | null;
   aoTentar?: () => void;
-  /** “as situações”, “os abrigos”. */
+  /** “as situações”, “as ações”. */
   oQue: string;
 }) {
   if (erro instanceof ErroApi && erro.status === 404)
@@ -191,7 +191,7 @@ export function MensagemPronta({ mensagem, rotulo }: { mensagem: MensagemWhatsAp
 
 /**
  * Escolha de território num `<select>` nativo (rápido no celular), com bairros agrupados por distrito.
- * `niveis` limita o que aparece: abrigo fica num bairro; ação pode ser distrito ou bairro.
+ * `niveis` limita o que aparece (município, distrito ou bairro).
  */
 export function SelecaoTerritorio({
   rotulo,

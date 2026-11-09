@@ -6,7 +6,7 @@
  */
 import { formatarNumero } from "@/lib/formatos";
 
-export type IdCamada = "base" | "populacao" | "areas" | "equipamentos" | "abrigos";
+export type IdCamada = "base" | "populacao" | "areas" | "equipamentos";
 
 export const CAMINHO_CAMADA = {
   equipamentos: "/territorios/camadas/equipamentos-saude",
@@ -19,14 +19,12 @@ export const FONTE_PADRAO: Record<Exclude<IdCamada, "base">, string> = {
   equipamentos: "CNES (Ministério da Saúde)",
   populacao: "IBGE, Censo 2022",
   areas: "Defesa Civil do Recife",
-  abrigos: "Cadastro de abrigos (equipe e COP)",
 };
 
 export const ROTULO_CAMADA: Record<Exclude<IdCamada, "base">, string> = {
   equipamentos: "Equipamentos de saúde",
   populacao: "População vulnerável",
   areas: "Áreas de risco",
-  abrigos: "Abrigos",
 };
 
 // ---------- população vulnerável
@@ -242,7 +240,6 @@ export interface ResumoVulnerabilidade {
   deficiencia?: null;
   equipamentos?: { cnes?: string | number | null; nome?: string | null; tipo?: string | null }[] | null;
   equipamentos_em_area_de_risco?: (string | number)[] | number | null;
-  abrigos?: number | { nome?: string }[] | null;
   areas_risco?: number | null;
   cobertura_risco_parcial?: boolean | null;
 }

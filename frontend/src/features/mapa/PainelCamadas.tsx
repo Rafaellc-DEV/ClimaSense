@@ -17,13 +17,12 @@ import { TOKENS_POPULACAO, tokenTipoRisco, type Camadas, type EstadoCamada } fro
 import estilos from "./Camadas.module.css";
 
 type Dependentes = Exclude<IdCamada, "base">;
-const ORDEM: Dependentes[] = ["populacao", "areas", "equipamentos", "abrigos"];
+const ORDEM: Dependentes[] = ["populacao", "areas", "equipamentos"];
 
 const AJUDA: Record<Dependentes, string> = {
   populacao: "Quantas pessoas moram em cada bairro",
   areas: "Onde há risco de deslizamento ou alagamento",
   equipamentos: "Hospitais, UPAs e unidades básicas",
-  abrigos: "Abertos em destaque",
 };
 
 /** Texto curto do estado de uma camada ligada. `ok` não escreve nada. */
@@ -60,22 +59,33 @@ function MensagemEstado({
 }
 
 /** Caixas de seleção das camadas. Estágio (ou a classe do cenário) vem ligado; as demais, desligadas. */
-export function ControleCamadas({ c, rotuloBase }: { c: Camadas; rotuloBase: string }) {
+export function ControleCamadas({
+  c,
+  rotuloBase,
+  semBase,
+}: {
+  c: Camadas;
+  rotuloBase: string;
+  /** Esconde a caixa da cor base (o Mapa tem o seletor "Colorir por" no lugar). */
+  semBase?: boolean;
+}) {
   const grupoIndicador = useId();
   const aviso = useId();
   return (
     <fieldset className={estilos.camadas}>
       <legend>Camadas do mapa</legend>
       <ul className={estilos.lista}>
-        <li>
-          <label className={estilos.camada}>
-            <input type="checkbox" checked={c.ligadas.base} onChange={() => c.alternar("base")} />
-            <span>
-              {rotuloBase}
-              <small>Cor de cada bairro</small>
-            </span>
-          </label>
-        </li>
+        {!semBase && (
+          <li>
+            <label className={estilos.camada}>
+              <input type="checkbox" checked={c.ligadas.base} onChange={() => c.alternar("base")} />
+              <span>
+                {rotuloBase}
+                <small>Cor de cada bairro</small>
+              </span>
+            </label>
+          </li>
+        )}
         {ORDEM.map((id) => (
           <li key={id}>
             <label className={estilos.camada}>
@@ -115,7 +125,7 @@ export function ControleCamadas({ c, rotuloBase }: { c: Camadas; rotuloBase: str
       )}
       {c.ligadas.populacao && (
         <p className={estilos.nota}>
-          A população substitui a cor do estágio. Desligue-a para voltar a ver o estágio.
+          A população substitui a cor do mapa. Desligue-a para voltar à cor anterior.
         </p>
       )}
     </fieldset>
@@ -197,7 +207,6 @@ export function LegendaCamadas({ c }: { c: Camadas }) {
                     </ul>
                   </>
                 )}
-                {id === "abrigos" && <LegendaAbrigos c={c} />}
                 {venceu && (
                   <p className={estilos.estado} data-aviso="desatualizado">
                     <SeloDesatualizado /> Fonte vencida: confira antes de decidir.
@@ -256,32 +265,6 @@ function LegendaAreas({ c }: { c: Camadas }) {
           {c.risco.cobertura?.texto ?? "Bairro sem área desenhada não quer dizer bairro sem risco."}
         </p>
       )}
-    </>
-  );
-}
-
-function LegendaAbrigos({ c }: { c: Camadas }) {
-  const abertos = c.totais.abrigos.filter((a) => a.aberto === true).length;
-  return (
-    <>
-      <p className={estilos.resumoCamada}>
-        {formatarNumero(c.totais.abrigos.length)} abrigos com localização, {formatarNumero(abertos)} abertos
-        agora.
-      </p>
-      <ul className={estilos.itens}>
-        <li>
-          <b className={`${estilos.pinoLegenda} ${estilos.abrigoAberto}`} aria-hidden="true">
-            A
-          </b>
-          Aberto (em destaque)
-        </li>
-        <li>
-          <b className={`${estilos.pinoLegenda} ${estilos.abrigoFechado}`} aria-hidden="true">
-            a
-          </b>
-          Fechado ou situação não informada
-        </li>
-      </ul>
     </>
   );
 }

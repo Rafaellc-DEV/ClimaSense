@@ -110,15 +110,35 @@
   background: var(--g-saude-6);
   border-radius: 6px;
 }
-.pinoAbrigo span {
-  background: var(--cs-papel);
-  color: var(--cs-mare-forte);
-  border: 2px solid var(--cs-mare-forte);
-  border-radius: 4px 4px 50% 50%;
+
+/* ---------- rótulos dos distritos (DS I … DS VIII): discretos, somem ao aproximar */
+.rotuloDistrito {
+  background: none !important;
+  border: 0 !important;
+  display: grid !important;
+  place-items: center;
+  pointer-events: none;
+  transition: opacity 0.2s;
 }
-.pinoAberto span {
-  background: var(--cs-mare-forte);
-  color: var(--cs-sobre-mare);
-  border: 3px solid var(--cs-sol);
-  font-size: 15px;
+.rotuloDistrito span {
+  padding: 1px 8px;
+  border: 2px solid var(--cs-tinta);
+  border-radius: var(--r-pilula);
+  background: color-mix(in srgb, var(--cs-papel) 92%, transparent);
+  font-family: var(--fonte-titulo);
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.5;
+  color: var(--cs-tinta);
+  white-space: nowrap;
+}
+.rotuloDistritoFraco {
+  opacity: 0.35;
+}
+.mapa[data-zoom-alto="true"] .rotuloDistrito {
+  display: none !important;
+}
+.mapa :global(.leaflet-interactive:focus-visible) {
+  outline: 3px solid var(--cs-foco);
+  outline-offset: 1px;
 }

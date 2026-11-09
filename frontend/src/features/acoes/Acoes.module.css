@@ -2,16 +2,23 @@
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   gap: var(--e-5);
-  max-width: 920px;
+  max-width: 1200px;
 }
 .caixa {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--e-3);
   padding: var(--e-5);
   border-radius: var(--r-painel);
   background: var(--cs-papel);
   box-shadow: var(--sombra-cartao);
   border-top: 4px solid var(--cs-mare);
+}
+.caixa select,
+.caixa input,
+.caixa textarea {
+  max-width: 100%;
+  min-width: 0;
 }
 .caixa h2 {
   margin: 0;
@@ -43,6 +50,10 @@
   align-items: center;
   justify-content: space-between;
   gap: var(--e-2);
+}
+.doDistrito {
+  font-weight: 400;
+  color: var(--cs-tinta-2);
 }
 .distrito {
   font-weight: 800;
@@ -98,5 +109,95 @@
   }
   .caixa {
     padding: var(--e-4);
+  }
+}
+
+/* filtros no cabeçalho */
+.filtros {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--e-3);
+  width: 100%;
+  max-width: 34rem;
+}
+.filtros > * {
+  min-width: 0;
+}
+.cartoes {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--e-4);
+}
+.principal {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--e-5);
+  align-items: start;
+}
+.rodapeBlocos {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--e-5);
+  align-items: start;
+}
+.statusSelect {
+  min-height: 2.25rem;
+  max-width: 100%;
+  font-size: 0.875rem;
+}
+.checklist {
+  display: grid;
+  gap: var(--e-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.checklist li {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  column-gap: var(--e-2);
+}
+.checklist li span:first-child {
+  color: var(--cs-mangue);
+  font-weight: 800;
+}
+.checklist small {
+  grid-column: 2;
+  color: var(--cs-tinta-2);
+}
+.trilha {
+  display: grid;
+  gap: var(--e-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.9375rem;
+}
+.trilha li {
+  display: grid;
+  grid-template-columns: 5.5rem minmax(0, 1fr);
+  gap: var(--e-2);
+}
+.trilha time {
+  color: var(--cs-tinta-2);
+  font-variant-numeric: tabular-nums;
+}
+@media (max-width: 720px) {
+  .cartoes {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .filtros {
+    grid-template-columns: minmax(0, 1fr);
+    max-width: none;
+  }
+}
+@media (min-width: 1500px) {
+  .principal {
+    grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr);
+  }
+}
+@media (min-width: 900px) {
+  .rodapeBlocos {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }

@@ -1,13 +1,12 @@
-import { Link } from "react-router-dom";
-import { Phone, Tent } from "lucide-react";
+import { Phone } from "lucide-react";
 import { DEFESA_CIVIL_RECIFE } from "./telefones";
 import estilos from "./BarraEmergencia.module.css";
 
 /**
  * Barra fixa no rodapé da tela, só no celular (no computador os telefones ficam no topo). Ligar para a Defesa Civil
- * do Recife, ligar 199 e ir aos abrigos ficam sempre a um toque, em qualquer ponto da página.
+ * do Recife, e ligar 199 ficam sempre a um toque, em qualquer ponto da página.
  */
-export function BarraEmergencia({ aoAbrirAbrigos }: { aoAbrirAbrigos?: () => void }) {
+export function BarraEmergencia() {
   return (
     <nav className={estilos.barra} aria-label="Emergência">
       <a
@@ -23,24 +22,6 @@ export function BarraEmergencia({ aoAbrirAbrigos }: { aoAbrirAbrigos?: () => voi
       <a href="tel:199" className={estilos.link} aria-label="Ligar para a Defesa Civil, 199">
         <b>199</b>
       </a>
-      {aoAbrirAbrigos ? (
-        <a
-          href="#abrigos"
-          className={estilos.link}
-          onClick={(e) => {
-            e.preventDefault();
-            aoAbrirAbrigos();
-          }}
-        >
-          <Tent aria-hidden="true" size={20} />
-          <span>Abrigos</span>
-        </a>
-      ) : (
-        <Link to="/#abrigos" className={estilos.link}>
-          <Tent aria-hidden="true" size={20} />
-          <span>Abrigos</span>
-        </Link>
-      )}
     </nav>
   );
 }

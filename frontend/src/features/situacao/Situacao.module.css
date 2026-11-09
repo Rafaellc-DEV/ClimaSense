@@ -1,5 +1,4 @@
-/* Situação do evento: números da cidade, tabela por distrito e a lista de abrigos. Os estilos de formulário valem para
-   os diálogos de declaração do Mapa (Declarar.tsx). */
+/* Situação do evento: painel do dia. Os estilos de formulário valem para os diálogos do Mapa (Declarar.tsx). */
 .detalhe {
   margin: 0;
   font-size: var(--t-apoio);
@@ -12,7 +11,6 @@
   justify-items: start;
 }
 
-/* ---------- abrigos */
 .form {
   display: grid;
   gap: var(--e-4);
@@ -78,35 +76,190 @@
 .pagina {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: var(--e-5);
-}
-/* os dois números que o cliente acompanha */
-.numerosCidade {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--e-4);
 }
-.semDadoCelula {
-  color: var(--cs-tinta-2);
-  font-size: 0.9375rem;
+.filtros {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--e-3);
 }
-.parcial {
-  display: block;
-  font-size: 0.875rem;
+.filtros > div {
+  min-width: 0;
+  flex: 1 1 16rem;
+}
+.rotuloFiltro {
+  font-size: var(--t-apoio);
   font-weight: 700;
   color: var(--cs-tinta-2);
 }
-.distritoNome {
+.faixa {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--e-2) var(--e-4);
+  padding: var(--e-3) var(--e-4);
+  border-radius: var(--r-painel);
+  background: var(--cs-papel);
+  box-shadow: var(--sombra-cartao);
+}
+.simular {
+  margin-left: auto;
+}
+.faixaRotulo {
+  margin: 0;
+  font-family: var(--fonte-titulo);
+  font-size: var(--t-apoio);
+  font-weight: 700;
+  color: var(--cs-tinta-2);
+}
+.fonteLinha,
+.insuficiente,
+.carregando,
+.apoio {
+  margin: 0;
+  font-size: var(--t-apoio);
+  line-height: 1.4;
+  color: var(--cs-tinta-2);
+}
+.insuficiente b {
+  color: var(--cs-tinta);
+}
+.cartoes {
   display: grid;
-  gap: 2px;
-  font-weight: 700;
+  grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+  gap: var(--e-3);
 }
-.distritoNome small {
+.cartao,
+.bloco {
+  display: grid;
+  align-content: start;
+  gap: var(--e-2);
+  min-width: 0;
+  padding: var(--e-4);
+  border-radius: var(--r-painel);
+  background: var(--cs-papel);
+  box-shadow: var(--sombra-cartao);
+}
+.cartaoTopo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--e-2);
+}
+.cartaoRotulo {
+  margin: 0;
+  font-family: var(--fonte-titulo);
+  font-size: var(--t-apoio);
+  font-weight: 700;
+  color: var(--cs-tinta-2);
+}
+.valorGrande {
+  margin: 0;
+  font-family: var(--fonte-titulo);
+  font-size: 2rem;
+  font-weight: 750;
+  line-height: 1.1;
+}
+.valorGrande small {
+  font-size: var(--t-apoio);
   font-weight: 400;
   color: var(--cs-tinta-2);
 }
-@media (max-width: 560px) {
-  .numerosCidade {
+.detalheCartao {
+  margin: 0;
+  font-size: var(--t-apoio);
+  line-height: 1.4;
+}
+.dupla {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--e-4);
+  align-items: start;
+}
+@media (min-width: 64rem) {
+  .dupla {
+    grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+  }
+}
+.pergunta {
+  margin: 0;
+  font-family: var(--fonte-titulo);
+  font-size: var(--t-4);
+  font-weight: 750;
+}
+.esqueleto {
+  display: grid;
+  gap: var(--e-2);
+}
+.barras {
+  display: grid;
+  gap: var(--e-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.barras li {
+  display: grid;
+  grid-template-columns: 5.2rem minmax(0, 1fr) 5.5rem;
+  align-items: center;
+  gap: var(--e-3);
+  font-size: var(--t-apoio);
+}
+.barras li[data-destaque] .nome {
+  text-decoration: underline;
+}
+.nome {
+  font-weight: 700;
+}
+.trilho {
+  display: block;
+  height: 12px;
+  border-radius: 4px;
+  background: var(--cs-nevoa);
+}
+.barra {
+  display: block;
+  height: 100%;
+  border-radius: 4px;
+}
+.b72 {
+  background: var(--g-1);
+}
+.semLeitura {
+  display: block;
+  height: 100%;
+  border-radius: 4px;
+  background: repeating-linear-gradient(135deg, var(--cs-linha) 0 4px, transparent 4px 8px);
+}
+.valor {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  white-space: nowrap;
+}
+.valor em {
+  color: var(--cs-tinta-2);
+}
+.fontes {
+  display: grid;
+  gap: var(--e-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.fontes li {
+  display: grid;
+  grid-template-columns: 7.5rem minmax(0, 1fr);
+  align-items: start;
+  gap: var(--e-3);
+  font-size: var(--t-apoio);
+}
+@media (max-width: 30rem) {
+  .barras li {
+    grid-template-columns: 5.2rem minmax(0, 1fr) 4.6rem;
+    gap: var(--e-2);
+  }
+  .fontes li {
     grid-template-columns: minmax(0, 1fr);
+    gap: var(--e-1);
   }
 }

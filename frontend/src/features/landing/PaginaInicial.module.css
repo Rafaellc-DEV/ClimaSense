@@ -1,5 +1,5 @@
 /* Landing pública. A pergunta “Há aviso no meu bairro?” e o campo de busca são a primeira coisa da página; o resto
-   (comunicados, abrigos, mapa) vem em abas logo abaixo, e o que é explicação fica recolhido. Sem decoração pesada:
+   (comunicados, mapa) vem em abas logo abaixo, e o que é explicação fica recolhido. Sem decoração pesada:
    fundo claro, um cartão branco para o estado do Recife e a régua de maré como único desenho. */
 .pagina {
   --largura: 1180px;

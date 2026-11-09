@@ -111,7 +111,7 @@ test("próximos 3 dias: uma frase, só os distritos acima do limite e o gráfico
   window.history.pushState({}, "", "/app/chuva");
   render(<App />);
   expect(
-    await screen.findByRole("heading", { name: /^DS V pode passar do limite (hoje|amanhã)\.$/ }),
+    await screen.findByRole("heading", { name: /^Distrito 5 pode passar do limite (hoje|amanhã)\.$/ }),
   ).toBeInTheDocument();
   const acima = screen.getByRole("list", { name: "Distritos acima do limite" });
   expect(within(acima).getAllByRole("listitem")).toHaveLength(1);
@@ -148,7 +148,7 @@ test("sem previsão não vira “sem chuva”; abaixo do limite diz o máximo pr
   expect(fraseProximosDias(vazio, LIMITES).frase).toBe("Sem previsão de chuva agora.");
   const calmo = fraseProximosDias([distrito("ds-1", "Distrito Sanitário I", 1, 3)], LIMITES);
   expect(calmo.frase).toBe("Nenhum distrito passa do limite nos próximos 3 dias.");
-  expect(calmo.apoio).toMatch(/3,0 mm em 3 dias, no DS I/);
+  expect(calmo.apoio).toMatch(/3,0 mm em 3 dias, no Distrito 1/);
 });
 
 test("o calendário começa no primeiro ano com dado e a média usa só os anos anteriores", () => {

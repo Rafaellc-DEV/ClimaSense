@@ -132,10 +132,10 @@ function Conteudo({ r, resposta, em }: { r: ResumoVulnerabilidade; resposta: unk
             )}
             .
           </p>
-          <ul className={estilos.abrigos}>
+          <ul className={estilos.itens}>
             {equipamentos.slice(0, LIMITE_EQUIPAMENTOS).map((e, i) => (
               <li key={`${e.cnes ?? e.nome}-${i}`}>
-                <span className={estilos.abrigoNome}>{e.nome ?? "Equipamento sem nome"}</span>
+                <span className={estilos.itemNome}>{e.nome ?? "Equipamento sem nome"}</span>
                 {e.tipo && <small>{e.tipo}</small>}
                 {e.cnes != null && emRisco.has(String(e.cnes)) && (
                   <span className={estilos.etiquetaRisco}>em área de risco</span>

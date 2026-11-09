@@ -1,13 +1,10 @@
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { distritoPorExtenso } from "@/textos/glossario";
 import { SeloNivel } from "@/design-system/componentes/SeloNivel";
 import { NIVEIS, type ChaveNivel } from "@/design-system/niveis";
 import { quandoRelativo } from "@/lib/formatos";
-import { CartaoAbrigo } from "./CartaoAbrigo";
-import { formatarDistancia, maisPertoDe, pertoDoBairro } from "./abrigosPublicos";
-import type { Bairro, Busca } from "./useBusca";
-import type { Abrigos } from "./useAbrigos";
+import type { Busca } from "./useBusca";
 import type { AvisoPublico } from "./useEstado";
 import estilos from "./ResultadoBusca.module.css";
 
@@ -17,9 +14,6 @@ const ABERTURA: Record<string, string> = {
   alerta: "Alerta",
   critico: "Situação crítica",
 };
-
-/** Mais longe que isto, a pessoa está fora do Recife: nenhum abrigo cadastrado é “perto”. */
-const LONGE_KM = 40;
 
 function CartaoDoBairro({ bairro, aviso }: { bairro: string; aviso: AvisoPublico }) {
   const nivel = (aviso.nivel in NIVEIS ? aviso.nivel : "informativo") as ChaveNivel;
@@ -53,71 +47,16 @@ function CartaoDoBairro({ bairro, aviso }: { bairro: string; aviso: AvisoPublico
   );
 }
 
-function ListaAbrigos({
-  titulo,
-  nota,
-  abrigos,
-  itens,
-  aoVerTodos,
-  vazio = "Nenhum local de abrigo cadastrado ainda.",
-}: {
-  titulo: string;
-  vazio?: string;
-  nota?: string;
-  abrigos: Abrigos;
-  itens: { abrigo: Abrigos["itens"][number]; nota?: string }[];
-  aoVerTodos: () => void;
-}) {
-  return (
-    <section className={estilos.abrigos} aria-labelledby="abrigos-perto">
-      <h3 id="abrigos-perto" className={estilos.h3}>
-        {titulo}
-      </h3>
-      {nota && <p className={estilos.nota}>{nota}</p>}
-      {abrigos.carregando && <p className={estilos.nota}>Verificando os abrigos…</p>}
-      {abrigos.indisponivel && (
-        <p className={estilos.nota}>A lista de abrigos ainda não está disponível. Ligue 0800 081 3400.</p>
-      )}
-      {abrigos.erro && (
-        <p className={estilos.nota}>
-          Não foi possível carregar a lista de abrigos agora. Isso não quer dizer que não há abrigo. Ligue
-          0800 081 3400.{" "}
-          <button type="button" className={estilos.link} onClick={abrigos.refazer}>
-            Tentar de novo
-          </button>
-        </p>
-      )}
-      {!abrigos.carregando && !abrigos.indisponivel && !abrigos.erro && itens.length === 0 && (
-        <p className={estilos.nota}>{vazio}</p>
-      )}
-      {itens.length > 0 && (
-        <>
-          <ul className={estilos.cartoes}>
-            {itens.map((x) => (
-              <CartaoAbrigo key={x.abrigo.id} a={x.abrigo} compacto nota={x.nota} />
-            ))}
-          </ul>
-          <button type="button" className={estilos.link} onClick={aoVerTodos}>
-            Ver todos os abrigos
-          </button>
-        </>
-      )}
-    </section>
-  );
-}
-
 /**
  * O resultado da busca, no mesmo lugar do campo. É a única região viva da página: o leitor de tela anuncia só
  * esta, e só quando ela muda. Cada estado diz o que se sabe, o que não se sabe e o que fazer.
  */
 export function ResultadoBusca({
   busca,
-  abrigos,
   irParaAba,
 }: {
   busca: Busca;
-  abrigos: Abrigos;
-  irParaAba: (aba: "comunicados" | "abrigos" | "mapa") => void;
+  irParaAba: (aba: "comunicados" | "mapa") => void;
 }) {
   const { resultado: r, localizacao: loc } = busca;
   const caixa = useRef<HTMLDivElement>(null);
@@ -127,28 +66,6 @@ export function ResultadoBusca({
     if (r.tipo === "ocioso" || r.tipo === "curto") return;
     caixa.current?.scrollIntoView?.({ block: "nearest" });
   }, [r.tipo]);
-
-  const bairro: Bairro | null = r.tipo === "ok" || r.tipo === "erro" ? r.bairro : null;
-  const proximos = useMemo(() => {
-    if (!bairro) return [];
-    const dist = bairro.distrito_id ? distritoPorExtenso(bairro.distrito_id) : null;
-    return pertoDoBairro(abrigos.itens, bairro.nome, dist)
-      .slice(0, 3)
-      .map((x) => ({
-        abrigo: x.abrigo,
-        nota:
-          x.grupo === "bairro"
-            ? `No bairro ${bairro.nome}`
-            : x.grupo === "distrito"
-              ? "Mesmo distrito"
-              : undefined,
-      }));
-  }, [bairro, abrigos.itens]);
-
-  const perto = useMemo(
-    () => (loc.tipo === "ok" ? maisPertoDe(abrigos.itens, { lat: loc.lat, lon: loc.lon }) : []),
-    [loc, abrigos.itens],
-  );
 
   let conteudo = null;
   if (r.tipo === "carregando") {
@@ -197,12 +114,6 @@ export function ResultadoBusca({
             Tentar de novo
           </button>
         </div>
-        <ListaAbrigos
-          titulo={`Abrigos perto de ${r.bairro.nome}`}
-          abrigos={abrigos}
-          itens={proximos}
-          aoVerTodos={() => irParaAba("abrigos")}
-        />
       </>
     );
   } else if (r.tipo === "ok") {
@@ -231,12 +142,6 @@ export function ResultadoBusca({
             </p>
           )}
         </div>
-        <ListaAbrigos
-          titulo={`Abrigos perto de ${r.bairro.nome}`}
-          abrigos={abrigos}
-          itens={proximos}
-          aoVerTodos={() => irParaAba("abrigos")}
-        />
       </>
     );
   } else if (loc.tipo === "pedindo") {
@@ -271,7 +176,6 @@ export function ResultadoBusca({
       </div>
     );
   } else if (loc.tipo === "ok") {
-    const longe = perto.length > 0 && perto[0].km > LONGE_KM;
     conteudo = (
       <>
         <div className={estilos.painel}>
@@ -281,24 +185,6 @@ export function ResultadoBusca({
             acima para ver os avisos.
           </p>
         </div>
-        {longe ? (
-          <section className={estilos.abrigos}>
-            <h3 className={estilos.h3}>Abrigos perto de você</h3>
-            <p className={estilos.nota}>
-              Sua localização está longe dos abrigos cadastrados no Recife. Digite o bairro acima ou ligue
-              0800 081 3400.
-            </p>
-          </section>
-        ) : (
-          <ListaAbrigos
-            titulo="Abrigos mais perto de você"
-            nota="Distância em linha reta. A rota real pode ser maior."
-            vazio="Nenhum abrigo cadastrado tem localização no mapa. Ligue 0800 081 3400."
-            abrigos={abrigos}
-            itens={perto.map((x) => ({ abrigo: x.abrigo, nota: `a ${formatarDistancia(x.km)} de você` }))}
-            aoVerTodos={() => irParaAba("abrigos")}
-          />
-        )}
       </>
     );
   }

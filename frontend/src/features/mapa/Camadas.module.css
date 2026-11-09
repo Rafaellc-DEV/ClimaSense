@@ -183,17 +183,6 @@
   border-radius: 6px;
   box-shadow: 0 0 0 1px var(--cs-linha-forte);
 }
-.abrigoAberto {
-  background: var(--cs-mare-forte);
-  border: 3px solid var(--cs-sol);
-  border-radius: 4px 4px 50% 50%;
-}
-.abrigoFechado {
-  background: var(--cs-papel);
-  color: var(--cs-mare-forte);
-  border: 2px solid var(--cs-mare-forte);
-  border-radius: 4px 4px 50% 50%;
-}
 .alertaCobertura {
   padding: var(--e-2) var(--e-3);
   border-radius: var(--r-icone);

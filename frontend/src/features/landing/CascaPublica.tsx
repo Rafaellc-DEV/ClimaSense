@@ -17,14 +17,7 @@ export { TELEFONES } from "./telefones";
  * equipe), conteúdo, rodapé com as fontes e, no celular, a barra fixa de emergência. O espaço dela é reservado no fim da página
  * (padding-bottom e scroll-padding-bottom) para o foco nunca ficar escondido atrás dela.
  */
-export function CascaPublica({
-  children,
-  aoAbrirAbrigos,
-}: {
-  children: ReactNode;
-  /** Só na página inicial: o atalho “Abrigos” da barra de emergência troca de aba sem recarregar. */
-  aoAbrirAbrigos?: () => void;
-}) {
+export function CascaPublica({ children }: { children: ReactNode }) {
   const naHome = useLocation().pathname === "/";
   useRolarAoChegar(naHome);
   return (
@@ -106,7 +99,7 @@ export function CascaPublica({
           />
         </div>
       </footer>
-      <BarraEmergencia aoAbrirAbrigos={aoAbrirAbrigos} />
+      <BarraEmergencia />
     </div>
   );
 }

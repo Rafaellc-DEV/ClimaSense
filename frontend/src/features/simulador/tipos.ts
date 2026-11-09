@@ -7,17 +7,11 @@
 import type { ChaveNivel } from "@/design-system/niveis";
 import { formatarNumero } from "@/lib/formatos";
 
-export const CAMPOS_NUMERICOS = [
-  "chuva_prevista_mm",
-  "duracao_h",
-  "chuva_acumulada_mm",
-  "mare_m",
-  "abrigos_abertos",
-  "capacidade_abrigos",
-] as const;
+export const CAMPOS_NUMERICOS = ["chuva_prevista_mm", "duracao_h", "chuva_acumulada_mm", "mare_m"] as const;
 export type CampoNumerico = (typeof CAMPOS_NUMERICOS)[number];
 
-export const HORIZONTES = [6, 12, 24, 48, 72] as const;
+export const HORIZONTES = [6, 12, 24, 72] as const;
+export const DURACOES = [1, 3, 6, 12, 24, 48, 72] as const;
 export const HORIZONTE_PADRAO = 24;
 
 /** O que a API aceita e devolve: cada campo pode ser nulo (sem dado). */
@@ -27,12 +21,60 @@ export interface Premissas {
   chuva_acumulada_mm: number | null;
   mare_m: number | null;
   horizonte_h: number | null;
-  abrigos_abertos: number | null;
-  capacidade_abrigos: number | null;
 }
 
 /** O formulário guarda texto: vazio = sem dado (nunca zero). */
 export type Formulario = Record<CampoNumerico, string> & { horizonte_h: number };
+
+export type ClasseArbovirose = "baixa" | "media" | "alta";
+
+export interface PontoSemanalArbovirose {
+  ano: number;
+  semana: number;
+  inicio: string;
+  casos: number | null;
+  suprimido: boolean;
+  incompleta: boolean;
+  nivel_alerta?: number | null;
+}
+
+export interface AgravoDistrito {
+  agravo: string;
+  nome: string;
+  semana_recente: PontoSemanalArbovirose | null;
+  ano_distrito: number | null;
+  casos_ano_distrito: number | null;
+  casos_ano_suprimido: boolean;
+  classe_impacto: ClasseArbovirose | null;
+  dados_insuficientes: boolean;
+  motivo: string | null;
+  fonte_semanal?: string | null;
+  fonte_anual?: string | null;
+}
+
+/** Arboviroses de um distrito no cenário: contexto, nunca previsão causal. Nos bairros vem `null`. */
+export interface ArbovirosesDistrito {
+  agravos: AgravoDistrito[];
+  classe_impacto: ClasseArbovirose | null;
+  agravos_em_destaque: string[];
+}
+
+export interface OrdemDistrito {
+  distrito_id: string;
+  nome: string;
+  estagio_sugerido?: string | null;
+  classe_arboviroses: ClasseArbovirose | null;
+  agravos_em_destaque: string[];
+}
+
+export interface ResumoArboviroses {
+  experimental?: boolean;
+  contexto?: boolean;
+  aviso?: string | null;
+  granularidade_semanal?: string | null;
+  granularidade_anual?: string | null;
+  fontes?: { id: string; nome: string; atualizado_em: string | null; status: string }[] | null;
+}
 
 export interface ItemSimulado {
   territorio_id: string;
@@ -45,14 +87,16 @@ export interface ItemSimulado {
   confianca?: string | null;
   motivos?: string[] | null;
   impacto_pessoas?: unknown;
+  arboviroses?: ArbovirosesDistrito | null;
 }
 
 export interface ResultadoSimulacao {
   itens: ItemSimulado[];
   resumo?: {
     por_classe?: Record<string, number> | null;
-    pressao_abrigos?: unknown;
     impacto_pessoas_aviso?: string | null;
+    ordem_de_atencao_distritos?: OrdemDistrito[] | null;
+    arboviroses?: ResumoArboviroses | null;
     pessoas_vulneraveis_em_alerta?: unknown;
   } | null;
   experimental?: boolean;
@@ -104,8 +148,6 @@ export function deAtuais(p: Partial<Premissas> | null | undefined): Formulario {
     duracao_h: texto(p?.duracao_h),
     chuva_acumulada_mm: texto(p?.chuva_acumulada_mm),
     mare_m: texto(p?.mare_m),
-    abrigos_abertos: texto(p?.abrigos_abertos),
-    capacidade_abrigos: texto(p?.capacidade_abrigos),
     horizonte_h: horizonte,
   };
 }
@@ -123,8 +165,6 @@ const MINIMO: Record<CampoNumerico, number | null> = {
   duracao_h: 0,
   chuva_acumulada_mm: 0,
   mare_m: null, // a maré pode ser negativa
-  abrigos_abertos: 0,
-  capacidade_abrigos: 0,
 };
 
 export function erroDoCampo(campo: CampoNumerico, t: string): string | undefined {
@@ -182,25 +222,6 @@ export function fraseResumo(p: Premissas, itens: ItemSimulado[], visao: Visao): 
   if (por[0] > 0) contagens.push(`${formatarNumero(por[0])} em observação`);
   if (sem > 0) contagens.push(`${formatarNumero(sem)} sem dados`);
   return `${abertura}${contagens.join(", ")}.`;
-}
-
-/** Pressão nos abrigos: só texto ou classe vinda da API. Sem entendimento, não inventa nada. */
-export function pressaoAbrigos(v: unknown): { texto: string; ordem: number | null } | null {
-  if (v === null || v === undefined) return null;
-  if (typeof v === "string") {
-    const o = ordemDaClasse(v);
-    return o !== null ? { texto: ROTULO_CLASSE[o], ordem: o } : { texto: v, ordem: null };
-  }
-  if (typeof v === "object") {
-    const r = v as Record<string, unknown>;
-    const o = ordemDaClasse(r.classe);
-    const texto = [r.texto, r.descricao, r.mensagem].find((t) => typeof t === "string" && t) as
-      | string
-      | undefined;
-    if (o !== null) return { texto: texto ?? ROTULO_CLASSE[o], ordem: o };
-    if (texto) return { texto, ordem: null };
-  }
-  return null;
 }
 
 export function formatarSegundos(ms: number): string {

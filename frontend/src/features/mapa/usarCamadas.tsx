@@ -5,11 +5,10 @@
 import { useMemo, useState } from "react";
 import { useTemaAtual } from "@/charts/tema";
 import { fontesDado, type FonteDado } from "@/design-system/componentes/EstadoDados";
-import { listaDe, type Abrigo } from "@/features/evento/tipos";
 import { ErroApi } from "@/lib/api";
 import { INTERVALO, useConsultaViva } from "@/lib/consultas";
 import { fontesDe } from "@/lib/frescor";
-import type { AparenciaPopulacao, PontoAbrigo, TipoPino } from "@/map/MapaBairros";
+import type { AparenciaPopulacao, TipoPino } from "@/map/MapaBairros";
 import {
   CAMINHO_CAMADA,
   FONTE_PADRAO,
@@ -48,7 +47,6 @@ const FALTA_PADRAO: Record<Dependentes, string> = {
   equipamentos: "CNES",
   populacao: "IBGE, Censo 2022",
   areas: "Defesa Civil do Recife (áreas de risco)",
-  abrigos: "localização dos abrigos",
 };
 
 /** Cor (token) do tipo de área: deslizamento e alagamento têm cor fixa, os outros tipos recebem as demais. */
@@ -90,7 +88,6 @@ export function useCamadas() {
     populacao: false,
     areas: false,
     equipamentos: false,
-    abrigos: false,
   });
   const [indicador, setIndicador] = useState<Indicador>("idosos_60_mais");
 
@@ -109,36 +106,17 @@ export function useCamadas() {
   );
   const vul = useConsultaViva<unknown>(ligadas.populacao ? CAMINHO_CAMADA.populacao : null, INTERVALO.saude);
   const ar = useConsultaViva<unknown>(ligadas.areas ? CAMINHO_CAMADA.areas : null, INTERVALO.saude);
-  const ab = useConsultaViva<unknown>(ligadas.abrigos ? "/abrigos" : null);
 
   const featEq = useMemo(() => featuresDe<PropsEquipamento>(eq.data), [eq.data]);
   const featAr = useMemo(() => featuresDe<PropsAreaRisco>(ar.data), [ar.data]);
   const itensVul = useMemo(() => itensVulneraveis(vul.data), [vul.data]);
-  const pontosAbrigo = useMemo<PontoAbrigo[]>(
-    () =>
-      listaDe<Abrigo>(ab.data).flatMap((a) =>
-        typeof a.latitude === "number" && typeof a.longitude === "number"
-          ? [
-              {
-                id: a.id,
-                nome: a.nome,
-                lat: a.latitude,
-                lng: a.longitude,
-                aberto: a.status_fonte === null || a.status_fonte === undefined ? null : a.aberto,
-              },
-            ]
-          : [],
-      ),
-    [ab.data],
-  );
 
   const estados: Record<Dependentes, EstadoCamada> = {
     equipamentos: estadoDe(ligadas.equipamentos, eq, featEq.length === 0 && !!eq.data, "equipamentos"),
     populacao: estadoDe(ligadas.populacao, vul, itensVul.length === 0 && !!vul.data, "populacao"),
     areas: estadoDe(ligadas.areas, ar, featAr.length === 0 && !!ar.data, "areas"),
-    abrigos: estadoDe(ligadas.abrigos, ab, pontosAbrigo.length === 0 && !!ab.data, "abrigos"),
   };
-  const consultas = { equipamentos: eq, populacao: vul, areas: ar, abrigos: ab };
+  const consultas = { equipamentos: eq, populacao: vul, areas: ar };
   const fontes = Object.fromEntries(
     (Object.keys(consultas) as Dependentes[]).map((k) => [
       k,
@@ -207,7 +185,6 @@ export function useCamadas() {
         : null,
     [featEq, estados.equipamentos.tipo],
   );
-  const pinosAbrigo = estados.abrigos.tipo === "ok" ? pontosAbrigo : null;
 
   const propsMapa = {
     modo,
@@ -215,7 +192,6 @@ export function useCamadas() {
     tokensPopulacao: TOKENS_POPULACAO,
     areasRisco: colecaoAreas,
     equipamentos: colecaoEquip,
-    abrigos: pinosAbrigo,
   };
 
   return {
@@ -234,12 +210,11 @@ export function useCamadas() {
       itens: itensVul,
     },
     risco: { tipos: tiposRisco, cobertura: coberturaMeta ?? null, total: featAr.length },
-    totais: { equipamentos: featEq.length, abrigos: pontosAbrigo, areas: featAr.length },
+    totais: { equipamentos: featEq.length, areas: featAr.length },
     tentar: {
       equipamentos: () => void eq.refetch(),
       populacao: () => void vul.refetch(),
       areas: () => void ar.refetch(),
-      abrigos: () => void ab.refetch(),
     },
     modo,
   };

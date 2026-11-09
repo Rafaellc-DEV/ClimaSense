@@ -35,7 +35,7 @@ interface ItemMenu {
 
 /**
  * As cinco telas do PRD (§7), na ordem do dia a dia: o mapa, a situação do evento, a saúde, as ações e o simulador.
- * Fontes e Administração ficam no rodapé. Chuva, Abrigos, Registro e Boletim viraram parte destas telas (rotas
+ * Fontes e Administração ficam no rodapé. Chuva, Registro e Boletim viraram parte destas telas (rotas
  * antigas redirecionam, ver App.tsx).
  */
 const PRINCIPAIS: ItemMenu[] = [

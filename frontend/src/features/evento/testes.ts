@@ -50,7 +50,7 @@ export function simularApi(mapa: Record<string, Resposta>, metodos: Record<strin
       const r = chave === undefined ? { status: 404, corpo: { detail: "Não encontrado." } } : fonte[chave];
       const status = ehStatus(r) ? r.status : 200;
       const conteudo = ehStatus(r) ? (r.corpo ?? {}) : r;
-      return new Response(JSON.stringify(conteudo), { status });
+      return new Response(status === 204 ? null : JSON.stringify(conteudo), { status });
     }),
   );
   return pedidos;

@@ -7,7 +7,8 @@ import { expect, type Page } from "@playwright/test";
  */
 const EMAIL = process.env.E2E_EMAIL ?? "gestor@climasense.dev";
 
-export const SAIDAS_DE_ESCRITA = /\/api\/v1\/(estagios(\/oficial|\/mensagem)?|acoes|abrigos|cenarios\/simular|cenarios)(\/|\?|$)/;
+export const SAIDAS_DE_ESCRITA =
+  /\/api\/v1\/(estagios(\/oficial|\/mensagem)?|acoes|cenarios\/simular|cenarios)(\/|\?|$)/;
 
 export async function entrar(page: Page, destino = "/app") {
   const senha = process.env.E2E_SENHA;
@@ -26,7 +27,11 @@ export async function entrar(page: Page, destino = "/app") {
  */
 export async function bloquearEscritas(
   page: Page,
-  respostas: (url: string, metodo: string, corpo: unknown) => { status?: number; json: unknown } | null = () => null,
+  respostas: (
+    url: string,
+    metodo: string,
+    corpo: unknown,
+  ) => { status?: number; json: unknown } | null = () => null,
 ) {
   const tentativas: { metodo: string; url: string; corpo: unknown }[] = [];
   await page.route("**/api/v1/**", async (rota) => {

@@ -23,13 +23,12 @@ import {
   quandoAs,
   useFontesResumo,
 } from "@/features/evento/textos";
-import type { Acao, SituacaoEvento } from "@/features/evento/tipos";
+import type { Acao } from "@/features/evento/tipos";
 import { dadosDe, NIVEL_ALERTA, type ResumoSaude } from "@/features/saude/tipos";
 import estilos from "./Boletim.module.css";
 
 /** O contrato do relatório executivo ganhou campos; os que o OpenAPI gerado ainda não traz ficam opcionais. */
-type Boletim = Omit<Esquemas["Boletim"], "abrigos"> & {
-  abrigos: Esquemas["Boletim"]["abrigos"] & { situacao?: SituacaoEvento | null };
+type Boletim = Esquemas["Boletim"] & {
   periodo?: { desde: string; ate: string } | null;
   acoes_concluidas?: Acao[] | null;
 };
@@ -79,21 +78,7 @@ function fraseChuva(c: Boletim["chuva"]): string {
   return `${ult}; ${prev}.`;
 }
 
-function fraseAbrigosSaude(
-  b: Boletim | undefined,
-  saude: ResumoSaude | undefined,
-  saudeFalhou: boolean,
-): string {
-  const t = b?.abrigos.totais;
-  const abrigos = !t
-    ? "Sem informação de abrigos"
-    : t.abrigos_cadastrados === 0 || t.abrigos_abertos === null
-      ? "Sem informação de abrigos"
-      : t.abrigos_abertos === 0
-        ? "Nenhum abrigo aberto"
-        : t.abrigos_abertos === 1
-          ? "1 abrigo aberto"
-          : `${formatarNumero(t.abrigos_abertos)} abrigos abertos`;
+function fraseSaude(saude: ResumoSaude | undefined, saudeFalhou: boolean): string {
   const j = saude?.janela_leptospirose;
   const lepto = j?.ativa
     ? `janela de vigilância de leptospirose aberta até ${diaMes(j.fim)}`
@@ -102,7 +87,7 @@ function fraseAbrigosSaude(
       : saudeFalhou
         ? "dados de saúde ainda não disponíveis"
         : "";
-  return lepto ? `${abrigos}; ${lepto}.` : `${abrigos}.`;
+  return lepto ? `${lepto[0].toUpperCase()}${lepto.slice(1)}.` : "";
 }
 
 /** Destaques em tópicos, só com o que existe nos dados. */
@@ -169,9 +154,8 @@ export function TelaBoletim() {
   const distritos = [...(b?.estagios ?? [])].sort(ordemPorNome);
   const emAndamento = b?.acoes_em_andamento ?? [];
   const concluidas = b?.acoes_concluidas ?? [];
-  const situacaoAbrigos = b?.abrigos.situacao?.cidade;
   const resumo = b
-    ? [fraseSituacao(distritos), fraseChuva(b.chuva), fraseAbrigosSaude(b, saude, saudeR.isError)]
+    ? [fraseSituacao(distritos), fraseChuva(b.chuva), fraseSaude(saude, saudeR.isError)].filter(Boolean)
     : [];
   const topicos = destaques(b, saude, emAndamento.length);
   const fontesMeta = fontesDado(juntarFontes(r.data, saudeR.data));
@@ -342,38 +326,6 @@ export function TelaBoletim() {
               </dl>
               <p className={estilos.nota}>O maior valor entre os distritos.</p>
             </section>
-
-            <section className={estilos.secao} aria-labelledby="bo-abrigos">
-              <h3 id="bo-abrigos">Abrigos abertos</h3>
-              {b.abrigos.totais.abrigos_cadastrados === 0 || b.abrigos.totais.abrigos_abertos === null ? (
-                <p>Sem informação de abrigos.</p>
-              ) : b.abrigos.abertos.length === 0 ? (
-                <p>Nenhum abrigo aberto.</p>
-              ) : (
-                <ul className={estilos.topicos}>
-                  {b.abrigos.abertos.map((a) => (
-                    <li key={a.id}>
-                      {a.nome}, {a.bairro_nome}
-                      {a.capacidade !== null && ` (capacidade ${formatarNumero(a.capacidade)})`}
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </section>
-
-            {situacaoAbrigos && (
-              <p className={estilos.nota}>
-                Pessoas abrigadas:{" "}
-                {situacaoAbrigos.pessoas_abrigadas === null
-                  ? "dados insuficientes"
-                  : formatarNumero(situacaoAbrigos.pessoas_abrigadas)}
-                . Desabrigados:{" "}
-                {situacaoAbrigos.desabrigados === null
-                  ? "dados insuficientes"
-                  : formatarNumero(situacaoAbrigos.desabrigados)}
-                {situacaoAbrigos.parcial ? " (soma parcial)" : ""}.
-              </p>
-            )}
 
             <section className={estilos.secao} aria-labelledby="bo-saude">
               <h3 id="bo-saude">Saúde</h3>

@@ -1,31 +1,29 @@
 import { useMemo, useState, type FormEvent } from "react";
-import { FileText } from "lucide-react";
+import { FileText, Trash2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { CabecalhoTela } from "@/design-system/componentes/CabecalhoTela";
 import { useAviso } from "@/design-system/componentes/Aviso";
 import { Botao, classesBotao } from "@/design-system/componentes/Botao";
 import { AreaTexto, Campo } from "@/design-system/componentes/Campo";
-import { CarregandoLista } from "@/design-system/componentes/Esqueleto";
+import { Confirmacao } from "@/design-system/componentes/Dialogo";
 import { EstadoDados } from "@/design-system/componentes/EstadoDados";
+import { Indicador } from "@/design-system/componentes/Indicador";
 import { Painel } from "@/design-system/componentes/Painel";
 import { Pilula, type TomPilula } from "@/design-system/componentes/Pilula";
 import { Segmentado } from "@/design-system/componentes/Segmentado";
-import { enviar, ErroApi } from "@/lib/api";
-import { useConsulta, useConsultaViva, ultimaAtualizacao } from "@/lib/consultas";
-import { formatarDataHora } from "@/lib/formatos";
+import { consulta, enviar, ErroApi } from "@/lib/api";
+import { useConsultaViva, ultimaAtualizacao } from "@/lib/consultas";
+import { diaNoRecife, formatarHora, somarDias } from "@/lib/formatos";
 import { useSessao } from "@/lib/sessao";
 import campo from "@/design-system/componentes/Campo.module.css";
-import { EstadoConsulta, invalidarPrefixo, SelecaoTerritorio } from "@/features/evento/Evento";
-import { nomeCurto, quandoAs } from "@/features/evento/textos";
-import {
-  desembrulhar,
-  listaDe,
-  type Acao,
-  type EventoAcao,
-  type SituacaoAcao,
-} from "@/features/evento/tipos";
+import { EstadoConsulta, invalidarPrefixo } from "@/features/evento/Evento";
+import { diaMes, nomeCurto, quandoAs } from "@/features/evento/textos";
+import { listaDe, type Acao, type SituacaoAcao } from "@/features/evento/tipos";
+import { ListaAdaptavel } from "@/features/fluxo/ListaAdaptavel";
 import type { ItemPrioridadeTerritorio } from "@/features/mapa/tipos";
+import { Auditoria } from "./Auditoria";
+import { SeletorTerritorio } from "./SeletorTerritorio";
 import { agoraNoRecife, isoDeDiaHora } from "./tempo";
 import estilos from "./Acoes.module.css";
 
@@ -41,7 +39,15 @@ const TOM: Record<SituacaoAcao, TomPilula> = {
   concluida: "sucesso",
   cancelada: "neutro",
 };
-const ABERTAS: SituacaoAcao[] = ["em_andamento", "planejada"];
+
+type Periodo = "todo" | "hoje" | "7d" | "30d";
+const PERIODOS: { valor: Periodo; rotulo: string }[] = [
+  { valor: "todo", rotulo: "Todo o período" },
+  { valor: "hoje", rotulo: "Hoje" },
+  { valor: "7d", rotulo: "Últimos 7 dias" },
+  { valor: "30d", rotulo: "Últimos 30 dias" },
+];
+const DIAS: Record<Exclude<Periodo, "todo">, number> = { hoje: 0, "7d": 7, "30d": 30 };
 
 /** Distritos mais vulneráveis primeiro (RF-22); dentro do distrito, a ação mais recente primeiro. */
 export function ordenarAcoes(acoes: Acao[], prioridade: ItemPrioridadeTerritorio[]): Acao[] {
@@ -53,115 +59,213 @@ export function ordenarAcoes(acoes: Acao[], prioridade: ItemPrioridadeTerritorio
   return [...acoes].sort((a, b) => rank(a) - rank(b) || quando(b).localeCompare(quando(a)));
 }
 
+const horario = (iso: string) => `${diaMes(iso)} ${formatarHora(iso).replace("h", ":")}`;
+
 function useGravar() {
   const cliente = useQueryClient();
   const avisar = useAviso();
   const [ocupado, setOcupado] = useState(false);
-  async function gravar(caminho: string, corpo: unknown, metodo: string, confirmacao: string) {
+  async function executar(
+    chamada: () => Promise<unknown>,
+    confirmacao: string,
+    falha: string,
+  ): Promise<boolean> {
     setOcupado(true);
     try {
-      await enviar(caminho, corpo, metodo);
+      await chamada();
       void invalidarPrefixo(cliente, "/acoes");
       void invalidarPrefixo(cliente, "/boletim");
       avisar({ titulo: confirmacao });
       return true;
     } catch (x) {
-      avisar({
-        titulo: "Não foi possível salvar.",
-        texto: x instanceof ErroApi ? x.message : "Tente de novo.",
-        tipo: "erro",
-      });
+      avisar({ titulo: falha, texto: x instanceof ErroApi ? x.message : "Tente de novo.", tipo: "erro" });
       return false;
     } finally {
       setOcupado(false);
     }
   }
-  return { ocupado, gravar };
+  const gravar = (caminho: string, corpo: unknown, metodo: string, confirmacao: string) =>
+    executar(() => enviar(caminho, corpo, metodo), confirmacao, "Não foi possível salvar.");
+  const excluir = (id: string) =>
+    executar(
+      () => enviar(`/acoes/${encodeURIComponent(id)}`, undefined, "DELETE"),
+      "Ação excluída.",
+      "Não foi possível excluir a ação.",
+    );
+  return { ocupado, gravar, excluir };
 }
 
 /**
- * Ações (RF-15, RF-16, RF-17): registrar o que a equipe fez em cada distrito, acompanhar o que está em andamento
- * (distritos mais vulneráveis primeiro) e abrir o relatório executivo. Registro manual, com hora e autor.
+ * Ações (RF-15, RF-16, RF-17): o que a equipe fez na cidade, em cada distrito e em cada bairro. Filtros por território
+ * e período, três totais derivados do registro, a tabela das ações (com exclusão auditada), o formulário de registro,
+ * o relatório executivo para a Secretaria de Saúde e a trilha de auditoria.
  */
 export function TelaAcoes() {
   const { pode } = useSessao();
   const podeEditar = pode("editar");
-  const r = useConsultaViva<unknown>("/acoes?ordem=prioridade");
+  const [territorio, setTerritorio] = useState("");
+  const [periodo, setPeriodo] = useState<Periodo>("todo");
+  const hoje = diaNoRecife();
+  const caminho = `/acoes${consulta({
+    ordem: "prioridade",
+    territorio_id: territorio,
+    desde: periodo === "todo" ? "" : somarDias(hoje, -DIAS[periodo]),
+  })}`;
+  const r = useConsultaViva<unknown>(caminho);
   const prioridade = useConsultaViva<unknown>("/territorios/prioridade");
   const todas = useMemo(
     () => ordenarAcoes(listaDe<Acao>(r.data), listaDe<ItemPrioridadeTerritorio>(prioridade.data)),
     [r.data, prioridade.data],
   );
-  const abertas = todas.filter((a) => ABERTAS.includes(a.situacao));
-  const fechadas = todas.filter((a) => !ABERTAS.includes(a.situacao));
+  const conta = (s: SituacaoAcao) => todas.filter((a) => a.situacao === s).length;
   const ultima = todas
     .map((a) => a.atualizada_em ?? a.criada_em ?? "")
     .sort()
     .pop();
+  const fonte = [{ nome: "Registro da equipe", atualizadoEm: ultima || null }];
+  const cartao = (rotulo: string, n: number, unidade: string) => (
+    <Indicador
+      rotulo={rotulo}
+      valor={String(n)}
+      unidade={unidade}
+      carregando={r.isPending}
+      selo={<Pilula>Derivado</Pilula>}
+      explicacao="Contagem das ações do registro da equipe, no território e período escolhidos."
+      fonte={fonte}
+    />
+  );
 
   return (
     <>
       <CabecalhoTela
         titulo="Ações"
-        proposito="O que a equipe está fazendo em cada distrito, quem cuida e desde quando."
+        proposito="O que a equipe fez na cidade, em cada distrito e em cada bairro, e o relatório para a Secretaria de Saúde."
         atualizadoEm={ultimaAtualizacao(r, prioridade)}
         acoes={
-          <Link to="/app/acoes/relatorio" className={classesBotao("secundario")}>
-            <FileText aria-hidden="true" size={20} /> Relatório executivo
-          </Link>
+          <div className={estilos.filtros}>
+            <SeletorTerritorio
+              rotulo="Território"
+              niveis={["municipio", "distrito", "bairro"]}
+              vazio="Recife — todos os distritos"
+              valor={territorio}
+              aoMudar={setTerritorio}
+            />
+            <div className={campo.campo}>
+              <label htmlFor="ac-periodo" className={campo.rotulo}>
+                Período
+              </label>
+              <select
+                id="ac-periodo"
+                className={campo.entrada}
+                value={periodo}
+                onChange={(e) => setPeriodo(e.target.value as Periodo)}
+              >
+                {PERIODOS.map((p) => (
+                  <option key={p.valor} value={p.valor}>
+                    {p.rotulo}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
         }
       />
       <div className={estilos.pagina}>
-        {podeEditar && <FormularioAcao />}
+        {r.isError ? (
+          <EstadoConsulta erro={r.error} oQue="as ações" aoTentar={() => r.refetch()} />
+        ) : (
+          <section className={estilos.cartoes} aria-label="Totais das ações">
+            {cartao("Em andamento", conta("em_andamento"), "ações abertas agora")}
+            {cartao("Planejadas", conta("planejada"), "ainda não iniciadas")}
+            {cartao("Concluídas", conta("concluida"), "no período")}
+          </section>
+        )}
 
-        <Painel id="ac-andamento" titulo={`Em andamento${r.isSuccess ? ` (${abertas.length})` : ""}`}>
-          {r.isPending && <CarregandoLista linhas={3} altura="5rem" texto="Carregando as ações…" />}
-          {r.isError && <EstadoConsulta erro={r.error} oQue="as ações" aoTentar={() => r.refetch()} />}
-          {r.isSuccess && todas.length === 0 && (
-            <EstadoDados tipo="insuficiente" titulo="Nenhuma ação registrada.">
-              Isso não quer dizer que nada esteja sendo feito: registre aqui o que a equipe faz em cada
-              distrito.
-            </EstadoDados>
-          )}
-          {r.isSuccess && todas.length > 0 && abertas.length === 0 && (
-            <p className={estilos.vazio}>Nenhuma ação em andamento ou planejada.</p>
-          )}
-          {abertas.length > 0 && (
-            <ul className={estilos.lista}>
-              {abertas.map((a) => (
-                <CartaoAcao key={a.id} acao={a} podeEditar={podeEditar} />
-              ))}
-            </ul>
-          )}
-          {fechadas.length > 0 && (
-            <details className={estilos.recolhido}>
-              <summary>Concluídas e canceladas ({fechadas.length})</summary>
-              <ul className={estilos.lista}>
-                {fechadas.map((a) => (
-                  <CartaoAcao key={a.id} acao={a} podeEditar={podeEditar} />
-                ))}
-              </ul>
-            </details>
-          )}
-          {r.isSuccess && (
-            <p className={estilos.meta}>
-              Fonte: registro da equipe
-              {ultima ? `, última atualização ${quandoAs(ultima)}` : ", sem hora de atualização"}.
-            </p>
-          )}
-        </Painel>
+        <div className={estilos.principal}>
+          <Painel id="ac-tabela" titulo="Ações do evento">
+            <p className={estilos.meta}>A exclusão fica registrada na auditoria, com quem, quando e o quê.</p>
+            {r.isSuccess && todas.length === 0 ? (
+              <EstadoDados tipo="insuficiente" titulo="Nenhuma ação registrada.">
+                Isso não quer dizer que nada esteja sendo feito: registre aqui o que a equipe faz.
+              </EstadoDados>
+            ) : (
+              <ListaAdaptavel
+                legenda="Ações do evento"
+                carregando={r.isPending}
+                linhas={todas}
+                chaveLinha={(a) => String(a.id)}
+                colunas={[
+                  { chave: "acao", titulo: "Ação", celula: (a) => <b>{a.descricao}</b> },
+                  { chave: "onde", titulo: "Onde", celula: (a) => <Onde acao={a} /> },
+                  {
+                    chave: "resp",
+                    titulo: "Responsável",
+                    celula: (a) => a.responsavel ?? <span className={estilos.meta}>Não informado</span>,
+                  },
+                  {
+                    chave: "status",
+                    titulo: "Status",
+                    celula: (a) => <Status acao={a} podeEditar={podeEditar} />,
+                  },
+                  {
+                    chave: "horario",
+                    titulo: "Horário",
+                    semQuebra: true,
+                    celula: (a) => {
+                      const q = a.inicio_em ?? a.criada_em;
+                      return q ? horario(q) : "Sem horário";
+                    },
+                  },
+                  {
+                    chave: "excluir",
+                    titulo: "Excluir",
+                    semRotulo: true,
+                    celula: (a) => (podeEditar ? <Excluir acao={a} /> : null),
+                  },
+                ]}
+              />
+            )}
+            {r.isSuccess && (
+              <p className={estilos.meta}>
+                Fonte: registro da equipe
+                {ultima ? `, última atualização ${quandoAs(ultima)}` : ", sem hora de atualização"}.
+              </p>
+            )}
+          </Painel>
+
+          {podeEditar && <FormularioAcao />}
+        </div>
+
+        <div className={estilos.rodapeBlocos}>
+          <Relatorio />
+          <Auditoria acoes={todas} />
+        </div>
       </div>
     </>
   );
 }
 
-function CartaoAcao({ acao: a, podeEditar }: { acao: Acao; podeEditar: boolean }) {
+function nomeOnde(a: Acao): string {
+  return a.territorio_id === "recife" || a.territorio_nivel === "municipio"
+    ? "Cidade"
+    : nomeCurto(a.territorio_nome ?? a.territorio_id);
+}
+
+function Onde({ acao: a }: { acao: Acao }) {
+  const distrito =
+    a.territorio_nivel === "bairro" && (a.distrito_nome ?? a.distrito_id)
+      ? nomeCurto(a.distrito_nome ?? String(a.distrito_id))
+      : null;
+  return (
+    <span className={estilos.distrito}>
+      {nomeOnde(a)}
+      {distrito && <small className={estilos.doDistrito}> · {distrito}</small>}
+    </span>
+  );
+}
+
+function Status({ acao: a, podeEditar }: { acao: Acao; podeEditar: boolean }) {
   const { ocupado, gravar } = useGravar();
-  const [historico, setHistorico] = useState(false);
-  const quando = a.inicio_em ?? a.criada_em;
-  const nome =
-    a.territorio_id === "recife" ? "Recife inteiro" : nomeCurto(a.territorio_nome ?? a.territorio_id);
-  const idSel = `st-${a.id}`;
   function mudar(nova: SituacaoAcao) {
     if (nova === a.situacao) return;
     void gravar(
@@ -172,65 +276,62 @@ function CartaoAcao({ acao: a, podeEditar }: { acao: Acao; podeEditar: boolean }
     );
   }
   return (
-    <li className={estilos.acao}>
-      <div className={estilos.acaoTopo}>
-        <span className={estilos.distrito}>{nome}</span>
-        <Pilula tom={TOM[a.situacao]}>{ROTULO[a.situacao]}</Pilula>
-      </div>
-      <p className={estilos.texto}>{a.descricao}</p>
-      <p className={estilos.meta}>
-        {a.responsavel ? `Responsável: ${a.responsavel}. ` : "Sem responsável informado. "}
-        {quando ? `${a.situacao === "planejada" ? "Para" : "Desde"} ${quandoAs(quando)}. ` : ""}
-        {a.fim_em && a.situacao === "concluida" ? `Concluída ${quandoAs(a.fim_em)}. ` : ""}
-        {a.autor_nome ? `Registrada por ${a.autor_nome}.` : ""}
-      </p>
+    <span className={estilos.status}>
+      <Pilula tom={TOM[a.situacao]}>{ROTULO[a.situacao]}</Pilula>
       {podeEditar && (
-        <div className={estilos.status}>
-          <label htmlFor={idSel}>Status</label>
-          <select
-            id={idSel}
-            className={campo.entrada}
-            value={a.situacao}
-            disabled={ocupado}
-            aria-label={`Mudar o status da ação em ${nome}`}
-            onChange={(e) => mudar(e.target.value as SituacaoAcao)}
-          >
-            {(Object.keys(ROTULO) as SituacaoAcao[]).map((s) => (
-              <option key={s} value={s}>
-                {ROTULO[s]}
-              </option>
-            ))}
-          </select>
-        </div>
+        <select
+          className={`${campo.entrada} ${estilos.statusSelect}`}
+          value={a.situacao}
+          disabled={ocupado}
+          aria-label={`Mudar o status da ação em ${nomeOnde(a)}`}
+          onChange={(e) => mudar(e.target.value as SituacaoAcao)}
+        >
+          {(Object.keys(ROTULO) as SituacaoAcao[]).map((s) => (
+            <option key={s} value={s}>
+              {ROTULO[s]}
+            </option>
+          ))}
+        </select>
       )}
-      <details className={estilos.recolhido} onToggle={(e) => setHistorico(e.currentTarget.open)}>
-        <summary>Histórico</summary>
-        {historico && <Historico id={String(a.id)} />}
-      </details>
-    </li>
+    </span>
   );
 }
 
-function Historico({ id }: { id: string }) {
-  const r = useConsulta<unknown>(`/acoes/${encodeURIComponent(id)}`);
-  const linha = (desembrulhar<{ linha_do_tempo?: EventoAcao[] }>(r.data)?.linha_do_tempo ??
-    []) as EventoAcao[];
-  if (r.isPending) return <p className={estilos.meta}>Carregando o histórico…</p>;
-  if (r.isError) return <EstadoConsulta erro={r.error} oQue="o histórico" aoTentar={() => r.refetch()} />;
-  if (linha.length === 0) return <p className={estilos.meta}>Sem histórico registrado.</p>;
+function Excluir({ acao: a }: { acao: Acao }) {
+  const { ocupado, excluir } = useGravar();
+  const [confirmando, setConfirmando] = useState(false);
   return (
-    <ol className={estilos.historico}>
-      {linha.map((e) => (
-        <li key={e.id}>
-          <b>{formatarDataHora(e.em)}</b>, {e.autor_nome}: {e.texto}
-        </li>
-      ))}
-    </ol>
+    <>
+      <Botao
+        variante="perigo"
+        icone={<Trash2 />}
+        disabled={ocupado}
+        aria-label={`Excluir a ação em ${nomeOnde(a)}`}
+        onClick={() => setConfirmando(true)}
+      >
+        Excluir
+      </Botao>
+      <Confirmacao
+        aberto={confirmando}
+        aoMudar={setConfirmando}
+        titulo="Excluir esta ação?"
+        consequencia="Isso não pode ser desfeito."
+        rotuloConfirmar="Excluir"
+        perigo
+        aoConfirmar={() => {
+          setConfirmando(false);
+          void excluir(String(a.id));
+        }}
+      />
+    </>
   );
 }
+
+type Escopo = "cidade" | "distrito" | "bairro";
 
 function FormularioAcao() {
   const inicial = () => ({
+    escopo: "distrito" as Escopo,
     territorio: "",
     texto: "",
     responsavel: "",
@@ -238,15 +339,26 @@ function FormularioAcao() {
     ...agoraNoRecife(),
   });
   const [v, setV] = useState(inicial);
-  const [erros, setErros] = useState<{ territorio?: string; texto?: string; quando?: string }>({});
+  const [erros, setErros] = useState<{
+    territorio?: string;
+    texto?: string;
+    responsavel?: string;
+    quando?: string;
+  }>({});
   const { ocupado, gravar } = useGravar();
+  const territorioId = v.escopo === "cidade" ? "recife" : v.territorio;
 
   async function registrar(e: FormEvent) {
     e.preventDefault();
     const quando = isoDeDiaHora(v.dia, v.hora);
     const f = {
-      territorio: v.territorio ? undefined : "Escolha o distrito.",
+      territorio: territorioId
+        ? undefined
+        : v.escopo === "bairro"
+          ? "Escolha o bairro."
+          : "Escolha o distrito.",
       texto: v.texto.trim() ? undefined : "Escreva o que foi feito, em uma frase.",
+      responsavel: v.responsavel.trim() ? undefined : "Informe quem é o responsável.",
       quando: !quando
         ? "Informe o dia e a hora."
         : v.situacao !== "planejada" && Date.parse(quando) > Date.now() + 60_000
@@ -254,14 +366,14 @@ function FormularioAcao() {
           : undefined,
     };
     setErros(f);
-    if (f.territorio || f.texto || f.quando || !quando) return;
+    if (f.territorio || f.texto || f.responsavel || f.quando || !quando) return;
     const ok = await gravar(
       "/acoes",
       {
-        territorio_id: v.territorio,
+        territorio_id: territorioId,
         tipo: "outro",
         descricao: v.texto.trim(),
-        responsavel: v.responsavel.trim() || null,
+        responsavel: v.responsavel.trim(),
         situacao: v.situacao,
         inicio_em: quando,
         ...(v.situacao === "concluida" ? { fim_em: new Date().toISOString() } : {}),
@@ -275,54 +387,82 @@ function FormularioAcao() {
   return (
     <form className={estilos.caixa} onSubmit={registrar} noValidate aria-label="Registrar ação">
       <h2>Registrar ação</h2>
-      <SelecaoTerritorio
-        rotulo="Distrito"
-        vazio="Escolha o distrito"
-        niveis={["municipio", "distrito"]}
-        valor={v.territorio}
-        aoMudar={(t) => setV((a) => ({ ...a, territorio: t }))}
-        erro={erros.territorio}
-        obrigatorio
+      <p className={estilos.meta}>Responsável, status e horário são obrigatórios.</p>
+      <Segmentado
+        rotulo="Onde foi a ação"
+        opcoes={[
+          { valor: "cidade", rotulo: "Cidade" },
+          { valor: "distrito", rotulo: "Distrito" },
+          { valor: "bairro", rotulo: "Bairro" },
+        ]}
+        valor={v.escopo}
+        aoMudar={(escopo: Escopo) => setV((a) => ({ ...a, escopo, territorio: "" }))}
       />
+      {v.escopo === "distrito" && (
+        <SeletorTerritorio
+          rotulo="Distrito"
+          niveis={["distrito"]}
+          vazio="Escolha o distrito"
+          valor={v.territorio}
+          aoMudar={(t) => setV((a) => ({ ...a, territorio: t }))}
+          erro={erros.territorio}
+          obrigatorio
+        />
+      )}
+      {v.escopo === "bairro" && (
+        <SeletorTerritorio
+          rotulo="Bairro"
+          niveis={["bairro"]}
+          vazio="Escolha o bairro"
+          valor={v.territorio}
+          aoMudar={(t) => setV((a) => ({ ...a, territorio: t }))}
+          erro={erros.territorio}
+          obrigatorio
+        />
+      )}
       <AreaTexto
         privacidade
-        rotulo="O que foi feito"
-        rows={2}
+        rotulo="Descrição"
+        rows={3}
         maxLength={2000}
+        placeholder="Ex.: visita das equipes de saúde às famílias da encosta"
         value={v.texto}
         onChange={(e) => setV((a) => ({ ...a, texto: e.target.value }))}
         erro={erros.texto}
       />
-      <Campo
-        rotulo="Responsável (órgão ou pessoa)"
-        value={v.responsavel}
-        maxLength={160}
-        onChange={(e) => setV((a) => ({ ...a, responsavel: e.target.value }))}
-      />
-      <Segmentado
-        rotulo="Status"
-        opcoes={[
-          { valor: "planejada", rotulo: "Planejada" },
-          { valor: "em_andamento", rotulo: "Em andamento" },
-          { valor: "concluida", rotulo: "Concluída" },
-        ]}
-        valor={v.situacao}
-        aoMudar={(s) => setV((a) => ({ ...a, situacao: s }))}
-      />
       <div className={estilos.dupla}>
         <Campo
-          rotulo="Dia"
-          type="date"
-          value={v.dia}
-          onChange={(e) => setV((a) => ({ ...a, dia: e.target.value }))}
-          erro={erros.quando}
+          rotulo="Responsável"
+          value={v.responsavel}
+          maxLength={160}
+          onChange={(e) => setV((a) => ({ ...a, responsavel: e.target.value }))}
+          erro={erros.responsavel}
         />
         <Campo
-          rotulo="Hora"
-          type="time"
-          value={v.hora}
-          onChange={(e) => setV((a) => ({ ...a, hora: e.target.value }))}
+          rotulo="Horário"
+          type="datetime-local"
+          value={`${v.dia}T${v.hora}`}
+          onChange={(e) => {
+            const [dia = "", hora = ""] = e.target.value.split("T");
+            setV((a) => ({ ...a, dia, hora }));
+          }}
+          erro={erros.quando}
         />
+      </div>
+      <div className={campo.campo}>
+        <label htmlFor="ac-status" className={campo.rotulo}>
+          Status
+        </label>
+        <select
+          id="ac-status"
+          className={campo.entrada}
+          value={v.situacao}
+          onChange={(e) => setV((a) => ({ ...a, situacao: e.target.value as SituacaoAcao }))}
+        >
+          <option value="planejada">Planejada</option>
+          <option value="em_andamento">Em andamento</option>
+          <option value="concluida">Concluída</option>
+        </select>
       </div>
       <div>
         <Botao type="submit" disabled={ocupado}>
@@ -330,5 +470,40 @@ function FormularioAcao() {
         </Botao>
       </div>
     </form>
+  );
+}
+
+const ITENS_RELATORIO: { item: string; fonte: string }[] = [
+  { item: "Estágio declarado por distrito", fonte: "Registro da equipe" },
+  { item: "Chuva medida, prevista e maré", fonte: "APAC, Open-Meteo" },
+  { item: "Ações por território e status", fonte: "Registro da equipe" },
+  { item: "Dengue, chikungunya e leptospirose", fonte: "InfoDengue, SINAN" },
+];
+
+function Relatorio() {
+  return (
+    <Painel id="ac-relatorio" titulo="Relatório executivo">
+      <p className={estilos.meta}>
+        Para a Secretaria de Saúde, gerado a partir das ações e dos indicadores do boletim atual.
+      </p>
+      <ul className={estilos.checklist}>
+        {ITENS_RELATORIO.map((i) => (
+          <li key={i.item}>
+            <span aria-hidden="true">✓</span>
+            <span>{i.item}</span>
+            <small>{i.fonte}</small>
+          </li>
+        ))}
+      </ul>
+      <p className={estilos.meta}>
+        O relatório sai como rascunho. Alguém da equipe revisa antes do envio; ninguém aprova o próprio
+        conteúdo.
+      </p>
+      <div>
+        <Link to="/app/acoes/relatorio" className={classesBotao("secundario")}>
+          <FileText aria-hidden="true" size={20} /> Abrir o relatório
+        </Link>
+      </div>
+    </Painel>
   );
 }

@@ -1,14 +1,14 @@
-/* Saúde depois da chuva: aviso da janela de leptospirose, três números, o gráfico semanal e o ranking. */
+/* Saúde depois da chuva: arboviroses recentes, aviso de leptospirose e um item recolhido para o que está velho. */
 .pagina {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: var(--e-5);
+  gap: var(--e-4);
 }
 .janela {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
-  gap: var(--e-4);
-  padding: var(--e-5);
+  gap: var(--e-3);
+  padding: var(--e-4);
   border-radius: var(--r-painel);
   background: var(--n-atencao-bg);
   box-shadow: inset 0 0 0 2px var(--n-atencao);
@@ -17,15 +17,15 @@
 .janelaIcone {
   display: grid;
   place-items: center;
-  width: 48px;
-  height: 48px;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
   background: var(--cs-papel);
   color: var(--cs-mare);
 }
 .janelaCorpo {
   display: grid;
-  gap: var(--e-3);
+  gap: var(--e-2);
   min-width: 0;
 }
 .janelaTitulo {
@@ -34,232 +34,105 @@
   font-size: var(--t-4);
   font-weight: 750;
   line-height: 1.25;
-  text-wrap: balance;
 }
-.apoio {
+.apoio,
+.fonteLinha,
+.carregando,
+.tendencia,
+.vazio {
   margin: 0;
   font-size: var(--t-apoio);
   line-height: 1.45;
 }
-.apoio a {
+.apoio svg {
+  vertical-align: -3px;
+  color: var(--cs-mare);
+}
+.fonteLinha,
+.carregando {
+  color: var(--cs-tinta-2);
+}
+.janela .fonteLinha {
+  color: inherit;
+}
+.fonteLinha a {
   font-weight: 700;
   color: inherit;
 }
-.checklist {
-  display: grid;
-  gap: var(--e-2);
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-.checklist li {
-  display: grid;
-  grid-template-columns: 20px minmax(0, 1fr);
-  gap: var(--e-2);
-  line-height: 1.4;
-}
-.checklist svg {
-  margin-top: 2px;
-  color: var(--cs-mare);
+.vazio {
+  padding: var(--e-4);
+  border-radius: var(--r-painel);
+  background: var(--cs-papel);
+  box-shadow: var(--sombra-cartao);
 }
 .kpis {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr));
   gap: var(--e-4);
 }
-.bloco {
-  display: grid;
-  gap: var(--e-3);
-}
-.topoBloco,
-.filtros {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--e-3);
-}
-.filtros {
-  justify-content: flex-end;
-}
-.tituloBloco {
-  margin: 0;
-  font-family: var(--fonte-titulo);
-  font-weight: 700;
-  font-size: var(--t-4);
-}
-.barras {
-  display: grid;
-  gap: var(--e-2);
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-.barras li {
-  display: grid;
-  grid-template-columns: minmax(7rem, 12rem) minmax(0, 1fr) 6.5rem;
-  align-items: center;
-  gap: var(--e-3);
-  font-size: var(--t-apoio);
-}
-.barra {
-  height: 14px;
-  border-radius: 0 4px 4px 0;
-  background: var(--g-2);
-}
-.valorBarra {
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-  text-align: right;
-}
-.limites {
-  margin: 0;
-  padding: var(--e-3) var(--e-4);
-  border-radius: var(--r-icone);
-  background: var(--cs-nevoa);
-  font-size: var(--t-apoio);
-}
-.rodape {
-  margin: 0;
-  font-size: var(--t-apoio);
-  line-height: 1.45;
-  color: var(--cs-tinta-2);
-}
-
-@media (max-width: 900px) {
-  .kpis {
-    grid-template-columns: minmax(0, 1fr);
-  }
-}
-@media (max-width: 560px) {
-  .janela {
-    grid-template-columns: minmax(0, 1fr);
-    padding: var(--e-4);
-  }
-  .barras li {
-    grid-template-columns: minmax(6.5rem, 9rem) minmax(0, 1fr) 5rem;
-    gap: var(--e-2);
-  }
-  .filtros {
-    justify-content: flex-start;
-  }
-}
-
-.nomeBarra {
-  min-width: 0;
-}
-.semRegistro {
-  color: var(--cs-tinta-2);
-  font-style: italic;
-  text-align: right;
-  white-space: nowrap;
-}
-.totalAno {
-  margin: 0 0 var(--e-3);
-  font-size: var(--t-apoio);
-  color: var(--cs-tinta-2);
-}
-.totalAno b {
-  color: var(--cs-tinta);
-}
-.ano {
-  flex-direction: row;
-  align-items: center;
-  gap: var(--e-2);
-}
-.anoRotulo {
-  font-size: var(--t-apoio);
-  font-weight: 600;
-  color: var(--cs-tinta-2);
-}
-.legenda,
-.nota {
-  margin: 0;
-  font-size: var(--t-apoio);
-  color: var(--cs-tinta-2);
-}
-.nota {
-  margin-top: var(--e-3);
-}
 .cartao {
-  position: relative;
   display: flex;
   flex-direction: column;
   gap: var(--e-2);
   min-width: 0;
-  padding: var(--e-5);
+  padding: var(--e-4);
   border-radius: var(--r-painel);
   background: var(--cs-papel);
   box-shadow: var(--sombra-cartao);
-  --cor-nivel: var(--n-insuf);
-}
-.cartao::before {
-  content: "";
-  position: absolute;
-  inset: 0 var(--e-5) auto;
-  height: 4px;
-  border-radius: 0 0 4px 4px;
-  background: var(--cor-nivel);
-}
-.cartao[data-tom="sucesso"] {
-  --cor-nivel: var(--n-sem);
-}
-.cartao[data-tom="atencao"] {
-  --cor-nivel: var(--n-atencao);
-}
-.cartao[data-tom="alerta"] {
-  --cor-nivel: var(--n-alerta);
-}
-.cartao[data-tom="critico"] {
-  --cor-nivel: var(--n-critico);
-}
-.cartaoTopo {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--e-2);
 }
 .cartaoRotulo {
   margin: 0;
   font-family: var(--fonte-titulo);
-  font-weight: 700;
-  color: var(--cs-tinta-2);
-}
-.nivel {
-  display: inline-flex;
-  align-items: center;
-  gap: 2px;
+  font-size: var(--t-4);
+  font-weight: 750;
 }
 .numero {
   display: flex;
+  flex-wrap: wrap;
   align-items: baseline;
   gap: var(--e-2);
   margin: 0;
   font-family: var(--fonte-titulo);
-  font-size: 2.5rem;
-  font-weight: 800;
+  font-size: 2.25rem;
+  font-weight: 750;
   line-height: 1.1;
-  color: var(--cs-mare);
 }
 .unidade {
-  font-size: var(--t-corpo);
-  font-weight: 600;
+  font-family: inherit;
+  font-size: var(--t-apoio);
+  font-weight: 400;
   color: var(--cs-tinta-2);
 }
-.semDado {
-  margin: 0;
-  font-family: var(--fonte-titulo);
-  font-size: var(--t-4);
+.tendencia b {
+  font-weight: 750;
+}
+.mini {
+  min-width: 0;
+}
+
+.velhos {
+  padding: var(--e-3) var(--e-4);
+  border-radius: var(--r-painel);
+  background: var(--cs-nevoa);
+  font-size: var(--t-apoio);
+}
+.velhos summary {
+  cursor: pointer;
   font-weight: 700;
   color: var(--cs-tinta-2);
 }
-.frase {
-  margin: 0;
+.velhos ul {
+  display: grid;
+  gap: var(--e-2);
+  margin: var(--e-3) 0 0;
+  padding: 0;
+  list-style: none;
   line-height: 1.45;
-}
-.incompleta {
-  margin: 0;
-  font-size: var(--t-apoio);
   color: var(--cs-tinta-2);
+}
+
+@media (max-width: 560px) {
+  .janela {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }

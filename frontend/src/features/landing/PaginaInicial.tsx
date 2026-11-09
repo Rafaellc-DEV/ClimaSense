@@ -9,7 +9,6 @@ import { ResultadoBusca } from "./ResultadoBusca";
 import { SecaoSobre } from "./SecaoSobre";
 import { useRevelar } from "./efeitos";
 import { DEFESA_CIVIL_RECIFE, WHATSAPP_DEFESA_CIVIL } from "./telefones";
-import { useAbrigos } from "./useAbrigos";
 import { useBusca } from "./useBusca";
 import { useAvisos, useEstado } from "./useEstado";
 import estilos from "./PaginaInicial.module.css";
@@ -18,19 +17,17 @@ import estilos from "./PaginaInicial.module.css";
 const HASH_ABA: Record<string, AbaLanding> = {
   "#comunicados": "comunicados",
   "#avisos": "comunicados",
-  "#abrigos": "abrigos",
   "#mapa": "mapa",
 };
 
 /**
  * Landing pública. De cima para baixo: o banner de aviso ativo (só se houver), a pergunta com o campo de busca, o resultado
- * no mesmo lugar, as abas Comunicados | Abrigos | Mapa, como receber alertas e, recolhido, como funciona e quem
+ * no mesmo lugar, as abas Comunicados | Mapa, como receber alertas e, recolhido, como funciona e quem
  * somos. A busca é uma só para a página inteira.
  */
 export function PaginaInicial() {
   const situacao = useEstado();
   const avisos = useAvisos();
-  const abrigos = useAbrigos();
   const busca = useBusca();
   const [aba, setAba] = useState<AbaLanding>(() => HASH_ABA[location.hash] ?? "comunicados");
   const alertas = useRef<HTMLElement>(null);
@@ -45,7 +42,7 @@ export function PaginaInicial() {
     setAba(a);
     // espera a aba abrir para levar a tela até ela
     requestAnimationFrame(() =>
-      document.getElementById("avisos-e-abrigos")?.scrollIntoView?.({
+      document.getElementById("avisos-e-mapa")?.scrollIntoView?.({
         block: "start",
         behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
       }),
@@ -62,21 +59,14 @@ export function PaginaInicial() {
   }, [irParaAba]);
 
   return (
-    <CascaPublica aoAbrirAbrigos={() => irParaAba("abrigos")}>
+    <CascaPublica>
       <HeroiBusca
         busca={busca}
-        resultado={<ResultadoBusca busca={busca} abrigos={abrigos} irParaAba={irParaAba} />}
+        resultado={<ResultadoBusca busca={busca} irParaAba={irParaAba} />}
         aviso={<AvisoAtivo situacao={situacao} aoVerComunicados={() => irParaAba("comunicados")} />}
       />
 
-      <AbasLanding
-        aba={aba}
-        aoMudar={setAba}
-        avisos={avisos}
-        niveis={niveis}
-        abrigos={abrigos}
-        busca={busca}
-      />
+      <AbasLanding aba={aba} aoMudar={setAba} avisos={avisos} niveis={niveis} busca={busca} />
 
       <section ref={alertas} className={estilos.alertas} aria-labelledby="alertas-h">
         <div className={estilos.alertasInterno}>

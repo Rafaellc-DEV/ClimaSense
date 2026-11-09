@@ -8,7 +8,6 @@ import { AreaTexto, Campo } from "@/design-system/componentes/Campo";
 import { Dialogo } from "@/design-system/componentes/Dialogo";
 import { Esqueleto } from "@/design-system/componentes/Esqueleto";
 import { LegendaFonte, fontesDado } from "@/design-system/componentes/EstadoDados";
-import { FaixaMare } from "@/design-system/componentes/FaixaMare";
 import { Segmentado } from "@/design-system/componentes/Segmentado";
 import { enviar, ErroApi } from "@/lib/api";
 import { fontesDe } from "@/lib/frescor";
@@ -58,79 +57,86 @@ export function FaixaOficial({
 
   return (
     <>
-      <FaixaMare id="mapa-oficial" titulo="Estágio oficial da cidade (COP)">
-        {oficial.isPending && (
-          <div role="status" aria-busy="true">
-            <span className="so-leitor">Carregando o estágio do COP…</span>
-            <Esqueleto largura="16rem" altura="2.5rem" forma="bloco" />
-          </div>
-        )}
-        {definido && (
-          <div className={estilos.oficial}>
-            <p className={estilos.oficialEstagio}>
-              <SeloEstagio estagio={definido.estagio} />
-            </p>
-            <p className={estilos.oficialQuem}>
-              Informado pelo COP {definido.informado_em ? quandoAs(definido.informado_em) : "(sem hora)"}
-              {definido.autor_nome ? `, registrado por ${definido.autor_nome}` : ""}.
-            </p>
-            {definido.observacao && <p className={estilos.oficialObs}>“{definido.observacao}”</p>}
-            <p className={estilos.oficialFonte}>
-              Fonte: {nomeDaFonte(definido.fonte)}
-              {definido.registrado_em && <>, registrado {quandoAs(definido.registrado_em)}</>}.
-            </p>
-            <LegendaFonte fontes={fontesDado(fontesDe(oficial.data))} />
-          </div>
-        )}
-        {oficial.isSuccess && !definido && (
-          <div className={estilos.oficial}>
-            <p className={estilos.oficialFrase}>
-              <b>Dados insuficientes:</b> ninguém informou o estágio do COP.
-            </p>
-            <p className={estilos.oficialFonte}>
-              Isso não quer dizer observação nem risco baixo. Falta a fonte: estágio informado pelo COP.
-            </p>
-          </div>
-        )}
-        {indisponivel && (
-          <div className={estilos.oficial}>
-            <p className={estilos.oficialFrase}>
-              <b>Ainda não disponível.</b>
-            </p>
-            <p className={estilos.oficialFonte}>
-              O servidor ainda não oferece o estágio do COP. Nada é mostrado até haver dado real.
-            </p>
-          </div>
-        )}
-        {oficial.isError && !indisponivel && (
-          <div className={estilos.oficial}>
-            <p className={estilos.oficialFrase}>
-              <b>Não foi possível ver o estágio do COP agora.</b>
-            </p>
-            <Botao variante="claro" onClick={() => oficial.refetch()}>
-              Tentar de novo
-            </Botao>
-          </div>
-        )}
-        {podeInformar && !indisponivel && !oficial.isPending && (
-          <div className={estilos.oficialAcao}>
-            <Botao variante="claro" icone={<Radio />} onClick={() => setAberto(true)}>
-              Informar estágio do COP
-            </Botao>
-          </div>
-        )}
+      <section className={estilos.faixaCop} aria-labelledby="mapa-oficial">
+        <div className={estilos.copLinha}>
+          <h2 id="mapa-oficial" className={estilos.copTitulo}>
+            Estágio oficial da cidade (COP)
+          </h2>
+          {oficial.isPending && (
+            <div role="status" aria-busy="true" className={estilos.copCarregando}>
+              <Esqueleto largura="9rem" altura="1.75rem" forma="bloco" />
+              <span>Carregando o estágio do COP…</span>
+            </div>
+          )}
+          {definido && (
+            <div className={estilos.oficial}>
+              <p className={estilos.oficialEstagio}>
+                <SeloEstagio estagio={definido.estagio} />
+              </p>
+              <p className={estilos.oficialQuem}>
+                Informado pelo COP {definido.informado_em ? quandoAs(definido.informado_em) : "(sem hora)"}
+                {definido.autor_nome ? `, registrado por ${definido.autor_nome}` : ""}.
+              </p>
+              {definido.observacao && <p className={estilos.oficialObs}>“{definido.observacao}”</p>}
+              <p className={estilos.oficialFonte}>
+                Fonte: {nomeDaFonte(definido.fonte)}
+                {definido.registrado_em && <>, registrado {quandoAs(definido.registrado_em)}</>}.
+              </p>
+              <LegendaFonte fontes={fontesDado(fontesDe(oficial.data))} />
+            </div>
+          )}
+          {oficial.isSuccess && !definido && (
+            <div className={estilos.oficial}>
+              <p className={estilos.oficialFrase}>
+                <b>Dados insuficientes:</b> ninguém informou o estágio do COP.
+                <span className={estilos.soLargo}>
+                  {" "}
+                  Falta essa fonte; isso não quer dizer observação nem risco baixo.
+                </span>
+              </p>
+            </div>
+          )}
+          {indisponivel && (
+            <div className={estilos.oficial}>
+              <p className={estilos.oficialFrase}>
+                <b>Ainda não disponível.</b>
+              </p>
+              <p className={estilos.oficialFonte}>
+                O servidor ainda não oferece o estágio do COP. Nada é mostrado até haver dado real.
+              </p>
+            </div>
+          )}
+          {oficial.isError && !indisponivel && (
+            <div className={estilos.oficial}>
+              <p className={estilos.oficialFrase}>
+                <b>Não foi possível ver o estágio do COP agora.</b>
+              </p>
+              <Botao variante="secundario" onClick={() => oficial.refetch()}>
+                Tentar de novo
+              </Botao>
+            </div>
+          )}
+          {podeInformar && !indisponivel && !oficial.isPending && (
+            <div className={estilos.oficialAcao}>
+              <Botao variante="secundario" icone={<Radio />} onClick={() => setAberto(true)}>
+                Informar estágio do COP
+              </Botao>
+            </div>
+          )}
+        </div>
         <ContagemBairros
           contagem={contagem}
           total={totalBairros}
           semBairros={semBairros}
           carregando={carregandoBairros}
         />
-      </FaixaMare>
+      </section>
       {aberto && <DialogoOficial aoFechar={() => setAberto(false)} />}
     </>
   );
 }
 
+/** Chips pequenos: quantos bairros em cada estágio (só os que têm bairro). Declarado x sugerido na dica do chip. */
 function ContagemBairros({
   contagem,
   total,
@@ -142,9 +148,10 @@ function ContagemBairros({
   semBairros: string | null;
   carregando: boolean;
 }) {
+  const declarados = contagem.reduce((n, c) => n + c.declarados, 0);
+  const sugeridos = contagem.filter((c) => c.estagio !== "sem_dados").reduce((n, c) => n + c.sugeridos, 0);
   return (
-    <section className={estilos.contagem} aria-labelledby="mapa-contagem">
-      <h3 id="mapa-contagem">Bairros por estágio</h3>
+    <section className={estilos.contagem} aria-label="Bairros por estágio">
       {carregando ? (
         <p className={estilos.contagemVazia} role="status" aria-busy="true">
           Carregando os estágios dos bairros…
@@ -155,27 +162,31 @@ function ContagemBairros({
         </p>
       ) : (
         <>
+          <span className={estilos.contagemTitulo}>Bairros por estágio:</span>
           <ul>
-            {contagem.map((c) => {
-              const n = c.declarados + c.sugeridos;
-              return (
-                <li key={c.estagio} data-estagio={c.estagio} data-zero={n === 0}>
-                  <b className="numeros">{n}</b>
-                  <span>{c.rotulo}</span>
-                  <small>
-                    {c.estagio === "sem_dados"
-                      ? "o sistema não consegue sugerir"
-                      : n === 0
-                        ? "nenhum"
-                        : `${c.declarados} declarado${c.declarados === 1 ? "" : "s"}, ${c.sugeridos} sugerido${c.sugeridos === 1 ? "" : "s"}`}
-                  </small>
-                </li>
-              );
-            })}
+            {contagem
+              .filter((c) => c.declarados + c.sugeridos > 0)
+              .map((c) => {
+                const n = c.declarados + c.sugeridos;
+                return (
+                  <li
+                    key={c.estagio}
+                    data-estagio={c.estagio}
+                    title={
+                      c.estagio === "sem_dados"
+                        ? "o sistema não consegue sugerir"
+                        : `${c.declarados} declarado${c.declarados === 1 ? "" : "s"}, ${c.sugeridos} sugerido${c.sugeridos === 1 ? "" : "s"}`
+                    }
+                  >
+                    <b>{n}</b> {c.rotulo}
+                  </li>
+                );
+              })}
           </ul>
-          <p className={estilos.contagemTotal}>
-            {total} bairros. “Sugerido” é o que o sistema indica; “declarado” é decisão da equipe.
-          </p>
+          <small className={estilos.contagemTotal}>
+            {total} bairros: {declarados} {declarados === 1 ? "declarado" : "declarados"} pela equipe,{" "}
+            {sugeridos} {sugeridos === 1 ? "sugerido" : "sugeridos"} pelo sistema.
+          </small>
         </>
       )}
     </section>

@@ -28,7 +28,6 @@ test("o menu tem as cinco telas do PRD, nesta ordem, e Fontes e Administração 
   for (const fora of [
     "Chuva",
     "Registro do evento",
-    "Abrigos",
     "Boletim",
     "Comunicados",
     "Situação",
@@ -62,7 +61,6 @@ test.each([
   ["/app/cenarios", "Chuva"],
   ["/app/series", "Chuva"],
   ["/app/registro", "Ações"],
-  ["/app/abrigos", "Situação do evento"],
   ["/app/painel", "Situação do evento"],
   ["/app/boletim", "Relatório executivo — Secretaria de Saúde"],
   ["/app/acoes/relatorio", "Relatório executivo — Secretaria de Saúde"],
@@ -75,6 +73,5 @@ test.each([
   expect(await screen.findByRole("heading", { level: 1, name: titulo })).toBeInTheDocument();
   if (de === "/app/series") expect(window.location.search).toBe("?aba=historico");
   if (de === "/app/registro") expect(window.location.pathname).toBe("/app/acoes");
-  if (de === "/app/abrigos") expect(window.location.pathname).toBe("/app/situacao");
   if (de === "/app/boletim") expect(window.location.pathname).toBe("/app/acoes/relatorio");
 });

@@ -39,7 +39,7 @@ function RedirecionarEquipe() {
 
 /**
  * Telas que saíram do menu levam para a tela nova que ficou com o conteúdo delas, sem 404: Registro do evento virou
- * Ações, Abrigos virou parte da Situação do evento e o Boletim virou o Relatório executivo dentro de Ações. A Chuva
+ * Ações e o Boletim virou o Relatório executivo dentro de Ações. A Chuva
  * segue em /app/chuva, com link a partir do Simulador. Endereço desconhecido dentro de /app volta para o Mapa.
  */
 function antigas(): [string, string][] {
@@ -47,7 +47,6 @@ function antigas(): [string, string][] {
     ["painel", "/app/situacao"],
     ["estagios", "/app"],
     ["registro", "/app/acoes"],
-    ["abrigos", "/app/situacao"],
     ["boletim", "/app/acoes/relatorio"],
     ["mapa", "/app"],
     ["avaliacoes/*", "/app"],

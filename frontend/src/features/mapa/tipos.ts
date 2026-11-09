@@ -25,6 +25,9 @@ export interface ItemPrioridadeTerritorio {
   ocorrencias_alagamento?: number | null;
   ocorrencias_deslizamento?: number | null;
   criterio?: string | null;
+  /** Só nos distritos: contagens agregadas do Censo 2022 (nunca zero no lugar de ausente, RN-01). */
+  idosos_60_mais?: number | null;
+  criancas_0_14?: number | null;
 }
 
 export interface PropsTerritorio {

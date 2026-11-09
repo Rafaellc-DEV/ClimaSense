@@ -1,5 +1,5 @@
 /**
- * Tipos do evento de chuva (specs/foco-chuvas.md §4): situações, abrigos, ações e boletim.
+ * Tipos do evento de chuva (specs/foco-chuvas.md §4): situações, ações e boletim.
  *
  * O backend destes endpoints está sendo escrito em paralelo, então os tipos ficam aqui (e não em `api-tipos.ts`, que é
  * gerado do OpenAPI). Quando o contrato entrar no OpenAPI, troque por `Esquemas[...]` e rode `npm run gerar-tipos`.
@@ -75,74 +75,16 @@ export interface MensagemWhatsApp {
   uso?: { territorio_ids: string[]; estagio?: string };
 }
 
-export interface TotaisAbrigos {
-  abrigos_abertos: number | null;
-  pessoas_abrigadas: number | null;
-  desabrigados: number | null;
-  atualizado_em: string | null;
-  /** Quantos abrigos a equipe cadastrou. Zero cadastrados: “0 abertos” seria um zero inventado (RN-01). */
-  abrigos_cadastrados?: number | null;
-  /** Abrigos abertos que ainda não informaram a contagem. */
-  abertos_sem_contagem?: number | null;
-}
-
-/** Totais da situação do evento (`GET /abrigos/situacao`): null = sem registro, nunca zero (RN-01, RN-02). */
-export interface TotaisSituacao {
-  abrigos_abertos: number | null;
-  abrigos_cadastrados: number;
-  pessoas_abrigadas: number | null;
-  desabrigados: number | null;
-  /** true: há abrigo aberto sem contagem; a soma é parcial. */
-  parcial: boolean;
-  abertos_sem_contagem: number;
-  atualizado_em: string | null;
-  atualizado_por_nome?: string | null;
-}
-
-export interface SituacaoDistrito extends TotaisSituacao {
-  distrito_id: string;
-  distrito_nome: string;
-}
-
-export interface SituacaoEvento {
-  cidade: TotaisSituacao;
-  distritos: SituacaoDistrito[];
-  ocupacao_atualizada_em: string | null;
-}
-
-export interface Abrigo {
-  id: string | number;
-  nome: string;
-  bairro_id?: string | null;
-  bairro_nome?: string | null;
-  distrito_id?: string | null;
-  distrito_nome?: string | null;
-  territorio_id?: string | null;
-  territorio_nome?: string | null;
-  endereco?: string | null;
-  /** Coordenadas do abrigo (camada do mapa, RF-02). Sem elas o abrigo não aparece no mapa. */
-  latitude?: number | null;
-  longitude?: number | null;
-  capacidade?: number | null;
-  aberto: boolean;
-  pessoas_abrigadas?: number | null;
-  desabrigados?: number | null;
-  observacao?: string | null;
-  atualizado_em?: string | null;
-  atualizado_por?: string | null;
-  atualizado_por_nome?: string | null;
-  /** Quem disse se está aberto ou fechado. `null` = ninguém informou ainda (não é “fechado”). */
-  status_fonte?: "equipe" | "cop" | null;
-  status_informado_em?: string | null;
-}
-
 export type SituacaoAcao = "planejada" | "em_andamento" | "concluida" | "cancelada";
 
 export interface Acao {
   id: string | number;
   territorio_id: string;
   territorio_nome?: string | null;
+  /** "municipio", "distrito" ou "bairro". */
+  territorio_nivel?: "municipio" | "distrito" | "bairro" | null;
   distrito_id?: string | null;
+  distrito_nome?: string | null;
   tipo: string;
   descricao: string;
   responsavel?: string | null;
@@ -166,19 +108,6 @@ export interface EventoAcao {
   texto: string;
 }
 
-/** Entrada do histórico de um abrigo: os campos que mudaram, quando e por quem. */
-export interface HistoricoAbrigo {
-  id?: string | number;
-  atualizado_em?: string | null;
-  em?: string | null;
-  autor_nome?: string | null;
-  atualizado_por_nome?: string | null;
-  aberto?: boolean | null;
-  pessoas_abrigadas?: number | null;
-  desabrigados?: number | null;
-  observacao?: string | null;
-}
-
 type Objeto = Record<string, unknown>;
 const ehObjeto = (x: unknown): x is Objeto => typeof x === "object" && x !== null && !Array.isArray(x);
 
@@ -200,13 +129,6 @@ export function listaDe<T>(r: unknown): T[] {
   if (Array.isArray(d)) return d as T[];
   if (ehObjeto(d) && Array.isArray(d.itens)) return d.itens as T[];
   return [];
-}
-
-/** `totais` de uma resposta de abrigos (no corpo ou dentro do envelope). */
-export function totaisDe(r: unknown): TotaisAbrigos | null {
-  const d = desembrulhar<unknown>(r);
-  if (ehObjeto(d) && ehObjeto(d.totais)) return d.totais as unknown as TotaisAbrigos;
-  return null;
 }
 
 /** Limiares de `/estagios/parametros`: só os valores numéricos, achatados por nome. */

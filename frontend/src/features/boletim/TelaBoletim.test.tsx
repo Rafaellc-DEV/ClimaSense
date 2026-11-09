@@ -56,17 +56,6 @@ const boletim = {
       previsao_emitida_em: AGORA,
     },
     mare: { maxima_m: 2.45, maxima_em: AGORA, emitida_em: AGORA },
-    abrigos: {
-      totais: {
-        abrigos_abertos: 1,
-        abrigos_cadastrados: 199,
-        pessoas_abrigadas: null,
-        desabrigados: null,
-        abertos_sem_contagem: 0,
-        atualizado_em: AGORA,
-      },
-      abertos: [{ id: "a1", nome: "Escola Ibura", bairro_nome: "Ibura", capacidade: 80 }],
-    },
     acoes_em_andamento: [
       {
         id: "r1",
@@ -156,18 +145,17 @@ test("documento com marca, número, resumo, destaques e as seções fixas; só a
   ).toBeInTheDocument();
 
   const resumo = await within(folha).findByRole("region", { name: "Resumo" });
-  expect(resumo).toHaveTextContent("DS V em Alerta. Um distrito está sem declaração.");
-  expect(resumo).toHaveTextContent("1 abrigo aberto; janela de vigilância de leptospirose aberta até 26/11.");
+  expect(resumo).toHaveTextContent("Distrito 5 em Alerta. Um distrito está sem declaração.");
+  expect(resumo).toHaveTextContent("Janela de vigilância de leptospirose aberta até 26/11.");
   const destaques = within(folha).getByRole("region", { name: "Destaques" });
-  expect(destaques).toHaveTextContent("DS I: o sistema sugere Atenção, acima do declarado.");
+  expect(destaques).toHaveTextContent("Distrito 1: o sistema sugere Atenção, acima do declarado.");
 
   const situacao = within(folha).getByRole("region", { name: "Situação por distrito" });
   expect(within(situacao).getByText("sem declaração")).toBeInTheDocument();
   expect(within(situacao).queryByText("Atenção")).not.toBeInTheDocument();
 
-  for (const s of ["Chuva e maré", "Abrigos abertos", "Saúde", "Ações da equipe"])
+  for (const s of ["Chuva e maré", "Saúde", "Ações da equipe"])
     expect(within(folha).getByRole("region", { name: s })).toBeInTheDocument();
-  expect(within(folha).getByText(/Escola Ibura, Ibura \(capacidade 80\)/)).toBeInTheDocument();
   expect(await within(folha).findByText("Nível 2, amarelo")).toBeInTheDocument();
   expect(await within(folha).findByText(/Equipe no Ibura/)).toBeInTheDocument();
   expect(within(folha).getByText("De onde vêm os números")).toBeInTheDocument();
@@ -192,7 +180,7 @@ test("imprimir chama o navegador; copiar manda o texto para o WhatsApp, sem cria
   await u.click(screen.getByRole("button", { name: "Copiar para WhatsApp" }));
   const texto = escrever.mock.calls[0][0];
   expect(texto).toMatch(/^\*Relatório executivo ClimaSense — Secretaria de Saúde\* BOL-/);
-  expect(texto).toContain("- DS I: sem declaração");
+  expect(texto).toContain("- Distrito 1: sem declaração");
   expect(texto).toContain("Confira na APAC e no Cemaden.");
   expect(pedidos.filter((p) => p.metodo === "POST")).toHaveLength(0);
 });
@@ -206,7 +194,7 @@ test("sem a rota de saúde (404), a seção Saúde diz que ainda não está disp
   const saudeSecao = await screen.findByRole("region", { name: "Saúde" });
   expect(await within(saudeSecao).findByText("Ainda não disponível.")).toBeInTheDocument();
   expect(screen.getByRole("region", { name: "Resumo" })).toHaveTextContent(
-    "dados de saúde ainda não disponíveis",
+    "Dados de saúde ainda não disponíveis",
   );
 });
 
@@ -231,7 +219,7 @@ test("bairros de cada distrito, em ordem alfabética, só na página e não no t
   expect(within(folha).getByText("Bairros: Boa Vista")).toBeInTheDocument();
   await userEvent.setup().click(screen.getByText("Ver o texto para o WhatsApp"));
   const caixa = (await screen.findByLabelText("Texto para o WhatsApp")) as HTMLTextAreaElement;
-  expect(caixa.value).toContain("DS V");
+  expect(caixa.value).toContain("Distrito 5");
   expect(caixa.value).not.toContain("Areias");
 });
 

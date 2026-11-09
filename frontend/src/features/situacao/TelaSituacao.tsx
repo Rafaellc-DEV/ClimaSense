@@ -1,197 +1,287 @@
-import { useMemo } from "react";
+import { useId, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
+import { classesBotao } from "@/design-system/componentes/Botao";
 import { CabecalhoTela } from "@/design-system/componentes/CabecalhoTela";
-import {
-  EstadoDados,
-  fontesDado,
-  LegendaFonte,
-  type FonteDado,
-} from "@/design-system/componentes/EstadoDados";
-import { Indicador } from "@/design-system/componentes/Indicador";
-import { Painel } from "@/design-system/componentes/Painel";
-import { Pilula } from "@/design-system/componentes/Pilula";
-import { EstadoConsulta } from "@/features/evento/Evento";
-import { nomeCurto } from "@/features/evento/textos";
-import { desembrulhar, listaDe, type SituacaoDistrito, type SituacaoEvento } from "@/features/evento/tipos";
-import { ListaAbrigos } from "@/features/abrigos/TelaAbrigos";
-import { ListaAdaptavel } from "@/features/fluxo/ListaAdaptavel";
-import type { ItemPrioridadeTerritorio } from "@/features/mapa/tipos";
+import campo from "@/design-system/componentes/Campo.module.css";
+import { EstadoConsulta, SeloEstagio } from "@/features/evento/Evento";
+import { nomeCurto, quandoAs } from "@/features/evento/textos";
+import { desembrulhar, listaDe, type ItemEstagio } from "@/features/evento/tipos";
+import { nomeDaFonte, type EstagioOficial } from "@/features/mapa/tipos";
+import { consulta, ErroApi } from "@/lib/api";
 import { useConsultaViva, ultimaAtualizacao } from "@/lib/consultas";
-import { fontesDe, type FonteMeta } from "@/lib/frescor";
 import { formatarNumero } from "@/lib/formatos";
+import { fontesDe } from "@/lib/frescor";
+import {
+  CartaoIndicador,
+  ChuvaPorDistrito,
+  FontesAtualizacao,
+  MensagemEstagio,
+  type LinhaFonte,
+} from "./Blocos";
+import { achaFonte, faixaDeIncerteza, linhasMedidas, maiorDe, type CenarioHora } from "./dados";
+import { GraficoChuvaMare } from "./GraficoChuvaMare";
 import estilos from "./Situacao.module.css";
 
-const ID_FONTE_PESSOAS = "recife-abrigos-ocupacao";
+const mm = (v: number) => formatarNumero(v, 1);
 
 /**
- * Distritos do mais vulnerável ao menos (RF-22): a ordem de `/territorios/prioridade`. Quem não aparece lá vai para o
- * fim, em ordem de nome. Sem a lista de prioridade, fica só a ordem de nome (e a tela diz isso).
- */
-export function ordenarDistritos(
-  distritos: SituacaoDistrito[],
-  prioridade: ItemPrioridadeTerritorio[],
-): SituacaoDistrito[] {
-  const posicao = new Map(
-    prioridade.filter((p) => p.nivel === "distrito").map((p) => [p.territorio_id, p.posicao] as const),
-  );
-  return [...distritos].sort(
-    (a, b) =>
-      (posicao.get(a.distrito_id) ?? Number.MAX_SAFE_INTEGER) -
-        (posicao.get(b.distrito_id) ?? Number.MAX_SAFE_INTEGER) ||
-      a.distrito_nome.localeCompare(b.distrito_nome, "pt-BR", { numeric: true }),
-  );
-}
-
-/** Um número do evento: “Dados insuficientes” quando é null; “soma parcial” quando falta contagem em abrigo aberto. */
-function Numero({ valor, parcial }: { valor: number | null; parcial?: boolean }) {
-  if (valor === null) return <span className={estilos.semDadoCelula}>Dados insuficientes</span>;
-  return (
-    <>
-      {formatarNumero(valor)}
-      {parcial && <span className={estilos.parcial}>soma parcial</span>}
-    </>
-  );
-}
-
-/**
- * Situação do evento (RF-08, RF-09, RF-10): os dois números que o cliente acompanha, abrigos abertos e desabrigados,
- * na cidade e por distrito sanitário (mais vulneráveis primeiro, RF-22), e a lista de abrigos para a equipe lançar as
- * pessoas abrigadas e os desabrigados atendidos. A situação por estágio mora no Mapa. Atualiza sozinha a cada 60 s.
+ * Situação do evento (RF-08, RF-09, RF-10): o painel de gestão e análise. Estágio oficial do COP, quatro números
+ * com fonte e hora, chuva e maré, chuva por distrito, fontes e a mensagem de mudança de estágio. Cada bloco carrega
+ * sozinho. Sem dado, diz "Dados insuficientes" e a fonte que falta (RN-01). Só dados reais (ADR 0008).
  */
 export function TelaSituacao() {
-  const r = useConsultaViva<unknown>("/abrigos/situacao");
-  const prioridade = useConsultaViva<unknown>("/territorios/prioridade");
-  const dados = desembrulhar<SituacaoEvento>(r.data);
-  const fontes = fontesDe(r.data);
-  const cidade = dados?.cidade;
-  const prio = listaDe<ItemPrioridadeTerritorio>(prioridade.data);
-  const distritos = useMemo(() => ordenarDistritos(dados?.distritos ?? [], prio), [dados, prio]);
-  const porVulnerabilidade = prio.some((p) => p.nivel === "distrito");
+  const idTerr = useId();
+  const idPeriodo = useId();
+  const [territorio, setTerritorio] = useState("recife");
+  const [periodo, setPeriodo] = useState<"24" | "72">("24");
 
-  // cada número mostra a fonte que lhe cabe; sem `meta.fontes`, o rótulo antigo com a hora da equipe
-  const fonteAbertos: FonteDado[] =
-    fontes.length > 0
-      ? fontesDado(fontes)
-      : [{ nome: "Feed do COP e registro da equipe", atualizadoEm: cidade?.atualizado_em ?? null }];
-  const soPessoas = fontes.filter((f: FonteMeta) => f.id === ID_FONTE_PESSOAS);
-  const fonteDesabrigados: FonteDado[] =
-    soPessoas.length > 0
-      ? fontesDado(soPessoas)
-      : fontes.length > 0
-        ? fontesDado(fontes)
-        : [{ nome: "Registro da equipe", atualizadoEm: cidade?.atualizado_em ?? null }];
+  const oficial = useConsultaViva<unknown>("/estagios/oficial");
+  const distritos = useConsultaViva<unknown>(`/estagios${consulta({ nivel: "distrito" })}`);
+  const fontesApi =
+    useConsultaViva<
+      { id: string; nome: string; ultima_atualizacao: string | null; desatualizado: boolean | null }[]
+    >("/fontes");
+  const grafico = useConsultaViva<{ dados: CenarioHora }>(
+    `/cenarios/estimativa${consulta({ territorio_id: territorio, horizonte_h: Number(periodo) })}`,
+    5 * 60_000,
+    { staleTime: 5 * 60_000 },
+  );
 
-  const semCadastro = cidade?.abrigos_cadastrados === 0;
-  const parcial = cidade?.parcial === true;
-  const avisoParcial = parcial
-    ? `${formatarNumero(cidade?.abertos_sem_contagem ?? 0)} ${
-        cidade?.abertos_sem_contagem === 1
-          ? "abrigo aberto ainda sem contagem"
-          : "abrigos abertos ainda sem contagem"
-      }: o total pode ser maior.`
-    : undefined;
+  const estagio = desembrulhar<EstagioOficial | null>(oficial.data) ?? null;
+  const definido = estagio?.estagio ? estagio : null;
+  const oficialIndisponivel = oficial.error instanceof ErroApi && oficial.error.status === 404;
+
+  const todos = useMemo(() => listaDe<ItemEstagio>(distritos.data), [distritos.data]);
+  const escolhidos = useMemo(
+    () => (territorio === "recife" ? todos : todos.filter((i) => i.territorio_id === territorio)),
+    [todos, territorio],
+  );
+  const metaFontes = fontesDe(distritos.data);
+
+  const medida = maiorDe(escolhidos, "chuva_24h_mm");
+  const prev24 = maiorDe(escolhidos, "chuva_prev_24h_mm");
+  const prev72 = maiorDe(escolhidos, "chuva_prev_72h_mm");
+  const mare = maiorDe(escolhidos, "mare_max_m");
+  const mareEm = mare?.item.sugerido.insumos.mare_max_em;
+
+  // faixa de incerteza do distrito que tem a maior previsão de 24 h
+  const idFaixa = prev24?.item.territorio_id ?? null;
+  const faixaConsulta = useConsultaViva<{ dados: CenarioHora }>(
+    idFaixa ? `/cenarios/estimativa${consulta({ territorio_id: idFaixa, horizonte_h: 24 })}` : null,
+    5 * 60_000,
+    { staleTime: 5 * 60_000 },
+  );
+  const faixa = faixaDeIncerteza(faixaConsulta.data?.dados, 24);
+
+  const idsMedida = (medida?.item.sugerido.insumos.chuva_24h_fontes as string[] | undefined) ?? [
+    "apac-chuva",
+  ];
+  const nomeDe = (i: ItemEstagio | undefined) => (i ? nomeCurto(i.territorio_nome) : "");
+  const carregando = distritos.isPending;
+
+  const linhasFonte: LinhaFonte[] = useMemo(() => {
+    const lista = fontesApi.data ?? [];
+    const medidas = linhasMedidas(todos);
+    const semLeitura = medidas.filter((l) => l.mm === null).length;
+    const de = (id: string, nome: string, parcial?: string | null): LinhaFonte => {
+      const f = lista.find((x) => x.id === id) ?? metaFontes.find((x) => x.id === id);
+      const atualizado =
+        (f && "ultima_atualizacao" in f
+          ? f.ultima_atualizacao
+          : (f as { atualizado_em?: string } | undefined)?.atualizado_em) ?? null;
+      return { id, nome, atualizadoEm: atualizado, desatualizado: f?.desatualizado ?? null, parcial };
+    };
+    return [
+      {
+        id: "oficial",
+        nome: "Estágio oficial da cidade (COP, registro da equipe)",
+        atualizadoEm: definido?.informado_em ?? null,
+        desatualizado: null,
+      },
+      de(
+        "apac-chuva",
+        "Chuva medida (pluviômetros, APAC e Cemaden)",
+        medidas.length > 0 && semLeitura > 0 && semLeitura < medidas.length
+          ? `${semLeitura} de ${medidas.length} distritos sem leitura.`
+          : null,
+      ),
+      de("open-meteo-previsao", "Previsão de chuva (Open-Meteo)"),
+      de("open-meteo-mare", "Previsão de maré (Open-Meteo Marine)"),
+    ];
+  }, [fontesApi.data, metaFontes, todos, definido]);
 
   return (
     <>
       <CabecalhoTela
         titulo="Situação do evento"
-        proposito="Quantos abrigos estão abertos e quantas pessoas ficaram desabrigadas, na cidade e em cada distrito."
-        atualizadoEm={ultimaAtualizacao(r, prioridade)}
+        proposito="Estágio oficial, chuva medida e prevista e maré, com fonte e hora em cada número."
+        atualizadoEm={ultimaAtualizacao(oficial, distritos)}
+        acoes={
+          <div className={estilos.filtros}>
+            <div className={campo.campo}>
+              <label htmlFor={idTerr} className={estilos.rotuloFiltro}>
+                Território
+              </label>
+              <select
+                id={idTerr}
+                className={campo.entrada}
+                value={territorio}
+                onChange={(e) => setTerritorio(e.target.value)}
+              >
+                <option value="recife">Recife, todos os distritos</option>
+                {todos.map((i) => (
+                  <option key={i.territorio_id} value={i.territorio_id}>
+                    {nomeCurto(i.territorio_nome)}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className={campo.campo}>
+              <label htmlFor={idPeriodo} className={estilos.rotuloFiltro}>
+                Período
+              </label>
+              <select
+                id={idPeriodo}
+                className={campo.entrada}
+                value={periodo}
+                onChange={(e) => setPeriodo(e.target.value as "24" | "72")}
+              >
+                <option value="24">Próximas 24 h</option>
+                <option value="72">Próximas 72 h</option>
+              </select>
+            </div>
+          </div>
+        }
       />
       <div className={estilos.pagina}>
-        {r.isError ? (
-          <EstadoConsulta erro={r.error} oQue="a situação do evento" aoTentar={() => r.refetch()} />
+        <section aria-labelledby="se-oficial" className={estilos.faixa}>
+          <h2 id="se-oficial" className={estilos.faixaRotulo}>
+            Estágio oficial da cidade (COP)
+          </h2>
+          {oficial.isPending ? (
+            <p className={estilos.carregando} role="status">
+              Carregando…
+            </p>
+          ) : oficial.isError && !oficialIndisponivel ? (
+            <EstadoConsulta
+              erro={oficial.error}
+              oQue="o estágio oficial"
+              aoTentar={() => oficial.refetch()}
+            />
+          ) : definido ? (
+            <>
+              <SeloEstagio estagio={definido.estagio!} />
+              <p className={estilos.fonteLinha}>
+                Registrado
+                {definido.autor_nome ? ` por ${definido.autor_nome}` : ""}{" "}
+                {definido.informado_em ? `${quandoAs(definido.informado_em)}` : "(sem hora)"}
+                {definido.observacao ? `, a partir de ${definido.observacao}` : ""}. Fonte:{" "}
+                {nomeDaFonte(definido.fonte)}.
+              </p>
+            </>
+          ) : (
+            <p className={estilos.insuficiente}>
+              <b>Dados insuficientes:</b> falta o estágio informado pelo COP.
+            </p>
+          )}
+          <Link to="/app/simulador" className={[classesBotao("principal"), estilos.simular].join(" ")}>
+            Simular este cenário
+          </Link>
+        </section>
+
+        {distritos.isError ? (
+          <EstadoConsulta
+            erro={distritos.error}
+            oQue="os números da chuva e da maré"
+            aoTentar={() => distritos.refetch()}
+          />
         ) : (
-          <section aria-labelledby="se-cidade" className={estilos.numerosCidade}>
-            <h2 id="se-cidade" className="so-leitor">
-              Recife
-            </h2>
-            <Indicador
-              rotulo="Abrigos abertos"
-              carregando={r.isPending}
-              valor={cidade?.abrigos_abertos == null ? null : formatarNumero(cidade.abrigos_abertos)}
-              insuficiente={cidade?.abrigos_abertos == null}
-              explicacao={
-                semCadastro
-                  ? "Nenhum abrigo cadastrado ainda. Isso não quer dizer que não haja abrigo aberto."
-                  : undefined
+          <div className={estilos.cartoes}>
+            <CartaoIndicador
+              rotulo="Chuva medida 24 h"
+              selo={idsMedida.includes("apac-chuva") ? "Observado" : "Estimado"}
+              tomSelo="info"
+              carregando={carregando}
+              valor={medida ? mm(medida.valor) : null}
+              unidade="mm"
+              detalhe={
+                medida && territorio === "recife"
+                  ? `Maior valor entre os distritos: ${nomeDe(medida.item)}`
+                  : null
               }
-              fonte={fonteAbertos}
+              faltando="a chuva medida nas últimas 24 h (pluviômetros, APAC)"
+              fontes={achaFonte(metaFontes, ...idsMedida)}
             />
-            <Indicador
-              rotulo="Desabrigados"
-              carregando={r.isPending}
-              valor={cidade?.desabrigados == null ? null : formatarNumero(cidade.desabrigados)}
-              insuficiente={cidade?.desabrigados == null}
-              explicacao={avisoParcial}
-              selo={
-                parcial && cidade?.desabrigados != null ? (
-                  <Pilula tom="atencao">Soma parcial</Pilula>
-                ) : undefined
+            <CartaoIndicador
+              rotulo="Chuva prevista 24 h"
+              selo="Previsto"
+              tomSelo="marca"
+              carregando={carregando}
+              valor={prev24 ? mm(prev24.valor) : null}
+              unidade="mm"
+              detalhe={
+                prev24 && (
+                  <>
+                    {territorio === "recife" && `${nomeDe(prev24.item)}. `}
+                    {faixa
+                      ? `Faixa de ${formatarNumero(faixa.min, 0)} a ${formatarNumero(faixa.max, 0)} mm.`
+                      : null}
+                  </>
+                )
               }
-              fonte={fonteDesabrigados}
+              faltando="a previsão de chuva por distrito (Open-Meteo)"
+              fontes={achaFonte(metaFontes, "open-meteo-previsao")}
             />
-          </section>
+            <CartaoIndicador
+              rotulo="Maré máxima prevista"
+              selo="Previsto"
+              tomSelo="marca"
+              carregando={carregando}
+              valor={mare ? formatarNumero(mare.valor, 2) : null}
+              unidade="m"
+              detalhe={typeof mareEm === "string" ? `Pico ${quandoAs(mareEm)}` : null}
+              faltando="a previsão de maré (Open-Meteo Marine)"
+              fontes={achaFonte(metaFontes, "open-meteo-mare")}
+            />
+            <CartaoIndicador
+              rotulo="Chuva prevista 72 h"
+              selo="Previsto"
+              tomSelo="marca"
+              carregando={carregando}
+              valor={prev72 ? mm(prev72.valor) : null}
+              unidade="mm"
+              detalhe={prev72 && territorio === "recife" ? nomeDe(prev72.item) : null}
+              faltando="a previsão de chuva por distrito (Open-Meteo)"
+              fontes={achaFonte(metaFontes, "open-meteo-previsao")}
+              extra={
+                <p className={estilos.insuficiente}>
+                  <b>Dados insuficientes:</b> falta a umidade do solo para dizer se está saturado.
+                </p>
+              }
+            />
+          </div>
         )}
 
-        {!r.isError && (
-          <Painel
-            id="se-distritos"
-            titulo="Por distrito sanitário"
-            dica="Os distritos mais vulneráveis vêm primeiro: a ordem é a do histórico de atendimentos de alagamento e deslizamento da Defesa Civil. Pessoas abrigadas e desabrigados são lançados pela equipe, abrigo por abrigo."
-          >
-            {r.isSuccess && distritos.length === 0 ? (
-              <EstadoDados tipo="insuficiente" titulo="Dados insuficientes.">
-                Falta o cadastro de abrigos por distrito. Cadastre os abrigos na lista abaixo.
-              </EstadoDados>
-            ) : (
-              <>
-                <ListaAdaptavel
-                  legenda="Abrigos e desabrigados por distrito sanitário, dos mais vulneráveis aos menos"
-                  carregando={r.isPending}
-                  linhas={distritos}
-                  chaveLinha={(d) => d.distrito_id}
-                  colunas={[
-                    {
-                      chave: "distrito",
-                      titulo: "Distrito",
-                      celula: (d) => (
-                        <span className={estilos.distritoNome}>{nomeCurto(d.distrito_nome)}</span>
-                      ),
-                    },
-                    {
-                      chave: "abertos",
-                      titulo: "Abrigos abertos",
-                      numerica: true,
-                      celula: (d) => <Numero valor={d.abrigos_abertos} />,
-                    },
-                    {
-                      chave: "abrigadas",
-                      titulo: "Pessoas abrigadas",
-                      numerica: true,
-                      celula: (d) => <Numero valor={d.pessoas_abrigadas} parcial={d.parcial} />,
-                    },
-                    {
-                      chave: "desabrigados",
-                      titulo: "Desabrigados",
-                      numerica: true,
-                      celula: (d) => <Numero valor={d.desabrigados} parcial={d.parcial} />,
-                    },
-                  ]}
-                />
-                {r.isSuccess && (
-                  <p className={estilos.detalhe}>
-                    {porVulnerabilidade
-                      ? "Ordem: do distrito mais vulnerável ao menos."
-                      : "Ordem por nome: falta a fonte de ocorrências da Defesa Civil para ordenar por vulnerabilidade."}
-                  </p>
-                )}
-                <LegendaFonte fontes={fontesDado(fontes)} />
-              </>
-            )}
-          </Painel>
-        )}
+        <div className={estilos.dupla}>
+          <GraficoChuvaMare cenario={grafico} fontes={metaFontes} />
+          <ChuvaPorDistrito
+            carregando={carregando}
+            erro={distritos.isError ? distritos.error : null}
+            aoTentar={() => distritos.refetch()}
+            linhas={linhasMedidas(todos)}
+            fontes={achaFonte(metaFontes, ...idsMedida)}
+            destaque={territorio === "recife" ? null : territorio}
+          />
+        </div>
 
-        <ListaAbrigos />
+        <div className={estilos.dupla}>
+          <FontesAtualizacao linhas={linhasFonte} carregando={fontesApi.isPending && distritos.isPending} />
+          <MensagemEstagio
+            estagio={definido?.estagio ?? null}
+            territorioId={territorio}
+            carregando={oficial.isPending}
+          />
+        </div>
       </div>
     </>
   );

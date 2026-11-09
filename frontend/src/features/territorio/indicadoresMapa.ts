@@ -82,7 +82,7 @@ export const ROTULO_PRIORIDADE = ["Sem indicação", "Atenção", "Alerta", "Sit
 /** Mesmas cores dos níveis (tokens --n-*), lidas pelo mapa em tempo de execução para valer nos dois temas. */
 export const TOKEN_PRIORIDADE = ["--n-sem", "--n-atencao", "--n-alerta", "--n-critico"];
 
-export type ItemPrioridade = Esquemas["ItemPrioridade"];
+export type ItemPrioridade = Esquemas["climasense__api__esquemas_decisao__ItemPrioridade"];
 
 export const NIVEL_DA_API: Record<ItemPrioridade["nivel"], ChaveNivel> = {
   sem_indicacao: "sem",

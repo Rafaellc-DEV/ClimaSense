@@ -5,10 +5,6 @@ import { MemoryRouter } from "react-router-dom";
 import { simularApi } from "@/features/evento/testes";
 import { clienteConsultas } from "@/lib/api";
 import { PaginaInicial } from "./PaginaInicial";
-import type { AbrigoPublico } from "./abrigosPublicos";
-
-// o mapa (Leaflet) é apoio visual; a lista carrega a informação e é o que se testa aqui
-vi.mock("./MapaAbrigos", () => ({ default: () => <div data-testid="mapa" /> }));
 
 const AGORA = new Date().toISOString();
 const DEPOIS = new Date(Date.now() + 5 * 3_600_000).toISOString();
@@ -36,30 +32,12 @@ const ESTADO_SEM = {
   atualizado_em: AGORA,
 };
 
-const local = (p: Partial<AbrigoPublico> & { id: string; nome: string }): AbrigoPublico => ({
-  endereco: "Rua do Canal, 10",
-  bairro_nome: "Várzea",
-  distrito_nome: "Distrito Sanitário IV",
-  latitude: -8.04,
-  longitude: -34.95,
-  aberto: null,
-  aberto_fonte: null,
-  aberto_lido_em: null,
-  capacidade: null,
-  tipo: "abrigo_temporario",
-  atualizado_em: AGORA,
-  origem: "Prefeitura do Recife",
-  fonte_url: "https://dados.recife.pe.gov.br/",
-  ...p,
-});
-
 const AFOGADOS = { id: "bairro-afogados", nome: "Afogados", distrito_id: "ds-5" };
 
 const BASE = {
   "/publico/estado": ESTADO_SEM,
   "/publico/avisos": [],
   "/publico/fontes": [],
-  "/publico/abrigos": { itens: [] },
 };
 
 function montar() {
@@ -92,22 +70,11 @@ test("a primeira coisa é a pergunta, com o campo, o botão e a localização", 
   expect(screen.getAllByRole("link", { name: /Defesa Civil, 199/ })[0]).toHaveAttribute("href", "tel:199");
 });
 
-test("com aviso: nível, o que fazer, fonte, link do comunicado e abrigos do bairro primeiro", async () => {
+test("com aviso: nível, o que fazer, fonte, link do comunicado", async () => {
   simularApi({
     ...BASE,
     "/publico/territorios/busca": [AFOGADOS],
     "/publico/avisos?bairro=": [AVISO],
-    "/publico/abrigos": {
-      itens: [
-        local({ id: "1", nome: "Escola da Várzea" }),
-        local({
-          id: "2",
-          nome: "Escola de Afogados",
-          bairro_nome: "Afogados",
-          distrito_nome: "Distrito Sanitário V",
-        }),
-      ],
-    },
   });
   montar();
   const u = userEvent.setup();
@@ -120,15 +87,6 @@ test("com aviso: nível, o que fazer, fonte, link do comunicado e abrigos do bai
     "href",
     "/avisos/a1",
   );
-  const perto = screen.getByRole("heading", { name: "Abrigos perto de Afogados" }).closest("section")!;
-  const cartoes = within(perto).getAllByRole("listitem");
-  expect(within(cartoes[0]).getByText("Escola de Afogados")).toBeInTheDocument();
-  expect(within(cartoes[0]).getByText(/No bairro Afogados/)).toBeInTheDocument();
-  expect(
-    within(cartoes[0]).getByRole("link", { name: /Ligar para confirmar a abertura de Escola de Afogados/ }),
-  ).toHaveAttribute("href", "tel:08000813400");
-  expect(within(cartoes[0]).getByRole("link", { name: /Como chegar/ })).toBeInTheDocument();
-  expect(within(cartoes[0]).queryByText(/Aberto agora/)).not.toBeInTheDocument();
 });
 
 test("sem aviso: diz que não significa ausência de risco", async () => {
@@ -244,17 +202,15 @@ test("falha ao carregar os comunicados: nunca vira “sem aviso”; diz que não
   expect(await screen.findByRole("list", { name: "Comunicados em vigor" })).toBeInTheDocument();
 });
 
-test("abas: três, com role e aria-selected, e as setas do teclado trocam de aba", async () => {
+test("abas: duas, com role e aria-selected, e as setas do teclado trocam de aba", async () => {
   simularApi(BASE);
   montar();
   const u = userEvent.setup();
   const abas = screen.getAllByRole("tab");
-  expect(abas.map((a) => a.textContent)).toEqual(["Comunicados", "Abrigos", "Mapa"]);
+  expect(abas.map((a) => a.textContent)).toEqual(["Comunicados", "Mapa"]);
   expect(screen.getByRole("tablist")).toBeInTheDocument();
   expect(abas[0]).toHaveAttribute("aria-selected", "true");
   abas[0].focus();
-  await u.keyboard("{ArrowRight}");
-  expect(screen.getByRole("tab", { name: "Abrigos" })).toHaveAttribute("aria-selected", "true");
   await u.keyboard("{ArrowRight}");
   expect(screen.getByRole("tab", { name: "Mapa" })).toHaveAttribute("aria-selected", "true");
   expect(screen.getByRole("tabpanel")).toBeInTheDocument();
@@ -270,67 +226,6 @@ test("a aba Comunicados mostra 3 e “Ver todos”, em lista vertical", async ()
   expect(screen.getByRole("tab", { name: /Comunicados \(4 em vigor\)/ })).toBeInTheDocument();
   await u.click(screen.getByRole("button", { name: "Ver todos os 4 comunicados" }));
   expect(within(lista).getAllByRole("article")).toHaveLength(4);
-});
-
-test("aba Abrigos: sem aberto confirmado nunca diz “aberto”; CRAS só no filtro à parte", async () => {
-  simularApi({
-    ...BASE,
-    "/publico/abrigos": {
-      itens: [
-        local({ id: "1", nome: "Abrigo da Várzea" }),
-        local({ id: "3", nome: "CRAS Várzea", tipo: "cras" }),
-      ],
-    },
-  });
-  montar();
-  const u = userEvent.setup();
-  await u.click(screen.getByRole("tab", { name: "Abrigos" }));
-  expect(await screen.findByText("Nenhum abrigo ativo neste momento.")).toBeInTheDocument();
-  const lista = screen.getByRole("list", { name: "Locais de abrigo" });
-  expect(within(lista).getByText("Abrigo da Várzea")).toBeInTheDocument();
-  expect(within(lista).queryByText("CRAS Várzea")).not.toBeInTheDocument();
-  expect(within(lista).getByText(/Confirme a abertura com a Defesa Civil/)).toBeInTheDocument();
-  expect(within(lista).queryByText(/Aberto agora/)).not.toBeInTheDocument();
-  await u.selectOptions(screen.getByLabelText("Tipo de local"), "cras");
-  expect(
-    within(screen.getByRole("list", { name: "Locais de abrigo" })).getByText("CRAS Várzea"),
-  ).toBeInTheDocument();
-  expect(screen.getByText(/não um abrigo/)).toBeInTheDocument();
-});
-
-test("aba Abrigos: aberto só com confirmação, com quem informou, e vai primeiro", async () => {
-  simularApi({
-    ...BASE,
-    "/publico/abrigos": {
-      itens: [
-        local({ id: "1", nome: "A fechado", bairro_nome: "Afogados" }),
-        local({ id: "2", nome: "B aberto", aberto: true, aberto_fonte: "cop", aberto_lido_em: AGORA }),
-      ],
-    },
-  });
-  montar();
-  const u = userEvent.setup();
-  await u.click(screen.getByRole("tab", { name: "Abrigos" }));
-  expect(await screen.findByText("1 abrigo aberto agora.")).toBeInTheDocument();
-  const itens = within(screen.getByRole("list", { name: "Locais de abrigo" })).getAllByRole("listitem");
-  expect(within(itens[0]).getByText("B aberto")).toBeInTheDocument();
-  expect(within(itens[0]).getByText(/informado pela Defesa Civil/)).toBeInTheDocument();
-});
-
-test("lista de abrigos fora do ar (404): diz a verdade e dá o 0800", async () => {
-  simularApi({ ...BASE, "/publico/abrigos": { status: 404 } });
-  montar();
-  await userEvent.setup().click(screen.getByRole("tab", { name: "Abrigos" }));
-  expect(
-    await screen.findByText("A lista de abrigos ainda não está disponível. Ligue 0800 081 3400."),
-  ).toBeInTheDocument();
-});
-
-test("lista de abrigos vazia: “Nenhum local de abrigo cadastrado ainda.”", async () => {
-  simularApi(BASE);
-  montar();
-  await userEvent.setup().click(screen.getByRole("tab", { name: "Abrigos" }));
-  expect(await screen.findByText(/Nenhum local de abrigo cadastrado ainda/)).toBeInTheDocument();
 });
 
 describe("localização", () => {
@@ -364,16 +259,14 @@ describe("localização", () => {
     montar();
     await userEvent.setup().click(screen.getByRole("button", { name: "Usar minha localização" }));
     expect(await screen.findByRole("heading", { name: "A localização está imprecisa" })).toBeInTheDocument();
-    expect(screen.queryByText(/Abrigos mais perto/)).not.toBeInTheDocument();
   });
 
-  test("ok: abrigos com a distância real, dizendo que o bairro é desconhecido", async () => {
+  test("ok: diz que o bairro é desconhecido e pede o nome do bairro", async () => {
     geo((ok) => ok({ coords: { latitude: -8.04, longitude: -34.95, accuracy: 50 } } as GeolocationPosition));
-    simularApi({ ...BASE, "/publico/abrigos": { itens: [local({ id: "1", nome: "Escola da Várzea" })] } });
+    simularApi(BASE);
     montar();
     await userEvent.setup().click(screen.getByRole("button", { name: "Usar minha localização" }));
-    expect(await screen.findByRole("heading", { name: "Abrigos mais perto de você" })).toBeInTheDocument();
-    expect(screen.getByText(/a \d+ m de você/)).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Localização encontrada" })).toBeInTheDocument();
     expect(screen.getByText(/não dá para saber o seu bairro/)).toBeInTheDocument();
   });
 });

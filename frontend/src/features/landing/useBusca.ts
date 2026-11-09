@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { api } from "@/lib/api";
-import { normalizar } from "./abrigosPublicos";
 import type { AvisoPublico } from "./useEstado";
 
 export interface Bairro {
@@ -19,6 +18,11 @@ export type Resultado =
   | { tipo: "ok"; bairro: Bairro; avisos: AvisoPublico[] }
   | { tipo: "escolher"; consulta: string; opcoes: Bairro[] };
 
+/** Sem acento e em minúsculas, para a busca achar “Varzea” em “Várzea”. */
+export function normalizar(t: string) {
+  return t.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim();
+}
+
 /** A localização só é pedida depois do toque. Imprecisa ou negada nunca vira “sem aviso”. */
 export type Localizacao =
   | { tipo: "ocioso" }
@@ -29,7 +33,7 @@ export type Localizacao =
   | { tipo: "imprecisa" }
   | { tipo: "ok"; lat: number; lon: number };
 
-/** Acima disto (metros), a posição não serve nem para sugerir abrigos próximos. */
+/** Acima disto (metros), a posição é considerada imprecisa. */
 export const PRECISAO_MAXIMA_M = 1500;
 
 export interface Busca {
