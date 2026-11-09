@@ -24,6 +24,7 @@ import { PainelPremissas } from "./Premissas";
 import {
   deAtuais,
   paraPremissas,
+  podeSimular,
   temAlgumDado,
   type CampoNumerico,
   type CenarioSalvo,
@@ -89,7 +90,15 @@ export function TelaSimulador() {
   const [pronta, setPronta] = useAtraso<Premissas | null>(premissas, chave, ATRASO_MS);
   const pronto = atuais.isPending ? null : pronta; // espera os valores atuais antes do primeiro cálculo
 
-  const mudar = (campo: CampoNumerico, valor: string) => setEditado({ ...form, [campo]: valor });
+  // ao mexer na chuva sem duração definida, a duração assume o horizonte (a chuva espalhada em todo o cenário)
+  const mudar = (campo: CampoNumerico, valor: string) =>
+    setEditado({
+      ...form,
+      [campo]: valor,
+      ...(campo === "chuva_prevista_mm" && valor.trim() !== "" && form.duracao_h === ""
+        ? { duracao_h: String(form.horizonte_h) }
+        : {}),
+    });
   const mudarHorizonte = (h: number) => setEditado({ ...form, horizonte_h: h });
   const aplicarCenario = (c: CenarioPronto) =>
     setEditado({
@@ -108,7 +117,7 @@ export function TelaSimulador() {
   const calculo = useQuery<Envelope<ResultadoSimulacao>, ErroApi>({
     queryKey: ["simulador", pronto ? JSON.stringify(pronto) : null],
     queryFn: () => enviar<Envelope<ResultadoSimulacao>>("/cenarios/simular", pronto),
-    enabled: pronto !== null && temAlgumDado(pronto),
+    enabled: pronto !== null && podeSimular(pronto),
     placeholderData: keepPreviousData,
     staleTime: 5 * 60_000,
     retry: false,
@@ -247,7 +256,7 @@ export function TelaSimulador() {
             <Botao
               type="submit"
               form="form-salvar-cenario"
-              disabled={!nome.trim() || !pronto || !temAlgumDado(pronto) || salvar.isPending}
+              disabled={!nome.trim() || !pronto || !podeSimular(pronto) || salvar.isPending}
             >
               Salvar cenário
             </Botao>
@@ -328,10 +337,12 @@ function Resultado({
         O cenário só é calculado com números válidos.
       </EstadoDados>
     );
-  if (pronto !== null && !temAlgumDado(pronto))
+  if (pronto !== null && !podeSimular(pronto))
     return (
       <EstadoDados tipo="insuficiente" titulo="Dados insuficientes para simular.">
-        Nenhuma fonte trouxe os valores atuais. Mova a chuva prevista ou a maré para ver o cenário.
+        {temAlgumDado(pronto)
+          ? "Falta a chuva prevista (fonte: Open-Meteo). Escolha um cenário pronto ou mova a chuva prevista para ver o resultado."
+          : "Nenhuma fonte trouxe os valores atuais. Escolha um cenário pronto ou mova a chuva prevista para ver o resultado."}
       </EstadoDados>
     );
   if (erro && !resultado)

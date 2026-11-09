@@ -189,6 +189,11 @@ export function temAlgumDado(p: Premissas): boolean {
   return CAMPOS_NUMERICOS.some((c) => p[c] !== null);
 }
 
+/** O cálculo exige a chuva prevista e a duração; acumulada e maré podem faltar (RN-01). */
+export function podeSimular(p: Premissas): boolean {
+  return p.chuva_prevista_mm !== null && p.duracao_h !== null;
+}
+
 const plural = (n: number, s: string, p: string) => `${formatarNumero(n)} ${n === 1 ? s : p}`;
 
 /** Contagem de bairros por classe na visão escolhida. `sem` = sem dado. */
