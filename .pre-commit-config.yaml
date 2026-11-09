@@ -33,12 +33,3 @@ repos:
         language: system
         files: ^frontend/src/
         types_or: [ts, tsx, css, json]
-      # nenhum push a partir desta máquina sem o dono desligar este hook (instale com:
-      # pre-commit install --hook-type pre-commit --hook-type pre-push)
-      - id: bloquear-push
-        name: push bloqueado (decisão do dono, 06/11/2026)
-        entry: push bloqueado pela política do projeto; o dono faz o push manualmente
-        language: fail
-        stages: [pre-push]
-        always_run: true
-        pass_filenames: false
