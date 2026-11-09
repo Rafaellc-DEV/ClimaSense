@@ -108,7 +108,7 @@ def test_tabelas_vazias_dizem_qual_fonte_falta_e_nunca_zero(c, sessao):
     d = r["dados"]
     assert d["idosos_60_mais"] is None and d["criancas_0_14"] is None
     assert d["equipamentos"] == [] and d["equipamentos_em_area_de_risco"] is None and d["areas_risco"] is None
-    assert d["cobertura_risco_parcial"] is True and d["abrigos"] == 0
+    assert d["cobertura_risco_parcial"] is True
     assert len(r["meta"]["avisos"]) == 3
 
 
@@ -181,23 +181,16 @@ def test_resumo_cruza_equipamentos_com_areas_de_risco(c, sessao):
     _equipamento(sessao, "0000002", b1, ds1, -34.50, -8.05)  # fora
     _equipamento(sessao, "0000003", b1, ds1, None, None)  # sem coordenada: conta como equipamento, não cruza
     _area(sessao, "a1", b1, "Regional 1")
-    sessao.execute(
-        text(
-            "insert into app.abrigos (nome, bairro_id, endereco, latitude, longitude, origem, codigo_fonte, aberto) "
-            "values ('Escola X', :b, 'Rua Y', -8.05, -34.9, 'dados-abertos', 'x1', true)"
-        ),
-        {"b": b1},
-    )
     d = c.get(f"{T}/{b1}/resumo-vulnerabilidade").json()
     assert d["meta"]["dados_insuficientes"] is False and d["meta"]["avisos"] == []
     r = d["dados"]
     assert r["idosos_60_mais"] == 1500 and r["criancas_0_14"] == 2100
     assert {e["cnes"] for e in r["equipamentos"]} == {"0000001", "0000002", "0000003"}
     assert r["equipamentos_em_area_de_risco"] == 1
-    assert r["areas_risco"] == 1 and r["cobertura_risco_parcial"] is True and r["abrigos"] == 1
+    assert r["areas_risco"] == 1 and r["cobertura_risco_parcial"] is True
     # o distrito soma: falta população de outros bairros dele, então o número fica nulo (nunca subestimado)
     dd = c.get(f"{T}/{ds1}/resumo-vulnerabilidade").json()["dados"]
-    assert len(dd["equipamentos"]) == 3 and dd["idosos_60_mais"] is None and dd["abrigos"] == 1
+    assert len(dd["equipamentos"]) == 3 and dd["idosos_60_mais"] is None
     # outro bairro: não herda o equipamento de b1
     r2 = c.get(f"{T}/{b2}/resumo-vulnerabilidade").json()["dados"]
     assert r2["equipamentos"] == [] and r2["areas_risco"] == 0 and r2["equipamentos_em_area_de_risco"] == 0

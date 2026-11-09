@@ -21,6 +21,14 @@ def limites() -> dict[str, float]:
     return {fonte: float(h) for fonte, h in bruto.items() if h and h > 0}
 
 
+@lru_cache(maxsize=1)
+def fontes_sem_limite() -> frozenset[str]:
+    """Fontes listadas no TOML com valor 0: estáticas de propósito (território, Censo). Nunca ficam desatualizadas."""
+    with ARQUIVO.open("rb") as f:
+        bruto = tomllib.load(f).get("limites_h", {})
+    return frozenset(fonte for fonte, h in bruto.items() if not h or h <= 0)
+
+
 def limite_frescor_h(fonte_id: str) -> float | None:
     """Horas alem das quais o dado da fonte e desatualizado; None se a fonte nao tem limite."""
     return limites().get(fonte_id)

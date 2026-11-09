@@ -19,8 +19,16 @@ from sqlalchemy.orm import Session
 
 from climasense.dominio import simulador as dom
 from climasense.dominio.evento import RegistroInvalido
+from climasense.infra import cache
 from climasense.infra.modelos_sql import Usuario
-from climasense.servicos import cenarios, estagios, fluxo, prioridade_vulnerabilidade, vulnerabilidade
+from climasense.servicos import (
+    arboviroses_cenario,
+    cenarios,
+    estagios,
+    fluxo,
+    prioridade_vulnerabilidade,
+    vulnerabilidade,
+)
 
 ALVO = "cenario"
 FONTE_OCORRENCIAS = prioridade_vulnerabilidade.FONTE
@@ -100,14 +108,20 @@ def simular(db: Session, p: dom.Premissas, agora: datetime) -> dict:
         por_bairro[bid] = r
         por_distrito.setdefault(ds, []).append((nome, r))
         itens_bairro.append((bid, nome, ds, r))
+    arbo = arboviroses_cenario.montar(db, est["distritos"], agora)
     itens = []
+    distritos_res: dict[str, dom.Resultado] = {}
     for ds, nome in est["distritos"].items():
         r = dom.agregar_distrito(por_distrito.get(ds, []))
-        itens.append(_item(ds, nome, "distrito", ds, r, vul))
+        distritos_res[ds] = r
+        item = _item(ds, nome, "distrito", ds, r, vul)
+        item["arboviroses"] = arbo["por_distrito"][ds]
+        itens.append(item)
     itens += [_item(b, n, "bairro", ds, r, vul) for b, n, ds, r in itens_bairro]
     resumo = {
         "por_classe": dom.resumo_por_classe(list(por_bairro.values())),
-        "pressao_abrigos": dom.pressao_abrigos(p),
+        "arboviroses": arbo["resumo"],
+        "ordem_de_atencao_distritos": _ordem_distritos(est["distritos"], distritos_res, arbo["por_distrito"]),
         "impacto_pessoas_aviso": dom.MOTIVO_IMPACTO_PENDENTE if vul is None else None,
         "pessoas_vulneraveis_em_alerta": dom.pessoas_em_alerta(
             {b: r.estagio_sugerido for b, r in por_bairro.items()}, vul
@@ -120,6 +134,29 @@ def simular(db: Session, p: dom.Premissas, agora: datetime) -> dict:
         "calculado_em": agora,
         "tempo_calculo_ms": round((time.perf_counter() - inicio) * 1000),
     }
+
+
+_ESTAGIO_RANK = {"sem_dados": 0, "observacao": 1, "atencao": 2, "alerta": 3, "critico": 4}
+_CLASSE_RANK = {"alta": 3, "media": 2, "baixa": 1, None: 0}
+
+
+def _ordem_distritos(nomes: dict[str, str], res: dict, arbo: dict) -> list[dict]:
+    """Distritos do mais para o menos afetado pela chuva simulada (estágio sugerido) e, no empate, pela classe
+    de arboviroses (contexto). Ordem de atenção, não probabilidade; empate total cai em ordem alfabética."""
+
+    def chave(d: str):
+        return (-_ESTAGIO_RANK[res[d].estagio_sugerido], -_CLASSE_RANK[arbo[d]["classe_impacto"]], nomes[d])
+
+    return [
+        {
+            "distrito_id": d,
+            "nome": nomes[d],
+            "estagio_sugerido": res[d].estagio_sugerido,
+            "classe_arboviroses": arbo[d]["classe_impacto"],
+            "agravos_em_destaque": arbo[d]["agravos_em_destaque"],
+        }
+        for d in sorted(res, key=chave)
+    ]
 
 
 def _item(tid: str, nome: str, nivel: str, ds: str, r: dom.Resultado, vul) -> dict:
@@ -142,6 +179,10 @@ def _chuva_apac_72h(db: Session, agora: datetime) -> float | None:
     """Maior acumulado de 3 dias (hoje e os 2 anteriores, dia local) entre os distritos, pelos pluviômetros da APAC.
     Só vale com os 3 dias medidos em algum distrito; senão `None` (não é zero, RN-02)."""
     hoje = agora.astimezone(ZoneInfo("America/Recife")).date()
+    return cache.obter("apac_72h", hoje, cache.VIVO_S, lambda: _ler_chuva_apac_72h(db, hoje))
+
+
+def _ler_chuva_apac_72h(db: Session, hoje) -> float | None:
     try:
         with db.begin_nested():
             linhas = db.execute(
@@ -157,18 +198,6 @@ def _chuva_apac_72h(db: Session, agora: datetime) -> float | None:
     return round(max(completos), 1) if completos else None
 
 
-def _abrigos(db: Session) -> tuple[int | None, int | None]:
-    from climasense.servicos import abrigos
-
-    linhas = abrigos._linhas(db)
-    if not linhas:
-        return None, None
-    abertos = [r for r in linhas if r["aberto"]]
-    capacidades = [r["capacidade"] for r in abertos]
-    cap = None if any(c is None for c in capacidades) else sum(capacidades)
-    return len(abertos), cap
-
-
 def premissas_atuais(db: Session, agora: datetime) -> dict:
     """Valores sugeridos a partir das fontes reais; `None` quando a fonte falta."""
     par = estagios.parametros_atuais(db)["parametros"]
@@ -180,15 +209,12 @@ def premissas_atuais(db: Session, agora: datetime) -> dict:
     _, mare = cenarios.mare_prevista(db, inicio)
     ate = inicio + timedelta(hours=horizonte)
     niveis = [v for t, v in mare if v is not None and t < ate]
-    abertos, cap = _abrigos(db)
     return {
         "chuva_prevista_mm": round(max(prev), 1) if prev else None,
         "duracao_h": 24 if prev else None,
         "chuva_acumulada_mm": _chuva_apac_72h(db, agora),
         "mare_m": round(max(niveis), 2) if niveis else None,
         "horizonte_h": horizonte,
-        "abrigos_abertos": abertos,
-        "capacidade_abrigos": cap,
     }
 
 
@@ -238,7 +264,7 @@ def salvar(
 
 def _resumo(resultado: dict) -> dict:
     r = resultado.get("resumo") or {}
-    return {"por_classe": r.get("por_classe"), "pressao_abrigos": r.get("pressao_abrigos")}
+    return {"por_classe": r.get("por_classe")}
 
 
 _SQL = (

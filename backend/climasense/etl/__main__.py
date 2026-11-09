@@ -3,10 +3,9 @@
 python -m climasense.etl listar
 python -m climasense.etl run open-meteo-historico [--limite DIAS]
 python -m climasense.etl run apac-chuva [--modo historico [--limite MESES]]
-python -m climasense.etl run recife-abrigos [--modo ativos]
 python -m climasense.etl verificar-gold
 python -m climasense.etl atualizar [--forcar] [--sem-territorio]
-python -m climasense.etl tempo-real          # APAC, alertas oficiais e abrigos ativos (a cada 10–15 min)
+python -m climasense.etl tempo-real          # APAC e alertas oficiais (a cada 10–15 min)
 python -m climasense.etl semanal             # saúde: InfoDengue e SINAN leptospirose (uma vez por semana)
 """
 
@@ -38,14 +37,14 @@ def main(argv: list[str] | None = None) -> int:
     r.add_argument(
         "--limite", type=int, help="Open-Meteo histórico: nº de dias. APAC histórico: nº de meses."
     )
-    r.add_argument("--modo", help="apac-chuva: tempo-real | historico. recife-abrigos: cadastro | ativos.")
+    r.add_argument("--modo", help="apac-chuva: tempo-real | historico.")
     sub.add_parser("verificar-gold", help="Recalcula a gold a partir da silver e compara")
     a = sub.add_parser("atualizar", help="Roda o pipeline inteiro (todas as fontes reais) e confere a gold")
     a.add_argument(
         "--forcar", action="store_true", help="Refaz os conjuntos estáticos mesmo se carregados há pouco"
     )
     a.add_argument("--sem-territorio", action="store_true", help="Não recarrega a base territorial")
-    sub.add_parser("tempo-real", help="Só as fontes rápidas: APAC, alertas oficiais e abrigos ativos do COP")
+    sub.add_parser("tempo-real", help="Só as fontes rápidas: APAC e alertas oficiais")
     sub.add_parser("semanal", help="Só as séries de saúde: InfoDengue e SINAN leptospirose")
     args = p.parse_args(argv)
     config = obter_configuracao()

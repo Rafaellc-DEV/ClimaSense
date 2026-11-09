@@ -1,4 +1,4 @@
-"""F2, F3, F4 e F5 no domínio: mensagem de WhatsApp, totais de abrigos, ações e texto do boletim."""
+"""F2, F3, F4 e F5 no domínio: mensagem de WhatsApp, ações e texto do boletim."""
 
 from __future__ import annotations
 
@@ -7,7 +7,7 @@ from urllib.parse import parse_qs, urlparse
 
 import pytest
 
-from climasense.dominio import abrigos, acoes, mensagem
+from climasense.dominio import acoes, mensagem
 from climasense.dominio.evento import RegistroInvalido
 
 AGORA = datetime(2026, 11, 4, 18, 30, tzinfo=UTC)  # 15:30 no Recife
@@ -21,7 +21,7 @@ def test_mensagem_padronizada_em_portugues_com_hora_do_recife():
     linhas = t.splitlines()
     assert linhas[0] == "*ClimaSense · Vigidesastres*"
     assert "Estágio: *ALERTA*" in t
-    assert "Territórios: Distrito Sanitário IV, Afogados" in t
+    assert "Territórios: Distrito 4, Afogados" in t
     assert "Motivo: Chuva forte à tarde" in t  # espaços e quebras normalizados
     assert "Hora: 04/11/2026 15:30" in t
     assert "O que fazer: " in t and linhas[-1] == mensagem.ASSINATURA
@@ -60,69 +60,18 @@ def test_texto_do_boletim():
             "chuva_prev_72h": (80.5, "DS I"),
         },
         (1.2, AGORA + timedelta(hours=2)),
-        {
-            "cidade": {
-                "abrigos_abertos": 2,
-                "pessoas_abrigadas": None,
-                "desabrigados": None,
-                "parcial": True,
-                "atualizado_em": AGORA,
-            },
-            "distritos": [
-                {
-                    "distrito_nome": "DS I",
-                    "abrigos_abertos": 1,
-                    "pessoas_abrigadas": 40,
-                    "desabrigados": 37,
-                    "parcial": False,
-                }
-            ],
-        },
         3,
         acoes_concluidas=0,
         saude=[{"nome": "Dengue", "casos": None, "ultima_semana": None}],
     )
-    assert "- Distrito Sanitário I: Alerta (declarado)" in t
-    assert "- Distrito Sanitário II: Sem dados (sugerido)" in t
+    assert "- Distrito 1: Alerta (declarado)" in t
+    assert "- Distrito 2: Sem dados (sugerido)" in t
     assert "- Últimas 24 h: sem dado" in t
-    assert "- Prevista 24 h: 42,0 mm (maior: Distrito Sanitário I)" in t
+    assert "- Prevista 24 h: 42,0 mm (maior: Distrito 1)" in t
     assert "Maré máxima: 1,20 m às 04/11 17:30" in t
-    # total parcial não vira número (RN-01); o distrito com contagem completa aparece
-    assert "- Cidade: 2 aberto(s), sem dado (parcial) abrigado(s), sem dado (parcial) desabrigado(s)" in t
-    assert "- DS I: 1 aberto(s), 40 abrigado(s), 37 desabrigado(s)" in t
     assert "Estágio oficial do COP (cidade): sem registro" in t
     assert "Ações em andamento: 3" in t and "Ações concluídas no período: 0" in t
     assert "- Dengue: sem dado caso(s)" in t
-
-
-# ---------------------------------------------------------------- F3 abrigos
-def _a(aberto, pessoas, desabrigados, minutos=0):
-    return abrigos.SituacaoAbrigo(aberto, pessoas, desabrigados, AGORA + timedelta(minutes=minutos))
-
-
-def test_totais_somam_abrigados_dos_abertos_e_desabrigados_de_todos():
-    t = abrigos.totais([_a(True, 40, 50, 5), _a(True, None, 10), _a(False, 0, 30, -60)])
-    assert t.abrigos_abertos == 2 and t.abrigos_cadastrados == 3
-    assert t.pessoas_abrigadas == 40  # o fechado não conta; o sem contagem também não
-    assert t.desabrigados == 90
-    assert t.abertos_sem_contagem == 1
-    assert t.atualizado_em == AGORA + timedelta(minutes=5)
-
-
-def test_totais_sem_contagem_e_null_nao_zero():
-    t = abrigos.totais([_a(True, None, None)])
-    assert t.pessoas_abrigadas is None and t.desabrigados is None
-    vazio = abrigos.totais([])
-    assert vazio.abrigos_abertos == 0 and vazio.pessoas_abrigadas is None and vazio.atualizado_em is None
-
-
-def test_abrigo_validacao_e_alteracoes():
-    assert abrigos.problemas("Escola", 100, 20, 30) == []
-    assert len(abrigos.problemas("  ", -1, -2, None)) == 3
-    mudou = abrigos.alteracoes(
-        {"aberto": False, "pessoas_abrigadas": None}, {"aberto": True, "pessoas_abrigadas": None}
-    )
-    assert mudou == {"aberto": {"de": False, "para": True}}
 
 
 # ---------------------------------------------------------------- F4 ações
@@ -151,16 +100,3 @@ def test_licao_aprendida_so_ao_encerrar():
     acoes.validar_licao("em_andamento", None)
     with pytest.raises(RegistroInvalido):
         acoes.validar_licao("em_andamento", "cedo demais")
-
-
-def test_totais_situacao_parcial_zero_derivado_e_ausente():
-    assert abrigos.totais_situacao([]).abrigos_abertos is None  # nada cadastrado: ausente
-    parcial = abrigos.totais_situacao([_a(True, 40, 5), _a(True, None, 3)])
-    assert parcial.parcial and parcial.pessoas_abrigadas is None and parcial.abertos_sem_contagem == 1
-    sem_desabrigados = abrigos.totais_situacao([_a(True, 40, None)])
-    assert sem_desabrigados.parcial and sem_desabrigados.desabrigados is None
-    fechados = abrigos.totais_situacao([_a(False, None, None), _a(False, None, 7)])
-    assert fechados.abrigos_abertos == 0 and fechados.pessoas_abrigadas == 0 and fechados.desabrigados == 7
-    assert not fechados.parcial
-    completo = abrigos.totais_situacao([_a(True, 40, 5), _a(True, 10, 0)])
-    assert completo.pessoas_abrigadas == 50 and completo.desabrigados == 5 and not completo.parcial

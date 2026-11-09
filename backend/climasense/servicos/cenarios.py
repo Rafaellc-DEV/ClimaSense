@@ -11,6 +11,7 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from climasense.dominio import cenario
+from climasense.infra import cache
 from climasense.modelos.estimador import EstimadorAlagamento, EstimadorReferencia
 
 FONTE_PREVISAO = "open-meteo-previsao"
@@ -52,9 +53,39 @@ def previsao_por_emissao(
     return dict(por_emissao)
 
 
+def previsao_por_emissao_distritos(
+    db: Session, distritos: list[str], desde: datetime
+) -> dict[str, dict[datetime, list[tuple[datetime, float | None]]]]:
+    """`previsao_por_emissao` de vários distritos em 1 consulta (a de cada distrito custava 2): por distrito, as
+    últimas `EMISSOES_PARA_FAIXA` emissões dele, hora a hora. Hora com algum valor nulo sai nula (RN-02)."""
+    if not distritos:
+        return {}
+    linhas = db.execute(
+        text(
+            "with e as (select territorio_id, emitido_em, dense_rank() over (partition by territorio_id "
+            "order by emitido_em desc) as ordem from (select distinct territorio_id, emitido_em "
+            "from silver.observacoes where fonte_id = :f and emitido_em is not null and territorio_id = any(:ts)) x) "
+            "select o.territorio_id, o.emitido_em, o.observado_em, avg(o.valor) as valor, count(o.valor) as n, "
+            "count(*) as total from silver.observacoes o join e on e.territorio_id = o.territorio_id "
+            "and e.emitido_em = o.emitido_em where o.fonte_id = :f and e.ordem <= :n and o.observado_em >= :d "
+            "group by o.territorio_id, o.emitido_em, o.observado_em order by o.emitido_em, o.observado_em"
+        ),
+        {"f": FONTE_PREVISAO, "ts": list(distritos), "n": EMISSOES_PARA_FAIXA, "d": desde},
+    ).all()
+    saida: dict[str, dict[datetime, list[tuple[datetime, float | None]]]] = {}
+    for ds, emitido, hora, valor, n, total in linhas:
+        saida.setdefault(ds, defaultdict(list))[emitido].append((hora, valor if n == total else None))
+    return {ds: dict(v) for ds, v in saida.items()}
+
+
 def mare_prevista(
     db: Session, desde: datetime
 ) -> tuple[datetime | None, list[tuple[datetime, float | None]]]:
+    """Maré da emissão mais recente a partir de `desde`. Guardada por `cache.VIVO_S` (a coleta é diária)."""
+    return cache.obter("mare", desde, cache.VIVO_S, lambda: _ler_mare(db, desde))
+
+
+def _ler_mare(db: Session, desde: datetime) -> tuple[datetime | None, list[tuple[datetime, float | None]]]:
     emitido = db.execute(
         text("select max(emitido_em) from silver.observacoes where fonte_id = :f"), {"f": FONTE_MARE}
     ).scalar()
@@ -84,7 +115,13 @@ def chuva_historica(db: Session, territorio_id: str) -> list[float]:
 
 
 def ocorrencias(db: Session, territorio_id: str) -> int | None:
-    """None enquanto o conector de ocorrências não tiver nenhuma carga bem-sucedida."""
+    """None enquanto o conector de ocorrências não tiver nenhuma carga bem-sucedida. Guardado por `cache.MEDIO_S`."""
+    return cache.obter(
+        "ocorrencias", ("total", territorio_id), cache.MEDIO_S, lambda: _ler_ocorrencias(db, territorio_id)
+    )
+
+
+def _ler_ocorrencias(db: Session, territorio_id: str) -> int | None:
     carregou = db.execute(
         text(
             "select 1 from app.etl_execucoes where fonte_id = 'recife-alagamento' and status = 'sucesso' limit 1"

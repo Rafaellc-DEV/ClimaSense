@@ -17,10 +17,7 @@ def test_status_das_fontes_e_disparo_pelo_administrador(sessao):
     status = {f["id"]: f["status"] for f in c.get("/api/v1/fontes").json()}
     assert status["ana-telemetria"] == "planejada"
     # implementadas na 0008 e ainda sem carga neste banco de teste
-    assert all(
-        status[f] != "planejada"
-        for f in ("recife-alagamento", "apac-chuva", "alertas-oficiais", "recife-abrigos")
-    )
+    assert all(status[f] != "planejada" for f in ("recife-alagamento", "apac-chuva", "alertas-oficiais"))
     assert "vacinacao" not in status  # removida (0009)
     r = c.post("/api/v1/etl/execucoes", json={"fonte_id": "open-meteo-previsao"})
     assert r.status_code == 202 and r.json()["status"] == "em_andamento"

@@ -23,7 +23,6 @@ PUBLICAS = {
     ("GET", "/api/v1/publico/avisos"),
     ("GET", "/api/v1/publico/avisos/{aviso_id}"),
     ("GET", "/api/v1/publico/fontes"),
-    ("GET", "/api/v1/publico/abrigos"),
     ("GET", "/api/v1/publico/territorios/busca"),
 }
 

@@ -19,10 +19,10 @@ def test_extract_pagina_de_500_respeita_o_limite_e_guarda_o_total():
 
 
 def test_bronze_e_acumulativa_e_le_so_o_lote_pedido():
-    colecao = mongomock.MongoClient()["bronze"]["recife_abrigos"]
+    colecao = mongomock.MongoClient()["bronze"]["recife_alagamento"]
     load = Load()
-    load.salvar_bronze(colecao, copy.deepcopy(REGISTROS[:3]), "recife-abrigos", "exec-1")
-    load.salvar_bronze(colecao, copy.deepcopy(REGISTROS[:2]), "recife-abrigos", "exec-2")
+    load.salvar_bronze(colecao, copy.deepcopy(REGISTROS[:3]), "recife-alagamento", "exec-1")
+    load.salvar_bronze(colecao, copy.deepcopy(REGISTROS[:2]), "recife-alagamento", "exec-2")
     assert colecao.count_documents({}) == 5  # nada foi apagado (RN-09)
     lote = Extract("u", "r", 1).ler_bronze(colecao, "exec-2")
     assert len(lote) == 2 and "_execucao_id" not in lote and "_fonte" not in lote

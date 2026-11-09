@@ -1,0 +1,58 @@
+[
+ {
+  "cod_estacao": "260790115",
+  "nome_estacao": "JABOATAO DOS GUARARAPES ( VILA NATAL) (CEMADEM)",
+  "nome_rio": "RIO JABOATÃO",
+  "data_hora": "2026-11-05 19:00:00",
+  "data_coleta": "2026-11-05",
+  "hora_coleta": "19:00:00",
+  "nivel_atual": "183.30",
+  "nivel_pre_alerta": "320",
+  "nivel_alerta": "340",
+  "nivel_alerta_enchente": "440",
+  "alerta_pcd": "N",
+  "recente": 0
+ },
+ {
+  "cod_estacao": "260790115",
+  "nome_estacao": "JABOATAO DOS GUARARAPES ( VILA NATAL) (CEMADEM)",
+  "nome_rio": "RIO JABOATÃO",
+  "data_hora": "2026-11-05 20:00:00",
+  "data_coleta": "2026-11-05",
+  "hora_coleta": "20:00:00",
+  "nivel_atual": "183.30",
+  "nivel_pre_alerta": "320",
+  "nivel_alerta": "340",
+  "nivel_alerta_enchente": "440",
+  "alerta_pcd": "N",
+  "recente": 0
+ },
+ {
+  "cod_estacao": "260790115",
+  "nome_estacao": "JABOATAO DOS GUARARAPES ( VILA NATAL) (CEMADEM)",
+  "nome_rio": "RIO JABOATÃO",
+  "data_hora": "2026-11-05 21:00:00",
+  "data_coleta": "2026-11-05",
+  "hora_coleta": "21:00:00",
+  "nivel_atual": "183.20",
+  "nivel_pre_alerta": "320",
+  "nivel_alerta": "340",
+  "nivel_alerta_enchente": "440",
+  "alerta_pcd": "N",
+  "recente": 0
+ },
+ {
+  "cod_estacao": "260790115",
+  "nome_estacao": "JABOATAO DOS GUARARAPES ( VILA NATAL) (CEMADEM)",
+  "nome_rio": "RIO JABOATÃO",
+  "data_hora": "2026-11-05 22:00:00",
+  "data_coleta": "2026-11-05",
+  "hora_coleta": "22:00:00",
+  "nivel_atual": "183.40",
+  "nivel_pre_alerta": "320",
+  "nivel_alerta": "340",
+  "nivel_alerta_enchente": "440",
+  "alerta_pcd": "N",
+  "recente": 0
+ }
+]

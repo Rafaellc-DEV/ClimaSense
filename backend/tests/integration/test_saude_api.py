@@ -97,7 +97,12 @@ def test_saude_semanal_bairros_e_onde_ja_aconteceu(ambiente):  # noqa: F811
     assert dengue["variacao_4s_pct"] == round((874 - 1014) / 1014 * 100, 1)
     assert agravos["chikungunya"]["ultima_semana"] is None  # sem série: ausente, não zero
     lepto = agravos["leptospirose"]
-    assert lepto["ultima_semana"]["inicio"] == "2026-10-04" and lepto["nivel_alerta"] is None
+    # a última semana com dado (04/10) terminou há 26 dias: mais velha que o limite de 15 dias da fonte
+    assert lepto["utilizavel"] is False and lepto["ultima_semana"] is None
+    assert lepto["ultima_semana_com_dado"]["inicio"] == "2026-10-04"
+    assert lepto["casos"] is None and lepto["nivel_alerta"] is None
+    assert "Dados insuficientes" in lepto["motivo"]
+    assert dengue["utilizavel"] is True and dengue["ultima_semana_com_dado"]["inicio"] == "2026-10-25"
     assert corpo["dados"]["janela_leptospirose"] is None  # nenhum gatilho registrado
     assert {f["id"] for f in corpo["meta"]["fontes"]} >= {"infodengue", "sinan-leptospirose"}
 
@@ -114,7 +119,9 @@ def test_saude_semanal_bairros_e_onde_ja_aconteceu(ambiente):  # noqa: F811
     lep = {i["inicio"]: i for i in r.json()["dados"]["itens"]}
     assert (lep["2026-05-10"]["casos"], lep["2026-05-10"]["confirmados"]) == (3, 2)
     assert lep["2026-10-04"]["incompleta"] is True
-    assert c.get("/api/v1/saude/semanal", params={"agravo": "zika"}).status_code == 422
+    zika = c.get("/api/v1/saude/semanal", params={"agravo": "zika"})
+    assert zika.status_code == 200 and zika.json()["dados"]["itens"] == []  # sem dado, com o motivo
+    assert c.get("/api/v1/saude/semanal", params={"agravo": "outra"}).status_code == 422
 
     r = c.get("/api/v1/saude/bairros", params={"agravo": "dengue"})
     assert r.status_code == 200, r.text

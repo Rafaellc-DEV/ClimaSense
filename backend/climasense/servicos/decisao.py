@@ -15,6 +15,7 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from climasense.dominio import prioridades as dom
+from climasense.dominio.distritos import nome_distrito
 from climasense.servicos import cenarios, series
 from climasense.servicos import fontes as servico_fontes
 
@@ -46,6 +47,35 @@ def chuva_horaria_recente(
         if hora not in melhor or prioridade > melhor[hora][0]:
             melhor[hora] = (prioridade, valor, fonte)
     return {h: v for h, (_, v, _f) in melhor.items()}, {h: f for h, (_, _v, f) in melhor.items()}
+
+
+def chuva_horaria_recente_distritos(
+    db: Session, distritos: list[str], desde: datetime, ate: datetime
+) -> dict[str, tuple[dict[datetime, float | None], dict[datetime, str]]]:
+    """`chuva_horaria_recente` de vários distritos em 1 consulta (eram 1 por distrito). Mesma regra: prefere a
+    reanálise, depois a emissão mais recente da previsão; hora com valor ausente não entra (RN-02)."""
+    if not distritos:
+        return {}
+    linhas = db.execute(
+        text(
+            "select territorio_id, observado_em, fonte_id, emitido_em, avg(valor) as valor, count(valor) as n, "
+            "count(*) as total from silver.observacoes where fonte_id in (:h, :p) and territorio_id = any(:ts) "
+            "and observado_em >= :d and observado_em < :a group by territorio_id, observado_em, fonte_id, emitido_em"
+        ),
+        {"h": FONTE_HISTORICO, "p": cenarios.FONTE_PREVISAO, "ts": list(distritos), "d": desde, "a": ate},
+    ).all()
+    melhor: dict[str, dict[datetime, tuple[tuple, float | None, str]]] = {ds: {} for ds in distritos}
+    for ds, hora, fonte, emitido, valor, n, total in linhas:
+        if n != total or total < 1:
+            continue
+        prioridade = (1 if fonte == FONTE_HISTORICO else 0, emitido.timestamp() if emitido else 0)
+        atual = melhor[ds]
+        if hora not in atual or prioridade > atual[hora][0]:
+            atual[hora] = (prioridade, valor, fonte)
+    return {
+        ds: ({h: v for h, (_, v, _f) in m.items()}, {h: f for h, (_, _v, f) in m.items()})
+        for ds, m in melhor.items()
+    }
 
 
 # ------------------------------------------------------------------ frescor das fontes
@@ -116,11 +146,12 @@ def prioridades(
     avisos,
     distrito_id: str | None = None,
 ) -> list[dict]:
-    distritos = dict(
-        db.execute(
+    distritos = {
+        i: nome_distrito(n)
+        for i, n in db.execute(
             text("select id, nome_exibicao from app.territorios where tipo = 'distrito' order by id")
         ).all()
-    )
+    }
     fr = frescor(db, agora)
     problemas = _problemas(fr)
     sinais = sinais_equipe(db, avisos)

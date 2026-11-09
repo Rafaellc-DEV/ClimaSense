@@ -13,7 +13,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from climasense import __version__
 from climasense.api.erros import registrar_tratadores
 from climasense.api.routers import (
-    abrigos,
     acoes,
     admin_login,
     admin_sistema,
@@ -24,6 +23,7 @@ from climasense.api.routers import (
     cenarios,
     comunicados,
     estagios,
+    eventos,
     fontes,
     painel,
     publico,
@@ -31,6 +31,7 @@ from climasense.api.routers import (
     saude,
     saude_agravos,
     series,
+    situacao,
     territorios,
 )
 from climasense.api.seguranca import CabecalhosSeguranca
@@ -57,11 +58,12 @@ ROTEADORES = [
     painel.router,
     admin_sistema.router,
     estagios.router,
-    abrigos.router,
     acoes.router,
+    eventos.router,
     boletim.router,
     risco_alagamento.router,
     saude_agravos.router,
+    situacao.router,
     saude_agravos.ocorrencias,
 ]
 # Chaves de funcionalidade (ADR 0011, RNF-02): campo da Configuracao -> roteadores que ela liga. Desligada
@@ -98,17 +100,33 @@ async def _expirar_periodicamente(config: Configuracao) -> None:
         await asyncio.sleep(60)
 
 
+async def _aquecer_periodicamente(config: Configuracao) -> None:
+    """Renova em segundo plano o cache das leituras que as telas pedem primeiro (servicos/aquecimento.py): ninguém
+    paga a leitura fria depois que o cache vence."""
+    from climasense.infra.postgres import engine_da_configuracao, fabrica_sessoes
+    from climasense.servicos import aquecimento
+
+    fabrica = fabrica_sessoes(engine_da_configuracao(config))
+    while True:
+        try:
+            await asyncio.to_thread(aquecimento.aquecer, fabrica, datetime.now(UTC))
+        except Exception as erro:  # noqa: BLE001 — só o tipo: mensagens de driver podem ter a URI
+            log.warning("Aquecimento do cache falhou (%s)", type(erro).__name__)
+        await asyncio.sleep(aquecimento.INTERVALO_S)
+
+
 def criar_app(config: Configuracao | None = None) -> FastAPI:
     config = config or obter_configuracao()
 
     @asynccontextmanager
     async def ciclo_de_vida(_: FastAPI):
-        tarefa = None
+        tarefas = []
         if config.ambiente != "teste" and config.database_url is not None:
-            tarefa = asyncio.create_task(_expirar_periodicamente(config))
+            tarefas.append(asyncio.create_task(_expirar_periodicamente(config)))
+            tarefas.append(asyncio.create_task(_aquecer_periodicamente(config)))
         yield
-        if tarefa:
-            tarefa.cancel()
+        for t in tarefas:
+            t.cancel()
 
     app = FastAPI(
         lifespan=ciclo_de_vida,

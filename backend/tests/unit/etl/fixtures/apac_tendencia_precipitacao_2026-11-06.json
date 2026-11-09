@@ -1,0 +1,352 @@
+[
+ {
+  "mesoregiao": "Metropolitana",
+  "dia_semana": "S\u00e1bado",
+  "data": "2026-11-07",
+  "data_atualizacao": "2026-11-06 10:00:19",
+  "categoria": "Sem chuva",
+  "categoria_valores": "<2 mm",
+  "cor_categoria": "Cinza Claro",
+  "cor_categoria_hex": "#D9D9D9"
+ },
+ {
+  "mesoregiao": "Agreste",
+  "dia_semana": "S\u00e1bado",
+  "data": "2026-11-07",
+  "data_atualizacao": "2026-11-06 10:00:19",
+  "categoria": "Sem chuva",
+  "categoria_valores": "<2 mm",
+  "cor_categoria": "Cinza Claro",
+  "cor_categoria_hex": "#D9D9D9"
+ },
+ {
+  "mesoregiao": "Sert\u00e3o de Pernambuco",
+  "dia_semana": "S\u00e1bado",
+  "data": "2026-11-07",
+  "data_atualizacao": "2026-11-06 10:00:19",
+  "categoria": "Sem chuva",
+  "categoria_valores": "<2 mm",
+  "cor_categoria": "Cinza Claro",
+  "cor_categoria_hex": "#D9D9D9"
+ },
+ {
+  "mesoregiao": "Sert\u00e3o S\u00e3o Francisco",
+  "dia_semana": "S\u00e1bado",
+  "data": "2026-11-07",
+  "data_atualizacao": "2026-11-06 10:00:19",
+  "categoria": "Sem chuva",
+  "categoria_valores": "<2 mm",
+  "cor_categoria": "Cinza Claro",
+  "cor_categoria_hex": "#D9D9D9"
+ },
+ {
+  "mesoregiao": "Mata Norte",
+  "dia_semana": "S\u00e1bado",
+  "data": "2026-11-07",
+  "data_atualizacao": "2026-11-06 10:00:19",
+  "categoria": "Sem chuva",
+  "categoria_valores": "<2 mm",
+  "cor_categoria": "Cinza Claro",
+  "cor_categoria_hex": "#D9D9D9"
+ },
+ {
+  "mesoregiao": "Mata Sul",
+  "dia_semana": "S\u00e1bado",
+  "data": "2026-11-07",
+  "data_atualizacao": "2026-11-06 10:00:19",
+  "categoria": "Sem chuva",
+  "categoria_valores": "<2 mm",
+  "cor_categoria": "Cinza Claro",
+  "cor_categoria_hex": "#D9D9D9"
+ },
+ {
+  "mesoregiao": "Fernando de Noronha",
+  "dia_semana": "S\u00e1bado",
+  "data": "2026-11-07",
+  "data_atualizacao": "2026-11-06 10:00:19",
+  "categoria": "Sem chuva",
+  "categoria_valores": "<2 mm",
+  "cor_categoria": "Cinza Claro",
+  "cor_categoria_hex": "#D9D9D9"
+ },
+ {
+  "mesoregiao": "Metropolitana",
+  "dia_semana": "Domingo",
+  "data": "2026-11-08",
+  "data_atualizacao": "2026-11-06 10:00:19",
+  "categoria": "Sem chuva",
+  "categoria_valores": "<2 mm",
+  "cor_categoria": "Cinza Claro",
+  "cor_categoria_hex": "#D9D9D9"
+ },
+ {
+  "mesoregiao": "Agreste",
+  "dia_semana": "Domingo",
+  "data": "2026-11-08",
+  "data_atualizacao": "2026-11-06 10:00:19",
+  "categoria": "Sem chuva",
+  "categoria_valores": "<2 mm",
+  "cor_categoria": "Cinza Claro",
+  "cor_categoria_hex": "#D9D9D9"
+ },
+ {
+  "mesoregiao": "Sert\u00e3o de Pernambuco",
+  "dia_semana": "Domingo",
+  "data": "2026-11-08",
+  "data_atualizacao": "2026-11-06 10:00:19",
+  "categoria": "Sem chuva",
+  "categoria_valores": "<2 mm",
+  "cor_categoria": "Cinza Claro",
+  "cor_categoria_hex": "#D9D9D9"
+ },
+ {
+  "mesoregiao": "Sert\u00e3o S\u00e3o Francisco",
+  "dia_semana": "Domingo",
+  "data": "2026-11-08",
+  "data_atualizacao": "2026-11-06 10:00:19",
+  "categoria": "Sem chuva",
+  "categoria_valores": "<2 mm",
+  "cor_categoria": "Cinza Claro",
+  "cor_categoria_hex": "#D9D9D9"
+ },
+ {
+  "mesoregiao": "Mata Norte",
+  "dia_semana": "Domingo",
+  "data": "2026-11-08",
+  "data_atualizacao": "2026-11-06 10:00:19",
+  "categoria": "Sem chuva",
+  "categoria_valores": "<2 mm",
+  "cor_categoria": "Cinza Claro",
+  "cor_categoria_hex": "#D9D9D9"
+ },
+ {
+  "mesoregiao": "Mata Sul",
+  "dia_semana": "Domingo",
+  "data": "2026-11-08",
+  "data_atualizacao": "2026-11-06 10:00:19",
+  "categoria": "Sem chuva",
+  "categoria_valores": "<2 mm",
+  "cor_categoria": "Cinza Claro",
+  "cor_categoria_hex": "#D9D9D9"
+ },
+ {
+  "mesoregiao": "Fernando de Noronha",
+  "dia_semana": "Domingo",
+  "data": "2026-11-08",
+  "data_atualizacao": "2026-11-06 10:00:19",
+  "categoria": "Sem chuva",
+  "categoria_valores": "<2 mm",
+  "cor_categoria": "Cinza Claro",
+  "cor_categoria_hex": "#D9D9D9"
+ },
+ {
+  "mesoregiao": "Metropolitana",
+  "dia_semana": "Segunda",
+  "data": "2026-11-09",
+  "data_atualizacao": "2026-11-06 10:00:19",
+  "categoria": "Sem chuva",
+  "categoria_valores": "<2 mm",
+  "cor_categoria": "Cinza Claro",
+  "cor_categoria_hex": "#D9D9D9"
+ },
+ {
+  "mesoregiao": "Agreste",
+  "dia_semana": "Segunda",
+  "data": "2026-11-09",
+  "data_atualizacao": "2026-11-06 10:00:19",
+  "categoria": "Sem chuva",
+  "categoria_valores": "<2 mm",
+  "cor_categoria": "Cinza Claro",
+  "cor_categoria_hex": "#D9D9D9"
+ },
+ {
+  "mesoregiao": "Sert\u00e3o de Pernambuco",
+  "dia_semana": "Segunda",
+  "data": "2026-11-09",
+  "data_atualizacao": "2026-11-06 10:00:19",
+  "categoria": "Fraca",
+  "categoria_valores": "2 a 10 mm",
+  "cor_categoria": "Cinza",
+  "cor_categoria_hex": "#B7B7B7"
+ },
+ {
+  "mesoregiao": "Sert\u00e3o S\u00e3o Francisco",
+  "dia_semana": "Segunda",
+  "data": "2026-11-09",
+  "data_atualizacao": "2026-11-06 10:00:19",
+  "categoria": "Fraca",
+  "categoria_valores": "2 a 10 mm",
+  "cor_categoria": "Cinza",
+  "cor_categoria_hex": "#B7B7B7"
+ },
+ {
+  "mesoregiao": "Mata Norte",
+  "dia_semana": "Segunda",
+  "data": "2026-11-09",
+  "data_atualizacao": "2026-11-06 10:00:19",
+  "categoria": "Sem chuva",
+  "categoria_valores": "<2 mm",
+  "cor_categoria": "Cinza Claro",
+  "cor_categoria_hex": "#D9D9D9"
+ },
+ {
+  "mesoregiao": "Mata Sul",
+  "dia_semana": "Segunda",
+  "data": "2026-11-09",
+  "data_atualizacao": "2026-11-06 10:00:19",
+  "categoria": "Sem chuva",
+  "categoria_valores": "<2 mm",
+  "cor_categoria": "Cinza Claro",
+  "cor_categoria_hex": "#D9D9D9"
+ },
+ {
+  "mesoregiao": "Fernando de Noronha",
+  "dia_semana": "Segunda",
+  "data": "2026-11-09",
+  "data_atualizacao": "2026-11-06 10:00:19",
+  "categoria": "Sem chuva",
+  "categoria_valores": "<2 mm",
+  "cor_categoria": "Cinza Claro",
+  "cor_categoria_hex": "#D9D9D9"
+ },
+ {
+  "mesoregiao": "Metropolitana",
+  "dia_semana": "Ter\u00e7a",
+  "data": "2026-11-10",
+  "data_atualizacao": "2026-11-06 10:00:19",
+  "categoria": "Fraca",
+  "categoria_valores": "2 a 10 mm",
+  "cor_categoria": "Cinza",
+  "cor_categoria_hex": "#B7B7B7"
+ },
+ {
+  "mesoregiao": "Agreste",
+  "dia_semana": "Ter\u00e7a",
+  "data": "2026-11-10",
+  "data_atualizacao": "2026-11-06 10:00:19",
+  "categoria": "Fraca",
+  "categoria_valores": "2 a 10 mm",
+  "cor_categoria": "Cinza",
+  "cor_categoria_hex": "#B7B7B7"
+ },
+ {
+  "mesoregiao": "Sert\u00e3o de Pernambuco",
+  "dia_semana": "Ter\u00e7a",
+  "data": "2026-11-10",
+  "data_atualizacao": "2026-11-06 10:00:19",
+  "categoria": "Fraca a moderada",
+  "categoria_valores": "10 a 30 mm",
+  "cor_categoria": "Azul",
+  "cor_categoria_hex": "#9FC5E8"
+ },
+ {
+  "mesoregiao": "Sert\u00e3o S\u00e3o Francisco",
+  "dia_semana": "Ter\u00e7a",
+  "data": "2026-11-10",
+  "data_atualizacao": "2026-11-06 10:00:19",
+  "categoria": "Fraca a moderada",
+  "categoria_valores": "10 a 30 mm",
+  "cor_categoria": "Azul",
+  "cor_categoria_hex": "#9FC5E8"
+ },
+ {
+  "mesoregiao": "Mata Norte",
+  "dia_semana": "Ter\u00e7a",
+  "data": "2026-11-10",
+  "data_atualizacao": "2026-11-06 10:00:19",
+  "categoria": "Fraca",
+  "categoria_valores": "2 a 10 mm",
+  "cor_categoria": "Cinza",
+  "cor_categoria_hex": "#B7B7B7"
+ },
+ {
+  "mesoregiao": "Mata Sul",
+  "dia_semana": "Ter\u00e7a",
+  "data": "2026-11-10",
+  "data_atualizacao": "2026-11-06 10:00:19",
+  "categoria": "Fraca",
+  "categoria_valores": "2 a 10 mm",
+  "cor_categoria": "Cinza",
+  "cor_categoria_hex": "#B7B7B7"
+ },
+ {
+  "mesoregiao": "Fernando de Noronha",
+  "dia_semana": "Ter\u00e7a",
+  "data": "2026-11-10",
+  "data_atualizacao": "2026-11-06 10:00:19",
+  "categoria": "Sem chuva",
+  "categoria_valores": "<2 mm",
+  "cor_categoria": "Cinza Claro",
+  "cor_categoria_hex": "#D9D9D9"
+ },
+ {
+  "mesoregiao": "Metropolitana",
+  "dia_semana": "Quarta",
+  "data": "2026-11-11",
+  "data_atualizacao": "2026-11-06 10:00:19",
+  "categoria": "Fraca",
+  "categoria_valores": "2 a 10 mm",
+  "cor_categoria": "Cinza",
+  "cor_categoria_hex": "#B7B7B7"
+ },
+ {
+  "mesoregiao": "Agreste",
+  "dia_semana": "Quarta",
+  "data": "2026-11-11",
+  "data_atualizacao": "2026-11-06 10:00:19",
+  "categoria": "Fraca",
+  "categoria_valores": "2 a 10 mm",
+  "cor_categoria": "Cinza",
+  "cor_categoria_hex": "#B7B7B7"
+ },
+ {
+  "mesoregiao": "Sert\u00e3o de Pernambuco",
+  "dia_semana": "Quarta",
+  "data": "2026-11-11",
+  "data_atualizacao": "2026-11-06 10:00:19",
+  "categoria": "Fraca a moderada",
+  "categoria_valores": "10 a 30 mm",
+  "cor_categoria": "Azul",
+  "cor_categoria_hex": "#9FC5E8"
+ },
+ {
+  "mesoregiao": "Sert\u00e3o S\u00e3o Francisco",
+  "dia_semana": "Quarta",
+  "data": "2026-11-11",
+  "data_atualizacao": "2026-11-06 10:00:19",
+  "categoria": "Fraca",
+  "categoria_valores": "2 a 10 mm",
+  "cor_categoria": "Cinza",
+  "cor_categoria_hex": "#B7B7B7"
+ },
+ {
+  "mesoregiao": "Mata Norte",
+  "dia_semana": "Quarta",
+  "data": "2026-11-11",
+  "data_atualizacao": "2026-11-06 10:00:19",
+  "categoria": "Fraca",
+  "categoria_valores": "2 a 10 mm",
+  "cor_categoria": "Cinza",
+  "cor_categoria_hex": "#B7B7B7"
+ },
+ {
+  "mesoregiao": "Mata Sul",
+  "dia_semana": "Quarta",
+  "data": "2026-11-11",
+  "data_atualizacao": "2026-11-06 10:00:19",
+  "categoria": "Fraca",
+  "categoria_valores": "2 a 10 mm",
+  "cor_categoria": "Cinza",
+  "cor_categoria_hex": "#B7B7B7"
+ },
+ {
+  "mesoregiao": "Fernando de Noronha",
+  "dia_semana": "Quarta",
+  "data": "2026-11-11",
+  "data_atualizacao": "2026-11-06 10:00:19",
+  "categoria": "Sem chuva",
+  "categoria_valores": "<2 mm",
+  "cor_categoria": "Cinza Claro",
+  "cor_categoria_hex": "#D9D9D9"
+ }
+]

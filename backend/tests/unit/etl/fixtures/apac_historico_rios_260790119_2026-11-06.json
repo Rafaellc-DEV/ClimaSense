@@ -1,0 +1,58 @@
+[
+ {
+  "cod_estacao": "260790119",
+  "nome_estacao": "JABOATAO DOS GUARARAPES (CENTRO) (CEMADEM)",
+  "nome_rio": "RIO DUAS UNAS",
+  "data_hora": "2026-11-05 14:00:00",
+  "data_coleta": "2026-11-05",
+  "hora_coleta": "14:00:00",
+  "nivel_atual": "139.10",
+  "nivel_pre_alerta": "200",
+  "nivel_alerta": "230",
+  "nivel_alerta_enchente": "330",
+  "alerta_pcd": "N",
+  "recente": 0
+ },
+ {
+  "cod_estacao": "260790119",
+  "nome_estacao": "JABOATAO DOS GUARARAPES (CENTRO) (CEMADEM)",
+  "nome_rio": "RIO DUAS UNAS",
+  "data_hora": "2026-11-05 15:00:00",
+  "data_coleta": "2026-11-05",
+  "hora_coleta": "15:00:00",
+  "nivel_atual": "139.10",
+  "nivel_pre_alerta": "200",
+  "nivel_alerta": "230",
+  "nivel_alerta_enchente": "330",
+  "alerta_pcd": "N",
+  "recente": 0
+ },
+ {
+  "cod_estacao": "260790119",
+  "nome_estacao": "JABOATAO DOS GUARARAPES (CENTRO) (CEMADEM)",
+  "nome_rio": "RIO DUAS UNAS",
+  "data_hora": "2026-11-05 16:00:00",
+  "data_coleta": "2026-11-05",
+  "hora_coleta": "16:00:00",
+  "nivel_atual": "139.10",
+  "nivel_pre_alerta": "200",
+  "nivel_alerta": "230",
+  "nivel_alerta_enchente": "330",
+  "alerta_pcd": "N",
+  "recente": 0
+ },
+ {
+  "cod_estacao": "260790119",
+  "nome_estacao": "JABOATAO DOS GUARARAPES (CENTRO) (CEMADEM)",
+  "nome_rio": "RIO DUAS UNAS",
+  "data_hora": "2026-11-05 17:00:00",
+  "data_coleta": "2026-11-05",
+  "hora_coleta": "17:00:00",
+  "nivel_atual": "138.80",
+  "nivel_pre_alerta": "200",
+  "nivel_alerta": "230",
+  "nivel_alerta_enchente": "330",
+  "alerta_pcd": "N",
+  "recente": 0
+ }
+]

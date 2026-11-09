@@ -8,7 +8,9 @@ from functools import lru_cache
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
+from climasense.dominio.distritos import nome_distrito
 from climasense.dominio.recorte import RecorteInvalido, granularidade, validar_territorio
+from climasense.infra import cache
 from climasense.territorio.carga import slug
 from climasense.territorio.geometria import carregar_malha_bairros, simplificar_web
 
@@ -22,10 +24,18 @@ class TerritorioUsado:
 
 
 def nome(db: Session, territorio_id: str) -> str:
+    return cache.obter(
+        "territorios", ("nome", territorio_id), cache.CARGA_S, lambda: _nome(db, territorio_id)
+    )
+
+
+def _nome(db: Session, territorio_id: str) -> str:
     return (
-        db.execute(
-            text("select nome_exibicao from app.territorios where id = :i"), {"i": territorio_id}
-        ).scalar()
+        nome_distrito(
+            db.execute(
+                text("select nome_exibicao from app.territorios where id = :i"), {"i": territorio_id}
+            ).scalar()
+        )
         or territorio_id
     )
 
@@ -35,9 +45,14 @@ def no_maximo_distrito(db: Session, territorio_id: str) -> TerritorioUsado:
     validar_territorio(territorio_id)
     if granularidade(territorio_id) != "bairro":
         return TerritorioUsado(territorio_id, territorio_id, nome(db, territorio_id))
-    linha = db.execute(
-        text("select nome_exibicao, pai_id from app.territorios where id = :i"), {"i": territorio_id}
-    ).first()
+    linha = cache.obter(
+        "territorios",
+        ("pai", territorio_id),
+        cache.CARGA_S,
+        lambda: db.execute(
+            text("select nome_exibicao, pai_id from app.territorios where id = :i"), {"i": territorio_id}
+        ).first(),
+    )
     if not linha or not linha[1]:
         raise RecorteInvalido(f"Território “{territorio_id}” não existe.")
     nome_distrito = nome(db, linha[1])
@@ -71,12 +86,17 @@ def malha_bairros(db: Session) -> dict | None:
     geometrias = _malha_simplificada()
     if geometrias is None:
         return None
-    cadastro = {
-        i: (n, pai)
-        for i, n, pai in db.execute(
-            text("select id, nome_exibicao, pai_id from app.territorios where tipo = 'bairro'")
-        )
-    }
+    cadastro = cache.obter(
+        "territorios",
+        "cadastro_bairros",
+        cache.CARGA_S,
+        lambda: {
+            i: (n, pai)
+            for i, n, pai in db.execute(
+                text("select id, nome_exibicao, pai_id from app.territorios where tipo = 'bairro'")
+            )
+        },
+    )
     features = [
         {
             "type": "Feature",

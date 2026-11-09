@@ -1,13 +1,7 @@
-"""Registros reais no formato da API CKAN (datastore_search) do conjunto “abrigos-temporarios-disponiveis”
-(Dados Abertos do Recife), gravados em 04/11/2026 em `fixtures/`, e um dublê HTTP com paginação por offset."""
+"""Registros de exemplo no formato da API CKAN (datastore_search) e um dublê HTTP com paginação por offset.
+Dados de exemplo só para testes do extrator (a internet não é usada)."""
 
-import json
-from pathlib import Path
-
-FIXTURES = Path(__file__).parent / "fixtures"
-REGISTROS = json.loads((FIXTURES / "ckan_abrigos_datastore_2026-11-04.json").read_text(encoding="utf-8"))[
-    "result"
-]["records"]
+REGISTROS = [{"_id": n, "bairro": f"Bairro {n}", "valor": n * 10} for n in range(1, 18)]
 
 
 class HttpCkan:

@@ -1,0 +1,58 @@
+[
+ {
+  "cod_estacao": "39187800",
+  "nome_estacao": "SÃO LOURENÇO DA MATA (ANA/SGB)",
+  "nome_rio": "RIO CAPIBARIBE",
+  "data_hora": "2026-11-05 15:30:00",
+  "data_coleta": "2026-11-05",
+  "hora_coleta": "15:30:00",
+  "nivel_atual": "179.00",
+  "nivel_pre_alerta": "250",
+  "nivel_alerta": "300",
+  "nivel_alerta_enchente": "400",
+  "alerta_pcd": "N",
+  "recente": 0
+ },
+ {
+  "cod_estacao": "39187800",
+  "nome_estacao": "SÃO LOURENÇO DA MATA (ANA/SGB)",
+  "nome_rio": "RIO CAPIBARIBE",
+  "data_hora": "2026-11-05 15:45:00",
+  "data_coleta": "2026-11-05",
+  "hora_coleta": "15:45:00",
+  "nivel_atual": "179.00",
+  "nivel_pre_alerta": "250",
+  "nivel_alerta": "300",
+  "nivel_alerta_enchente": "400",
+  "alerta_pcd": "N",
+  "recente": 0
+ },
+ {
+  "cod_estacao": "39187800",
+  "nome_estacao": "SÃO LOURENÇO DA MATA (ANA/SGB)",
+  "nome_rio": "RIO CAPIBARIBE",
+  "data_hora": "2026-11-05 16:00:00",
+  "data_coleta": "2026-11-05",
+  "hora_coleta": "16:00:00",
+  "nivel_atual": "179.00",
+  "nivel_pre_alerta": "250",
+  "nivel_alerta": "300",
+  "nivel_alerta_enchente": "400",
+  "alerta_pcd": "N",
+  "recente": 0
+ },
+ {
+  "cod_estacao": "39187800",
+  "nome_estacao": "SÃO LOURENÇO DA MATA (ANA/SGB)",
+  "nome_rio": "RIO CAPIBARIBE",
+  "data_hora": "2026-11-05 16:15:00",
+  "data_coleta": "2026-11-05",
+  "hora_coleta": "16:15:00",
+  "nivel_atual": "179.00",
+  "nivel_pre_alerta": "250",
+  "nivel_alerta": "300",
+  "nivel_alerta_enchente": "400",
+  "alerta_pcd": "N",
+  "recente": 0
+ }
+]

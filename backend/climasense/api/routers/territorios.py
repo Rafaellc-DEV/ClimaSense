@@ -184,7 +184,9 @@ class ItemPrioridade(BaseModel):
     territorio_id: str
     nome: str
     nivel: Literal["distrito", "bairro"]
-    posicao: int = Field(description="1 = mais atendimentos; empatados dividem a posição")
+    posicao: int = Field(
+        description="1 = mais atendimentos; única e consecutiva (empate: mais alagamento, nome e id)"
+    )
     ocorrencias_alagamento: int
     ocorrencias_deslizamento: int
     criterio: str = Field(description="Por que esta ordem, em texto")
@@ -262,7 +264,6 @@ class ResumoVulnerabilidade(BaseModel):
     criancas_0_14: int | None
     equipamentos: list[EquipamentoResumo]
     equipamentos_em_area_de_risco: int | None = Field(description="null = sem a camada de áreas de risco")
-    abrigos: int = Field(description="Abrigos cadastrados no território (abertos ou não)")
     areas_risco: int | None = Field(description="Áreas de risco mapeadas no território; null = sem a camada")
     cobertura_risco_parcial: bool = Field(
         description="true = nem todo bairro tem área de risco mapeada: ausência não é segurança (RN-01)"
@@ -345,7 +346,7 @@ def camada_areas_risco(
 @router.get(
     "/{territorio_id}/resumo-vulnerabilidade",
     response_model=RespostaDados[ResumoVulnerabilidade],
-    summary="Cruzamento do território: idosos, crianças, equipamentos, abrigos e áreas de risco (RF-04, RF-07)",
+    summary="Cruzamento do território: idosos, crianças, equipamentos e áreas de risco (RF-04, RF-07)",
 )
 def resumo_vulnerabilidade(
     territorio_id: str,

@@ -354,8 +354,8 @@
           <ns2:onset>2026-11-04T10:59:57-03:00</ns2:onset>
           <ns2:expires>2026-11-04T12:00:00-03:00</ns2:expires>
           <ns2:senderName>Defesa Civil Estadual de Santa Catarina</ns2:senderName>
-          <ns2:headline>Defesa Civil:SDC: ALERTA de tempestade com chuva intensa e vendaval na proxima hora. BUSQUE ABRIGO e nao atravesse areas alagadas. Emerg 199/193.</ns2:headline>
-          <ns2:description>SDC: ALERTA de tempestade com chuva intensa e vendaval na próxima hora. BUSQUE ABRIGO e não atravesse áreas alagadas. Emerg 199/193.</ns2:description>
+          <ns2:headline>Defesa Civil:SDC: ALERTA de tempestade com chuva intensa e vendaval na proxima hora. BUSQUE LOCAL SEGURO e nao atravesse areas alagadas. Emerg 199/193.</ns2:headline>
+          <ns2:description>SDC: ALERTA de tempestade com chuva intensa e vendaval na próxima hora. BUSQUE LOCAL SEGURO e não atravesse áreas alagadas. Emerg 199/193.</ns2:description>
           <ns2:instruction>Siga as orientações da defesa civil local e do plano de contingência municipal. Em caso de emergência, ligue 199 ou 193.</ns2:instruction>
           <ns2:web>https://www.gov.br/mdr/pt-br/assuntos/protecao-e-defesa-civil/saiba-como-agir</ns2:web>
           <ns2:contact>+55 61 2034-4660</ns2:contact>

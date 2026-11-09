@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 from datetime import datetime
 
 from sqlalchemy import text
@@ -10,6 +11,9 @@ from sqlalchemy.orm import Session
 from climasense.api.envelope import FonteMeta
 from climasense.dominio.qualidade import status_fonte
 from climasense.etl import frescor
+from climasense.infra import cache
+
+SEM_LIMITE_H = 24 * 365 * 100  # "sem limite" para a coluna inteira de status (100 anos)
 
 SQL_FONTES = """
 select f.*, (select status from app.etl_execucoes e where e.fonte_id = f.id and e.status <> 'em_andamento'
@@ -19,13 +23,30 @@ from app.fontes f where f.ativa
 """
 
 
+def _todas(db: Session) -> list[dict]:
+    """Todas as fontes ativas com a última carga, numa só consulta, guardadas por `cache.VIVO_S`. A hora da última
+    atualização (RF-19) vem desta leitura; o status e o "desatualizado" são recalculados com o `agora` de cada
+    requisição, então nunca envelhecem com o cache."""
+    sql = SQL_FONTES + " order by f.implementada desc, f.nome"
+    return cache.obter(
+        "fontes", "todas", cache.VIVO_S, lambda: [dict(r) for r in db.execute(text(sql)).mappings()]
+    )
+
+
 def linhas(db: Session, agora: datetime, fonte_id: str | None = None) -> list[dict]:
-    sql = SQL_FONTES + (" and f.id = :i" if fonte_id else "") + " order by f.implementada desc, f.nome"
     resultado = []
-    for r in db.execute(text(sql), {"i": fonte_id}).mappings():
+    for r in _todas(db):
+        if fonte_id and r["id"] != fonte_id:
+            continue
         d = dict(r)
+        # `etl/frescor.toml` é a fonte única do limite (RF-19); a coluna do banco vale onde o TOML não define
+        limite = frescor.limite_frescor_h(r["id"])
+        if limite:
+            d["limite_desatualizacao_h"] = max(1, math.ceil(limite))
+        # fonte estática de propósito (território, Censo): nunca envelhece pela idade da carga
+        para_status = SEM_LIMITE_H if r["id"] in frescor.fontes_sem_limite() else d["limite_desatualizacao_h"]
         d["status"] = status_fonte(
-            r["implementada"], r["ultima_status"], r["ultimo_sucesso"], r["limite_desatualizacao_h"], agora
+            r["implementada"], r["ultima_status"], r["ultimo_sucesso"], para_status, agora
         )
         resultado.append(d)
     return resultado

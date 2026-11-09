@@ -1,0 +1,82 @@
+[
+ {
+  "latitude": -8.195,
+  "longitude": -35.464,
+  "data_referencia": "2026-11-06 22:55",
+  "acumulado_24h": "https://barramento2.apac.pe.gov.br/imagens_radar/202611070145.Acum24h_trans.png",
+  "acumulado_1h": "https://barramento2.apac.pe.gov.br/imagens_radar/202611070145.Acum1h_trans.png",
+  "cappi_1km": "https://barramento2.apac.pe.gov.br/imagens_radar/202611070145.cappi1km_trans.png"
+ },
+ {
+  "latitude": -8.195,
+  "longitude": -35.464,
+  "data_referencia": "2026-11-06 22:45",
+  "acumulado_24h": "https://barramento2.apac.pe.gov.br/imagens_radar/202611070135.Acum24h_trans.png",
+  "acumulado_1h": "https://barramento2.apac.pe.gov.br/imagens_radar/202611070135.Acum1h_trans.png",
+  "cappi_1km": "https://barramento2.apac.pe.gov.br/imagens_radar/202611070135.cappi1km_trans.png"
+ },
+ {
+  "latitude": -8.195,
+  "longitude": -35.464,
+  "data_referencia": "2026-11-06 22:35",
+  "acumulado_24h": "https://barramento2.apac.pe.gov.br/imagens_radar/202611070125.Acum24h_trans.png",
+  "acumulado_1h": "https://barramento2.apac.pe.gov.br/imagens_radar/202611070125.Acum1h_trans.png",
+  "cappi_1km": "https://barramento2.apac.pe.gov.br/imagens_radar/202611070125.cappi1km_trans.png"
+ },
+ {
+  "latitude": -8.195,
+  "longitude": -35.464,
+  "data_referencia": "2026-11-06 22:25",
+  "acumulado_24h": "https://barramento2.apac.pe.gov.br/imagens_radar/202611070115.Acum24h_trans.png",
+  "acumulado_1h": "https://barramento2.apac.pe.gov.br/imagens_radar/202611070115.Acum1h_trans.png",
+  "cappi_1km": "https://barramento2.apac.pe.gov.br/imagens_radar/202611070115.cappi1km_trans.png"
+ },
+ {
+  "latitude": -8.195,
+  "longitude": -35.464,
+  "data_referencia": "2026-11-06 22:15",
+  "acumulado_24h": "https://barramento2.apac.pe.gov.br/imagens_radar/202611070105.Acum24h_trans.png",
+  "acumulado_1h": "https://barramento2.apac.pe.gov.br/imagens_radar/202611070105.Acum1h_trans.png",
+  "cappi_1km": "https://barramento2.apac.pe.gov.br/imagens_radar/202611070105.cappi1km_trans.png"
+ },
+ {
+  "latitude": -8.195,
+  "longitude": -35.464,
+  "data_referencia": "2026-11-06 22:05",
+  "acumulado_24h": "https://barramento2.apac.pe.gov.br/imagens_radar/202611070055.Acum24h_trans.png",
+  "acumulado_1h": "https://barramento2.apac.pe.gov.br/imagens_radar/202611070055.Acum1h_trans.png",
+  "cappi_1km": "https://barramento2.apac.pe.gov.br/imagens_radar/202611070055.cappi1km_trans.png"
+ },
+ {
+  "latitude": -8.195,
+  "longitude": -35.464,
+  "data_referencia": "2026-11-06 21:55",
+  "acumulado_24h": "https://barramento2.apac.pe.gov.br/imagens_radar/202611070045.Acum24h_trans.png",
+  "acumulado_1h": "https://barramento2.apac.pe.gov.br/imagens_radar/202611070045.Acum1h_trans.png",
+  "cappi_1km": "https://barramento2.apac.pe.gov.br/imagens_radar/202611070045.cappi1km_trans.png"
+ },
+ {
+  "latitude": -8.195,
+  "longitude": -35.464,
+  "data_referencia": "2026-11-06 21:45",
+  "acumulado_24h": "https://barramento2.apac.pe.gov.br/imagens_radar/202611070035.Acum24h_trans.png",
+  "acumulado_1h": "https://barramento2.apac.pe.gov.br/imagens_radar/202611070035.Acum1h_trans.png",
+  "cappi_1km": "https://barramento2.apac.pe.gov.br/imagens_radar/202611070035.cappi1km_trans.png"
+ },
+ {
+  "latitude": -8.195,
+  "longitude": -35.464,
+  "data_referencia": "2026-11-06 21:35",
+  "acumulado_24h": "https://barramento2.apac.pe.gov.br/imagens_radar/202611070025.Acum24h_trans.png",
+  "acumulado_1h": "https://barramento2.apac.pe.gov.br/imagens_radar/202611070025.Acum1h_trans.png",
+  "cappi_1km": "https://barramento2.apac.pe.gov.br/imagens_radar/202611070025.cappi1km_trans.png"
+ },
+ {
+  "latitude": -8.195,
+  "longitude": -35.464,
+  "data_referencia": "2026-11-06 21:25",
+  "acumulado_24h": "https://barramento2.apac.pe.gov.br/imagens_radar/202611070015.Acum24h_trans.png",
+  "acumulado_1h": "https://barramento2.apac.pe.gov.br/imagens_radar/202611070015.Acum1h_trans.png",
+  "cappi_1km": "https://barramento2.apac.pe.gov.br/imagens_radar/202611070015.cappi1km_trans.png"
+ }
+]

@@ -1,0 +1,58 @@
+[
+ {
+  "cod_estacao": "39130010",
+  "nome_estacao": "TORITAMA",
+  "nome_rio": "RIO CAPIBARIBE",
+  "data_hora": "2026-11-05 08:15:00",
+  "data_coleta": "2026-11-05",
+  "hora_coleta": "08:15:00",
+  "nivel_atual": "64.00",
+  "nivel_pre_alerta": "400",
+  "nivel_alerta": "450",
+  "nivel_alerta_enchente": "550",
+  "alerta_pcd": "N",
+  "recente": 0
+ },
+ {
+  "cod_estacao": "39130010",
+  "nome_estacao": "TORITAMA",
+  "nome_rio": "RIO CAPIBARIBE",
+  "data_hora": "2026-11-05 08:30:00",
+  "data_coleta": "2026-11-05",
+  "hora_coleta": "08:30:00",
+  "nivel_atual": "64.00",
+  "nivel_pre_alerta": "400",
+  "nivel_alerta": "450",
+  "nivel_alerta_enchente": "550",
+  "alerta_pcd": "N",
+  "recente": 0
+ },
+ {
+  "cod_estacao": "39130010",
+  "nome_estacao": "TORITAMA",
+  "nome_rio": "RIO CAPIBARIBE",
+  "data_hora": "2026-11-05 08:45:00",
+  "data_coleta": "2026-11-05",
+  "hora_coleta": "08:45:00",
+  "nivel_atual": "64.00",
+  "nivel_pre_alerta": "400",
+  "nivel_alerta": "450",
+  "nivel_alerta_enchente": "550",
+  "alerta_pcd": "N",
+  "recente": 0
+ },
+ {
+  "cod_estacao": "39130010",
+  "nome_estacao": "TORITAMA",
+  "nome_rio": "RIO CAPIBARIBE",
+  "data_hora": "2026-11-05 09:30:00",
+  "data_coleta": "2026-11-05",
+  "hora_coleta": "09:30:00",
+  "nivel_atual": "64.00",
+  "nivel_pre_alerta": "400",
+  "nivel_alerta": "450",
+  "nivel_alerta_enchente": "550",
+  "alerta_pcd": "N",
+  "recente": 1
+ }
+]

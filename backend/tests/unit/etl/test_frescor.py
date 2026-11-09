@@ -22,9 +22,9 @@ def test_limites_documentados():
     assert frescor.limite_frescor_h("apac-chuva") == 1
     assert frescor.limite_frescor_h("infodengue") == 192
     assert frescor.limite_frescor_h("sinan-leptospirose") == 360
-    assert frescor.limite_frescor_h("recife-arboviroses") == 9600
-    assert frescor.limite_frescor_h("cnes-equipamentos") == 744
-    assert frescor.limite_frescor_h("recife-areas-risco") == 8760
+    assert frescor.limite_frescor_h("recife-arboviroses") == 13140
+    assert frescor.limite_frescor_h("cnes-equipamentos") == 1440
+    assert frescor.limite_frescor_h("recife-areas-risco") == 13140
 
 
 def test_territorio_estatico_e_fonte_desconhecida_sem_limite():

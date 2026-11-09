@@ -22,7 +22,6 @@ COLECOES_BRONZE = (
     ("bronze", "apac_chuva_historico"),
     ("bronze", "alertas_oficiais"),
     ("bronze", "recife_alagamento"),
-    ("bronze", "recife_abrigos"),
     ("bronze", "infodengue"),
     ("bronze", "sinan_leptospirose"),  # só contagens por semana; nenhuma linha individual
     ("bronze", "recife_arboviroses"),  # só contagens por bairro e ano; sem endereço, CEP ou nascimento

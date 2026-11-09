@@ -1,0 +1,92 @@
+[
+ {
+  "cod_estacao": "260790115",
+  "nome_estacao": "JABOATAO DOS GUARARAPES ( VILA NATAL) (CEMADEM)",
+  "nome_rio": "RIO JABOATÃO",
+  "bacia_hidrografica": "GL2",
+  "municipios": "Jaboatão dos Guararapes",
+  "cod_municipio": "2607901",
+  "latitude": "-8.108782",
+  "longitude": "-34.999402"
+ },
+ {
+  "cod_estacao": "260790119",
+  "nome_estacao": "JABOATAO DOS GUARARAPES (CENTRO) (CEMADEM)",
+  "nome_rio": "RIO DUAS UNAS",
+  "bacia_hidrografica": "GL2",
+  "municipios": "Jaboatão dos Guararapes",
+  "cod_municipio": "2607901",
+  "latitude": "-8.111846",
+  "longitude": "-35.013613"
+ },
+ {
+  "cod_estacao": "39145010",
+  "nome_estacao": "LIMOEIRO",
+  "nome_rio": "RIO CAPIBARIBE",
+  "bacia_hidrografica": "Capibaribe",
+  "municipios": "Limoeiro",
+  "cod_municipio": "2608909",
+  "latitude": "-7.878889",
+  "longitude": "-35.451944"
+ },
+ {
+  "cod_estacao": "39189560",
+  "nome_estacao": "MORENO",
+  "nome_rio": "RIO JABOATÃO",
+  "bacia_hidrografica": "GL2",
+  "municipios": "Jaboatão dos Guararapes, Moreno",
+  "cod_municipio": "2607901;2609402",
+  "latitude": "-8.119583",
+  "longitude": "-35.106083"
+ },
+ {
+  "cod_estacao": "39150010",
+  "nome_estacao": "PAUDALHO",
+  "nome_rio": "RIO CAPIBARIBE",
+  "bacia_hidrografica": "Capibaribe",
+  "municipios": "Paudalho, São Lourenço da Mata",
+  "cod_municipio": "2610608;2613701",
+  "latitude": "-7.894167",
+  "longitude": "-35.173333"
+ },
+ {
+  "cod_estacao": "39187800",
+  "nome_estacao": "SÃO LOURENÇO DA MATA (ANA/SGB)",
+  "nome_rio": "RIO CAPIBARIBE",
+  "bacia_hidrografica": "Capibaribe",
+  "municipios": "Camaragibe, Recife, São Lourenço da Mata",
+  "cod_municipio": "2603454;2611606;2613701",
+  "latitude": "-7.998611",
+  "longitude": "-35.0392"
+ },
+ {
+  "cod_estacao": "39130010",
+  "nome_estacao": "TORITAMA",
+  "nome_rio": "RIO CAPIBARIBE",
+  "bacia_hidrografica": "Capibaribe",
+  "municipios": "Toritama",
+  "cod_municipio": "2615409",
+  "latitude": "-8.01277777",
+  "longitude": "-36.05777777"
+ },
+ {
+  "cod_estacao": "39170000",
+  "nome_estacao": "VITÓRIA DE SANTO ANTÃO",
+  "nome_rio": "RIO TAPACURÁ",
+  "bacia_hidrografica": "Capibaribe",
+  "municipios": "Vitória de Santo Antão",
+  "cod_municipio": "2616407",
+  "latitude": "-8.113611",
+  "longitude": "-35.283889"
+ },
+ {
+  "cod_estacao": "39431000",
+  "nome_estacao": "AMARAJI (ANA/SGB)",
+  "nome_rio": "AMARAJI",
+  "bacia_hidrografica": "Sirinhaém",
+  "municipios": "Ribeirão, Amaraji",
+  "cod_municipio": "2611804;2600906",
+  "latitude": "-8.380278",
+  "longitude": "-35.455278"
+ }
+]

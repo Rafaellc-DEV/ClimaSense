@@ -17,7 +17,7 @@ from climasense.dominio.estagio import Parametros
 from climasense.dominio.evento import RegistroInvalido
 from climasense.dominio.fluxo_revisao import TransicaoNegada
 from climasense.dominio.papeis import Permissao
-from climasense.infra.postgres import obter_sessao
+from climasense.infra.postgres import em_paralelo, obter_sessao
 from climasense.servicos import estagio_oficial as servico_oficial
 from climasense.servicos import estagios as servico
 from climasense.servicos import fontes as servico_fontes
@@ -278,7 +278,11 @@ def listar(
     db: Session = Depends(obter_sessao),
     agora: datetime = Depends(relogio),
 ) -> RespostaEstagios:
-    itens = servico.listar(db, nivel, agora, distrito_id)
+    # declarações e estágio oficial são leituras ao vivo e independentes: lidas ao mesmo tempo (banco remoto)
+    itens, oficial = em_paralelo(
+        db,
+        [lambda s: servico.listar(s, nivel, agora, distrito_id), lambda s: servico_oficial.vigente(s)],
+    )
     versao = servico.parametros_atuais(db)["versao"]
     avisos = [
         "A sugestão é experimental e não muda o estágio sozinha: declarar é decisão da equipe.",
@@ -289,7 +293,6 @@ def listar(
     if versao is None:
         avisos.append("Limiares padrão, ainda não validados com a equipe.")
     sem_dados = sum(1 for i in itens if i["sugerido"]["estagio"] == "sem_dados")
-    oficial = servico_oficial.vigente(db)
     return RespostaEstagios(
         dados=ListaEstagios(nivel=nivel, gerado_em=agora, parametros_versao=versao, itens=itens),
         meta=MetaEstagios(

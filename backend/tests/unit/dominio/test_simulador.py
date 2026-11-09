@@ -177,17 +177,7 @@ def test_distrito_sem_nenhum_dado_e_sem_dados():
     assert sim.agregar_distrito([]).estagio_sugerido == "sem_dados"
 
 
-# ------------------------------------------------------------------ abrigos e impacto
-def test_pressao_dos_abrigos_so_repete_o_informado():
-    assert sim.pressao_abrigos(prem()) is None
-    assert (
-        sim.pressao_abrigos(prem(abrigos_abertos=3, capacidade_abrigos=450))
-        == "capacidade informada de 450 pessoas em 3 abrigos"
-    )
-    assert "1 abrigo" in sim.pressao_abrigos(prem(abrigos_abertos=1, capacidade_abrigos=80))
-    assert "não informada" in sim.pressao_abrigos(prem(abrigos_abertos=2))
-
-
+# ------------------------------------------------------------------ impacto
 def test_impacto_nulo_sem_fonte_e_estrutura_pronta_para_somar():
     assert sim.impacto_pessoas("alerta", None) is None
     v = sim.Vulneraveis(idosos=1200, criancas=800, equipamentos_saude=4)

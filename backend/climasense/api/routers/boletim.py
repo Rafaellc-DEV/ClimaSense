@@ -12,7 +12,6 @@ from climasense.api.auditoria_leitura import LEITURA_BOLETIM, auditar_leitura
 from climasense.api.autorizacao import Contexto, exige, relogio
 from climasense.api.envelope import Meta, RecorteMeta, RespostaDados
 from climasense.api.erros import ErroClimaSense
-from climasense.api.routers.abrigos import Abrigo, SituacaoEvento, TotaisAbrigos, fontes_abrigos
 from climasense.api.routers.acoes import Acao, AndamentoDistrito
 from climasense.api.routers.estagios import Declarado, EstagioOficial, Mensagem, Sugerido, _fonte_oficial
 from climasense.api.routers.saude_agravos import ResumoAgravo
@@ -70,14 +69,6 @@ class MareBoletim(BaseModel):
     emitida_em: datetime | None
 
 
-class AbrigosBoletim(BaseModel):
-    totais: TotaisAbrigos
-    abertos: list[Abrigo]
-    situacao: SituacaoEvento = Field(
-        description="Abertos, abrigados e desabrigados na cidade e por distrito; null = sem registro (RN-01)"
-    )
-
-
 class PeriodoBoletim(BaseModel):
     desde: date
     ate: date
@@ -91,7 +82,6 @@ class Boletim(BaseModel):
     territorios_em_atencao: list[TerritorioEmAtencao]
     chuva: ChuvaBoletim
     mare: MareBoletim
-    abrigos: AbrigosBoletim
     acoes_em_andamento: list[Acao] = Field(
         description="Em andamento agora, distritos mais vulneráveis primeiro (RF-22)"
     )
@@ -140,7 +130,6 @@ def boletim(
         "O estágio oficial do COP é da cidade; não há oficial por distrito.",
     ]
     fontes = [servico_fontes.meta(db, f, agora) for f in (*estagios.FONTES, *FONTES_SAUDE)]
-    fontes += [f for f in fontes_abrigos(db, b["abrigos"]["situacao"]["ocupacao_atualizada_em"], agora)]
     fontes.append(_fonte_oficial(b["estagio_oficial"], agora))
     vistas: set[str] = set()
     fontes = [f for f in fontes if not (f.id in vistas or vistas.add(f.id))]

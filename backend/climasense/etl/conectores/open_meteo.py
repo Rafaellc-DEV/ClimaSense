@@ -191,3 +191,170 @@ class ConectorOpenMeteoMare(_OpenMeteo):
 
 def agora_utc() -> datetime:
     return datetime.now(UTC)
+
+
+class ConectorOpenMeteoTemperatura(_OpenMeteo):
+    """Temperatura do ar a 2 m: PREVISÃO de modelo, nunca temperatura medida (a única estação medida do Recife, a
+    A301 do INMET, exige token). Vai para `silver.observacoes` (`temp_c`, `tipo = prevista`)."""
+
+    id = "open-meteo-temperatura"
+    fonte = FonteInfo(
+        "Temperatura do ar prevista por modelo (2 m)",
+        "Open-Meteo",
+        "https://open-meteo.com/en/docs",
+        "prevista",
+        "CC BY 4.0",
+    )
+    url = "https://api.open-meteo.com/v1/forecast"
+    variavel_api, variavel, unidade = "temperature_2m", "temp_c", "°C"
+    parametros_extra = {"forecast_days": 3, "past_days": 1}
+
+
+CAMADAS_SOLO = {"soil_moisture_0_to_7cm": "0_7cm", "soil_moisture_7_to_28cm": "7_28cm"}
+SOLO_MIN_HORAS_DIA = 24  # dia do histórico só entra com as 24 h (média diária de dia incompleto não vale)
+
+
+class ConectorOpenMeteoSolo(Conector):
+    """Umidade do solo (m³/m³) ESTIMADA por modelo: não existe medida pública no Recife (RN-11: Experimental).
+
+    - padrão (`previsao`): modelo ECMWF IFS pelo `api.open-meteo.com` (2 dias passados + 3 dias à frente);
+      silver guarda o estado mais recente de cada hora (a bronze guarda cada resposta, por execução).
+    - `historico`: ERA5-Land (`archive-api`), média diária por ponto, base do percentil do próprio ponto. A
+      reanálise chega com ~5-7 dias de atraso.
+    Hora sem valor não vira linha (lacuna, nunca zero). O percentil e a classe saem da gold."""
+
+    id = "open-meteo-solo"
+    fonte = FonteInfo(
+        "Umidade do solo estimada por modelo (0-7 cm e 7-28 cm)",
+        "Open-Meteo / ECMWF (IFS e ERA5-Land)",
+        "https://open-meteo.com/en/docs",
+        "derivada",
+        "CC BY 4.0",
+    )
+    url_previsao = "https://api.open-meteo.com/v1/forecast"
+    url_historico = "https://archive-api.open-meteo.com/v1/archive"
+    inicio_padrao = date(2021, 1, 1)
+
+    def __init__(self, http=None, **kw) -> None:
+        super().__init__(**kw)
+        self.http = http or requests.Session()
+        self.descartes: dict[str, int] = {}
+
+    def colecao_bronze(self, ctx: ExecucaoCtx):
+        nome = "open_meteo_solo_historico" if ctx.modo == "historico" else "open_meteo_solo"
+        return ctx.mongo[self.banco_bronze][nome]
+
+    def extrair(self, ctx: ExecucaoCtx) -> list[dict]:
+        if ctx.modo not in (None, "previsao", "historico"):
+            raise ValueError(f"Modo desconhecido: {ctx.modo}")
+        historico = ctx.modo == "historico"
+        extra: dict = {"forecast_days": 3, "past_days": 2}
+        if historico:
+            fim = (ctx.agora - timedelta(days=7)).date()
+            dias = ctx.limite or (fim - self.inicio_padrao).days
+            extra = {"start_date": (fim - timedelta(days=dias)).isoformat(), "end_date": fim.isoformat()}
+        registros = []
+        for territorio_id, lon, lat in pontos_distritos():
+            r = self.http.get(
+                self.url_historico if historico else self.url_previsao,
+                params={
+                    "latitude": round(lat, 4),
+                    "longitude": round(lon, 4),
+                    "hourly": ",".join(CAMADAS_SOLO),
+                    "timezone": "GMT",
+                    **extra,
+                },
+                timeout=90,
+            )
+            r.raise_for_status()
+            hora = r.json()["hourly"]
+            registros.append(
+                {
+                    "territorio_id": territorio_id,
+                    "lat": lat,
+                    "lon": lon,
+                    "time": hora["time"],
+                    **{api: hora[api] for api in CAMADAS_SOLO},
+                }
+            )
+        return registros
+
+    def transformar(self, bruto: pd.DataFrame, ctx: ExecucaoCtx) -> pd.DataFrame:
+        self.descartes = {}
+        linhas = []
+        for r in bruto.to_dict("records"):
+            for api, camada in CAMADAS_SOLO.items():
+                for h, v in zip(r["time"], r[api], strict=True):
+                    linhas.append((r["territorio_id"], camada, h, v))
+        df = pd.DataFrame(linhas, columns=["territorio_id", "camada", "hora", "valor"])
+        df["valor"] = pd.to_numeric(df["valor"], errors="coerce")
+        df["observado_em"] = pd.to_datetime(df["hora"], utc=True)
+        sem_valor = df["valor"].isna()
+        fora = ~sem_valor & ~df["valor"].between(0, 1)
+        if sem_valor.any():
+            self.descartes["hora_sem_valor"] = int(sem_valor.sum())
+        if fora.any():
+            self.descartes["valor_fora_da_faixa"] = int(fora.sum())
+        df = df[~sem_valor & ~fora].drop(columns="hora")
+        if ctx.modo != "historico" or df.empty:
+            return df
+        df["dia"] = df["observado_em"].dt.date
+        dia = (
+            df.groupby(["territorio_id", "camada", "dia"])["valor"]
+            .agg(media_m3m3="mean", n_horas="count")
+            .reset_index()
+        )
+        incompletos = dia["n_horas"] < SOLO_MIN_HORAS_DIA
+        if incompletos.any():
+            self.descartes["dia_incompleto"] = int(incompletos.sum())
+        return dia[~incompletos]
+
+    def gravar_silver(self, df: pd.DataFrame, ctx: ExecucaoCtx) -> int:
+        extra = {"agora": ctx.agora, "ex": ctx.execucao_id}
+        with ctx.engine.begin() as c:
+            if ctx.modo == "historico":
+                c.execute(
+                    text(
+                        "insert into silver.solo_modelo_diario (territorio_id, camada, dia, media_m3m3, n_horas, "
+                        "coletado_em, execucao_id) values (:t, :c, :d, :m, :n, :agora, :ex) "
+                        "on conflict (territorio_id, camada, dia) do update set media_m3m3 = excluded.media_m3m3, "
+                        "n_horas = excluded.n_horas, coletado_em = excluded.coletado_em, "
+                        "execucao_id = excluded.execucao_id"
+                    ),
+                    [
+                        {
+                            "t": r.territorio_id,
+                            "c": r.camada,
+                            "d": r.dia,
+                            "m": float(r.media_m3m3),
+                            "n": int(r.n_horas),
+                        }
+                        | extra
+                        for r in df.itertuples()
+                    ],
+                )
+            else:
+                c.execute(
+                    text(
+                        "insert into silver.solo_modelo_horario (territorio_id, camada, observado_em, valor_m3m3, "
+                        "emitido_em, coletado_em, execucao_id) values (:t, :c, :o, :v, :agora, :agora, :ex) "
+                        "on conflict (territorio_id, camada, observado_em) do update set "
+                        "valor_m3m3 = excluded.valor_m3m3, emitido_em = excluded.emitido_em, "
+                        "coletado_em = excluded.coletado_em, execucao_id = excluded.execucao_id"
+                    ),
+                    [
+                        {
+                            "t": r.territorio_id,
+                            "c": r.camada,
+                            "o": r.observado_em.to_pydatetime(),
+                            "v": float(r.valor),
+                        }
+                        | extra
+                        for r in df.itertuples()
+                    ],
+                )
+        return len(df)
+
+    def gerar_gold(self, ctx: ExecucaoCtx) -> None:
+        with ctx.engine.begin() as c:
+            gold.recalcular(c, gold.TABELAS_SOLO)

@@ -147,6 +147,9 @@ def test_insumos_dos_distritos_ficam_em_cache_por_60_s(monkeypatch):
         "_calcular_insumos_distritos",
         lambda db, ds, agora, p: chamadas.append(1) or {"ds-1": ("x", {})},
     )
+    from climasense.infra import cache
+
+    monkeypatch.setattr(cache, "ativo", True)
     monkeypatch.setattr(estagios, "CACHE_INSUMOS_S", 60.0)
     estagios.limpar_cache_insumos()
     agora = datetime(2026, 11, 5, 15, 30, tzinfo=UTC)

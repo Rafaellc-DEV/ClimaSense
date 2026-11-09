@@ -1,9 +1,7 @@
 """Foco em chuvas de ponta a ponta no Postgres de teste, com as respostas REAIS gravadas (tests/unit/etl/fixtures):
-APAC → silver/gold → `estagios.chuva_24h`; alertas → silver → `estagios.alertas_oficiais`; abrigos dos Dados
-Abertos e do COP → `app.abrigos` sem sobrescrever a equipe → `/publico/abrigos`.
+APAC → silver/gold → `estagios.chuva_24h`; alertas → silver → `estagios.alertas_oficiais`.
 
-Tudo roda dentro de uma transação desfeita no fim (o histórico de abrigos só aceita inclusões e não pode ser
-limpo depois)."""
+Tudo roda dentro de uma transação desfeita no fim."""
 
 from __future__ import annotations
 
@@ -16,16 +14,13 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from climasense.etl import execucao, gold
-from climasense.etl.conectores.abrigos import ConectorRecifeAbrigos
 from climasense.etl.conectores.alertas import ConectorAlertasOficiais
 from climasense.etl.conectores.apac import ConectorApacChuva
 from climasense.etl.conectores.base import ExecucaoCtx
-from climasense.servicos import abrigos as servico_abrigos
 from climasense.servicos import estagios
 from climasense.territorio import carga
 from tests.conftest import configuracao_teste, precisa_postgres
-from tests.integration.apoio import Relogio, cliente, criar_conta
-from tests.unit.etl.test_conectores_chuva import Http, Resposta, _http_abrigos, _http_alertas, _json
+from tests.unit.etl.test_conectores_chuva import Http, Resposta, _http_alertas, _json
 
 pytestmark = [precisa_postgres, pytest.mark.integracao]
 AGORA = datetime(2026, 11, 5, 2, 0, tzinfo=UTC)
@@ -124,78 +119,3 @@ def test_alertas_oficiais_na_silver_aparecem_nos_estagios(ambiente):
     assert len(lista) == 1 and lista[0]["origem"] == "inmet" and lista[0]["criterio_geo"] == "geocode"
     assert estagios.alertas_oficiais("ds-4", db, datetime(2026, 11, 8, tzinfo=UTC)) == []  # venceu
     assert estagios.alertas_oficiais("ds-4") == []
-
-
-def test_abrigos_nao_sobrescrevem_a_equipe_o_cop_abre_e_fecha_e_a_landing_nao_expoe_pessoas(
-    ambiente, tmp_path
-):
-    engine, mongo, config, db = ambiente
-    sem_curado = tmp_path / "nao-existe.csv"
-    r = rodar(engine, mongo, config, ConectorRecifeAbrigos(http=_http_abrigos(), arquivo_curado=sem_curado))
-    assert r.gravados == 17
-    autor = criar_conta(db, "equipe-abrigos@recife.pe.gov.br", ["analista"], nome="Servidora Fulana")
-    alvo = db.execute(
-        text("select id from app.abrigos where codigo_fonte = 'ckan:escola-municipal-dina-de-oliveira'")
-    ).scalar_one()
-    servico_abrigos.atualizar(db, alvo, {"aberto": True, "pessoas_abrigadas": 12}, autor, None, AGORA)
-    rodar(engine, mongo, config, ConectorRecifeAbrigos(http=_http_abrigos(), arquivo_curado=sem_curado))
-    c = engine.c
-    assert c.execute(
-        text("select aberto, pessoas_abrigadas from app.abrigos where id = :i"), {"i": alvo}
-    ).one() == (
-        True,
-        12,
-    )  # a recarga não mexe no que a equipe registrou
-    assert c.execute(text("select count(*) from app.abrigos")).scalar() == 17
-
-    feicao = {
-        "attributes": {
-            "globalid": "{1}",
-            "no_entidade": "Escola Municipal Casarão do Barbalho",
-            "latitude": -8.028799,
-            "longitude": -34.934646,
-            "status": "ATIVO",
-            "qtd_vagas_estimadas_quadra": 80,
-        }
-    }
-    depois = AGORA + timedelta(minutes=15)
-    rodar(
-        engine,
-        mongo,
-        config,
-        ConectorRecifeAbrigos(http=_http_abrigos({"features": [feicao]})),
-        "ativos",
-        depois,
-    )
-    casarao = "select aberto, status_origem from app.abrigos where codigo_fonte = 'ckan:escola-municipal-casarao-do-barbalho'"
-    assert c.execute(text(casarao)).one() == (True, "cop")
-    assert c.execute(text("select count(*) from app.abrigos")).scalar() == 17  # casou com o cadastrado
-
-    relogio = Relogio()
-    relogio.agora = depois
-    publico = cliente(db, relogio).get("/api/v1/publico/abrigos")
-    assert publico.status_code == 200
-    corpo = publico.json()
-    assert "0800 081 3400" in corpo["aviso"] and "199" in corpo["aviso"]
-    casa = next(i for i in corpo["itens"] if i["nome"].startswith("Escola Municipal Casar"))
-    assert (casa["aberto"], casa["aberto_fonte"], casa["capacidade"]) == (True, "cop", 80)
-    assert casa["bairro_nome"] and casa["fonte_url"]
-    dina = next(i for i in corpo["itens"] if i["id"] == str(alvo))
-    assert (dina["aberto"], dina["aberto_fonte"]) == (True, "equipe")
-    nunca = [i for i in corpo["itens"] if i["aberto_fonte"] is None]
-    assert len(nunca) == 15 and all(i["aberto"] is None for i in nunca)  # nunca informado ≠ fechado
-    assert "Servidora Fulana" not in publico.text and "pessoas_abrigadas" not in publico.text
-
-    rodar(
-        engine,
-        mongo,
-        config,
-        ConectorRecifeAbrigos(http=_http_abrigos()),
-        "ativos",
-        depois + timedelta(minutes=15),
-    )
-    assert c.execute(text(casarao)).one() == (False, "cop")  # saiu do feed: o COP fechou
-    assert c.execute(text("select aberto from app.abrigos where id = :i"), {"i": alvo}).scalar() is True
-    assert (
-        c.execute(text("select count(*) from app.abrigo_atualizacoes where autor_id is null")).scalar() == 2
-    )

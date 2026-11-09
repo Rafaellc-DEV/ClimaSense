@@ -7,11 +7,18 @@
 - histórico (`--modo historico`): `GET /historico_pluviometrico_mensal?tipo=diario` mês a mês desde 2022.
   Mês de uma estação com total muito abaixo das vizinhas (falha de equipamento) vira ausente (`falha`).
 
+Além das leituras acumuladas, o tempo real guarda `ultima_medicao` de cada leitura única (`silver.apac_chuva_passos`):
+a gold soma por hora e distrito o que chega a cada 10-15 min, só a partir da coleta (nunca preenche o passado) e
+sem transformar lacuna em zero. O cadastro `GET /estacoes?municipio=Recife` (`status_dados`, `tempo_min`) marca
+as estações sem leitura; se falhar, a chuva segue sem ele.
+
 Estação → bairro por ponto-em-polígono na malha oficial de bairros; sem malha, distrito (RN-07).
 """
 
 from __future__ import annotations
 
+import contextlib
+import json
 import statistics
 from datetime import date, timedelta
 
@@ -26,6 +33,50 @@ URL_API = "https://api.apac.pe.gov.br/api.php"
 JANELAS = (1, 3, 6, 12, 24, 48, 72, 96, 120)
 INICIO_HISTORICO = date(2022, 1, 1)
 LIMITE_DESATUALIZADA_MIN = 120
+# Na checagem de 06/11/2026 a API entregou os acentos certos (UTF-8 com `charset` no cabeçalho ou escape \uXXXX): o
+# "Torre?o" da pesquisa era do console do Windows. Mesmo assim o texto é decodificado como UTF-8 e reparado se chegar
+# com U+FFFD ou com UTF-8 lido como Latin-1 ("Ã£"), para a estação não aparecer com nome quebrado.
+REPAROS_NOME = {
+    "Torre�o": "Torreão",
+    "concei��o": "Conceição",
+    "V�rzea": "Várzea",
+    "Irm�os": "Irmãos",
+    "Esperan�a": "Esperança",
+    "C�u": "Céu",
+    "C�rrego": "Córrego",
+    "Caxang�": "Caxangá",
+    "manuten��o": "manutenção",
+    "observa��o": "observação",
+}
+
+
+def corrigir_texto(texto) -> str:
+    """Texto sem acento quebrado: desfaz UTF-8 lido como Latin-1, repara palavras conhecidas com U+FFFD e troca o
+    que sobrar por '?' (nunca um caractere inválido)."""
+    t = str(texto or "").strip()
+    if "Ã" in t or "Â" in t:
+        with contextlib.suppress(UnicodeEncodeError, UnicodeDecodeError):
+            t = t.encode("latin-1").decode("utf-8")
+    for quebrado, certo in REPAROS_NOME.items():
+        t = t.replace(quebrado, certo)
+    return t.replace("�", "?")
+
+
+def json_utf8(resposta):
+    """Corpo JSON decodificado como UTF-8 (não pela adivinhação de charset da biblioteca)."""
+    bruto = getattr(resposta, "content", None)
+    if isinstance(bruto, (bytes, bytearray)):
+        try:
+            return json.loads(bytes(bruto).decode("utf-8"))
+        except (UnicodeDecodeError, ValueError):
+            pass
+    return resposta.json()
+
+
+def _hora_ou_none(texto):
+    return comum.hora_local(texto) if texto and str(texto).strip() not in ("", "-") else None
+
+
 # Falha de estação no histórico: total do mês < 10% da mediana das vizinhas, quando elas somam ≥ 30 mm.
 FALHA_FRACAO, FALHA_MEDIANA_MIN_MM, FALHA_VIZINHAS_MIN = 0.10, 30.0, 2
 PICO_MIN_MM, PICO_FATOR, PICO_VIZINHAS_MIN = 80.0, 20.0, 3
@@ -54,6 +105,9 @@ class ConectorApacChuva(Conector):
         self.http = http or comum.sessao_http()
         self._localizador = localizador
         self.descartes: dict[str, int] = {}
+        self.cadastro_indisponivel = False
+        self.passos: list[dict] = []
+        self.cadastro: list[dict] = []
 
     @property
     def localizador(self):
@@ -67,7 +121,7 @@ class ConectorApacChuva(Conector):
     def _get(self, caminho: str, params: dict):
         r = self.http.get(f"{URL_API}/{caminho}", params=params, timeout=90)
         r.raise_for_status()
-        return r.json()
+        return json_utf8(r)
 
     def extrair(self, ctx: ExecucaoCtx) -> list[dict]:
         if ctx.modo == "historico":
@@ -77,6 +131,14 @@ class ConectorApacChuva(Conector):
         corpo = self._get("precipitacao_acumulada", {"municipio": "Recife"})
         if not isinstance(corpo, list):
             raise FonteSemDados(f"APAC sem dados de chuva acumulada: {str(corpo.get('erro', corpo))[:200]}")
+        try:  # o cadastro só marca a saúde das estações: a chuva não depende dele
+            cadastro = self._get("estacoes", {"municipio": "Recife"})
+        except Exception:  # noqa: BLE001
+            cadastro = None
+        if isinstance(cadastro, list):
+            corpo = corpo + [{**c, "_endpoint": "estacoes"} for c in cadastro if isinstance(c, dict)]
+        else:
+            self.cadastro_indisponivel = True  # só a marcação de saúde das estações fica sem dado
         return corpo
 
     def _extrair_historico(self, ctx: ExecucaoCtx) -> list[dict]:
@@ -120,7 +182,7 @@ class ConectorApacChuva(Conector):
         return {
             "id": f"apac-{codigo}",
             "codigo": str(codigo),
-            "nome": str(nome or codigo).strip()[:160],
+            "nome": corrigir_texto(nome or codigo)[:160],
             "lat": lat,
             "lon": lon,
             "territorio_id": bairro or distrito,
@@ -130,7 +192,10 @@ class ConectorApacChuva(Conector):
         self.descartes = {}
         if ctx.modo == "historico":
             return self._transformar_historico(bruto, ctx)
-        linhas, self.estacoes = [], {}
+        linhas, self.estacoes, self.passos = [], {}, []
+        self.cadastro = self._cadastro(bruto)
+        if "_endpoint" in bruto.columns:
+            bruto = bruto[bruto["_endpoint"].isna()]
         for r in bruto.to_dict("records"):
             est = self._estacao(
                 r.get("codigo_estacao"), r.get("estacao"), r.get("latitude"), r.get("longitude")
@@ -143,6 +208,9 @@ class ConectorApacChuva(Conector):
                 self.descartes[motivo] = self.descartes.get(motivo, 0) + 1
                 continue
             self.estacoes[est["id"]] = est
+            self.passos.append(
+                {"estacao_id": est["id"], "lida_em": lida, "valor_mm": comum.numero(r.get("ultima_medicao"))}
+            )
             for j in JANELAS:
                 linhas.append(
                     {
@@ -153,6 +221,30 @@ class ConectorApacChuva(Conector):
                     }
                 )
         return pd.DataFrame(linhas)
+
+    def _cadastro(self, bruto: pd.DataFrame) -> list[dict]:
+        """Estado atual por código de estação a partir de /estacoes. Código repetido: fica o cadastro com hora de
+        leitura (o outro é um registro vazio da mesma estação)."""
+        if "_endpoint" not in bruto.columns:
+            return []
+        melhor: dict[str, dict] = {}
+        for r in bruto[bruto["_endpoint"] == "estacoes"].to_dict("records"):
+            codigo = str(r.get("codigo_gmmc") or "").strip()
+            if not codigo:
+                continue
+            item = {
+                "codigo_fonte": codigo,
+                "nome": corrigir_texto(r.get("estacao"))[:160],
+                "status_dados": corrigir_texto(r.get("status_dados"))[:40] or None,
+                "tempo_min": _inteiro(r.get("tempo_min")),
+                "ultima_leitura_em": _hora_ou_none(r.get("data_hora_leitura")),
+            }
+            atual = melhor.get(codigo)
+            if atual is None or (
+                atual["ultima_leitura_em"] is None and item["ultima_leitura_em"] is not None
+            ):
+                melhor[codigo] = item
+        return list(melhor.values())
 
     def _transformar_historico(self, bruto: pd.DataFrame, ctx: ExecucaoCtx) -> pd.DataFrame:
         hoje = ctx.agora.astimezone(comum.FUSO_RECIFE).date()
@@ -228,7 +320,35 @@ class ConectorApacChuva(Conector):
                     for r in df.to_dict("records")
                 ],
             )
-            return c.execute(text("select count(*) from silver.apac_chuva_leituras")).scalar() - antes
+            novas = c.execute(text("select count(*) from silver.apac_chuva_leituras")).scalar() - antes
+            self._gravar_passos_e_cadastro(c, ctx)
+            return novas
+
+    def _gravar_passos_e_cadastro(self, c, ctx: ExecucaoCtx) -> None:
+        if self.passos:
+            c.execute(
+                text(
+                    "insert into silver.apac_chuva_passos (estacao_id, lida_em, valor_mm, coletado_em, visto_em, "
+                    "execucao_id) values (:estacao_id, :lida_em, :valor_mm, :agora, :agora, :ex) "
+                    "on conflict (estacao_id, lida_em) do update set visto_em = excluded.visto_em"
+                ),
+                [
+                    {**p, "valor_mm": _nulo(p["valor_mm"]), "agora": ctx.agora, "ex": ctx.execucao_id}
+                    for p in self.passos
+                ],
+            )
+        if self.cadastro:
+            c.execute(
+                text(
+                    "insert into silver.apac_estacoes_cadastro (codigo_fonte, nome, status_dados, tempo_min, "
+                    "ultima_leitura_em, visto_em, execucao_id) values (:codigo_fonte, :nome, :status_dados, "
+                    ":tempo_min, :ultima_leitura_em, :agora, :ex) on conflict (codigo_fonte) do update set "
+                    "nome = excluded.nome, status_dados = excluded.status_dados, tempo_min = excluded.tempo_min, "
+                    "ultima_leitura_em = excluded.ultima_leitura_em, visto_em = excluded.visto_em, "
+                    "execucao_id = excluded.execucao_id"
+                ),
+                [{**d, "agora": ctx.agora, "ex": ctx.execucao_id} for d in self.cadastro],
+            )
 
     def _gravar_diaria(self, c, df: pd.DataFrame, ctx: ExecucaoCtx) -> int:
         c.execute(
@@ -254,10 +374,16 @@ class ConectorApacChuva(Conector):
 
     def gerar_gold(self, ctx: ExecucaoCtx) -> None:
         with ctx.engine.begin() as c:
-            gold.recalcular(
-                c, gold.TABELAS_APAC_DIARIA if ctx.modo == "historico" else gold.TABELAS_APAC_AGORA
-            )
+            if ctx.modo == "historico":
+                gold.recalcular(c, gold.TABELAS_APAC_DIARIA)
+            else:
+                gold.recalcular(c, {**gold.TABELAS_APAC_AGORA, **gold.TABELAS_CHUVA_OBS})
 
 
 def _nulo(v):
     return None if v is None or (isinstance(v, float) and pd.isna(v)) else float(v)
+
+
+def _inteiro(v):
+    n = comum.real(v)
+    return None if n is None or n < 0 else int(n)

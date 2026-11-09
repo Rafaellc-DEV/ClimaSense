@@ -20,11 +20,11 @@ ESPERADAS = {
     ("GET", "/api/v1/estagios/parametros"): Permissao.CONSULTAR,
     ("PUT", "/api/v1/estagios/parametros"): Permissao.PARAMETRIZAR,
     ("POST", "/api/v1/estagios/mensagem"): Permissao.CONSULTAR,
-    ("POST", "/api/v1/abrigos"): Permissao.EDITAR,
-    ("PATCH", "/api/v1/abrigos/{abrigo_id}"): Permissao.EDITAR,
     ("POST", "/api/v1/acoes"): Permissao.EDITAR,
     ("PATCH", "/api/v1/acoes/{acao_id}"): Permissao.EDITAR,
+    ("DELETE", "/api/v1/acoes/{acao_id}"): Permissao.EDITAR,
     ("GET", "/api/v1/boletim"): Permissao.CONSULTAR,
+    ("GET", "/api/v1/situacao/chuva"): Permissao.CONSULTAR,
 }
 
 

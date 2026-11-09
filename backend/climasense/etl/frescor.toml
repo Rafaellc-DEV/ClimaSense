@@ -14,23 +14,63 @@ open-meteo-historico = 192
 apac-chuva = 1
 # Alerta vigente precisa estar atual; ver outro alerta so depois de 1 h seria risco operacional.
 alertas-oficiais = 1
-# Cadastro de abrigos (dados abertos) e republicado raramente; revisao anual.
-recife-abrigos = 8760
-# Ocupacao e desabrigados: registro manual da equipe; hora de cada lancamento e obrigatoria.
-recife-abrigos-ocupacao = 1
-# Atendimentos da Defesa Civil: publicacao diaria/mensal com defasagem; 60 dias.
-recife-alagamento = 1440
+# --- Fontes de carga rara (anuais, mensais ou estaticas) -------------------------------------------------------
+# O limite mede quanto tempo faz que a ultima carga bem-sucedida rodou, e deve acompanhar a cadencia REAL da fonte,
+# nunca a de uma fonte semanal: senao um dado anual aparece "Desatualizado" semanas depois de uma carga correta e
+# tira a credibilidade das fontes vivas. Fonte viva (chuva, mare, previsao, alertas) NAO foi afrouxada.
+# Atendimentos da Defesa Civil: a prefeitura republica o historico de tempos em tempos (diario a mensal, com atraso);
+# 90 dias toleram uma publicacao perdida.
+recife-alagamento = 2160
 # InfoDengue publica por semana epidemiologica; 8 dias (semana mais folga de um dia).
 infodengue = 192
 # SINAN preliminar republicado pelo DATASUS a cada 1 a 3 semanas; 15 dias.
 sinan-leptospirose = 360
-# Arboviroses por bairro: publicacao anual; 400 dias.
-recife-arboviroses = 9600
+# Arboviroes por bairro: um arquivo por ano, publicado no ano seguinte e as vezes com meses de atraso; 18 meses
+# (13140 h) evitam o selo de desatualizado entre uma publicacao anual e a seguinte.
+recife-arboviroses = 13140
 # Base territorial oficial e estatica, revisada periodicamente: sem limite.
 territorio-oficial = 0
-# Cadastro CNES: o Ministerio da Saude atualiza todo mes; 744 h = 31 dias.
-cnes-equipamentos = 744
+# Cadastro CNES: o Ministerio da Saude atualiza todo mes; 60 dias (1440 h) toleram uma carga mensal perdida.
+cnes-equipamentos = 1440
 # Censo 2022 e um retrato fixo (proximo censo em 2030): sem limite.
 ibge-censo-2022-bairro = 0
-# Setores de risco da Sedec: revisao rara (anual); 8760 h = 365 dias.
-recife-areas-risco = 8760
+# Setores de risco da Sedec: revisao rara (anual, as vezes bianual); 18 meses (13140 h).
+recife-areas-risco = 13140
+# --- Hidrologia (APAC; ANA como segunda fonte do rio) ------------------------------------------------------------
+# O limite mede a ultima COLETA bem-sucedida, nao a idade da leitura: as estacoes de rio publicam a cada 15 min a
+# 1 h, mas a APAC chega a atrasar ~30 h numa estacao (ANA ~7 h). 3 h = o ETL (rodado a cada 15 min) deixou de coletar.
+# A idade de cada leitura vai para a gold (rio_situacao.idade_min): leitura com mais de 12 h vira "Dados
+# insuficientes", com mais de 2 h aparece como "desatualizada". Coleta em dia nao significa leitura em dia.
+apac-rios = 3
+# Reservatorios tem leitura diaria (a data chega sem hora); 30 h = coleta diaria mais folga. Leitura com mais de
+# 3 dias de idade vira "Dados insuficientes" na gold (reservatorio_situacao).
+apac-reservatorios = 30
+# --- Meteorologia observada e de modelo (migracao 0021) ----------------------------------------------------------
+# Previsao horaria, tendencia e radar da APAC rodam junto do `etl tempo-real` (10-15 min); o radar sai a cada 10 min.
+# 2 h = a coleta parou (o painel nao pode mostrar radar ou previsao parados como atuais).
+apac-previsao = 2
+# Temperatura prevista (modelo Open-Meteo): reprocessada a cada 6 h, como a previsao de chuva.
+open-meteo-temperatura = 6
+# Umidade do solo (modelo, Experimental): previsao a cada 6 h; o historico ERA5-Land entra em janela movel no mesmo
+# `atualizar` (atraso proprio de 5-7 dias, ja descontado na janela).
+open-meteo-solo = 6
+# --- Cobertura territorial dos 94 bairros (migracao 0022) ----------------------------------------------------------
+# Fontes estaticas ou de revisao rara: o limite mede ha quanto tempo a ultima carga bem-sucedida rodou e acompanha a
+# cadencia real (anos), nunca a de uma fonte viva.
+# Carta de suscetibilidade do SGB/CPRM: produto de 2012-2014 (publicado em 2015), camada editada em 2025; 5 anos (43800 h).
+sgb-suscetibilidade-deslizamento = 43800
+# Atendimentos com grau de risco: um CSV por ano, publicado depois do ano; 18 meses (13140 h), como as arboviroses.
+# Atencao: o historico PAROU em 2024 (o arquivo de 2025 tem 1 linha); carga em dia nao significa dado de 2025.
+recife-atendimentos-grau-risco = 13140
+# Alagamento de 2026: retrato de um evento (camadas editadas de maio a junho de 2026); 12 meses (8760 h).
+recife-alagamento-2026 = 8760
+# --- Saude durante o evento e historico de desastres (migracao 0023) -----------------------------------------------
+# SAMU Recife: o portal publica um arquivo por ano, atualizado uma vez por mes (em 06/11 ia ate 31/10); 60 dias
+# (1440 h) toleram uma publicacao mensal perdida. Atencao: o limite mede a coleta, nao o ultimo dia do arquivo (na
+# silver, `ultimo_dia_dado` e `dados_ate` dizem ate quando ha chamados).
+samu-recife = 1440
+# SISAGUA: coleta semanal (a API recebe registros todo dia, com atraso mediano de 14 dias entre coleta e registro);
+# 8 dias (192 h), como o InfoDengue. As semanas recentes vao marcadas como incompletas na gold.
+sisagua = 192
+# Atlas Digital de Desastres: uma consolidacao por ano (a de 2026 e de 06/08, cobrindo ate 2025); 18 meses (13140 h).
+atlas-desastres = 13140

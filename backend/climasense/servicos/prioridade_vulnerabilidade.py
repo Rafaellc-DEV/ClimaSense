@@ -12,6 +12,8 @@ from __future__ import annotations
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
+from climasense.dominio.distritos import nome_distrito
+from climasense.infra import cache
 from climasense.servicos import cenarios, vulnerabilidade
 
 FONTE = "recife-alagamento"
@@ -46,33 +48,40 @@ def _populacao(vul: dict, territorio_id: str) -> dict:
 
 
 def _posicoes(itens: list[dict]) -> list[dict]:
-    """Ordena (mais atendimentos primeiro; empate: mais alagamento, depois nome) e numera; empatados dividem a posição."""
+    """Ordena (mais atendimentos primeiro; empate: mais alagamento, depois nome e, por fim, o id) e numera de 1 a N.
+    A ordem é determinística e a posição é única e consecutiva: empatados em contagem seguem a ordem de desempate
+    (a contagem igual continua visível nos próprios itens)."""
     itens.sort(
         key=lambda i: (
             -(i["ocorrencias_alagamento"] + i["ocorrencias_deslizamento"]),
             -i["ocorrencias_alagamento"],
             i["nome"],
+            i.get("territorio_id", ""),
         )
     )
-    anterior, pos = None, 0
     for n, i in enumerate(itens, start=1):
-        total = (i["ocorrencias_alagamento"], i["ocorrencias_deslizamento"])
-        if total != anterior:
-            pos, anterior = n, total
-        i["posicao"] = pos
+        i["posicao"] = n
     return itens
 
 
 def listar(db: Session, nivel: str | None = None) -> dict | None:
-    """`nivel`: distrito, bairro ou None (os dois, cada um com a sua numeração). None sem carga da fonte."""
+    """`nivel`: distrito, bairro ou None (os dois, cada um com a sua numeração). None sem carga da fonte.
+    Guardado por `cache.MEDIO_S` (só muda quando o ETL recarrega as ocorrências ou o Censo)."""
+    return cache.obter("prioridade", nivel, cache.MEDIO_S, lambda: _listar(db, nivel))
+
+
+def _listar(db: Session, nivel: str | None) -> dict | None:
     if cenarios.ocorrencias(db, "recife") is None:
         return None
     desde = _desde(db)
     vul = vulnerabilidade.vulneraveis_por_territorio(db) or {}
     criterio = "mais " + " e ".join(CRITERIOS) + (f" desde {desde}" if desde else "")
-    nomes = dict(
-        db.execute(text("select id, nome_exibicao from app.territorios where tipo = 'distrito'")).all()
-    )
+    nomes = {
+        i: nome_distrito(n)
+        for i, n in db.execute(
+            text("select id, nome_exibicao from app.territorios where tipo = 'distrito'")
+        ).all()
+    }
     bairros = [dict(r) for r in db.execute(text(_SQL), {"f": FONTE}).mappings()]
     por_bairro = [
         {

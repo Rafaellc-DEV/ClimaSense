@@ -7,7 +7,7 @@ A antiga `GET /cenarios` passou para `GET /cenarios/estimativa`, para dar a raiz
 from __future__ import annotations
 
 import uuid
-from datetime import datetime
+from datetime import date, datetime
 from typing import Literal
 
 from fastapi import APIRouter, Depends, Query
@@ -23,6 +23,7 @@ from climasense.dominio.evento import RegistroInvalido
 from climasense.dominio.papeis import Permissao
 from climasense.dominio.recorte import granularidade
 from climasense.infra.postgres import obter_sessao
+from climasense.servicos import arboviroses_cenario
 from climasense.servicos import cenarios as servico
 from climasense.servicos import fontes as servico_fontes
 from climasense.servicos import simulador as sim
@@ -176,8 +177,6 @@ class PremissasAtuais(BaseModel):
     )
     mare_m: float | None = Field(description="Maré máxima prevista no horizonte (Open-Meteo)")
     horizonte_h: int
-    abrigos_abertos: int | None
-    capacidade_abrigos: int | None
 
 
 class PedidoSimulacao(BaseModel):
@@ -190,8 +189,6 @@ class PedidoSimulacao(BaseModel):
         ge=-3, le=5, description="Nível previsto da maré junto do pico, em m; null = desconhecido"
     )
     horizonte_h: int = Field(ge=1, le=72, description="Próximas horas do cenário")
-    abrigos_abertos: int | None = Field(default=None, ge=0, le=500)
-    capacidade_abrigos: int | None = Field(default=None, ge=0, le=200000)
 
     def premissas(self) -> dom_sim.Premissas:
         if self.duracao_h > self.horizonte_h:
@@ -210,6 +207,73 @@ class ImpactoPessoas(BaseModel):
     criterio: str
 
 
+ClasseArbovirose = Literal["baixa", "media", "alta"]
+
+
+class PontoSemanal(BaseModel):
+    ano: int
+    semana: int
+    inicio: date
+    casos: int | None = Field(description="null = suprimido (1 a 4 casos, RN-13)")
+    suprimido: bool
+    incompleta: bool = Field(description="true = semana ainda sujeita a atraso de notificação")
+    nivel_alerta: int | None = Field(description="Nível 1 a 4 do InfoDengue (município); null = sem dado")
+
+
+class AgravoDistrito(BaseModel):
+    agravo: Literal["dengue", "chikungunya", "zika"]
+    nome: str
+    semana_recente: PontoSemanal | None = Field(
+        description="Semana epidemiológica mais recente com dado (município: a fonte semanal não abre por distrito)"
+    )
+    serie_semanal: list[PontoSemanal] = Field(
+        description="Últimas 8 semanas, em ordem cronológica (município)"
+    )
+    ano_distrito: int | None = Field(description="Último ano publicado por distrito; null = sem a fonte")
+    casos_ano_distrito: int | None = Field(
+        description="Confirmados no ano, soma dos bairros do distrito; null = sem dado ou suprimido (RN-13)"
+    )
+    casos_ano_suprimido: bool
+    classe_impacto: ClasseArbovirose | None = Field(
+        description="Terços do total anual entre os distritos: ordem de atenção, nunca probabilidade (RN-06). "
+        "null = sem dado (Dados insuficientes, RN-01)"
+    )
+    dados_insuficientes: bool
+    motivo: str | None = Field(description="Quando faltar dado: 'Dados insuficientes: falta a fonte ...'")
+    fonte_semanal: str
+    fonte_anual: str
+
+
+class ArbovirosesDistrito(BaseModel):
+    agravos: list[AgravoDistrito]
+    classe_impacto: ClasseArbovirose | None = Field(description="Maior classe entre os agravos com dado")
+    agravos_em_destaque: list[str] = Field(description="Agravos com classe alta neste distrito")
+
+
+class FonteArboviroses(BaseModel):
+    id: str
+    nome: str
+    atualizado_em: datetime | None
+    status: str
+
+
+class ResumoArboviroses(BaseModel):
+    experimental: Literal[True] = True
+    contexto: Literal[True] = True
+    aviso: str = Field(description="Deixa claro que arboviroses são contexto, não previsão causal da chuva")
+    granularidade_semanal: Literal["municipio"]
+    granularidade_anual: Literal["distrito"]
+    fontes: list[FonteArboviroses] = Field(description="Fonte e hora da última atualização (RF-19)")
+
+
+class OrdemDistrito(BaseModel):
+    distrito_id: str
+    nome: str
+    estagio_sugerido: Classe
+    classe_arboviroses: ClasseArbovirose | None
+    agravos_em_destaque: list[str]
+
+
 class ItemSimulacao(BaseModel):
     territorio_id: str
     nome: str
@@ -222,6 +286,9 @@ class ItemSimulacao(BaseModel):
     motivos: list[str] = Field(description="De 1 a 3 frases curtas")
     impacto_pessoas: ImpactoPessoas | None = Field(
         description="null sem a fonte de população vulnerável ou sem estágio de atenção ou mais"
+    )
+    arboviroses: ArbovirosesDistrito | None = Field(
+        default=None, description="Só nos itens de distrito; contexto, não previsão (RN-11)"
     )
 
 
@@ -239,8 +306,12 @@ class ResumoSimulacao(BaseModel):
     por_classe: dict[str, dict[str, int]] = Field(
         description="Contagem de bairros por classe: alagamento, deslizamento e estagio_sugerido"
     )
-    pressao_abrigos: str | None
     impacto_pessoas_aviso: str | None
+    arboviroses: ResumoArboviroses | None = None
+    ordem_de_atencao_distritos: list[OrdemDistrito] = Field(
+        default_factory=list,
+        description="Distritos do mais ao menos afetado pela chuva simulada; no empate, pela classe de arboviroses",
+    )
     pessoas_vulneraveis_em_alerta: PessoasEmAlerta | None = Field(
         default=None,
         description="Idosos e crianças residentes em bairros em alerta ou acima; contagem, não probabilidade",
@@ -256,7 +327,10 @@ class Simulacao(BaseModel):
 
 
 def _fontes_simulacao(db: Session, agora: datetime) -> list[FonteMeta]:
-    return [servico_fontes.meta(db, sim.FONTE_OCORRENCIAS, agora)]
+    return [
+        servico_fontes.meta(db, f, agora)
+        for f in (sim.FONTE_OCORRENCIAS, arboviroses_cenario.FONTE_SEMANAL, arboviroses_cenario.FONTE_ANUAL)
+    ]
 
 
 FONTE_POR_PREMISSA = {
@@ -264,20 +338,19 @@ FONTE_POR_PREMISSA = {
     "duracao_h": servico.FONTE_PREVISAO,
     "chuva_acumulada_mm": sim.FONTE_APAC,
     "mare_m": servico.FONTE_MARE,
-    "abrigos_abertos": "recife-abrigos",
-    "capacidade_abrigos": "recife-abrigos",
 }
 
 AVISOS_SIMULACAO = [
     "Experimental: regras sobre os limiares dos estágios, ainda sem validação temporal. "
-    "A classe é uma ordem de atenção, não uma probabilidade."
+    "A classe é uma ordem de atenção, não uma probabilidade.",
+    arboviroses_cenario.AVISO,
 ]
 
 
 @router.get(
     "/premissas-atuais",
     response_model=RespostaDados[PremissasAtuais],
-    summary="Premissas sugeridas pelas fontes reais (previsão, maré, chuva medida e abrigos)",
+    summary="Premissas sugeridas pelas fontes reais (previsão, maré e chuva medida)",
 )
 def premissas_atuais(
     _: Contexto = Depends(consultar), db: Session = Depends(obter_sessao), agora: datetime = Depends(relogio)
@@ -289,7 +362,7 @@ def premissas_atuais(
         meta=Meta(
             fontes=[
                 servico_fontes.meta(db, f, agora)
-                for f in (servico.FONTE_PREVISAO, servico.FONTE_MARE, sim.FONTE_APAC, "recife-abrigos")
+                for f in (servico.FONTE_PREVISAO, servico.FONTE_MARE, sim.FONTE_APAC)
             ],
             recorte=RecorteMeta(territorio_id="recife", granularidade="municipio"),
             fonte_por_premissa=FONTE_POR_PREMISSA,
@@ -333,7 +406,6 @@ class PedidoSalvar(BaseModel):
 
 class ResumoSalvo(BaseModel):
     por_classe: dict[str, dict[str, int]] | None
-    pressao_abrigos: str | None
 
 
 class CenarioListado(BaseModel):

@@ -14,7 +14,6 @@ from climasense.api.autorizacao import Contexto, exige, relogio
 from climasense.api.routers.publico import AvisoPublico, vigentes
 from climasense.dominio.papeis import Permissao, pode
 from climasense.infra.postgres import obter_sessao
-from climasense.servicos import abrigos as servico_abrigos
 from climasense.servicos import fontes as servico_fontes
 
 router = APIRouter(prefix="/painel", tags=["Painel"])
@@ -52,18 +51,8 @@ class Contadores(BaseModel):
     comunicados: int
 
 
-class TotaisAbrigos(BaseModel):
-    """Primeiras métricas no pico do evento (F3): só o que a equipe registrou; null = ninguém informou."""
-
-    abrigos_abertos: int
-    pessoas_abrigadas: int | None
-    desabrigados: int | None
-    atualizado_em: datetime | None
-
-
 class ResumoPainel(BaseModel):
     avisos: list[AvisoPublico]
-    abrigos: TotaisAbrigos
     pode_revisar: bool
     aguardando_revisao: list[ItemRevisao]
     territorios_em_atencao: list[TerritorioAtencao]
@@ -147,7 +136,6 @@ def resumo(
     aguardando = _aguardando(db, ctx.usuario.id) if revisa else []
     return ResumoPainel(
         avisos=avisos,
-        abrigos=TotaisAbrigos(**servico_abrigos.totais_recife(db)),
         pode_revisar=revisa,
         aguardando_revisao=aguardando,
         territorios_em_atencao=_em_atencao(db, avisos, agora),

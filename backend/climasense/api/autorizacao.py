@@ -67,6 +67,13 @@ def ip_cliente(request: Request) -> str | None:
 
 
 @dataclass
+class _Validado:
+    db: Session
+    sessao: Sessao
+    usuario: Usuario
+
+
+@dataclass
 class Contexto:
     usuario: Usuario
     sessao: Sessao
@@ -74,13 +81,27 @@ class Contexto:
 
 
 def _contexto(
-    request: Request, db: Session, config: Configuracao, agora: datetime, exigir_senha_trocada: bool
+    request: Request,
+    db: Session,
+    config: Configuracao,
+    agora: datetime,
+    exigir_senha_trocada: bool,
+    renovar_sempre: bool = False,
 ) -> Contexto:
+    # Rotas com mais de uma dependência de autorização (ex.: auditoria de leitura + permissão) validam a sessão uma
+    # vez por requisição: cada validação custa uma ida e volta ao banco.
     gerenciador = GerenciadorSessoes(RepositorioSessoes(db), RepositorioUsuarios(db), config)
-    try:
-        sessao, usuario = gerenciador.validar(request.cookies.get(COOKIE_SESSAO), agora)
-    except SessaoInvalida as erro:
-        raise ErroClimaSense(401, erro.mensagem) from None
+    memo = getattr(request.state, "contexto_validado", None)
+    if memo is not None and memo.db is db:
+        sessao, usuario = memo.sessao, memo.usuario
+    else:
+        try:
+            sessao, usuario = gerenciador.validar(
+                request.cookies.get(COOKIE_SESSAO), agora, sempre=renovar_sempre
+            )
+        except SessaoInvalida as erro:
+            raise ErroClimaSense(401, erro.mensagem) from None
+        request.state.contexto_validado = _Validado(db, sessao, usuario)
     if request.method in METODOS_QUE_ALTERAM:
         enviado = request.headers.get(CABECALHO_CSRF)
         if enviado != request.cookies.get(COOKIE_CSRF) or not gerenciador.csrf_confere(sessao, enviado):
@@ -91,7 +112,8 @@ def _contexto(
         raise ErroClimaSense(
             403, "Troque a sua senha temporária para continuar.", titulo="Troca de senha obrigatória"
         )
-    db.commit()  # grava a renovação da inatividade
+    if db.dirty or db.new:  # só grava quando a renovação da inatividade mudou algo
+        db.commit()
     return Contexto(usuario=usuario, sessao=sessao, ip=ip_cliente(request))
 
 
@@ -102,7 +124,7 @@ def contexto_autenticado(
     agora: datetime = Depends(relogio),
 ) -> Contexto:
     """Qualquer conta autenticada, mesmo com a troca de senha pendente (usada por /auth/eu, /sair, /trocar-senha)."""
-    return _contexto(request, db, config, agora, exigir_senha_trocada=False)
+    return _contexto(request, db, config, agora, exigir_senha_trocada=False, renovar_sempre=True)
 
 
 def exige(permissao: Permissao) -> Callable[..., Contexto]:

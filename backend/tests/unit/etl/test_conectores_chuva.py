@@ -14,7 +14,7 @@ from pathlib import Path
 import pandas as pd
 import pytest
 
-from climasense.etl.conectores import abrigos, alagamento, alertas, apac, comum
+from climasense.etl.conectores import alagamento, alertas, apac, comum
 from climasense.etl.conectores.base import ExecucaoCtx, FonteSemDados
 
 FIX = Path(__file__).parent / "fixtures"
@@ -244,107 +244,8 @@ def test_deslizamento_vem_da_categoria_ocorrencia_e_lona_preventiva_nao_conta():
     assert len(df) == 6 and "bairro-nova-descoberta" not in set(df["territorio_id"])
 
 
-# ----------------------------------------------------------------------------------------- abrigos
-CURADO = (
-    "nome;endereco;bairro;latitude;longitude;tipo;responsavel;fonte_url;fonte_data;observacao\n"
-    "ESCOLA MUNICIPAL PROFESSOR ADAUTO PONTES;R. Sertânia, 35;Jordão;-8.135405;-34.944796;abrigo_temporario;"
-    "Prefeitura do Recife;https://services7.arcgis.com/x;2025-06-13;capacidade estimada (pessoas): 100 em salas + "
-    "150 em quadra, também no CKAN 2022\n"
-    "ESCOLA MUNICIPAL ALTO DO PASCOAL;R. Ladeira de Pedra, 958;Agua Fria;-8.014701;-34.902125;abrigo_temporario;"
-    "Prefeitura do Recife;https://services7.arcgis.com/x;2025-06-13;capacidade estimada (pessoas): 250 em salas\n"
-)  # duas linhas reais de data/abrigos/abrigos-curados.csv (04/11/2026)
-
-
-def _http_abrigos(cop=None):
-    return Http(
-        {
-            "resource_show": Resposta({"result": {"last_modified": "2026-03-02T13:44:29"}}),
-            "datastore_search": Resposta(_json("ckan_abrigos_datastore_2026-11-04.json")),
-            "Abrigos_Ativos": Resposta(
-                cop if cop is not None else _json("cop_abrigos_ativos_vazio_2026-11-04.json")
-            ),
-        }
-    )
-
-
-def test_abrigos_ckan_e_curado_sem_duplicar_o_mesmo_local(tmp_path):
-    arquivo = tmp_path / "abrigos-curados.csv"
-    arquivo.write_text(CURADO, encoding="utf-8")
-    c = abrigos.ConectorRecifeAbrigos(http=_http_abrigos(), arquivo_curado=arquivo)
-    registros = c.extrair(ctx())
-    meta = next(r for r in registros if r["registro"] == "arquivo_curado")
-    assert meta["linhas"] == 2 and len(meta["sha256"]) == 64
-    assert not any(
-        "responsavel" in r for r in registros
-    )  # campo de pessoa/órgão responsável não vai à bronze
-    df = c.transformar(bronze(registros), ctx())
-    assert len(df) == 17 + 1 and c.descartes == {"mesmo_local_de_outra_fonte": 1}
-    adauto = df[df["codigo_fonte"] == "ckan:escola-municipal-adauto-pontes"].iloc[0]
-    assert adauto["capacidade_fonte"] == 250 and adauto["bairro_id"] == "bairro-jordao"
-    cohab = df[df["nome"].str.contains("Sampaio Lucena")].iloc[0]
-    assert cohab["bairro_id"] == "bairro-cohab"  # ponto-em-polígono, não o texto "COHAB/IBURA"
-
-
-def test_feed_do_cop_nao_grava_dados_pessoais_e_feed_vazio_ainda_e_leitura():
-    feicao = {
-        "attributes": {
-            "objectid": 1,
-            "globalid": "{ABC}",
-            "no_entidade": "ESCOLA MUNICIPAL ALTO DO PASCOAL",
-            "latitude": -8.014701,
-            "longitude": -34.902125,
-            "status": "ATIVO",
-            "qt_salas_utilizadas": 5,
-            "qtd_pessoas_estimadas_sala": 20,
-            "qtd_vagas_estimadas_quadra": 50,
-            "coordenador_local": "Fulana",
-            "contato_coordenador_local": "(81) 9 0000-0000",
-            "last_edited_user": "servidor.x",
-        }
-    }  # formato da camada (campos de /FeatureServer/0?f=json); valores fictícios só para os campos pessoais
-    c = abrigos.ConectorRecifeAbrigos(http=_http_abrigos({"features": [feicao]}))
-    registros = c.extrair(ctx("ativos"))
-    assert not any(
-        k for r in registros for k in r if "coordenador" in k or "contato" in k or k.endswith("_user")
-    )
-    df = c.transformar(bronze(registros), ctx("ativos"))
-    assert df.iloc[0]["capacidade_fonte"] == 150 and df.iloc[0]["bairro_id"] == "bairro-agua-fria"
-    vazio = abrigos.ConectorRecifeAbrigos(http=_http_abrigos())
-    df = vazio.transformar(bronze(vazio.extrair(ctx("ativos"))), ctx("ativos"))
-    assert len(df) == 1 and df.iloc[0]["_vazio"]  # ninguém aberto agora: a carga roda e fecha os do COP
-
-
-def test_capacidade_do_texto_e_mesmo_local():
-    assert (
-        abrigos.capacidade_do_texto("capacidade estimada (pessoas): 100 em salas + 150 em quadra, x") == 250
-    )
-    assert abrigos.capacidade_do_texto("sem capacidade") is None
-    a = {"nome": "ESCOLA MUNICIPAL RICARDO GAMA", "latitude": -8.007459, "longitude": -34.904255}
-    vizinha = {"nome": "ESCOLA MUNICIPAL PAULO VI", "latitude": -8.007, "longitude": -34.9047}
-    mesma = {
-        "nome": "ESCOLA MUNICIPAL PROFESSOR RICARDO GAMA",
-        "latitude": -8.007374,
-        "longitude": -34.904463,
-    }
-    assert abrigos.ConectorRecifeAbrigos._mesmo_local(a, mesma)
-    assert not abrigos.ConectorRecifeAbrigos._mesmo_local(
-        a, vizinha
-    )  # escolas vizinhas são locais diferentes
-
-
 def test_numeros_e_horas_da_fonte():
     assert comum.numero("-") is None and comum.numero(None) is None and comum.numero(-1) is None
     assert comum.numero("0") == 0.0 and comum.numero("1,5") == 1.5
     assert comum.hora_local("2026-11-04 22:30:00") == datetime(2026, 11, 5, 1, 30, tzinfo=UTC)
     assert comum.hora_local("2026-11-04T10:58:21-03:00") == datetime(2026, 11, 4, 13, 58, 21, tzinfo=UTC)
-
-
-def test_endereco_de_abrigo_perde_o_brazil_do_geocodificador():
-    from climasense.etl.conectores.abrigos import _endereco
-
-    assert _endereco("R. Ramiz Galvão 218, Arruda, Recife - PE, 52120-020, Brazil") == (
-        "R. Ramiz Galvão 218, Arruda, Recife - PE, 52120-020"
-    )
-    assert _endereco("Travessa do Gusmão, 178 - São José") == "Travessa do Gusmão, 178 - São José"
-    assert _endereco("Rua X, 1, Brasil") == "Rua X, 1"
-    assert _endereco(None) is None and _endereco("   ") is None

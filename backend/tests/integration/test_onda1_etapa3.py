@@ -111,11 +111,8 @@ def test_deslizamento_depende_do_historico_e_chuva_fraca_fica_em_observacao(equi
     assert i["estagio_sugerido"] == "observacao"
 
 
-def test_pressao_dos_abrigos_e_validacao_dos_limites(equipe):
+def test_validacao_dos_limites(equipe):
     c = equipe["leitor"]
-    r = c.post(f"{API}/simular", json={**PREMISSAS, "abrigos_abertos": 3, "capacidade_abrigos": 450}).json()
-    assert r["dados"]["resumo"]["pressao_abrigos"] == "capacidade informada de 450 pessoas em 3 abrigos"
-    assert c.post(f"{API}/simular", json=PREMISSAS).json()["dados"]["resumo"]["pressao_abrigos"] is None
     for ruim in (
         {"chuva_prevista_mm": -1},
         {"chuva_prevista_mm": 5000},
@@ -123,7 +120,6 @@ def test_pressao_dos_abrigos_e_validacao_dos_limites(equipe):
         {"duracao_h": 96},
         {"mare_m": 40},
         {"horizonte_h": 0},
-        {"abrigos_abertos": -2},
     ):
         assert c.post(f"{API}/simular", json={**PREMISSAS, **ruim}).status_code == 422, ruim
     assert (
@@ -156,7 +152,7 @@ def test_premissas_atuais_sem_fontes_sao_nulas_e_dizem_quais_faltam(equipe):
     d = r.json()
     assert d["dados"]["chuva_prevista_mm"] is None and d["dados"]["mare_m"] is None
     assert d["dados"]["chuva_acumulada_mm"] is None
-    assert d["dados"]["abrigos_abertos"] is None and d["dados"]["horizonte_h"] == 24
+    assert d["dados"]["horizonte_h"] == 24
     assert d["meta"]["dados_insuficientes"] is True
     ids = {f["id"] for f in d["meta"]["fontes"]}
     assert {"open-meteo-previsao", "open-meteo-mare", "apac-chuva"} <= ids
@@ -250,7 +246,7 @@ def test_premissas_nulas_sao_aceitas_e_nao_viram_zero(equipe, sessao):
     b1, _, _ = _bairros(sessao)
     _carga(sessao, [(b1, "alagamento", 2), (b1, "deslizamento", 2)])
     c = equipe["leitor"]
-    nulas = {**PREMISSAS, "chuva_acumulada_mm": None, "mare_m": None, "abrigos_abertos": None}
+    nulas = {**PREMISSAS, "chuva_acumulada_mm": None, "mare_m": None}
     r = c.post(f"{API}/simular", json=nulas)
     assert r.status_code == 200, r.text
     corpo = r.json()
@@ -280,6 +276,128 @@ def test_premissas_atuais_devolve_fonte_por_premissa(equipe):
         "duracao_h": "open-meteo-previsao",
         "chuva_acumulada_mm": "apac-chuva",
         "mare_m": "open-meteo-mare",
-        "abrigos_abertos": "recife-abrigos",
-        "capacidade_abrigos": "recife-abrigos",
     }
+
+
+# ------------------------------------------------------------------ arboviroses como contexto do cenário
+def _carga_saude(sessao, semanas: list[tuple[str, int, int | None]], por_bairro: dict[str, int]) -> None:
+    """Dados de exemplo só no teste: casos semanais do município e confirmados do ano por bairro."""
+    ex = sessao.execute(
+        text(
+            "insert into app.etl_execucoes (fonte_id, status, fim) values ('infodengue', 'sucesso', now()) returning id"
+        )
+    ).scalar_one()
+    for agravo, semana, casos in semanas:
+        sessao.execute(
+            text(
+                "insert into silver.infodengue_semanal (agravo, ano, semana, inicio, casos, nivel, incompleta, "
+                "coletado_em, execucao_id) values (:a, 2026, :s, date '2026-01-04' + (:s - 1) * 7, :c, 2, false, now(), :e)"
+            ),
+            {"a": agravo, "s": semana, "c": casos, "e": ex},
+        )
+        sessao.execute(
+            text(
+                "insert into gold.saude_semanal (agravo, fonte_id, ano, semana, inicio, casos, incompleta) "
+                "values (:a, 'infodengue', 2026, :s, date '2026-01-04' + (:s - 1) * 7, :c, false)"
+            ),
+            {"a": agravo, "s": semana, "c": casos},
+        )
+    ex2 = sessao.execute(
+        text(
+            "insert into app.etl_execucoes (fonte_id, status, fim) "
+            "values ('recife-arboviroses', 'sucesso', now()) returning id"
+        )
+    ).scalar_one()
+    for bairro, confirmados in por_bairro.items():
+        sessao.execute(
+            text(
+                "insert into silver.arboviroses_bairro_ano (agravo, ano, bairro_fonte, territorio_id, notificados, "
+                "confirmados, descartados, outros, execucao_id) values ('dengue', 2025, :b, :b, :c, :c, 0, 0, :e)"
+            ),
+            {"b": bairro, "c": confirmados, "e": ex2},
+        )
+        sessao.execute(
+            text(
+                "insert into gold.arboviroses_bairro_ano (agravo, ano, bairro_id, distrito_id, casos, notificados) "
+                "select 'dengue', 2025, id, pai_id, :c, :c from app.territorios where id = :b"
+            ),
+            {"b": bairro, "c": confirmados},
+        )
+
+
+def _distrito_do(sessao, bairro: str) -> str:
+    return sessao.execute(
+        text("select pai_id from app.territorios where id = :b"), {"b": bairro}
+    ).scalar_one()
+
+
+def test_arboviroses_sem_fonte_dizem_dados_insuficientes_e_a_fonte_que_falta(equipe):
+    corpo = equipe["leitor"].post(f"{API}/simular", json=PREMISSAS).json()
+    ds = next(i for i in corpo["dados"]["itens"] if i["nivel"] == "distrito")
+    arbo = {a["agravo"]: a for a in ds["arboviroses"]["agravos"]}
+    assert set(arbo) == {"dengue", "chikungunya", "zika"}
+    assert ds["arboviroses"]["classe_impacto"] is None  # ausência não é risco baixo (RN-01)
+    for a in arbo.values():
+        assert a["dados_insuficientes"] is True and a["classe_impacto"] is None
+        assert a["semana_recente"] is None and a["serie_semanal"] == [] and a["casos_ano_distrito"] is None
+    assert "falta a fonte infodengue" in arbo["dengue"]["motivo"]
+    assert "falta a fonte recife-arboviroses" in arbo["dengue"]["motivo"]
+    assert "zika" in arbo["zika"]["motivo"] and "Dados insuficientes" in arbo["zika"]["motivo"]
+    assert all(i["arboviroses"] is None for i in corpo["dados"]["itens"] if i["nivel"] == "bairro")
+
+
+def test_arboviroses_contexto_serie_supressao_classe_e_selo(equipe, sessao):
+    por_ds = {}
+    for b in _bairros(sessao, 94):
+        por_ds.setdefault(_distrito_do(sessao, b), b)
+    (d1, b1), (d2, b2), (d3, b3), (d4, b4) = list(por_ds.items())[:4]
+    # semanas 32 a 41 de 2026 (agosto a outubro): recentes o bastante para valer (a série parada não vale)
+    semanas = [("dengue", s + 31, 40 + s) for s in range(1, 11)] + [
+        ("chikungunya", 41, 3),
+        ("dengue", 42, None),
+    ]
+    _carga_saude(sessao, semanas, {b1: 30, b2: 3, b4: 10})
+    r = equipe["leitor"].post(f"{API}/simular", json=PREMISSAS)
+    assert r.status_code == 200, r.text
+    corpo = r.json()
+    ds = {i["territorio_id"]: i for i in corpo["dados"]["itens"] if i["nivel"] == "distrito"}
+    dengue = {a["agravo"]: a for a in ds[d1]["arboviroses"]["agravos"]}["dengue"]
+    # semana mais recente COM dado: a 11 (casos nulos) não vale como zero
+    assert dengue["semana_recente"]["semana"] == 41 and dengue["semana_recente"]["casos"] == 50
+    assert [p["semana"] for p in dengue["serie_semanal"]] == [35, 36, 37, 38, 39, 40, 41, 42]
+    assert dengue["serie_semanal"][-1]["casos"] is None and dengue["serie_semanal"][-1]["suprimido"] is False
+    assert dengue["ano_distrito"] == 2025 and dengue["casos_ano_distrito"] == 30
+    assert dengue["classe_impacto"] == "alta" and dengue["dados_insuficientes"] is False
+    assert ds[d1]["arboviroses"]["agravos_em_destaque"] == ["dengue"]
+    # 1 a 4 casos: suprimido (RN-13); zero medido continua zero (RN-02)
+    pequeno = {a["agravo"]: a for a in ds[d2]["arboviroses"]["agravos"]}["dengue"]
+    assert pequeno["casos_ano_distrito"] is None and pequeno["casos_ano_suprimido"] is True
+    assert pequeno["classe_impacto"] == "baixa"  # menor terço entre os distritos com casos
+    media = {a["agravo"]: a for a in ds[d4]["arboviroses"]["agravos"]}["dengue"]
+    assert media["classe_impacto"] == "media" and media["casos_ano_distrito"] == 10
+    zero = {a["agravo"]: a for a in ds[d3]["arboviroses"]["agravos"]}["dengue"]
+    assert zero["casos_ano_distrito"] == 0 and zero["casos_ano_suprimido"] is False
+    chik = {a["agravo"]: a for a in ds[d1]["arboviroses"]["agravos"]}["chikungunya"]
+    assert chik["semana_recente"]["casos"] is None and chik["semana_recente"]["suprimido"] is True
+    # chikungunya sem fonte anual: sem classe, e diz qual fonte falta
+    assert chik["classe_impacto"] is None and "recife-arboviroses" in chik["motivo"]
+    # contexto, selo experimental e sem percentual (RN-06, RN-11)
+    res = corpo["dados"]["resumo"]["arboviroses"]
+    assert res["experimental"] is True and res["contexto"] is True
+    assert "CONTEXTO" in res["aviso"] and "não previsão causal da chuva" in res["aviso"]
+    assert res["granularidade_semanal"] == "municipio" and res["granularidade_anual"] == "distrito"
+    assert {f["id"] for f in res["fontes"]} == {"infodengue", "recife-arboviroses"}
+    assert all(f["atualizado_em"] for f in res["fontes"])  # fonte e hora (RF-19)
+    assert {"infodengue", "recife-arboviroses"} <= {f["id"] for f in corpo["meta"]["fontes"]}
+    assert corpo["dados"]["experimental"] is True and "%" not in str(ds[d1]["arboviroses"])
+    ordem = corpo["dados"]["resumo"]["ordem_de_atencao_distritos"]
+    assert len(ordem) == 8 and {o["distrito_id"] for o in ordem} == set(ds)
+    primeiros = [o for o in ordem if o["estagio_sugerido"] == ordem[0]["estagio_sugerido"]]
+    assert primeiros[0]["classe_arboviroses"] == "alta"  # empate de estágio: o de classe maior vem antes
+
+
+def test_cenario_salvo_guarda_o_bloco_de_arboviroses(equipe):
+    r = equipe["analista"].post(f"{API}", json={"nome": "Com contexto", "premissas": PREMISSAS})
+    assert r.status_code == 201, r.text
+    ds = next(i for i in r.json()["dados"]["resultado"]["itens"] if i["nivel"] == "distrito")
+    assert len(ds["arboviroses"]["agravos"]) == 3

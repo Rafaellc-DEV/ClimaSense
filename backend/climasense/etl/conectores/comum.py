@@ -1,4 +1,4 @@
-"""Apoio comum aos conectores das fontes do foco em chuvas (APAC, alertas, Defesa Civil, abrigos)."""
+"""Apoio comum aos conectores das fontes do foco em chuvas (APAC, alertas, Defesa Civil)."""
 
 from __future__ import annotations
 

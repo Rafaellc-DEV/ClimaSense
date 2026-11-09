@@ -1,6 +1,6 @@
 """Pipeline completo em ordem: território → Open-Meteo (histórico, previsão, maré) → APAC (tempo real e
-histórico recente) → alertas oficiais → abrigos ativos (COP) → InfoDengue → conjuntos periódicos (alagamento e
-deslizamento, cadastro de abrigos, SINAN leptospirose, arboviroses por bairro; pulados se já carregados há menos
+histórico recente) → alertas oficiais → InfoDengue → conjuntos periódicos (alagamento e
+deslizamento, SINAN leptospirose, arboviroses por bairro; pulados se já carregados há menos
 de `REPETIR_APOS_DIAS`) → verificar-gold.
 
 `etl semanal` roda só a saúde (InfoDengue e SINAN): as duas séries mudam uma vez por semana.
@@ -22,6 +22,9 @@ from climasense.etl import execucao, gold
 
 # O histórico entra em janela móvel (a bronze é acumulativa: não se rebaixa 2021→hoje a cada atualização).
 JANELA_HISTORICO_DIAS = 45
+JANELA_SOLO_HISTORICO_DIAS = (
+    45  # ERA5-Land do solo em janela móvel; a carga completa é `run open-meteo-solo --modo historico`
+)
 JANELA_APAC_HISTORICO_MESES = (
     2  # mês atual e anterior; a carga completa (desde 2022) é `run apac-chuva --modo historico`
 )
@@ -32,21 +35,26 @@ ORDEM_FONTES: tuple[tuple[str, str | None, int | None], ...] = (
     ("open-meteo-historico", None, JANELA_HISTORICO_DIAS),
     ("open-meteo-previsao", None, None),
     ("open-meteo-mare", None, None),
+    ("open-meteo-temperatura", None, None),
+    ("open-meteo-solo", "previsao", None),
+    ("open-meteo-solo", "historico", JANELA_SOLO_HISTORICO_DIAS),
     ("apac-chuva", None, None),
+    ("apac-previsao", None, None),
     ("apac-chuva", "historico", JANELA_APAC_HISTORICO_MESES),
+    ("apac-rios", None, None),
+    ("apac-reservatorios", None, None),
     ("alertas-oficiais", None, None),
-    ("recife-abrigos", "ativos", None),
     ("infodengue", None, None),
     ("recife-alagamento", None, None),
-    ("recife-abrigos", None, None),
     ("sinan-leptospirose", None, None),
     ("recife-arboviroses", None, None),
 )
 # `etl tempo-real` (a cada 10–15 min): só o que muda rápido
 ORDEM_TEMPO_REAL: tuple[tuple[str, str | None, int | None], ...] = (
     ("apac-chuva", None, None),
+    ("apac-previsao", None, None),
+    ("apac-rios", None, None),
     ("alertas-oficiais", None, None),
-    ("recife-abrigos", "ativos", None),
 )
 # `etl semanal`: as séries de saúde (o InfoDengue publica uma versão por semana; o DATASUS, a cada 1–3 semanas)
 ORDEM_SEMANAL: tuple[tuple[str, str | None, int | None], ...] = (
@@ -55,7 +63,6 @@ ORDEM_SEMANAL: tuple[tuple[str, str | None, int | None], ...] = (
 )
 ESTATICAS = {
     ("recife-alagamento", None),
-    ("recife-abrigos", None),
     ("sinan-leptospirose", None),
     ("recife-arboviroses", None),
 }
@@ -70,10 +77,8 @@ class Passo:
     detalhe: str
 
 
-# Só pula se o destino da carga estática tem dados: a tabela de execuções não guarda o modo, e uma execução
-# "ativos" do COP (feed vivo) não pode valer como o cadastro dos abrigos.
+# Só pula se o destino da carga estática tem dados (a tabela de execuções não guarda o modo).
 DESTINO_ESTATICAS = {
-    "recife-abrigos": "select count(*) from app.abrigos where origem = 'dados-abertos'",
     "recife-alagamento": "select count(*) from silver.ocorrencias",
     "sinan-leptospirose": "select count(*) from silver.leptospirose_semanal",
     "recife-arboviroses": "select count(*) from silver.arboviroses_bairro_ano",

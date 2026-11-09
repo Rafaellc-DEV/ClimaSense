@@ -10,20 +10,23 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from climasense.dominio import acoes as dom
+from climasense.dominio.distritos import nome_distrito
 from climasense.dominio.evento import RegistroInvalido
 from climasense.dominio.recorte import inicio_do_dia_utc
 from climasense.infra.modelos_sql import Usuario
-from climasense.servicos import fluxo, prioridade_vulnerabilidade
+from climasense.servicos import estagios, fluxo, prioridade_vulnerabilidade
 
 ALVO = "acao_resposta"
 EDITAVEIS = ("descricao", "responsavel", "situacao", "inicio_em", "fim_em", "licao_aprendida")
 
 SQL_LISTA = """
-select a.id, a.territorio_id, t.nome_exibicao as territorio_nome, coalesce(t.pai_id, a.territorio_id) as distrito_id,
+select a.id, a.territorio_id, t.nome_exibicao as territorio_nome, t.tipo as territorio_nivel,
+       d.id as distrito_id, d.nome_exibicao as distrito_nome,
        a.tipo, a.descricao, a.responsavel, a.situacao, a.inicio_em, a.fim_em, a.licao_aprendida,
        a.criado_em as criada_em, a.atualizado_em as atualizada_em, u.nome as autor_nome,
        ua.nome as atualizado_por_nome
 from app.acoes_resposta a join app.territorios t on t.id = a.territorio_id
+join app.territorios d on d.id = case when t.tipo = 'bairro' then t.pai_id else t.id end
 join app.usuarios u on u.id = a.criado_por join app.usuarios ua on ua.id = a.atualizado_por
 where (cast(:id as uuid) is null or a.id = :id)
   and (cast(:t as varchar) is null or :t = 'recife' or a.territorio_id = :t or t.pai_id = :t)
@@ -37,6 +40,8 @@ order by coalesce(a.inicio_em, a.criado_em) desc, a.criado_em desc
 def _rotulos(r: dict) -> dict:
     return {
         **r,
+        "territorio_nome": nome_distrito(r["territorio_nome"]),
+        "distrito_nome": nome_distrito(r["distrito_nome"]),
         "tipo_rotulo": dom.TIPOS.get(r["tipo"], r["tipo"]),
         "situacao_rotulo": dom.SITUACOES[r["situacao"]],
     }
@@ -83,12 +88,7 @@ def listar(
     posicao = {i["territorio_id"]: i["posicao"] for i in prio["itens"]} if prio else {}
     nomes = {i["territorio_id"]: i["nome"] for i in prio["itens"]} if prio else {}
     if not nomes and por_distrito:
-        nomes = dict(
-            db.execute(
-                text("select id, nome_exibicao from app.territorios where id = any(:i)"),
-                {"i": list(por_distrito)},
-            ).all()
-        )
+        nomes = estagios._territorios(db)[0]  # cadastro em cache: sem consulta a cada leitura
     for d in por_distrito.values():
         d["distrito_nome"] = nomes.get(d["distrito_id"], d["distrito_id"])
     if posicao:  # sort estável: dentro do distrito segue a ordem recente da consulta
@@ -124,6 +124,31 @@ def obter(db: Session, acao_id: uuid.UUID) -> dict:
     if not linha:
         raise RegistroInvalido(404, "Ação não encontrada.")
     return {**_rotulos(dict(linha)), "linha_do_tempo": eventos(db, acao_id)}
+
+
+def excluir(db: Session, acao_id: uuid.UUID, autor: Usuario, ip: str | None) -> None:
+    """Exclui a ação em qualquer situação. A auditoria guarda quem, quando (hora do registro) e o que foi
+    excluído (território, tipo e situação), sem a descrição nem o responsável. A linha do tempo da ação
+    continua guardada: o histórico do evento é somente-inclusão."""
+    antes = obter(db, acao_id)
+    try:
+        db.execute(text("delete from app.acoes_resposta where id = :i"), {"i": acao_id})
+        fluxo.auditar(
+            db,
+            "acao_resposta_excluida",
+            autor,
+            ALVO,
+            acao_id,
+            ip,
+            territorio_id=antes["territorio_id"],
+            territorio_nivel=antes["territorio_nivel"],
+            tipo=antes["tipo"],
+            situacao=antes["situacao"],
+        )
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise
 
 
 def _evento(

@@ -1,6 +1,6 @@
 """Boletim situacional (F5): retrato de uma página do evento e o resumo em texto para WhatsApp.
 
-Junta estágio por distrito, territórios em atenção, chuva, maré, abrigos e ações em andamento. O que faltar
+Junta estágio por distrito, territórios em atenção, chuva, maré e ações em andamento. O que faltar
 aparece como ausente, nunca como zero (RN-01, RN-02).
 """
 
@@ -13,7 +13,8 @@ from sqlalchemy.orm import Session
 from climasense.dominio import estagio as dom
 from climasense.dominio.mensagem import texto_boletim, wa_me_url
 from climasense.dominio.recorte import inicio_do_dia_utc
-from climasense.servicos import abrigos, acoes, estagio_oficial, estagios, saude_agravos
+from climasense.infra.postgres import em_paralelo
+from climasense.servicos import acoes, estagio_oficial, estagios, saude_agravos
 
 NIVEIS_ATENCAO = {"atencao", "alerta", "critico"}
 CHUVAS = ("chuva_24h", "chuva_prev_24h", "chuva_prev_72h")
@@ -96,14 +97,22 @@ def montar(
     ate: date | None = None,
 ) -> dict:
     ini, fim = periodo(agora, desde, ate)
-    itens = estagios.listar(db, "todos", agora, distrito_id)
+    limite_ini, limite_fim = inicio_do_dia_utc(ini), inicio_do_dia_utc(fim + timedelta(days=1))
+    # leituras independentes ao mesmo tempo: o tempo total é o da mais lenta, não a soma (banco remoto)
+    itens, andamento_r, do_periodo, oficial, saude = em_paralelo(
+        db,
+        [
+            lambda s: estagios.listar(s, "todos", agora, distrito_id),
+            lambda s: acoes.listar(s, distrito_id, "em_andamento", ordem="prioridade"),
+            lambda s: acoes.listar(s, distrito_id, None, ini, fim),
+            lambda s: estagio_oficial.vigente(s),
+            lambda s: saude_agravos.resumo_agravos(s, agora),
+        ],
+    )
     distritos = [i for i in itens if i["nivel"] == "distrito"]
     chuva = _resumo_chuva(distritos)
     ins = distritos[0]["sugerido"]["insumos"] if distritos else {}
-    lista_abrigos = abrigos.listar(db, distrito_id=distrito_id)
-    andamento = acoes.listar(db, distrito_id, "em_andamento", ordem="prioridade")["itens"]
-    do_periodo = acoes.listar(db, distrito_id, None, ini, fim)
-    limite_ini, limite_fim = inicio_do_dia_utc(ini), inicio_do_dia_utc(fim + timedelta(days=1))
+    andamento = andamento_r["itens"]
     concluidas = [
         a
         for a in do_periodo["itens"]
@@ -112,8 +121,8 @@ def montar(
     return {
         "gerado_em": agora,
         "periodo": {"desde": ini, "ate": fim},
-        "estagio_oficial": estagio_oficial.vigente(db),
-        "saude": saude_agravos.resumo_agravos(db),
+        "estagio_oficial": oficial,
+        "saude": saude,
         "acoes_concluidas": concluidas,
         "acoes_por_distrito": do_periodo["por_distrito"],
         "estagios": [
@@ -146,11 +155,6 @@ def montar(
             "maxima_em": ins.get("mare_max_em"),
             "emitida_em": ins.get("mare_emitida_em"),
         },
-        "abrigos": {
-            "totais": lista_abrigos["totais"],
-            "abertos": [a for a in lista_abrigos["itens"] if a["aberto"]],
-            "situacao": abrigos.situacao_evento(db),
-        },
         "acoes_em_andamento": andamento,
     }
 
@@ -163,7 +167,6 @@ def texto(b: dict, territorio_nome: str) -> dict:
         [(e["territorio_nome"], e["estagio"], e["origem"]) for e in b["estagios"]],
         {c: (b["chuva"][f"{c}_mm"], b["chuva"][f"{c}_territorio"]) for c in CHUVAS},
         (mare["maxima_m"], mare["maxima_em"]) if mare["maxima_m"] is not None and mare["maxima_em"] else None,
-        b["abrigos"]["situacao"],
         len(b["acoes_em_andamento"]),
         oficial=b["estagio_oficial"],
         acoes_concluidas=len(b["acoes_concluidas"]),

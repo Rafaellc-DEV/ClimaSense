@@ -4,21 +4,25 @@ from climasense.api.main import criar_app
 from tests.conftest import configuracao_teste
 
 
-def test_mensagens_de_validacao_em_portugues_e_limites_de_abrigo():
+def test_mensagens_de_validacao_em_portugues_e_limites_de_acao_e_cenario():
     from pydantic import ValidationError
 
     from climasense.api.erros import _mensagem
-    from climasense.api.routers.abrigos import PedidoAbrigo
+    from climasense.api.routers.acoes import PedidoAcao
+    from climasense.api.routers.cenarios import PedidoSimulacao
 
     try:
-        PedidoAbrigo(nome="x", bairro_id="b", capacidade=100_001, observacao="a" * 1001)
+        PedidoAcao(territorio_id="b", tipo="visita", descricao="a" * 2001)
     except ValidationError as erro:
         msgs = {e["loc"][0]: _mensagem(e) for e in erro.errors()}
-    assert msgs["capacidade"] == "O valor não pode ser maior que 100000."
-    assert msgs["observacao"] == "O texto não pode ter mais de 1000 caracteres."
-    assert (
-        PedidoAbrigo(nome="x", bairro_id="b", capacidade=100_000, pessoas_abrigadas=0).capacidade == 100_000
-    )
+    assert msgs["descricao"] == "O texto não pode ter mais de 2000 caracteres."
+    try:
+        PedidoSimulacao(
+            chuva_prevista_mm=601, duracao_h=1, chuva_acumulada_mm=None, mare_m=None, horizonte_h=24
+        )
+    except ValidationError as erro:
+        msgs = {e["loc"][0]: _mensagem(e) for e in erro.errors()}
+    assert msgs["chuva_prevista_mm"] == "O valor não pode ser maior que 600.0."
 
 
 def test_resposta_422_traz_mensagem_em_portugues():

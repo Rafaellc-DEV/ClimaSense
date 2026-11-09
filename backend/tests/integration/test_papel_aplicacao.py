@@ -14,7 +14,6 @@ SOMENTE_INCLUSAO = (
     "estagio_declaracoes",
     "estagio_oficial",
     "cenarios",
-    "abrigo_atualizacoes",
     "acao_eventos",
     "liberacoes_login",
 )
@@ -85,6 +84,17 @@ def test_privilegios_das_tabelas_somente_inclusao(engine_teste, tabela):
         ).scalar()
         assert tem("SELECT") and tem("INSERT")
         assert not tem("UPDATE") and not tem("DELETE") and not tem("TRUNCATE")
+
+
+def test_acoes_podem_ser_excluidas_mas_o_historico_delas_continua_somente_inclusao(engine_teste):
+    """0019: a exclusão de ação precisa de DELETE em `acoes_resposta` (e só nela); `acao_eventos` segue imutável."""
+    with engine_teste.connect() as c:
+        tem = lambda t, priv: c.execute(  # noqa: E731
+            text("select has_table_privilege('climasense_app', :t, :p)"), {"t": f"app.{t}", "p": priv}
+        ).scalar()
+        assert tem("acoes_resposta", "DELETE") and tem("acoes_resposta", "UPDATE")
+        assert not tem("acoes_resposta", "TRUNCATE")
+        assert not tem("acao_eventos", "DELETE") and not tem("acao_eventos", "UPDATE")
 
 
 def test_nao_faz_ddl(app):

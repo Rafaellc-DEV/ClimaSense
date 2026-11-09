@@ -13,7 +13,7 @@ from sqlalchemy.orm import Session
 
 from climasense.dominio import simulador as dom_sim
 from climasense.dominio import vulnerabilidade as dom
-from climasense.servicos import abrigos
+from climasense.infra import cache
 from climasense.territorio.geometria import simplificar_web
 
 FONTE_EQUIPAMENTOS = "cnes-equipamentos"
@@ -28,6 +28,10 @@ def falta(fonte_id: str) -> str:
 
 
 def _bairros(db: Session) -> list[tuple[str, str, str]]:
+    return cache.obter("territorios", "bairros_por_nome", cache.CARGA_S, lambda: _ler_bairros(db))
+
+
+def _ler_bairros(db: Session) -> list[tuple[str, str, str]]:
     return [
         (i, n, p)
         for i, n, p in db.execute(
@@ -40,7 +44,12 @@ def _bairros(db: Session) -> list[tuple[str, str, str]]:
 
 # ------------------------------------------------------------------ população
 def populacao(db: Session) -> tuple[int | None, dict[str, dom.Celulas]]:
-    """(ano, células por bairro) do ano mais recente da fonte; (None, {}) com a tabela vazia."""
+    """(ano, células por bairro) do ano mais recente da fonte; (None, {}) com a tabela vazia. Guardado por
+    `cache.CARGA_S` (só muda quando o ETL recarrega o Censo)."""
+    return cache.obter("populacao", "ultimo_ano", cache.CARGA_S, lambda: _ler_populacao(db))
+
+
+def _ler_populacao(db: Session) -> tuple[int | None, dict[str, dom.Celulas]]:
     ano = db.execute(text("select max(ano) from silver.populacao_bairro")).scalar()
     if ano is None:
         return None, {}
@@ -84,9 +93,15 @@ def _equipamentos(db: Session, territorio_id: str | None = None) -> list[dict]:
     filtro = ""
     if territorio_id and territorio_id != "recife":
         filtro = "where e.bairro_id = :t or coalesce(e.distrito_id, t.pai_id) = :t "
-    return [
-        dict(r) for r in db.execute(text(sql + filtro + "order by e.nome"), {"t": territorio_id}).mappings()
-    ]
+    return cache.obter(
+        "equipamentos",
+        territorio_id if filtro else "todos",
+        cache.CARGA_S,
+        lambda: [
+            dict(r)
+            for r in db.execute(text(sql + filtro + "order by e.nome"), {"t": territorio_id}).mappings()
+        ],
+    )
 
 
 def camada_equipamentos(db: Session) -> dict | None:
@@ -109,7 +124,9 @@ def camada_equipamentos(db: Session) -> dict | None:
 # ------------------------------------------------------------------ áreas de risco
 def _areas(db: Session) -> list[dict]:
     sql = "select id, tipo, grau, regional, bairro_id, geometria from silver.areas_risco order by id"
-    return [dict(r) for r in db.execute(text(sql)).mappings()]
+    return cache.obter(
+        "areas_risco", "todas", cache.CARGA_S, lambda: [dict(r) for r in db.execute(text(sql)).mappings()]
+    )
 
 
 def cobertura_risco(areas: list[dict]) -> dict:
@@ -183,13 +200,12 @@ def resumo_territorio(db: Session, territorio_id: str, minimo: int = SUPRESSAO_M
     equipamentos = _equipamentos(db, territorio_id)
     areas = _areas(db)
     pontos = [(e["longitude"], e["latitude"]) for e in equipamentos if e["latitude"] is not None]
-    todos = db.execute(text("select 1 from silver.equipamentos_saude limit 1")).first() is not None
+    todos = bool(_equipamentos(db))
     return {
         "idosos_60_mais": idosos,
         "criancas_0_14": criancas,
         "equipamentos": [{"cnes": e["cnes"], "nome": e["nome"], "tipo": e["tipo"]} for e in equipamentos],
         "equipamentos_em_area_de_risco": em_area_de_risco(pontos, areas) if areas else None,
-        "abrigos": len(abrigos._linhas(db, distrito_id=None if territorio_id == "recife" else territorio_id)),
         "areas_risco": sum(1 for a in areas if a["bairro_id"] in ids) if areas else None,
         "cobertura_risco_parcial": cobertura_risco(areas)["parcial"] if areas else True,
         "_ano": ano,

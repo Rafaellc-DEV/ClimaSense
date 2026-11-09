@@ -66,11 +66,6 @@ def test_rotas_de_indicador_trazem_os_campos_de_frescor(equipe):
         assert r.status_code == 200, (rota, r.text)
         for f in r.json()["meta"]["fontes"]:
             assert {"limite_frescor_h", "desatualizado"} <= set(f), rota
-    lista = c.get(f"{API}/abrigos").json()
-    ids = {f["id"] for f in lista["meta"]["fontes"]}
-    assert ids == {"recife-abrigos", "recife-abrigos-ocupacao"}
-    ocupacao = next(f for f in lista["meta"]["fontes"] if f["id"] == "recife-abrigos-ocupacao")
-    assert ocupacao["atualizado_em"] is None and ocupacao["desatualizado"] is None
 
 
 def test_fontes_expoe_frescor(equipe):

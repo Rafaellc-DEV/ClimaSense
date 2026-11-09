@@ -9,6 +9,7 @@ from __future__ import annotations
 from datetime import date, datetime
 from urllib.parse import quote
 
+from climasense.dominio.distritos import nome_distrito
 from climasense.dominio.estagio import ROTULO
 from climasense.dominio.recorte import para_recife
 
@@ -18,9 +19,9 @@ MAX_TEXTO = 3500  # folga abaixo do limite prático de uma mensagem e de uma URL
 
 ORIENTACOES: dict[str, str] = {
     "observacao": "Manter o acompanhamento da previsão e das ocorrências.",
-    "atencao": "Reforçar a vigilância nos pontos de alagamento conhecidos e revisar contatos e abrigos.",
-    "alerta": "Preparar abrigos, equipes e insumos; orientar a população das áreas de risco.",
-    "critico": "Acionar a resposta: abrigos abertos, equipes em campo e articulação com a Defesa Civil.",
+    "atencao": "Reforçar a vigilância nos pontos de alagamento conhecidos e revisar contatos.",
+    "alerta": "Preparar equipes e insumos; orientar a população das áreas de risco.",
+    "critico": "Acionar a resposta: equipes em campo e articulação com a Defesa Civil.",
     "sem_dados": "Sem dados suficientes: confirme a situação na APAC e no Cemaden antes de decidir.",
 }
 
@@ -54,6 +55,8 @@ def mensagem_estagio(
 
 
 def limitar(texto: str) -> str:
+    """Corta no limite e escreve o distrito como "Distrito 5" (nunca romano, "DS V" ou "Distrito Sanitário V")."""
+    texto = nome_distrito(texto) or ""
     return texto if len(texto) <= MAX_TEXTO else texto[: MAX_TEXTO - 1].rstrip() + "…"
 
 
@@ -81,7 +84,6 @@ def texto_boletim(
     estagios: list[tuple[str, str, str]],
     chuva: dict,
     mare: tuple[float, datetime] | None,
-    abrigos: dict,
     acoes_em_andamento: int,
     *,
     oficial: dict | None = None,
@@ -91,8 +93,7 @@ def texto_boletim(
 ) -> str:
     """Resumo do boletim (F5) e do relatório executivo (RF-17) para WhatsApp.
 
-    `estagios`: (território, estágio, origem: declarado|sugerido). `abrigos`: `cidade` e `distritos` da situação do
-    evento (ou, no formato antigo, os totais da cidade). Ausência é "sem dado", nunca zero (RN-01, RN-02)."""
+    `estagios`: (território, estágio, origem: declarado|sugerido). Ausência é "sem dado", nunca zero (RN-01, RN-02)."""
     linhas = [
         "*Boletim ClimaSense · Vigidesastres*",
         f"{territorio_nome} · {hora_recife(momento)}",
@@ -120,23 +121,6 @@ def texto_boletim(
         if mare
         else "Maré máxima: sem dado"
     )
-    cidade = abrigos.get("cidade", abrigos)
-    linhas += [
-        "",
-        "*Abrigos (registro da equipe)*",
-        f"- Cidade: {_contagem(cidade.get('abrigos_abertos'))} aberto(s), "
-        f"{_contagem(cidade.get('pessoas_abrigadas'), cidade.get('parcial', False))} abrigado(s), "
-        f"{_contagem(cidade.get('desabrigados'), cidade.get('parcial', False))} desabrigado(s)",
-    ]
-    for d in abrigos.get("distritos", []):
-        if d.get("abrigos_abertos") or d.get("desabrigados"):
-            linhas.append(
-                f"- {d['distrito_nome']}: {_contagem(d['abrigos_abertos'])} aberto(s), "
-                f"{_contagem(d['pessoas_abrigadas'], d.get('parcial', False))} abrigado(s), "
-                f"{_contagem(d['desabrigados'], d.get('parcial', False))} desabrigado(s)"
-            )
-    if cidade.get("atualizado_em"):
-        linhas.append(f"- Atualizado em {hora_recife(cidade['atualizado_em'])}")
     quando = (
         f" ({periodo[0].strftime('%d/%m')} a {periodo[1].strftime('%d/%m')})" if periodo is not None else ""
     )
@@ -147,6 +131,11 @@ def texto_boletim(
         linhas += ["", "*Saúde (casos na última semana com dado)*"]
         for a in saude:
             semana = a.get("ultima_semana")
+            if (
+                a.get("utilizavel") is False
+            ):  # série parada ou sem dado: nunca a contagem antiga como se fosse atual
+                linhas.append(f"- {a['nome']}: dados insuficientes")
+                continue
             linhas.append(
                 f"- {a['nome']}: {_contagem(a.get('casos'))} caso(s)"
                 + (f" (SE {semana['semana']}/{semana['ano']})" if semana else "")

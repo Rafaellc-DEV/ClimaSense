@@ -6,7 +6,7 @@ import uuid
 from datetime import date, datetime
 from typing import Literal
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, Response
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
@@ -27,9 +27,11 @@ Situacao = Literal["planejada", "em_andamento", "concluida", "cancelada"]
 
 class Acao(BaseModel):
     id: uuid.UUID
-    territorio_id: str
+    territorio_id: str = Field(description="Município (recife), distrito ou bairro onde a ação acontece")
     territorio_nome: str
-    distrito_id: str
+    territorio_nivel: Literal["municipio", "distrito", "bairro"]
+    distrito_id: str = Field(description="Distrito do território (o próprio, se for distrito ou município)")
+    distrito_nome: str
     tipo: Tipo
     tipo_rotulo: str
     descricao: str
@@ -77,7 +79,7 @@ class ListaAcoes(BaseModel):
 
 
 class PedidoAcao(BaseModel):
-    territorio_id: str
+    territorio_id: str = Field(description="recife, um distrito (ds-1 a ds-8) ou um bairro; precisa existir")
     tipo: Tipo
     descricao: str = Field(max_length=2000)
     responsavel: str | None = Field(default=None, max_length=160, description="Órgão ou pessoa responsável")
@@ -149,3 +151,17 @@ def atualizar(
 ) -> DetalheAcao:
     dados = pedido.model_dump(exclude_unset=True)
     return erro_de_negocio(lambda: servico.atualizar(db, acao_id, dados, ctx.usuario, ctx.ip, agora))
+
+
+@router.delete(
+    "/{acao_id}",
+    status_code=204,
+    summary="Excluir ação em qualquer situação (auditado: quem, quando e o que foi excluído)",
+)
+def excluir(
+    acao_id: uuid.UUID,
+    ctx: Contexto = Depends(editar),
+    db: Session = Depends(obter_sessao),
+) -> Response:
+    erro_de_negocio(lambda: servico.excluir(db, acao_id, ctx.usuario, ctx.ip))
+    return Response(status_code=204)

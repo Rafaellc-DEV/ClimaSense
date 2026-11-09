@@ -1,5 +1,5 @@
 """Evento de chuva pela API, com Postgres real (specs/foco-chuvas.md F1–F5): estágio sugerido e declarado,
-limiares com histórico, mensagem de WhatsApp, abrigos, ações e boletim."""
+limiares com histórico, mensagem de WhatsApp, ações e boletim."""
 
 from __future__ import annotations
 
@@ -70,6 +70,7 @@ def _previsao_ds4_com_mare(sessao, agora):
             ),
             {"v": 0.8 if 9 <= h <= 11 else 0.2, "t": inicio + timedelta(hours=h), "e": emitido, "x": ex},
         )
+    sessao.commit()  # fecha o savepoint: uma validação que desfaça a transação da requisição não leva a semente
 
 
 def _bairro_de(sessao, ds: str) -> str:
@@ -237,67 +238,6 @@ def test_mensagem_whatsapp_auditada_e_uso(equipe, sessao):
     assert sessao.execute(text("select count(*) from app.estagio_declaracoes")).scalar() == 0
 
 
-def test_abrigos_com_historico_totais_e_painel(equipe, sessao):
-    ana, cris, relogio = equipe["ana"], equipe["cris"], equipe["relogio"]
-    bairro = _bairro_de(sessao, "ds-4")
-    assert ana.post(f"{API}/abrigos", json={"nome": "Escola", "bairro_id": "ds-4"}).status_code == 422
-    r = ana.post(
-        f"{API}/abrigos",
-        json={
-            "nome": "Escola Municipal",
-            "bairro_id": bairro,
-            "capacidade": 120,
-            "aberto": True,
-            "pessoas_abrigadas": 30,
-        },
-    )
-    assert r.status_code == 201, r.text
-    a = r.json()
-    assert a["origem"] == "manual" and a["latitude"] is None
-    assert a["distrito_id"] == "ds-4" and a["atualizado_por_nome"] == "Ana" and a["desabrigados"] is None
-    ana.post(
-        f"{API}/abrigos", json={"nome": "Ginásio", "bairro_id": _bairro_de(sessao, "ds-1"), "aberto": False}
-    )
-
-    relogio.avancar(minutes=30)
-    r = cris.patch(f"{API}/abrigos/{a['id']}", json={"pessoas_abrigadas": 55, "desabrigados": 70})
-    assert r.status_code == 200 and r.json()["atualizado_por_nome"] == "Cris"
-    assert cris.patch(f"{API}/abrigos/{a['id']}", json={"pessoas_abrigadas": -1}).status_code == 422
-    assert (
-        cris.patch(f"{API}/abrigos/{a['id']}", json={"latitude": -8.06}).status_code == 422
-    )  # sem longitude
-    r = cris.patch(f"{API}/abrigos/{a['id']}", json={"latitude": -8.06, "longitude": -34.9})
-    assert r.json()["latitude"] == -8.06 and r.json()["longitude"] == -34.9
-
-    hist = ana.get(f"{API}/abrigos/{a['id']}/historico").json()
-    assert [h["autor_nome"] for h in hist] == ["Cris", "Cris", "Ana"]
-    assert hist[0]["alteracoes"]["latitude"] == {"de": None, "para": -8.06}
-    assert hist[1]["alteracoes"]["pessoas_abrigadas"] == {"de": 30, "para": 55}
-
-    lista = ana.get(f"{API}/abrigos").json()
-    t = lista["totais"]
-    assert t["abrigos_abertos"] == 1 and t["pessoas_abrigadas"] == 55 and t["desabrigados"] == 70
-    assert t["abrigos_cadastrados"] == 2 and len(lista["itens"]) == 2
-    so_ds4 = ana.get(f"{API}/abrigos", params={"distrito_id": "ds-4", "aberto": "true"}).json()
-    assert [x["id"] for x in so_ds4["itens"]] == [a["id"]]
-    # pré-carga dos Dados Abertos (próxima onda) entra sem autor; manual sem autor é recusado no banco
-    sessao.execute(
-        text(
-            "insert into app.abrigos (nome, bairro_id, origem, codigo_fonte, latitude, longitude) "
-            "values ('Abrigo CKAN', :b, 'dados-abertos', 'ckan-1', -8.05, -34.88)"
-        ),
-        {"b": bairro},
-    )
-    with pytest.raises(DBAPIError), sessao.begin_nested():
-        sessao.execute(
-            text("insert into app.abrigos (nome, bairro_id) values ('Sem autor', :b)"), {"b": bairro}
-        )
-    ckan = next(x for x in ana.get(f"{API}/abrigos").json()["itens"] if x["origem"] == "dados-abertos")
-    assert ckan["atualizado_por_nome"] is None and ckan["aberto"] is False
-    painel = ana.get(f"{API}/painel/resumo").json()["abrigos"]
-    assert painel["abrigos_abertos"] == 1 and painel["desabrigados"] == 70 and painel["atualizado_em"]
-
-
 def test_acoes_linha_do_tempo_e_licao(equipe, sessao):
     ana, relogio = equipe["ana"], equipe["relogio"]
     bairro = _bairro_de(sessao, "ds-4")
@@ -339,9 +279,6 @@ def test_boletim_consolida_e_resume_para_whatsapp(equipe, sessao):
     _previsao_ds4_com_mare(sessao, relogio.agora)
     bairro = _bairro_de(sessao, "ds-4")
     ana.post(
-        f"{API}/abrigos", json={"nome": "Escola", "bairro_id": bairro, "aberto": True, "desabrigados": 12}
-    )
-    ana.post(
         f"{API}/acoes",
         json={
             "territorio_id": bairro,
@@ -358,7 +295,7 @@ def test_boletim_consolida_e_resume_para_whatsapp(equipe, sessao):
         "ds-4"
     ]  # bairros herdados não repetem
     assert b["chuva"]["chuva_prev_24h_mm"] == 44.5 and b["mare"]["maxima_m"] == 0.8
-    assert b["abrigos"]["totais"]["abrigos_abertos"] == 1 and len(b["acoes_em_andamento"]) == 1
+    assert len(b["acoes_em_andamento"]) == 1
 
     so_ds1 = ana.get(f"{API}/boletim", params={"territorio_id": "ds-1"}).json()["dados"]
     assert [e["territorio_id"] for e in so_ds1["estagios"]] == ["ds-1"] and so_ds1["acoes_em_andamento"] == []
@@ -423,3 +360,69 @@ def test_encerrar_estagio_volta_a_sem_declaracao_e_guarda_o_historico(equipe, se
     )
     itens = {i["territorio_id"]: i for i in ana.get(f"{API}/estagios").json()["dados"]["itens"]}
     assert itens["ds-4"]["declarado"]["estagio"] == "atencao"
+
+
+def test_acao_em_municipio_distrito_ou_bairro_e_exclusao_em_qualquer_situacao(equipe, sessao):
+    ana = equipe["ana"]
+    bairro = _bairro_de(sessao, "ds-4")
+    base = {"tipo": "orientacao", "descricao": "Texto livre que não pode ir para a auditoria."}
+    criadas = {}
+    for terr, nivel in (("recife", "municipio"), ("ds-4", "distrito"), (bairro, "bairro")):
+        r = ana.post(f"{API}/acoes", json={**base, "territorio_id": terr})
+        assert r.status_code == 201, r.text
+        a = r.json()
+        assert a["territorio_id"] == terr and a["territorio_nivel"] == nivel and a["territorio_nome"]
+        assert a["distrito_nome"] and a["distrito_id"] == ("recife" if nivel == "municipio" else "ds-4")
+        criadas[nivel] = a
+    assert (
+        ana.post(f"{API}/acoes", json={**base, "territorio_id": "bairro-que-nao-existe"}).status_code == 422
+    )
+
+    so_bairro = ana.get(f"{API}/acoes", params={"territorio_id": bairro}).json()
+    assert [x["id"] for x in so_bairro["itens"]] == [criadas["bairro"]["id"]]
+    assert so_bairro["itens"][0]["distrito_id"] == "ds-4"
+    no_distrito = ana.get(f"{API}/acoes", params={"territorio_id": "ds-4"}).json()
+    assert {x["id"] for x in no_distrito["itens"]} == {criadas["distrito"]["id"], criadas["bairro"]["id"]}
+
+    # exclusão em cada situação: planejada, em andamento, concluída e cancelada
+    ids = []
+    for situacao in ("planejada", "em_andamento", "concluida", "cancelada"):
+        r = ana.post(f"{API}/acoes", json={**base, "territorio_id": bairro, "situacao": situacao})
+        assert r.status_code == 201, r.text
+        ids.append(r.json()["id"])
+    for acao_id in ids:
+        assert ana.delete(f"{API}/acoes/{acao_id}").status_code == 204
+        assert ana.get(f"{API}/acoes/{acao_id}").status_code == 404
+        assert ana.delete(f"{API}/acoes/{acao_id}").status_code == 404
+    linhas = (
+        sessao.execute(
+            text(
+                "select usuario_id, em, alvo_id, detalhes from app.auditoria "
+                "where acao = 'acao_resposta_excluida' order by id"
+            )
+        )
+        .mappings()
+        .all()
+    )
+    assert [x["alvo_id"] for x in linhas] == ids
+    assert all(x["usuario_id"] and x["em"] for x in linhas)
+    assert linhas[2]["detalhes"] == {
+        "territorio_id": bairro,
+        "territorio_nivel": "bairro",
+        "tipo": "orientacao",
+        "situacao": "concluida",
+    }
+    assert "Texto livre" not in str(linhas[0]["detalhes"])
+    # o histórico da ação excluída continua guardado (somente inclusão)
+    assert (
+        sessao.execute(
+            text("select count(*) from app.acao_eventos where acao_id = any(cast(:i as uuid[]))"), {"i": ids}
+        ).scalar()
+        == 4
+    )
+    assert ana.get(f"{API}/acoes", params={"territorio_id": bairro}).json()["total"] == 1
+
+
+def test_excluir_acao_exige_login(equipe, sessao):
+    anonimo = cliente(sessao, equipe["relogio"])
+    assert anonimo.delete(f"{API}/acoes/00000000-0000-0000-0000-000000000000").status_code == 401

@@ -1,4 +1,4 @@
-"""Erro comum dos registros do evento de chuva (estágio, abrigos, ações), com status e mensagem para a tela."""
+"""Erro comum dos registros do evento de chuva (estágio, ações), com status e mensagem para a tela."""
 
 from __future__ import annotations
 

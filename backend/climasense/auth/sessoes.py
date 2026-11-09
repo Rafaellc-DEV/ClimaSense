@@ -16,6 +16,9 @@ from climasense.infra.repositorios.usuarios import RepositorioSessoes, Repositor
 COOKIE_SESSAO = "cs_sessao"
 COOKIE_CSRF = "cs_csrf"
 DURACAO_MAXIMA = timedelta(hours=12)  # mesmo em uso contínuo, pede novo login após 12 h
+# A renovação da inatividade grava no banco; gravar a cada requisição custa uma ida e volta ao Neon. Em uso contínuo
+# basta renovar a cada 30 s (a inatividade mínima configurável é de 5 min).
+RENOVAR_A_CADA = timedelta(seconds=30)
 
 _CHAVE_DESENVOLVIMENTO = "climasense-desenvolvimento-local-nao-use-em-producao"
 
@@ -71,10 +74,14 @@ class GerenciadorSessoes:
         )
         return NovaSessao(token=token, csrf=csrf, expira_em=expira)
 
-    def validar(self, token: str | None, agora: datetime, renovar: bool = True) -> tuple[Sessao, Usuario]:
+    def validar(
+        self, token: str | None, agora: datetime, renovar: bool = True, sempre: bool = False
+    ) -> tuple[Sessao, Usuario]:
+        """`sempre=False`: a renovação é gravada só se a última tem mais de `RENOVAR_A_CADA`."""
         if not token:
             raise SessaoInvalida()
-        sessao = self.sessoes.por_hash(resumo(self.config, token))
+        achada = self.sessoes.por_hash_com_usuario(resumo(self.config, token))
+        sessao = achada[0] if achada else None
         if sessao is None or sessao.revogada:
             raise SessaoInvalida()
         if agora >= sessao.expira_em:
@@ -84,7 +91,7 @@ class GerenciadorSessoes:
         usuario = self.usuarios.por_id(sessao.usuario_id)
         if usuario is None or not usuario.ativo:
             raise SessaoInvalida("Esta conta está desativada. Fale com o administrador do ClimaSense.")
-        if renovar:
+        if renovar and (sempre or agora - sessao.ultimo_uso >= RENOVAR_A_CADA or agora < sessao.ultimo_uso):
             sessao.ultimo_uso = agora
             sessao.expira_em = min(agora + self.inatividade, sessao.criada_em + DURACAO_MAXIMA)
         return sessao, usuario

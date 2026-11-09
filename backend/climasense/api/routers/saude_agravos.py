@@ -24,6 +24,7 @@ from climasense.dominio.papeis import Permissao
 from climasense.infra.postgres import obter_sessao
 from climasense.servicos import fontes as servico_fontes
 from climasense.servicos import saude_agravos as servico
+from climasense.servicos.arboviroses_cenario import MOTIVO_ZIKA
 
 router = APIRouter(
     prefix="/saude",
@@ -34,6 +35,7 @@ ocorrencias = APIRouter(prefix="/ocorrencias", tags=["Saúde depois da chuva"])
 consultar = exige(Permissao.CONSULTAR)
 
 Agravo = Literal["dengue", "chikungunya", "leptospirose"]
+AgravoSemanal = Literal["dengue", "chikungunya", "leptospirose", "zika"]  # zika: sempre "Dados insuficientes"
 AgravoBairro = Literal["dengue", "chikungunya"]
 TipoOcorrencia = Literal["alagamento", "deslizamento"]
 
@@ -54,7 +56,19 @@ class ResumoAgravo(BaseModel):
     agravo: Agravo
     nome: str
     fonte_id: str
-    ultima_semana: SemanaRef | None = Field(description="null enquanto a fonte não tiver carga (RN-01)")
+    utilizavel: bool = Field(
+        description="true = a semana mais recente com dado não é mais velha que o limite de frescor da fonte. "
+        "false = série parada ou sem dado: nenhuma contagem é devolvida (vêm nulas) e `motivo` explica"
+    )
+    ultima_semana_com_dado: SemanaRef | None = Field(
+        description="Semana mais recente com casos publicados (mesmo quando não utilizável); null sem nenhum dado"
+    )
+    motivo: str | None = Field(
+        default=None, description="'Dados insuficientes: ...' quando não utilizável; null quando utilizável"
+    )
+    ultima_semana: SemanaRef | None = Field(
+        description="Semana a que se referem as contagens; null quando não utilizável (RN-01)"
+    )
     casos: int | None = Field(description="Casos notificados na última semana da série")
     casos_estimados: float | None = Field(description="Nowcasting do InfoDengue; null na leptospirose")
     confirmados: int | None = Field(default=None, description="Só leptospirose (SINAN)")
@@ -108,10 +122,13 @@ class ChuvaSemana(BaseModel):
 
 
 class SerieSaude(BaseModel):
-    agravo: Agravo
+    agravo: AgravoSemanal
     desde: date
     itens: list[SemanaSaude]
     chuva: list[ChuvaSemana]
+    motivo: str | None = Field(
+        default=None, description="'Dados insuficientes: ...' com a fonte que falta (zika); null com série"
+    )
 
 
 class BairroAgravo(BaseModel):
@@ -189,7 +206,7 @@ def resumo(
     db: Session = Depends(obter_sessao),
     agora: datetime = Depends(relogio),
 ) -> RespostaDados[ResumoSaude]:
-    agravos = servico.resumo_agravos(db)
+    agravos = servico.resumo_agravos(db, agora)
     jan = servico.janela_leptospirose(db, agora)
     avisos = [AVISO_SEMANAS, AVISO_NIVEL, AVISO_MUNICIPIO]
     if jan:
@@ -216,12 +233,26 @@ def resumo(
     summary="Série semanal de um agravo no Recife com a chuva semanal ao lado",
 )
 def semanal(
-    agravo: Agravo = Query(default="dengue"),
+    agravo: AgravoSemanal = Query(default="dengue"),
     desde: date | None = Query(default=None, description="AAAA-MM-DD; padrão: 104 semanas atrás"),
     _: Contexto = Depends(consultar),
     db: Session = Depends(obter_sessao),
     agora: datetime = Depends(relogio),
 ) -> RespostaDados[SerieSaude]:
+    if (
+        agravo == "zika"
+    ):  # a série do Recife parou em 2024-SE07 e não é carregada: sem dado, com a fonte que falta
+        vazio = SerieSaude(
+            agravo="zika",
+            desde=desde or servico.domingo(servico.hoje_recife(agora)),
+            itens=[],
+            chuva=[],
+            motivo=MOTIVO_ZIKA,
+        )
+        return RespostaDados(
+            dados=vazio,
+            meta=_meta(db, ["infodengue"], agora, "municipio", [MOTIVO_ZIKA], True),
+        )
     serie = servico.semanal(db, agravo, desde, agora)
     fonte = servico.AGRAVOS[agravo][1]
     avisos = [AVISO_SEMANAS, AVISO_MUNICIPIO]

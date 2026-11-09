@@ -60,8 +60,6 @@ class Premissas:
     chuva_acumulada_mm: float | None
     mare_m: float | None
     horizonte_h: int
-    abrigos_abertos: int | None = None
-    capacidade_abrigos: int | None = None
 
 
 @dataclass(frozen=True)
@@ -325,25 +323,6 @@ def agregar_distrito(bairros: list[tuple[str, Resultado]]) -> Resultado:
     faltas = [m for m in motivos if m in (MOTIVO_SEM_ACUMULADA, MOTIVO_SEM_MARE)]
     resto = [m for m in motivos if m not in faltas]
     return Resultado(alag, desl, estagio, conf, [*resto[: MAX_MOTIVOS - len(faltas[:2])], *faltas[:2]])
-
-
-def pressao_abrigos(p: Premissas) -> str | None:
-    """Só repete o que foi informado: não inventa demanda de abrigo."""
-    n, cap = p.abrigos_abertos, p.capacidade_abrigos
-    if n is None and cap is None:
-        return None
-    if n is not None and cap is not None:
-        if n == 0:
-            return "nenhum abrigo aberto informado"
-        abrigos = "abrigo" if n == 1 else "abrigos"
-        return f"capacidade informada de {cap} pessoas em {n} {abrigos}"
-    if n is not None:
-        return (
-            "nenhum abrigo aberto informado"
-            if n == 0
-            else f"{n} abrigo(s) aberto(s), capacidade não informada"
-        )
-    return f"capacidade informada de {cap} pessoas, número de abrigos abertos não informado"
 
 
 def impacto_pessoas(estagio: Classe, vulneraveis: Vulneraveis | None) -> dict | None:

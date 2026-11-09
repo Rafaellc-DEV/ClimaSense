@@ -130,3 +130,15 @@ def _sem_cache_do_simulador():
     simulador.limpar_cache()
     yield
     simulador.limpar_cache()
+
+
+@pytest.fixture(autouse=True)
+def _sem_cache_em_memoria(monkeypatch):
+    """O cache em memória (infra/cache.py) é desligado nos testes: cada teste desfaz o banco e o dado do anterior
+    não pode aparecer no seguinte. Os testes do cache ligam de volta com `monkeypatch.setattr(cache, "ativo", True)`."""
+    from climasense.infra import cache
+
+    cache.limpar()
+    monkeypatch.setattr(cache, "ativo", False)
+    yield
+    cache.limpar()

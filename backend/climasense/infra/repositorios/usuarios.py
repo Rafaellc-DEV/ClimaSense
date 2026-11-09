@@ -47,6 +47,16 @@ class RepositorioSessoes:
     def por_hash(self, id_hash: str) -> Sessao | None:
         return self.sessao.get(Sessao, id_hash)
 
+    def por_hash_com_usuario(self, id_hash: str) -> tuple[Sessao, Usuario | None] | None:
+        """Sessão e dono numa só consulta (uma ida e volta ao banco em vez de duas). O usuário entra no mapa de
+        identidade da sessão do banco, então `RepositorioUsuarios.por_id` não consulta de novo."""
+        linha = self.sessao.execute(
+            select(Sessao, Usuario)
+            .outerjoin(Usuario, Usuario.id == Sessao.usuario_id)
+            .where(Sessao.id_hash == id_hash)
+        ).first()
+        return (linha[0], linha[1]) if linha else None
+
     def revogar_do_usuario(self, usuario_id: uuid.UUID, exceto: str | None = None) -> None:
         consulta = update(Sessao).where(Sessao.usuario_id == usuario_id, Sessao.revogada.is_(False))
         if exceto:

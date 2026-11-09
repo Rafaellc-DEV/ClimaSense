@@ -10,8 +10,6 @@ from __future__ import annotations
 
 import json
 import logging
-import threading
-import time
 import uuid
 from datetime import date, datetime, timedelta
 
@@ -20,10 +18,13 @@ from sqlalchemy.orm import Session
 
 from climasense.dominio import estagio as dom
 from climasense.dominio import situacao as sit
+from climasense.dominio.distritos import nome_distrito
 from climasense.dominio.evento import RegistroInvalido
 from climasense.dominio.mensagem import mensagem_estagio, wa_me_url
 from climasense.dominio.recorte import inicio_do_dia_utc
+from climasense.infra import cache
 from climasense.infra.modelos_sql import Usuario
+from climasense.infra.postgres import em_paralelo
 from climasense.servicos import cenarios, decisao, fluxo
 
 log = logging.getLogger("climasense.estagios")
@@ -41,6 +42,11 @@ MAX_JUSTIFICATIVA = 500
 
 # ------------------------------------------------------------------ parâmetros (limiares com histórico)
 def parametros_atuais(db: Session) -> dict:
+    """Limiares vigentes. Guardados por `cache.VIVO_S`; `alterar_parametros` esquece o cache na hora."""
+    return cache.obter("estagio_parametros", "vigentes", cache.VIVO_S, lambda: _ler_parametros(db))
+
+
+def _ler_parametros(db: Session) -> dict:
     linha = (
         db.execute(
             text(
@@ -121,6 +127,7 @@ def alterar_parametros(
     except Exception:
         db.rollback()
         raise
+    cache.limpar("estagio_parametros")
     return parametros_atuais(db)
 
 
@@ -157,16 +164,20 @@ def _risco_ml(db: Session, agora: datetime) -> dict[str, dict]:
 
 def _ocorrencias_por_bairro(db: Session) -> dict[str, int] | None:
     """None enquanto o conector de ocorrências não tiver carga bem-sucedida (ausência ≠ zero, RN-02)."""
-    if cenarios.ocorrencias(db, "recife") is None:
-        return None
-    return dict(
-        db.execute(
-            text(
-                "select territorio_id, count(*) from silver.ocorrencias where tipo = 'alagamento' "
-                "group by territorio_id"
-            )
-        ).all()
-    )
+
+    def ler() -> dict[str, int] | None:
+        if cenarios.ocorrencias(db, "recife") is None:
+            return None
+        return dict(
+            db.execute(
+                text(
+                    "select territorio_id, count(*) from silver.ocorrencias where tipo = 'alagamento' "
+                    "group by territorio_id"
+                )
+            ).all()
+        )
+
+    return cache.obter("ocorrencias", "por_bairro", cache.MEDIO_S, ler)
 
 
 APAC_DESATUALIZADA_MIN = 120  # leitura mais velha que isso não vale como "agora" (é desatualizada, não zero)
@@ -198,17 +209,25 @@ def _chuva_apac(db: Session, territorio_id: str, inicio: datetime) -> float | No
 
 
 def chuva_24h(
-    db: Session, territorio_id: str, inicio: datetime, apac: dict[str, float] | None = None
+    db: Session,
+    territorio_id: str,
+    inicio: datetime,
+    apac: dict[str, float] | None = None,
+    horaria: dict | None = None,
 ) -> tuple[float | None, list[str]]:
     """Chuva das últimas 24 h do distrito e as fontes usadas. Prefere os pluviômetros observados da APAC
     (`apac-chuva`, estações atualizadas há até 120 min); sem eles, a reanálise e as horas já passadas da
-    previsão (decisao.py). `apac` é a leitura de todos os territórios, quando quem chama já a tem."""
+    previsão (decisao.py). `apac` é a leitura de todos os territórios e `horaria` a da reanálise/previsão de todos os
+    distritos (`decisao.chuva_horaria_recente_distritos`), quando quem chama já as tem."""
     apac_mm = apac.get(territorio_id) if apac is not None else _chuva_apac(db, territorio_id, inicio)
     if apac_mm is not None:
         return apac_mm, ["apac-chuva"]
-    por_hora, fontes_hora = decisao.chuva_horaria_recente(
-        db, territorio_id, inicio - timedelta(hours=24), inicio
-    )
+    if horaria is not None and territorio_id in horaria:
+        por_hora, fontes_hora = horaria[territorio_id]
+    else:
+        por_hora, fontes_hora = decisao.chuva_horaria_recente(
+            db, territorio_id, inicio - timedelta(hours=24), inicio
+        )
     usadas = sorted({f for h, f in fontes_hora.items() if inicio - timedelta(hours=24) <= h < inicio})
     return sit.acumulado_recente(por_hora, inicio, 24).acumulado_mm, usadas
 
@@ -216,13 +235,10 @@ def chuva_24h(
 # Os insumos de tempo (chuva e maré) mudam a cada 10 a 15 min, mas custam dezenas de consultas ao banco: guardá-los
 # por 60 s deixa o painel e a lista de estágios rápidos sem atrasar nada. Declarações e alertas NÃO passam por aqui.
 CACHE_INSUMOS_S = 60.0
-_cache_insumos: dict[tuple, tuple[float, dict]] = {}
-_trava_cache = threading.Lock()
 
 
 def limpar_cache_insumos() -> None:
-    with _trava_cache:
-        _cache_insumos.clear()
+    cache.limpar("insumos")
 
 
 def insumos_distritos(db: Session, distritos: list[str], agora: datetime, p: dom.Parametros) -> dict:
@@ -232,40 +248,40 @@ def insumos_distritos(db: Session, distritos: list[str], agora: datetime, p: dom
         agora.replace(minute=0, second=0, microsecond=0),
         tuple(sorted(p.como_dict().items())),
     )
-    agora_s = time.monotonic()
-    if CACHE_INSUMOS_S > 0:
-        with _trava_cache:
-            guardado = _cache_insumos.get(chave)
-        if guardado and agora_s - guardado[0] < CACHE_INSUMOS_S:
-            return guardado[1]
-    resultado = _calcular_insumos_distritos(db, distritos, agora, p)
-    if CACHE_INSUMOS_S > 0:
-        with _trava_cache:
-            if len(_cache_insumos) >= 32:
-                _cache_insumos.clear()
-            _cache_insumos[chave] = (agora_s, resultado)
-    return resultado
+    return cache.obter(
+        "insumos", chave, CACHE_INSUMOS_S, lambda: _calcular_insumos_distritos(db, distritos, agora, p)
+    )
 
 
 def _calcular_insumos_distritos(
     db: Session, distritos: list[str], agora: datetime, p: dom.Parametros
 ) -> dict:
     inicio = agora.replace(minute=0, second=0, microsecond=0)
-    emitido_mare, mare = cenarios.mare_prevista(db, inicio)
+    # quatro leituras independentes (maré, APAC, previsão e chuva horária dos distritos) ao mesmo tempo
+    (emitido_mare, mare), apac, previsoes, horaria = em_paralelo(
+        db,
+        [
+            lambda s: cenarios.mare_prevista(s, inicio),
+            lambda s: _chuva_apac_todos(s, inicio),
+            lambda s: cenarios.previsao_por_emissao_distritos(s, distritos, inicio),
+            lambda s: decisao.chuva_horaria_recente_distritos(
+                s, distritos, inicio - timedelta(hours=24), inicio
+            ),
+        ],
+    )
     mare = [(t, v) for t, v in mare if t < inicio + timedelta(hours=72)]
     validas = [(t, v) for t, v in mare if v is not None]
     mare_em, mare_max = max(validas, key=lambda x: x[1]) if validas else (None, None)
     mare_max = round(mare_max, 2) if mare_max is not None else None
     resultado = {}
-    apac = _chuva_apac_todos(db, inicio)
     for ds in distritos:
-        por_emissao = cenarios.previsao_por_emissao(db, ds, inicio)
+        por_emissao = previsoes.get(ds, {})
         ultima = max(por_emissao) if por_emissao else None
         chuva = por_emissao.get(ultima, []) if ultima else []
         prev24, _ = dom.acumulado_previsto(chuva, inicio, 24)
         prev72, horas72 = dom.acumulado_previsto(chuva, inicio, 72)
         pico_em = dom.pico(chuva, inicio, 72)
-        recente_mm, recente_fontes = chuva_24h(db, ds, inicio, apac)
+        recente_mm, recente_fontes = chuva_24h(db, ds, inicio, apac, horaria)
         no_pico = dom.mare_perto_do_pico(mare, pico_em, p.mare_janela_h)
         resultado[ds] = (
             dom.Insumos(
@@ -293,6 +309,10 @@ def _alertas_vigentes(db: Session | None, agora: datetime | None) -> list[dict]:
     resultado é o mesmo para todo território do Recife e uma consulta basta por requisição."""
     if db is None or agora is None:
         return []
+    return cache.obter("alertas", "vigentes", cache.VIVO_S, lambda: _ler_alertas(db, agora))
+
+
+def _ler_alertas(db: Session, agora: datetime) -> list[dict]:
     from climasense.etl.conectores.alertas import CEMADEN_SEM_VALIDADE_H, vigentes_sql
 
     try:
@@ -341,7 +361,7 @@ def _sugerido(ins: dom.Insumos, extra: dict, risco: dict | None, p: dom.Parametr
 # ------------------------------------------------------------------ declarações
 def _ultimas_declaracoes(db: Session) -> dict[str, dict]:
     return {
-        r["territorio_id"]: dict(r)
+        r["territorio_id"]: {**r, "territorio_nome": nome_distrito(r["territorio_nome"])}
         for r in db.execute(
             text(
                 "select distinct on (d.territorio_id) d.id, d.territorio_id, t.nome_exibicao as territorio_nome, "
@@ -377,11 +397,17 @@ def _declarado(ultimas: dict[str, dict], cadeia: list[str]) -> dict | None:
 
 
 def _territorios(db: Session) -> tuple[dict[str, str], list[tuple[str, str, str]]]:
-    distritos = dict(
-        db.execute(
+    """Distritos e bairros do cadastro (só mudam quando a base territorial é recarregada)."""
+    return cache.obter("territorios", "distritos_bairros", cache.CARGA_S, lambda: _ler_territorios(db))
+
+
+def _ler_territorios(db: Session) -> tuple[dict[str, str], list[tuple[str, str, str]]]:
+    distritos = {
+        i: nome_distrito(n)  # "Distrito 5": o nome guardado no banco não muda, só o que a API devolve
+        for i, n in db.execute(
             text("select id, nome_exibicao from app.territorios where tipo = 'distrito' order by id")
         ).all()
-    )
+    }
     bairros = [
         (i, n, pai)
         for i, n, pai in db.execute(
@@ -554,6 +580,7 @@ def historico(
     return [
         {
             **dict(r),
+            "territorio_nome": nome_distrito(r["territorio_nome"]),
             "rotulo": dom.ROTULO[r["estagio"]],
             "sugerido_estagio": (r["sugerido"] or {}).get("estagio"),
         }

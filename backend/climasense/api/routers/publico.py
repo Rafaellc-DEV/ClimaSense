@@ -1,13 +1,10 @@
 """Rotas públicas da landing (T7.6, RF-01). Só mostram comunicados PUBLICADOS e VIGENTES (RN-04, RN-14):
-o filtro `validade_fim > agora` vale mesmo que a tarefa de expiração atrase (T7.5).
-
-`/publico/abrigos` lista os locais sem nomes de servidores, autores nem ocupação detalhada."""
+o filtro `validade_fim > agora` vale mesmo que a tarefa de expiração atrase (T7.5)."""
 
 from __future__ import annotations
 
 import uuid
 from datetime import datetime
-from typing import Literal
 
 from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel
@@ -190,81 +187,3 @@ def fontes(db: Session = Depends(obter_sessao), agora: datetime = Depends(relogi
         )
         for f in servico_fontes.linhas(db, agora)
     ]
-
-
-# ------------------------------------------------------------------ abrigos (landing)
-AVISO_ABRIGOS = (
-    "Lista de locais que podem servir de abrigo ou ponto de apoio, montada a partir dos Dados Abertos da "
-    "Prefeitura do Recife, do feed de abrigos ativos do COP e dos registros da equipe de Vigilância em Saúde. "
-    "“Aberto” só aparece quando o COP ou a equipe informou; sem essa informação, o local não está "
-    "necessariamente funcionando. Antes de se deslocar, ligue para a Defesa Civil do Recife: 0800 081 3400 "
-    "(gratuito, 24 horas) ou para a Defesa Civil de Pernambuco: 199."
-)
-
-SQL_ABRIGOS_PUBLICOS = """
-with equipe as (
-  select abrigo_id, max(em) as em from app.abrigo_atualizacoes where autor_id is not null group by abrigo_id
-), base as (
-  select a.id, a.nome, a.endereco, b.nome_exibicao as bairro_nome, d.nome_exibicao as distrito_nome,
-         a.latitude, a.longitude, a.aberto, a.origem, a.fonte_url, a.tipo_local,
-         coalesce(a.capacidade, a.capacidade_fonte) as capacidade,
-         case when e.em is not null and (a.status_lido_em is null or e.em >= a.status_lido_em) then 'equipe'
-              when a.status_origem = 'cop' then 'cop'
-              when a.origem = 'manual' then 'equipe' end as aberto_fonte,
-         a.status_lido_em, e.em as equipe_em, a.atualizado_em
-  from app.abrigos a join app.territorios b on b.id = a.bairro_id
-  left join app.territorios d on d.id = b.pai_id
-  left join equipe e on e.abrigo_id = a.id
-)
-select id, nome, endereco, bairro_nome, distrito_nome, latitude, longitude,
-       case when aberto_fonte is not null then aberto end as aberto,
-       aberto_fonte,
-       case aberto_fonte when 'cop' then status_lido_em when 'equipe' then coalesce(equipe_em, atualizado_em) end
-         as aberto_lido_em,
-       origem, fonte_url, tipo_local as tipo, capacidade
-from base
-order by (case when aberto_fonte is not null then aberto end) desc nulls last, nome
-"""
-
-
-class AbrigoPublico(BaseModel):
-    id: uuid.UUID
-    nome: str
-    endereco: str | None
-    bairro_nome: str
-    distrito_nome: str | None
-    latitude: float | None
-    longitude: float | None
-    aberto: bool | None
-    aberto_fonte: Literal["cop", "equipe"] | None
-    aberto_lido_em: datetime | None
-    atualizado_em: datetime | None
-    origem: str
-    fonte_url: str | None
-    tipo: str | None
-    capacidade: int | None
-
-
-class ListaAbrigosPublica(BaseModel):
-    itens: list[AbrigoPublico]
-    atualizado_em: datetime | None
-    aviso: str
-
-
-@router.get(
-    "/abrigos",
-    response_model=ListaAbrigosPublica,
-    summary="Abrigos e pontos de apoio (sem dados pessoais nem ocupação detalhada)",
-)
-def abrigos_publicos(db: Session = Depends(obter_sessao)) -> ListaAbrigosPublica:
-    itens = [
-        AbrigoPublico(**dict(r), atualizado_em=r["aberto_lido_em"])
-        for r in db.execute(text(SQL_ABRIGOS_PUBLICOS)).mappings()
-    ]
-    carga = db.execute(
-        text(
-            "select max(fim) from app.etl_execucoes where fonte_id = 'recife-abrigos' and status = 'sucesso'"
-        )
-    ).scalar()
-    datas = [d for d in [carga, *(i.aberto_lido_em for i in itens)] if d is not None]
-    return ListaAbrigosPublica(itens=itens, atualizado_em=max(datas) if datas else None, aviso=AVISO_ABRIGOS)

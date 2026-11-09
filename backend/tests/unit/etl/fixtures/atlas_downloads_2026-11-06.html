@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"><head>
+        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="theme-color" content="009FDA" />
+        <link rel="stylesheet" type="text/css" href="/css/main.css" /><link type="text/css" rel="stylesheet" href="/javax.faces.resource/theme.css.xhtml?ln=primefaces-poseidon-turquoise" /><link type="text/css" rel="stylesheet" href="/javax.faces.resource/fa/font-awesome.css.xhtml?ln=primefaces&amp;v=5.2" /><script type="text/javascript" src="/javax.faces.resource/jquery/jquery.js.xhtml;jsessionid=sc7VTS2Swp8LWYz1iVzsp371?ln=primefaces&amp;v=5.2"></script><script type="text/javascript" src="/javax.faces.resource/primefaces.js.xhtml;jsessionid=sc7VTS2Swp8LWYz1iVzsp371?ln=primefaces&amp;v=5.2"></script><link type="text/css" rel="stylesheet" href="/javax.faces.resource/css/nanoscroller.css.xhtml;jsessionid=sc7VTS2Swp8LWYz1iVzsp371?ln=poseidon-layout" /><link type="text/css" rel="stylesheet" href="/javax.faces.resource/css/animate.css.xhtml;jsessionid=sc7VTS2Swp8LWYz1iVzsp371?ln=poseidon-layout" /><link type="text/css" rel="stylesheet" href="/javax.faces.resource/css/layout-turquoise.css.xhtml;jsessionid=sc7VTS2Swp8LWYz1iVzsp371?ln=poseidon-layout" /><script type="text/javascript">if(window.PrimeFaces){PrimeFaces.settings.projectStage='Development';}</script>
+    <title>Downloads</title><script type="text/javascript" src="/javax.faces.resource/js/nanoscroller.js.xhtml;jsessionid=sc7VTS2Swp8LWYz1iVzsp371?ln=poseidon-layout"></script><script type="text/javascript" src="/javax.faces.resource/js/layout.js.xhtml;jsessionid=sc7VTS2Swp8LWYz1iVzsp371?ln=poseidon-layout"></script><script type="text/javascript" src="/javax.faces.resource/js/swipe.js.xhtml;jsessionid=sc7VTS2Swp8LWYz1iVzsp371?ln=poseidon-layout"></script>
+    <link href="https://fonts.googleapis.com/css?family=Montserrat:300,300i,400,400i,500,500i,600,700,700i,900" rel="stylesheet" />
+    <script>
+        //<![CDATA[
+        function goTo(page){
+            window.location = '/paginas/' + page;
+        }
+        //]]>
+    </script></head><body class="main-body">
+    <div class="main">
+<form id="form-header" name="form-header" method="post" action="/paginas/downloads.xhtml;jsessionid=sc7VTS2Swp8LWYz1iVzsp371" enctype="application/x-www-form-urlencoded">
+<input type="hidden" name="form-header" value="form-header" />
+
+        <div class="header">
+            <h2 class="client__logo" onclick="goTo('index.xhtml')">Atlas digital de desastres no Brasil</h2>
+            <div class="header__content">
+                <ul class="header__menu">
+                    <li class="header__menu-item"><a href="#" onclick="goTo('mapa-interativo.xhtml')">Mapa interativo</a></li>
+                    <li class="header__menu-item"><a href="#" onclick="goTo('graficos.xhtml')">Dashboard</a></li>
+                    <li class="header__menu-item"><a href="#" onclick="goTo('downloads.xhtml')">Downloads</a></li>
+                    <li class="header__menu-item"><a href="#" onclick="goTo('como-utilizar.xhtml')">Como utilizar</a></li>
+                    
+                    <li class="header__menu-item"><a href="#" onclick="goTo('institucional.xhtml')">Institucional</a></li>
+                </ul>
+            </div>
+        </div><input type="hidden" name="javax.faces.ViewState" id="javax.faces.ViewState" value="4952364158627680332:6092123764239556174" autocomplete="off" />
+</form>
+        <div class="main__layout-home">
+            <div class="main__content-footer">
+        <div class="content--subpages">
+            <div class="downloads-content">
+                <h2 class="downloads-title">Downloads</h2>
+                <span>Escolha abaixo o arquivo para realizar o download:</span>
+                <ol>
+                    <li>
+                        <strong>Base de Dados Completa:</strong> <a href="/arquivos/2026/BD_Atlas_1991_2025_v1.1_2026.08.06_Consolidado.xlsx">Excel (XSLX)</a> / <a href="/arquivos/2026/BD_Atlas_1991_2025_v1.1_2026.08.06_Consolidado.csv">Ponto e Vírgula (CSV) - Apenas Valores Corrigidos</a>
+                        <p style="margin-right: 15px;">
+                            Este arquivo contém toda a base de dados do Atlas, em formato Excel. No arquivo, são disponibilizadas três tabelas. A primeira, denominada <strong>Atlas – Valores Originais</strong>,  possui os valores monetários conforme registrado pelo ente federado à época da ocorrência. A segunda, denominada Atlas – <strong>Valores Corrigidos</strong>, contém os mesmos registros, porém com os valores atualizados para dezembro de 2022. Por fim, a terceira tabela, denominada <strong>Cálculo Correção</strong>, contém os valores do índice utilizado para correção dos valores monetários (IGP-DI) e os fatores de conversão relativos a este índice. O arquivo em formato CSV possui apenas a tabela com os valores já corrigidos.
+                        </p>
+                    </li>
+                    <li>
+                        <strong>Manual de Tratamento da Base de Dados:</strong> <a href="/arquivos/Atlas_Digital_Desastres_Manual_Aplicacao.pdf">PDF</a>.
+                        <p style="margin-right: 15px;">
+                            Este manual explica a origem dos dados, a metodologia de tratamento utilizada e o processo de atualização de valores monetários.
+                        </p>
+                    </li>
+                    <li>
+                        <strong>Log de Correções da Base de Dados:</strong> <a href="/arquivos/2026/2026.08-logs-correcoes.xlsx">Logs</a>.
+                        <p style="margin-right: 15px;">
+                            Este arquivo tem por objetivo registrar e prestar contas das alterações e correções realizadas na base de dados. Como os registros são realizados manualmente e os municípios que preenchem os dados normalmente se encontram sob pressão dos desastres que ocorrem em seu município, equívocos de preenchimento podem acontecer. Quando detectados, estes equívocos são corrigidos e registrados neste arquivo, para que os usuários desta base de dados tenham conhecimento das alterações realizadas.
+                        </p>
+                    </li>
+                </ol>
+            </div>
+        </div>
+
+    <div class="footer">
+        Ainda tem dúvidas? Entre em contato conosco por meio de nossa <a href="https://www.gov.br/mdr/pt-br/canais_atendimento/ouvidoria/ouvidoria">ouvidoria</a>.
+    </div>
+            </div>
+        </div>
+    </div><div id="j_idt19" style="width:32px;height:32px;position:fixed;right:7px;bottom:7px"><div id="j_idt19_start" style="display:none">
+            <i class="fa fa-circle-o-notch fa-spin ajax-loader" aria-hidden="true"></i></div><div id="j_idt19_complete" style="display:none"></div></div><script id="j_idt19_s" type="text/javascript">$(function(){PrimeFaces.cw("AjaxStatus","widget_j_idt19",{id:"j_idt19",widgetVar:"widget_j_idt19"});});</script></body>
+
+</html>

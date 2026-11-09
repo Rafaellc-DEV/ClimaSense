@@ -46,13 +46,17 @@ def test_atualizar_roda_as_fontes_na_ordem_com_janela_movel_do_historico(ambient
         "open-meteo-historico",
         "open-meteo-previsao",
         "open-meteo-mare",
+        "open-meteo-temperatura",
+        "open-meteo-solo (previsao)",
+        "open-meteo-solo (historico)",
         "apac-chuva",
+        "apac-previsao",
         "apac-chuva (historico)",
+        "apac-rios",
+        "apac-reservatorios",
         "alertas-oficiais",
-        "recife-abrigos (ativos)",
         "infodengue",
         "recife-alagamento",
-        "recife-abrigos",
         "sinan-leptospirose",
         "recife-arboviroses",
         "verificar-gold",
@@ -60,14 +64,16 @@ def test_atualizar_roda_as_fontes_na_ordem_com_janela_movel_do_historico(ambient
     assert all(p.status == "sucesso" for p in passos)
     assert _ok.limites[("open-meteo-historico", None)] == orquestrador.JANELA_HISTORICO_DIAS
     assert _ok.limites[("apac-chuva", "historico")] == orquestrador.JANELA_APAC_HISTORICO_MESES
+    assert _ok.limites[("open-meteo-solo", "historico")] == orquestrador.JANELA_SOLO_HISTORICO_DIAS
 
 
 def test_tempo_real_roda_so_as_fontes_rapidas(ambiente):
     passos = orquestrador.atualizar(_Engine(), None, None, executar=_ok, ordem=orquestrador.ORDEM_TEMPO_REAL)
     assert [p.nome for p in passos] == [
         "apac-chuva",
+        "apac-previsao",
+        "apac-rios",
         "alertas-oficiais",
-        "recife-abrigos (ativos)",
         "verificar-gold",
     ]
 
@@ -100,10 +106,10 @@ def test_falha_de_uma_fonte_nao_impede_as_demais_mas_aparece_no_resumo(ambiente)
 def test_conjuntos_estaticos_recentes_sao_pulados_sem_forcar(ambiente, monkeypatch):
     monkeypatch.setattr(orquestrador, "_recente", lambda e, f: True)
     estado = {p.nome: p.status for p in orquestrador.atualizar(_Engine(), None, None, executar=_ok)}
-    assert estado["recife-alagamento"] == "pulado" and estado["recife-abrigos"] == "pulado"
+    assert estado["recife-alagamento"] == "pulado"
     assert estado["sinan-leptospirose"] == "pulado" and estado["recife-arboviroses"] == "pulado"
     assert estado["infodengue"] == "sucesso"  # muda toda semana: roda sempre
-    assert estado["apac-chuva"] == "sucesso" and estado["recife-abrigos (ativos)"] == "sucesso"
+    assert estado["apac-chuva"] == "sucesso"
     estado = {
         p.nome: p.status for p in orquestrador.atualizar(_Engine(), None, None, forcar=True, executar=_ok)
     }
