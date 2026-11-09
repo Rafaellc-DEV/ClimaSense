@@ -1,12 +1,12 @@
 import { useMemo, useState, type FormEvent } from "react";
-import { FileText, Trash2 } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Trash2 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { CabecalhoTela } from "@/design-system/componentes/CabecalhoTela";
 import { useAviso } from "@/design-system/componentes/Aviso";
-import { Botao, classesBotao } from "@/design-system/componentes/Botao";
+import { Botao } from "@/design-system/componentes/Botao";
 import { AreaTexto, Campo } from "@/design-system/componentes/Campo";
 import { Confirmacao } from "@/design-system/componentes/Dialogo";
+import { CarregandoLista } from "@/design-system/componentes/Esqueleto";
 import { EstadoDados } from "@/design-system/componentes/EstadoDados";
 import { Indicador } from "@/design-system/componentes/Indicador";
 import { Painel } from "@/design-system/componentes/Painel";
@@ -20,9 +20,8 @@ import campo from "@/design-system/componentes/Campo.module.css";
 import { EstadoConsulta, invalidarPrefixo } from "@/features/evento/Evento";
 import { diaMes, nomeCurto, quandoAs } from "@/features/evento/textos";
 import { listaDe, type Acao, type SituacaoAcao } from "@/features/evento/tipos";
-import { ListaAdaptavel } from "@/features/fluxo/ListaAdaptavel";
+import { DocumentoRelatorio } from "@/features/boletim/DocumentoRelatorio";
 import type { ItemPrioridadeTerritorio } from "@/features/mapa/tipos";
-import { Auditoria } from "./Auditoria";
 import { SeletorTerritorio } from "./SeletorTerritorio";
 import { agoraNoRecife, isoDeDiaHora } from "./tempo";
 import estilos from "./Acoes.module.css";
@@ -60,6 +59,10 @@ export function ordenarAcoes(acoes: Acao[], prioridade: ItemPrioridadeTerritorio
 }
 
 const horario = (iso: string) => `${diaMes(iso)} ${formatarHora(iso).replace("h", ":")}`;
+const horarioDe = (a: Acao) => {
+  const q = a.inicio_em ?? a.criada_em;
+  return q ? horario(q) : "Sem horário";
+};
 
 function useGravar() {
   const cliente = useQueryClient();
@@ -97,8 +100,8 @@ function useGravar() {
 
 /**
  * Ações (RF-15, RF-16, RF-17): o que a equipe fez na cidade, em cada distrito e em cada bairro. Filtros por território
- * e período, três totais derivados do registro, a tabela das ações (com exclusão auditada), o formulário de registro,
- * o relatório executivo para a Secretaria de Saúde e a trilha de auditoria.
+ * e período, três totais derivados do registro, a lista das ações (com exclusão), o formulário de registro e o
+ * relatório executivo para a Secretaria de Saúde, editável, na mesma página.
  */
 export function TelaAcoes() {
   const { pode } = useSessao();
@@ -137,109 +140,95 @@ export function TelaAcoes() {
 
   return (
     <>
-      <CabecalhoTela
-        titulo="Ações"
-        proposito="O que a equipe fez na cidade, em cada distrito e em cada bairro, e o relatório para a Secretaria de Saúde."
-        atualizadoEm={ultimaAtualizacao(r, prioridade)}
-        acoes={
-          <div className={estilos.filtros}>
-            <SeletorTerritorio
-              rotulo="Território"
-              niveis={["municipio", "distrito", "bairro"]}
-              vazio="Recife — todos os distritos"
-              valor={territorio}
-              aoMudar={setTerritorio}
-            />
-            <div className={campo.campo}>
-              <label htmlFor="ac-periodo" className={campo.rotulo}>
-                Período
-              </label>
-              <select
-                id="ac-periodo"
-                className={campo.entrada}
-                value={periodo}
-                onChange={(e) => setPeriodo(e.target.value as Periodo)}
-              >
-                {PERIODOS.map((p) => (
-                  <option key={p.valor} value={p.valor}>
-                    {p.rotulo}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-        }
-      />
-      <div className={estilos.pagina}>
-        {r.isError ? (
-          <EstadoConsulta erro={r.error} oQue="as ações" aoTentar={() => r.refetch()} />
-        ) : (
-          <section className={estilos.cartoes} aria-label="Totais das ações">
-            {cartao("Em andamento", conta("em_andamento"), "ações abertas agora")}
-            {cartao("Planejadas", conta("planejada"), "ainda não iniciadas")}
-            {cartao("Concluídas", conta("concluida"), "no período")}
-          </section>
-        )}
-
-        <div className={estilos.principal}>
-          <Painel id="ac-tabela" titulo="Ações do evento">
-            <p className={estilos.meta}>A exclusão fica registrada na auditoria, com quem, quando e o quê.</p>
-            {r.isSuccess && todas.length === 0 ? (
-              <EstadoDados tipo="insuficiente" titulo="Nenhuma ação registrada.">
-                Isso não quer dizer que nada esteja sendo feito: registre aqui o que a equipe faz.
-              </EstadoDados>
-            ) : (
-              <ListaAdaptavel
-                legenda="Ações do evento"
-                carregando={r.isPending}
-                linhas={todas}
-                chaveLinha={(a) => String(a.id)}
-                colunas={[
-                  { chave: "acao", titulo: "Ação", celula: (a) => <b>{a.descricao}</b> },
-                  { chave: "onde", titulo: "Onde", celula: (a) => <Onde acao={a} /> },
-                  {
-                    chave: "resp",
-                    titulo: "Responsável",
-                    celula: (a) => a.responsavel ?? <span className={estilos.meta}>Não informado</span>,
-                  },
-                  {
-                    chave: "status",
-                    titulo: "Status",
-                    celula: (a) => <Status acao={a} podeEditar={podeEditar} />,
-                  },
-                  {
-                    chave: "horario",
-                    titulo: "Horário",
-                    semQuebra: true,
-                    celula: (a) => {
-                      const q = a.inicio_em ?? a.criada_em;
-                      return q ? horario(q) : "Sem horário";
-                    },
-                  },
-                  {
-                    chave: "excluir",
-                    titulo: "Excluir",
-                    semRotulo: true,
-                    celula: (a) => (podeEditar ? <Excluir acao={a} /> : null),
-                  },
-                ]}
+      <div className={estilos.naoImprimir}>
+        <CabecalhoTela
+          titulo="Ações"
+          proposito="O que a equipe fez na cidade, em cada distrito e em cada bairro, e o relatório para a Secretaria de Saúde."
+          atualizadoEm={ultimaAtualizacao(r, prioridade)}
+          acoes={
+            <div className={estilos.filtros}>
+              <SeletorTerritorio
+                rotulo="Território"
+                niveis={["municipio", "distrito", "bairro"]}
+                vazio="Recife — todos os distritos"
+                valor={territorio}
+                aoMudar={setTerritorio}
               />
-            )}
-            {r.isSuccess && (
-              <p className={estilos.meta}>
-                Fonte: registro da equipe
-                {ultima ? `, última atualização ${quandoAs(ultima)}` : ", sem hora de atualização"}.
-              </p>
-            )}
-          </Painel>
+              <div className={campo.campo}>
+                <label htmlFor="ac-periodo" className={campo.rotulo}>
+                  Período
+                </label>
+                <select
+                  id="ac-periodo"
+                  className={campo.entrada}
+                  value={periodo}
+                  onChange={(e) => setPeriodo(e.target.value as Periodo)}
+                >
+                  {PERIODOS.map((p) => (
+                    <option key={p.valor} value={p.valor}>
+                      {p.rotulo}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          }
+        />
+      </div>
+      <div className={estilos.pagina}>
+        <div className={`${estilos.naoImprimir} ${estilos.pagina}`}>
+          {r.isError ? (
+            <EstadoConsulta erro={r.error} oQue="as ações" aoTentar={() => r.refetch()} />
+          ) : (
+            <section className={estilos.cartoes} aria-label="Totais das ações">
+              {cartao("Em andamento", conta("em_andamento"), "ações abertas agora")}
+              {cartao("Planejadas", conta("planejada"), "ainda não iniciadas")}
+              {cartao("Concluídas", conta("concluida"), "no período")}
+            </section>
+          )}
 
-          {podeEditar && <FormularioAcao />}
+          <div className={`${estilos.principal} ${podeEditar ? estilos.comFormulario : ""}`}>
+            {podeEditar && <FormularioAcao />}
+            <Painel id="ac-tabela" titulo="Ações do evento">
+              {r.isSuccess && todas.length === 0 ? (
+                <EstadoDados tipo="insuficiente" titulo="Nenhuma ação registrada.">
+                  Isso não quer dizer que nada esteja sendo feito: registre aqui o que a equipe faz.
+                </EstadoDados>
+              ) : r.isPending ? (
+                <CarregandoLista linhas={4} altura="5rem" />
+              ) : (
+                <ul className={estilos.lista} aria-label="Ações do evento">
+                  {todas.map((a) => (
+                    <li key={String(a.id)} className={estilos.acao}>
+                      <div className={estilos.acaoTopo}>
+                        <Onde acao={a} />
+                        <span className={estilos.meta}>{horarioDe(a)}</span>
+                      </div>
+                      <p className={estilos.texto}>
+                        <b>{a.descricao}</b>
+                      </p>
+                      <div className={estilos.acaoRodape}>
+                        <span className={estilos.meta}>Responsável: {a.responsavel ?? "não informado"}</span>
+                        <div className={estilos.acaoControles}>
+                          <Status acao={a} podeEditar={podeEditar} />
+                          {podeEditar && <Excluir acao={a} />}
+                        </div>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              {r.isSuccess && (
+                <p className={estilos.meta}>
+                  Fonte: registro da equipe
+                  {ultima ? `, última atualização ${quandoAs(ultima)}` : ", sem hora de atualização"}.
+                </p>
+              )}
+            </Painel>
+          </div>
         </div>
 
-        <div className={estilos.rodapeBlocos}>
-          <Relatorio />
-          <Auditoria acoes={todas} />
-        </div>
+        <DocumentoRelatorio />
       </div>
     </>
   );
@@ -470,40 +459,5 @@ function FormularioAcao() {
         </Botao>
       </div>
     </form>
-  );
-}
-
-const ITENS_RELATORIO: { item: string; fonte: string }[] = [
-  { item: "Estágio declarado por distrito", fonte: "Registro da equipe" },
-  { item: "Chuva medida, prevista e maré", fonte: "APAC, Open-Meteo" },
-  { item: "Ações por território e status", fonte: "Registro da equipe" },
-  { item: "Dengue, chikungunya e leptospirose", fonte: "InfoDengue, SINAN" },
-];
-
-function Relatorio() {
-  return (
-    <Painel id="ac-relatorio" titulo="Relatório executivo">
-      <p className={estilos.meta}>
-        Para a Secretaria de Saúde, gerado a partir das ações e dos indicadores do boletim atual.
-      </p>
-      <ul className={estilos.checklist}>
-        {ITENS_RELATORIO.map((i) => (
-          <li key={i.item}>
-            <span aria-hidden="true">✓</span>
-            <span>{i.item}</span>
-            <small>{i.fonte}</small>
-          </li>
-        ))}
-      </ul>
-      <p className={estilos.meta}>
-        O relatório sai como rascunho. Alguém da equipe revisa antes do envio; ninguém aprova o próprio
-        conteúdo.
-      </p>
-      <div>
-        <Link to="/app/acoes/relatorio" className={classesBotao("secundario")}>
-          <FileText aria-hidden="true" size={20} /> Abrir o relatório
-        </Link>
-      </div>
-    </Painel>
   );
 }

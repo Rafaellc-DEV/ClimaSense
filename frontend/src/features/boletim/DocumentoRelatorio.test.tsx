@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { App } from "@/app/App";
 import { AGORA, simularApi, usuarioTeste } from "@/features/evento/testes";
 import { clienteConsultas } from "@/lib/api";
-import { numeroBoletim } from "./TelaBoletim";
+import { numeroBoletim } from "./relatorio";
 
 const sugerido = (estagio: string) => ({
   estagio,
@@ -133,7 +133,7 @@ afterEach(() => {
 
 test("documento com marca, número, resumo, destaques e as seções fixas; só a situação declarada", async () => {
   simularApi(base());
-  window.history.pushState({}, "", "/app/acoes/relatorio");
+  window.history.pushState({}, "", "/app/acoes");
   render(<App />);
   const folha = await screen.findByRole("article", { name: "Relatório executivo — Secretaria de Saúde" });
   expect(within(folha).getByRole("img", { name: "ClimaSense" })).toBeInTheDocument();
@@ -170,7 +170,7 @@ test("imprimir chama o navegador; copiar manda o texto para o WhatsApp, sem cria
   const pedidos = simularApi(base());
   const imprimir = vi.fn();
   vi.stubGlobal("print", imprimir);
-  window.history.pushState({}, "", "/app/acoes/relatorio");
+  window.history.pushState({}, "", "/app/acoes");
   render(<App />);
   const u = userEvent.setup();
   const escrever = vi.spyOn(navigator.clipboard, "writeText").mockResolvedValue();
@@ -189,7 +189,7 @@ test("sem a rota de saúde (404), a seção Saúde diz que ainda não está disp
   const b = base() as Record<string, unknown>;
   delete b["/saude/resumo"];
   simularApi(b);
-  window.history.pushState({}, "", "/app/acoes/relatorio");
+  window.history.pushState({}, "", "/app/acoes");
   render(<App />);
   const saudeSecao = await screen.findByRole("region", { name: "Saúde" });
   expect(await within(saudeSecao).findByText("Ainda não disponível.")).toBeInTheDocument();
@@ -212,7 +212,7 @@ test("bairros de cada distrito, em ordem alfabética, só na página e não no t
       { id: "b-3", tipo: "bairro", nome_exibicao: "Boa Vista", pai_id: "ds-1" },
     ],
   });
-  window.history.pushState({}, "", "/app/acoes/relatorio");
+  window.history.pushState({}, "", "/app/acoes");
   render(<App />);
   const folha = await screen.findByRole("article", { name: "Relatório executivo — Secretaria de Saúde" });
   expect(await within(folha).findByText("Bairros: Areias, Ibura")).toBeInTheDocument();
@@ -225,9 +225,60 @@ test("bairros de cada distrito, em ordem alfabética, só na página e não no t
 
 test("sem a lista de territórios, a linha de bairros some e o boletim continua inteiro", async () => {
   simularApi(base());
-  window.history.pushState({}, "", "/app/acoes/relatorio");
+  window.history.pushState({}, "", "/app/acoes");
   render(<App />);
   const situacao = await screen.findByRole("region", { name: "Situação por distrito" });
   expect(within(situacao).queryByText(/^Bairros:/)).not.toBeInTheDocument();
   expect(within(situacao).getByText("Distrito Sanitário V")).toBeInTheDocument();
+});
+
+test("Editar documento deixa mudar o texto na folha; a cópia leva o texto editado e Desfazer volta ao original", async () => {
+  const pedidos = simularApi(base());
+  window.history.pushState({}, "", "/app/acoes");
+  render(<App />);
+  const u = userEvent.setup();
+  const escrever = vi.spyOn(navigator.clipboard, "writeText").mockResolvedValue();
+  await screen.findByRole("region", { name: "Resumo" });
+  expect(screen.getAllByRole("button", { name: "Editar documento" })).toHaveLength(1);
+
+  await u.click(screen.getByRole("button", { name: "Editar documento" }));
+  const folha = screen.getByRole("article", { name: "Relatório executivo — Secretaria de Saúde" });
+  expect(folha).toHaveAttribute("contenteditable", "true");
+  expect(within(folha).getByRole("img", { name: "ClimaSense" })).toBeInTheDocument(); // a marca continua
+  expect(screen.getByRole("button", { name: "Imprimir / salvar PDF" })).toBeDisabled();
+  const resumo = within(folha).getByText(/Distrito 5 em Alerta/);
+  resumo.textContent = "Resumo revisado pela coordenação.";
+  await u.click(screen.getByRole("button", { name: "Concluir edição" }));
+
+  expect(folha).toHaveAttribute("contenteditable", "false");
+  await u.click(screen.getByRole("button", { name: "Copiar para WhatsApp" }));
+  expect(escrever.mock.calls[0][0]).toContain("Resumo revisado pela coordenação.");
+
+  await u.click(screen.getByRole("button", { name: "Desfazer edições" }));
+  expect((await screen.findAllByText(/Distrito 5 em Alerta/)).length).toBeGreaterThan(0);
+  expect(screen.queryByText("Resumo revisado pela coordenação.")).not.toBeInTheDocument();
+  expect(pedidos.filter((p) => p.metodo === "POST")).toHaveLength(0);
+});
+
+test("a barra de formatação só aparece ao editar e aplica negrito, tamanho e cor na seleção", async () => {
+  simularApi(base());
+  window.history.pushState({}, "", "/app/acoes");
+  render(<App />);
+  const u = userEvent.setup();
+  const comando = vi.fn(() => true);
+  document.execCommand = comando;
+  await screen.findByRole("region", { name: "Resumo" });
+  expect(screen.queryByRole("toolbar", { name: "Formatação do texto" })).not.toBeInTheDocument();
+
+  await u.click(screen.getByRole("button", { name: "Editar documento" }));
+  const barra = screen.getByRole("toolbar", { name: "Formatação do texto" });
+  await u.click(within(barra).getByRole("button", { name: "Negrito" }));
+  expect(comando).toHaveBeenCalledWith("bold", false, undefined);
+  await u.selectOptions(within(barra).getByRole("combobox", { name: "Tamanho da fonte" }), "18");
+  expect(comando).toHaveBeenCalledWith("fontSize", false, "5");
+  await u.click(within(barra).getByRole("button", { name: "Cor da fonte: Vermelho" }));
+  expect(comando).toHaveBeenCalledWith("foreColor", false, "#b42318");
+
+  await u.click(screen.getByRole("button", { name: "Concluir edição" }));
+  expect(screen.queryByRole("toolbar", { name: "Formatação do texto" })).not.toBeInTheDocument();
 });

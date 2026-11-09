@@ -11,7 +11,6 @@ const TELAS = [
   { rota: "/app/saude", titulo: "Saúde depois da chuva" },
   { rota: "/app/acoes", titulo: "Ações" },
   { rota: "/app/simulador", titulo: "Simulador de cenário" },
-  { rota: "/app/acoes/relatorio", titulo: "Relatório executivo — Secretaria de Saúde" },
 ];
 
 for (const largura of [1440, 375]) {

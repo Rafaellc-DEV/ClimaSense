@@ -82,20 +82,15 @@ test("três cartões com selo Derivado, fonte e hora, e a contagem do registro",
   expect(within(grupo).getByRole("group", { name: "Concluídas" })).toHaveTextContent("1");
 });
 
-test("tabela com Ação, Onde, Responsável, Status, Horário e Excluir; distrito mais vulnerável primeiro", async () => {
+test("lista de cartões com ação, onde, responsável, status, horário e Excluir; distrito mais vulnerável primeiro", async () => {
   simularApi(base());
   abrir();
-  const tabela = await screen.findByRole("table", { name: "Ações do evento" });
-  expect(
-    within(tabela)
-      .getAllByRole("columnheader")
-      .map((c) => c.textContent),
-  ).toEqual(["Ação", "Onde", "Responsável", "Status", "Horário", "Excluir"]);
-  const linhas = within(tabela).getAllByRole("row").slice(1);
-  expect(linhas[0]).toHaveTextContent("Distrito 7");
-  expect(
-    screen.getByText(/A exclusão fica registrada na auditoria, com quem, quando e o quê/),
-  ).toBeInTheDocument();
+  const lista = await screen.findByRole("list", { name: "Ações do evento" });
+  const itens = within(lista).getAllByRole("listitem");
+  expect(itens[0]).toHaveTextContent("Distrito 7");
+  expect(itens[0]).toHaveTextContent("Responsável: Vigilância");
+  expect(within(itens[0]).getByRole("button", { name: /Excluir a ação em Distrito 7/ })).toBeInTheDocument();
+  expect(screen.queryByText(/auditoria/i)).not.toBeInTheDocument();
   expect(screen.getAllByText(/Fonte: registro da equipe/).length).toBeGreaterThan(0);
   expect(document.body).not.toHaveTextContent(/Distrito Sanit|DS [IV]/);
 });
@@ -104,7 +99,7 @@ test("filtros de Território e Período mudam a consulta", async () => {
   const pedidos = simularApi(base());
   abrir();
   const u = userEvent.setup();
-  await screen.findByRole("table", { name: "Ações do evento" });
+  await screen.findByRole("list", { name: "Ações do evento" });
   await waitFor(() => expect(screen.getByLabelText("Território")).toBeEnabled());
   await u.selectOptions(screen.getByLabelText("Território"), "ds-7");
   await waitFor(() => expect(pedidos.some((p) => p.url.includes("territorio_id=ds-7"))).toBe(true));
@@ -181,7 +176,7 @@ test("ação em bairro mostra o bairro e o distrito", async () => {
     ]),
   );
   abrir();
-  const tabela = await screen.findByRole("table", { name: "Ações do evento" });
+  const tabela = await screen.findByRole("list", { name: "Ações do evento" });
   expect(within(tabela).getByText("Ibura")).toBeInTheDocument();
   expect(within(tabela).getByText(/· Distrito 7/)).toBeInTheDocument();
 });
@@ -197,7 +192,7 @@ test("ação da cidade aparece como Cidade", async () => {
     ]),
   );
   abrir();
-  const tabela = await screen.findByRole("table", { name: "Ações do evento" });
+  const tabela = await screen.findByRole("list", { name: "Ações do evento" });
   expect(within(tabela).getByText("Cidade")).toBeInTheDocument();
 });
 
@@ -239,48 +234,10 @@ test("falha ao excluir mostra erro em português", async () => {
   expect(await screen.findByText("Não foi possível excluir a ação.")).toBeInTheDocument();
 });
 
-test("relatório executivo: checklist com a fonte de cada item e a nota de revisão", async () => {
-  simularApi(base());
-  abrir();
-  const bloco = await screen.findByRole("region", { name: "Relatório executivo" });
-  expect(within(bloco).getAllByRole("listitem")).toHaveLength(4);
-  expect(within(bloco).getByText("InfoDengue, SINAN")).toBeInTheDocument();
-  expect(within(bloco).getByText(/ninguém aprova o próprio conteúdo/)).toBeInTheDocument();
-  expect(within(bloco).getByRole("link", { name: /Abrir o relatório/ })).toHaveAttribute(
-    "href",
-    "/app/acoes/relatorio",
-  );
-});
-
-test("auditoria: inclusões e mudanças de status da trilha real, com autor e hora", async () => {
-  const dados = base([acao("a1", { descricao: "Busca ativa" })]);
-  simularApi({
-    ...dados,
-    "/acoes/a1": {
-      ...acao("a1"),
-      linha_do_tempo: [
-        {
-          id: 1,
-          em: AGORA,
-          autor_nome: "M. Siqueira",
-          situacao: "em_andamento",
-          texto: "Ação registrada como em andamento.",
-        },
-        { id: 2, em: AGORA, autor_nome: "M. Lima", situacao: "concluida", texto: "Situação: concluída." },
-      ],
-    },
-  });
-  abrir();
-  const bloco = await screen.findByRole("region", { name: "Auditoria" });
-  expect(await within(bloco).findByText(/M\. Siqueira: “Busca ativa”/)).toBeInTheDocument();
-  expect(within(bloco).getByText(/Situação: concluída/)).toBeInTheDocument();
-  expect(within(bloco).getByText(/Fonte: registro da equipe/)).toBeInTheDocument();
-});
-
 test("sem permissão de edição: não há formulário nem Excluir", async () => {
   simularApi({ ...base(), "/auth/eu": usuarioTeste(["consultar"], ["leitor"]) });
   abrir();
-  await screen.findByRole("table", { name: "Ações do evento" });
+  await screen.findByRole("list", { name: "Ações do evento" });
   expect(screen.queryByRole("form", { name: "Registrar ação" })).not.toBeInTheDocument();
   expect(screen.queryByRole("button", { name: /Excluir a ação/ })).not.toBeInTheDocument();
 });

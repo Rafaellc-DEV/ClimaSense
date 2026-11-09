@@ -191,13 +191,36 @@
     max-width: none;
   }
 }
-@media (min-width: 1500px) {
-  .principal {
-    grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr);
+/* Registrar ação à esquerda, Ações do evento à direita */
+@media (min-width: 1000px) {
+  .comFormulario {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.5fr);
   }
 }
 @media (min-width: 900px) {
   .rodapeBlocos {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* lista de ações em cartões: nada fica cortado em nenhuma largura */
+.acaoRodape {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--e-3);
+}
+.acaoControles {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--e-3);
+}
+
+/* ao imprimir, só o relatório executivo sai na folha */
+@media print {
+  .naoImprimir {
+    display: none !important;
   }
 }

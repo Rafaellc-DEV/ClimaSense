@@ -281,6 +281,109 @@
   }
 }
 
+/* bloco dentro de Ações: título e botões acima da folha */
+.bloco {
+  display: grid;
+  gap: var(--e-4);
+}
+.barra {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--e-3);
+  max-width: 860px;
+}
+.blocoTitulo {
+  margin: 0;
+  font-size: var(--t-3);
+}
+.blocoProposito {
+  margin: var(--e-1) 0 0;
+  color: var(--cs-tinta-2);
+}
+.botoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--e-2);
+}
+.editando {
+  outline: 2px dashed var(--cs-mare);
+  outline-offset: 4px;
+  cursor: text;
+}
+
+/* barra de formatação, como num editor de documentos; fica presa no alto enquanto a folha rola */
+.barraEdicao {
+  position: sticky;
+  top: var(--e-2);
+  z-index: 2;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--e-2);
+  max-width: 860px;
+  padding: var(--e-2) var(--e-3);
+  border-radius: var(--r-icone);
+  background: var(--cs-papel);
+  box-shadow:
+    var(--sombra-cartao),
+    inset 0 0 0 1px var(--cs-linha);
+}
+.grupo {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding-right: var(--e-2);
+  border-right: 1px solid var(--cs-linha);
+}
+.grupo:last-child {
+  border-right: 0;
+  padding-right: 0;
+}
+.ferramenta {
+  display: inline-grid;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--cs-tinta);
+  cursor: pointer;
+}
+.ferramenta:hover,
+.ferramenta:focus-visible {
+  background: var(--cs-mare-suave);
+}
+.seletor select {
+  height: 2.25rem;
+  padding: 0 var(--e-2);
+  border: 1px solid var(--cs-linha-forte);
+  border-radius: 6px;
+  background: var(--cs-papel);
+  color: var(--cs-tinta);
+  font: inherit;
+  font-size: 0.9375rem;
+}
+.cores {
+  display: flex;
+  gap: 4px;
+  margin-left: var(--e-2);
+}
+.cor {
+  width: 1.5rem;
+  height: 1.5rem;
+  border: 2px solid var(--cs-papel);
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px var(--cs-linha-forte);
+  cursor: pointer;
+}
+.cor:hover,
+.cor:focus-visible {
+  box-shadow: 0 0 0 2px var(--cs-mare);
+}
+
 @media print {
   .naoImprimir {
     display: none !important;

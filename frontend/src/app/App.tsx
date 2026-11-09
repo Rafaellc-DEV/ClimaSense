@@ -22,7 +22,6 @@ const Chuva = carregar(() => import("@/features/chuva/TelaChuva"), "TelaChuva");
 const Simulador = carregar(() => import("@/features/simulador/TelaSimulador"), "TelaSimulador");
 const Acoes = carregar(() => import("@/features/acoes/TelaAcoes"), "TelaAcoes");
 const Saude = carregar(() => import("@/features/saude/TelaSaude"), "TelaSaude");
-const Boletim = carregar(() => import("@/features/boletim/TelaBoletim"), "TelaBoletim");
 const Comunicados = carregar(() => import("@/features/comunicados/ListaComunicados"), "ListaComunicados");
 const Comunicado = carregar(() => import("@/features/comunicados/EditorComunicado"), "EditorComunicado");
 const NovoComunicado = carregar(() => import("@/features/comunicados/EditorComunicado"), "NovoComunicado");
@@ -39,7 +38,7 @@ function RedirecionarEquipe() {
 
 /**
  * Telas que saíram do menu levam para a tela nova que ficou com o conteúdo delas, sem 404: Registro do evento virou
- * Ações e o Boletim virou o Relatório executivo dentro de Ações. A Chuva
+ * Ações e o Boletim virou o Relatório executivo, editável, dentro de Ações. A Chuva
  * segue em /app/chuva, com link a partir do Simulador. Endereço desconhecido dentro de /app volta para o Mapa.
  */
 function antigas(): [string, string][] {
@@ -47,7 +46,8 @@ function antigas(): [string, string][] {
     ["painel", "/app/situacao"],
     ["estagios", "/app"],
     ["registro", "/app/acoes"],
-    ["boletim", "/app/acoes/relatorio"],
+    ["boletim", "/app/acoes"],
+    ["acoes/relatorio", "/app/acoes"],
     ["mapa", "/app"],
     ["avaliacoes/*", "/app"],
     ["avaliacoes", "/app"],
@@ -89,7 +89,6 @@ export function App() {
                   <Route path="chuva" element={<Chuva />} />
                   <Route path="simulador" element={<Simulador />} />
                   <Route path="acoes" element={<Acoes />} />
-                  <Route path="acoes/relatorio" element={<Boletim />} />
                   <Route path="saude" element={<Saude />} />
                   {antigas().map(([de, para]) => (
                     <Route key={de} path={de} element={<Navigate to={para} replace />} />

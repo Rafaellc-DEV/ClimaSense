@@ -62,8 +62,8 @@ test.each([
   ["/app/series", "Chuva"],
   ["/app/registro", "Ações"],
   ["/app/painel", "Situação do evento"],
-  ["/app/boletim", "Relatório executivo — Secretaria de Saúde"],
-  ["/app/acoes/relatorio", "Relatório executivo — Secretaria de Saúde"],
+  ["/app/boletim", "Ações"],
+  ["/app/acoes/relatorio", "Ações"],
   ["/app/chuva", "Chuva"],
   ["/app/qualquer-coisa", "Mapa"],
 ])("o endereço antigo %s leva à tela %s, sem 404", async (de, titulo) => {
@@ -73,5 +73,6 @@ test.each([
   expect(await screen.findByRole("heading", { level: 1, name: titulo })).toBeInTheDocument();
   if (de === "/app/series") expect(window.location.search).toBe("?aba=historico");
   if (de === "/app/registro") expect(window.location.pathname).toBe("/app/acoes");
-  if (de === "/app/boletim") expect(window.location.pathname).toBe("/app/acoes/relatorio");
+  if (de === "/app/boletim" || de === "/app/acoes/relatorio")
+    expect(window.location.pathname).toBe("/app/acoes");
 });
