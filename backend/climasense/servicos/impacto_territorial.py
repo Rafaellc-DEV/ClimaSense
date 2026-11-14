@@ -6,8 +6,9 @@ seu distrito. Suscetibilidade e exposição são contexto; ML reprovado não alt
 
 from __future__ import annotations
 
+import logging
 from dataclasses import asdict
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 from math import isfinite
 from time import perf_counter
 
@@ -18,7 +19,9 @@ from sqlalchemy.orm import Session
 from climasense.dominio import estagio as dom_estagio
 from climasense.dominio import simulador as dom
 from climasense.ml.alagamento import servico as ml
-from climasense.servicos import arboviroses_cenario, cenarios, estagios, simulador
+from climasense.servicos import arboviroses_cenario, cenarios, chuva_preventiva, estagios, simulador
+
+log = logging.getLogger(__name__)
 
 METODO = "regras-previsao-distrital"
 VERSAO = "1.0.0"
@@ -139,43 +142,166 @@ def preparar(serie, emitida, mare, emitida_mare, obs, agora, horizonte, parametr
     return p, avaliacao
 
 
-def analisar(db: Session, agora: datetime, horizonte_h: int = 24) -> dict:
-    if not 1 <= horizonte_h <= 72:
-        raise ValueError("Horizonte deve estar entre 1 e 72 horas.")
-    agora = agora.replace(tzinfo=UTC) if agora.tzinfo is None else agora.astimezone(UTC)
-    tempo = perf_counter()
-    est = simulador._estatico(db)
-    parametros = estagios.parametros_atuais(db)["parametros"]
-    inicio = agora.replace(minute=0, second=0, microsecond=0)
-    previsoes = cenarios.previsao_por_emissao_distritos(db, list(est["distritos"]), inicio, agora)
-    emitida_mare, mare = cenarios.mare_prevista(db, inicio)
-    observadas = observada_72h(db, agora)
-    sgb = suscetibilidade(db)
-    vul = simulador.vulneraveis_por_territorio(db)
+def preparar_dia(dia, distrito, serie, mare, emitida_mare, agora, parametros):
+    """Reutiliza o domínio territorial sem exigir maré nem carregar solo atual para dias futuros."""
+    inicio, fim, horas = dia["inicio"], dia["fim"], dia["horas_periodo"]
+    serie = [
+        (t, v if v is not None and isfinite(v) and v >= 0 else None) for t, v in serie if inicio <= t < fim
+    ]
+    mare_valida = emitida_mare is not None and timedelta(0) <= agora - emitida_mare <= timedelta(hours=24)
+    mare = [(t, v) for t, v in mare if v is not None and isfinite(v)] if mare_valida else []
+    horas_mare = [t for t, _ in mare if inicio <= t < fim]
+    completas = len(horas_mare) == horas and set(horas_mare) == {
+        inicio + timedelta(hours=h) for h in range(horas)
+    }
+    pico = dom_estagio.pico(serie, inicio, horas)
+    no_pico = dom_estagio.mare_perto_do_pico(mare, pico, parametros.mare_janela_h) if completas else None
+    p = chuva_preventiva.premissas_do_dia(dia, distrito, no_pico)
+    return p, {
+        "metodo": METODO,
+        "versao": VERSAO,
+        "horizonte_h": horas,
+        "inicio_validade": inicio,
+        "fim_validade": fim,
+        "emitido_em_fonte": distrito["referencia_em"],
+        "mare_emitida_em": emitida_mare,
+        "fonte_meteorologica": cenarios.FONTE_PREVISAO,
+        "fonte_mare": cenarios.FONTE_MARE,
+        "fonte_observada": simulador.FONTE_APAC,
+        "acumulados_previstos_mm": {},
+        "chuva_no_horizonte_mm": distrito["chuva_prevista_mm"],
+        "chuva_observada_72h_mm": None,
+        "observada_em": None,
+        "estacoes_validas": 0,
+        "mare_no_pico_m": no_pico,
+        "serie_chuva": serie,
+        "serie_mare": [(t, v) for t, v in mare if inicio <= t < fim],
+        "faltando": [] if p else ["chuva horária completa e recente no período selecionado"],
+        "limitacoes": [
+            *LIMITACOES,
+            "Período diário limitado às próximas 72 h; sem extrapolar horas. Observação atual não representa solo futuro.",
+        ],
+        "parametros": asdict(parametros),
+    }
+
+
+def comparacoes_recentes(db: Session, agora: datetime) -> list[dict]:
+    """Uma leitura APAC de 1 h por distrito; só pareia previsão arquivada ANTES da janela.
+
+    Não arredonda horários de estação e não compara acumulados móveis com dias futuros.
+    O ponto Open-Meteo e o pluviômetro têm representatividade espacial distinta.
+    """
+    linhas = db.execute(
+        text(
+            "with l as (select case when t.tipo='distrito' then t.id else t.pai_id end as distrito_id, "
+            "e.nome as estacao, l.lida_em, l.visto_em, l.valor_mm, row_number() over (partition by "
+            "case when t.tipo='distrito' then t.id else t.pai_id end order by l.lida_em desc, "
+            "l.valor_mm desc, e.id) as ordem from silver.apac_chuva_leituras l "
+            "join silver.estacoes e on e.id=l.estacao_id join app.territorios t on t.id=e.territorio_id "
+            "where l.janela_h=1 and l.lida_em between :desde and :agora and l.visto_em<=:agora "
+            "and l.valor_mm>=0 and l.valor_mm<'Infinity'::float8 and t.tipo in ('bairro','distrito')) "
+            "select l.*, p.valor as prevista_mm, p.emitido_em from l left join lateral ("
+            "select o.valor,o.emitido_em from silver.observacoes o where o.fonte_id=:fonte "
+            "and o.variavel='chuva_mm' and o.territorio_id=l.distrito_id "
+            "and o.observado_em=l.lida_em-interval '1 hour' "
+            "and o.emitido_em<=l.lida_em-interval '1 hour' and o.coletado_em<=l.lida_em-interval '1 hour' "
+            "and o.valor>=0 and o.valor<'Infinity'::float8 order by o.emitido_em desc limit 1) p on true "
+            "where l.ordem=1 order by l.distrito_id"
+        ),
+        {"desde": agora - timedelta(hours=2), "agora": agora, "fonte": cenarios.FONTE_PREVISAO},
+    ).mappings()
+    saida = []
+    for r in linhas:
+        alinhada = r["lida_em"] == r["lida_em"].replace(minute=0, second=0, microsecond=0)
+        compativel = alinhada and r["prevista_mm"] is not None
+        saida.append(
+            {
+                "territorio_id": r["distrito_id"],
+                "inicio": r["lida_em"] - timedelta(hours=1),
+                "fim": r["lida_em"],
+                "observada_mm": float(r["valor_mm"]),
+                "estacao": r["estacao"],
+                "atualizada_em": r["visto_em"],
+                "previsao_referencia_em": r["emitido_em"] if compativel else None,
+                "prevista_mm": float(r["prevista_mm"]) if compativel else None,
+                "compativel": compativel,
+                "motivo": None
+                if compativel
+                else "Sem previsão arquivada anterior para a mesma hora exata; não comparar como acurácia.",
+            }
+        )
+    return saida
+
+
+def risco_no_periodo(db, agora, dia, parcial):
+    if parcial:
+        return {
+            "disponivel": False,
+            "motivo": "ML avalia o dia local completo; o recorte selecionado é parcial.",
+            "modelo": None,
+            "itens": [],
+        }
     try:
-        risco = ml.payload(db, agora)
-    except Exception:  # noqa: BLE001 — falha do experimento preserva as regras
-        risco = {
+        return ml.payload(db, agora, dia=dia) if dia else ml.payload(db, agora)
+    except Exception as erro:  # noqa: BLE001 — falha do experimento preserva as regras
+        log.warning("Inferência de alagamento indisponível (%s)", type(erro).__name__)
+        return {
             "disponivel": False,
             "motivo": "Inferência indisponível neste momento.",
             "modelo": None,
             "itens": [],
         }
+
+
+def analisar(db: Session, agora: datetime, horizonte_h: int = 24, *, dia: date | None = None) -> dict:
+    if not 1 <= horizonte_h <= 72:
+        raise ValueError("Horizonte deve estar entre 1 e 72 horas.")
+    agora = agora.replace(tzinfo=UTC) if agora.tzinfo is None else agora.astimezone(UTC)
+    inicio_dias = chuva_preventiva.inicio_janela(agora)
+    primeira = ml.hoje_recife(inicio_dias)
+    ultima = ml.hoje_recife(inicio_dias + timedelta(hours=71))
+    if dia is not None and not primeira <= dia <= ultima:
+        raise ValueError("Data fora dos dias cobertos pelas próximas 72 horas.")
+    tempo = perf_counter()
+    est = simulador._estatico(db)
+    parametros = estagios.parametros_atuais(db)["parametros"]
+    inicio = agora.replace(minute=0, second=0, microsecond=0)
+    previsoes = cenarios.previsao_por_emissao_distritos(db, list(est["distritos"]), inicio, agora)
+    dias = chuva_preventiva.resumir(previsoes, est["distritos"], agora, parametros)
+    selecionado = next((d for d in dias if d["data"] == dia), None)
+    distritos_dia = {d["territorio_id"]: d for d in selecionado["distritos"]} if selecionado else {}
+    comparacoes = comparacoes_recentes(db, agora)
+    emitida_mare, mare = cenarios.mare_prevista(db, inicio)
+    observadas = observada_72h(db, agora) if selecionado is None else {}
+    sgb = suscetibilidade(db)
+    vul = simulador.vulneraveis_por_territorio(db)
+    risco = risco_no_periodo(db, agora, dia, selecionado and selecionado["periodo_parcial"])
     riscos = {r["territorio_id"]: r for r in risco["itens"]} if risco["disponivel"] else {}
     insumos = {}
     for ds in est["distritos"]:
         emissoes = previsoes.get(ds, {})
         emitida = max(emissoes) if emissoes else None
-        insumos[ds] = preparar(
-            emissoes.get(emitida, []),
-            emitida,
-            mare,
-            emitida_mare,
-            observadas.get(ds, {}),
-            agora,
-            horizonte_h,
-            parametros,
-        )
+        if selecionado:
+            insumos[ds] = preparar_dia(
+                selecionado,
+                distritos_dia[ds],
+                emissoes.get(emitida, []),
+                mare,
+                emitida_mare,
+                agora,
+                parametros,
+            )
+        else:
+            insumos[ds] = preparar(
+                emissoes.get(emitida, []),
+                emitida,
+                mare,
+                emitida_mare,
+                observadas.get(ds, {}),
+                agora,
+                horizonte_h,
+                parametros,
+            )
     itens, por_ds, resultados_bairro = [], {}, {}
     for bid, nome, ds in est["bairros"]:
         p, avaliacao = insumos[ds]
@@ -213,6 +339,7 @@ def analisar(db: Session, agora: datetime, horizonte_h: int = 24) -> dict:
             "historico_ocorrencias": asdict(est["historico"][bid]),
         }
         item["ml_alagamento"] = riscos.get(bid)
+        item["sinalizacao_preventiva"] = distritos_dia[ds]["sinalizacao"] if selecionado else None
         itens.append(item)
         resultados_bairro[bid] = r
         por_ds.setdefault(ds, []).append((nome, r))
@@ -221,10 +348,14 @@ def analisar(db: Session, agora: datetime, horizonte_h: int = 24) -> dict:
     for ds, nome in est["distritos"].items():
         item = simulador._item(ds, nome, "distrito", ds, distritos[ds], vul)
         item["avaliacao"] = insumos[ds][1]
+        item["sinalizacao_preventiva"] = distritos_dia[ds]["sinalizacao"] if selecionado else None
         item["arboviroses"] = arbo["por_distrito"][ds]
         itens.append(item)
     return {
         "contexto": "previsao_atual",
+        "dia_selecionado": dia,
+        "dias": dias,
+        "comparacoes_recentes": comparacoes,
         "itens": itens,
         "ml_alagamento": risco,
         "experimental": True,

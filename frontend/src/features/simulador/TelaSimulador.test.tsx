@@ -18,14 +18,17 @@ vi.mock("@/map/MapaBairros", () => ({
   MapaBairros: ({
     modoCor,
     valorPorBairro,
+    aparencia,
   }: {
     modoCor?: string;
     valorPorBairro?: (id: string) => number | null;
+    aparencia?: (id: string) => { ordem: number | null };
   }) => (
     <div
       data-testid="mapa"
       data-modo={modoCor ?? "estagio"}
       data-ml-ibura={modoCor === "valor" ? (valorPorBairro?.("bairro-ibura") ?? "sem-dados") : undefined}
+      data-regra-ibura={aparencia?.("bairro-ibura").ordem ?? "sem-dados"}
     />
   ),
 }));
@@ -231,6 +234,119 @@ function abrir() {
   window.history.pushState({}, "", "/app/simulador");
   return render(<App />);
 }
+
+describe("Prevenção por dia e comparação meteorológica", () => {
+  const dia = (data: string, intensa: boolean, extra = {}) => ({
+    data,
+    inicio: `${data}T03:00:00Z`,
+    fim: `${data}T23:00:00Z`,
+    horas_periodo: 20,
+    periodo_parcial: true,
+    criterios: { atencao_mm: 25, alerta_mm: 50, critico_mm: 90 },
+    distritos_em_atencao: intensa ? ["ds-8"] : [],
+    distritos: [
+      {
+        territorio_id: "ds-8",
+        nome: "Distrito Sanitário VIII",
+        chuva_prevista_mm: intensa ? 50 : 0,
+        chuva_disponivel_mm: intensa ? 50 : 0,
+        horas_validas: 20,
+        horas_esperadas: 20,
+        cobertura_completa: true,
+        desatualizada: false,
+        referencia_em: AGORA,
+        sinalizacao: intensa ? "alerta" : "observacao",
+        chuva_intensa: intensa,
+        ...extra,
+      },
+    ],
+  });
+  const dias = [dia("2026-05-10", true), dia("2026-05-11", false)];
+  const resposta = (data: string | null, sinal = "alerta") => ({
+    ...resultado,
+    dados: {
+      ...resultado.dados,
+      contexto: "previsao_atual",
+      dias,
+      dia_selecionado: data,
+      comparacoes_recentes: [
+        {
+          territorio_id: "ds-8",
+          inicio: "2026-05-10T10:00:00Z",
+          fim: "2026-05-10T11:00:00Z",
+          observada_mm: 2,
+          prevista_mm: 3,
+          compativel: true,
+          estacao: "Estação local",
+          atualizada_em: AGORA,
+          previsao_referencia_em: "2026-05-10T09:00:00Z",
+          motivo: null,
+        },
+      ],
+      itens: [...resultado.dados.itens, distrito(8, "alerta")].map((i) => ({
+        ...i,
+        sinalizacao_preventiva: data ? sinal : null,
+      })),
+      ml_alagamento: { disponivel: false, motivo: "Não validado para uso operacional", modelo: null },
+    },
+  });
+
+  it("seleciona datas, atualiza bairros e compara a mesma previsão com as regras sem consultar prévia", async () => {
+    const pedidos = simularApi(
+      rotas({
+        "/cenarios/impacto-previsto?horizonte_h=24&dia=2026-05-10": resposta("2026-05-10"),
+        "/cenarios/impacto-previsto?horizonte_h=24&dia=2026-05-11": resposta("2026-05-11", "observacao"),
+        "/cenarios/impacto-previsto": resposta(null),
+      }),
+      { "/cenarios/simular": resultado },
+    );
+    abrir();
+    await userEvent.click(await screen.findByRole("radio", { name: "Previsão por distrito" }));
+    await userEvent.click(await screen.findByRole("radio", { name: /10\/05 · 1 distrito/ }));
+    await screen.findByRole("heading", { name: /Open-Meteo × interpretação territorial/ });
+    await waitFor(() => expect(screen.getByTestId("mapa")).toHaveAttribute("data-regra-ibura", "2"));
+    expect(screen.getByText(/Não são duas previsões independentes/)).toBeInTheDocument();
+    expect(screen.getByText(/observação ainda indisponível/)).toBeInTheDocument();
+    await userEvent.click(screen.getByText("APAC observada × previsão arquivada na mesma hora"));
+    expect(screen.getByText(/Open-Meteo arquivada: 3 mm/)).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("radio", { name: /11\/05 · 0 distritos/ }));
+    await waitFor(() => expect(screen.getByTestId("mapa")).toHaveAttribute("data-regra-ibura", "0"));
+    expect(screen.getByText(/Nenhuma ultrapassagem confirmada/)).toBeInTheDocument();
+    expect(pedidos.filter((p) => p.url.includes("&dia=2026-05-10"))).toHaveLength(1);
+    expect(pedidos.some((p) => p.url.includes("/previa-local"))).toBe(false);
+    await userEvent.click(screen.getByRole("radio", { name: "Cenário hipotético" }));
+    expect(await screen.findByLabelText("Chuva prevista em 24 h")).toBeInTheDocument();
+    expect(screen.queryByRole("radio", { name: "Atenção preventiva" })).not.toBeInTheDocument();
+  });
+
+  it("renovação dos dados muda sinalização e não trata lacuna ou emissão antiga como ausência de risco", async () => {
+    const caminho = "/cenarios/impacto-previsto?horizonte_h=24&dia=2026-05-10";
+    simularApi(rotas({ [caminho]: resposta("2026-05-10"), "/cenarios/impacto-previsto": resposta(null) }), {
+      "/cenarios/simular": resultado,
+    });
+    abrir();
+    await userEvent.click(await screen.findByRole("radio", { name: "Previsão por distrito" }));
+    await userEvent.click(await screen.findByRole("radio", { name: /10\/05 · 1 distrito/ }));
+    await waitFor(() => expect(screen.getByTestId("mapa")).toHaveAttribute("data-regra-ibura", "2"));
+    const semDados = resposta("2026-05-10", "sem_dados");
+    semDados.dados.dias = [
+      dia("2026-05-10", false, {
+        chuva_prevista_mm: null,
+        chuva_disponivel_mm: null,
+        cobertura_completa: false,
+        horas_validas: 0,
+        sinalizacao: "sem_dados",
+        chuva_intensa: null,
+        desatualizada: true,
+      }),
+    ];
+    simularApi(rotas({ [caminho]: semDados }));
+    await clienteConsultas.invalidateQueries({ queryKey: [caminho] });
+    await waitFor(() => expect(screen.getByTestId("mapa")).toHaveAttribute("data-regra-ibura", "sem-dados"));
+    expect(screen.getByText(/Previsão desatualizada/)).toBeInTheDocument();
+    expect(screen.getByText(/isso não significa ausência de risco/)).toBeInTheDocument();
+  });
+});
 
 describe("Demonstração acadêmica local", () => {
   const adminLocal = () => ({

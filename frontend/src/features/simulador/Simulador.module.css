@@ -5,6 +5,39 @@
   gap: var(--e-5);
   max-width: 1200px;
 }
+.preventiva {
+  display: grid;
+  gap: var(--e-3);
+  min-width: 0;
+  padding: var(--e-4);
+  background: var(--cs-papel);
+  border-radius: var(--r-painel);
+}
+.preventiva h2,
+.preventiva h3,
+.preventiva p {
+  margin: 0;
+}
+.tabelaPreventiva {
+  max-width: 100%;
+  overflow-x: auto;
+}
+.tabelaPreventiva table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--t-apoio);
+}
+.tabelaPreventiva th,
+.tabelaPreventiva td {
+  padding: var(--e-3);
+  text-align: left;
+  vertical-align: top;
+  border-bottom: 1px solid var(--cs-tinta-2);
+}
+.tabelaPreventiva small {
+  display: block;
+  margin-top: var(--e-2);
+}
 .grade {
   display: grid;
   grid-template-columns: minmax(0, 1fr);

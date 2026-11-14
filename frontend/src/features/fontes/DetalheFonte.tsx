@@ -37,15 +37,10 @@ export function DetalheFonte() {
   const { pode } = useSessao();
   const aviso = useAviso();
   const cliente = useQueryClient();
-  const [acompanhando, setAcompanhando] = useState<string | null>(null);
   const [iniciando, setIniciando] = useState(false);
   const controle = useRef<AbortController | null>(null);
-  const fonte = useConsulta<Esquemas["Fonte"]>(`/fontes/${id}`, {
-    refetchInterval: acompanhando ? 2000 : false,
-  });
-  const execucoes = useConsulta<Execucao[]>(`/fontes/${id}/execucoes`, {
-    refetchInterval: acompanhando ? 2000 : false,
-  });
+  const fonte = useConsulta<Esquemas["Fonte"]>(`/fontes/${id}`);
+  const execucoes = useConsulta<Execucao[]>(`/fontes/${id}/execucoes`);
   useEffect(() => () => controle.current?.abort(), []);
 
   async function atualizar() {
@@ -58,7 +53,6 @@ export function DetalheFonte() {
         method: "POST",
         body: JSON.stringify({ fonte_id: id }),
       });
-      setAcompanhando(e.id);
       aviso({ titulo: RETORNO.atualizarFonte, texto: "O status muda aqui quando terminar." });
       void execucoes.refetch();
       const fim = await acompanhar(e.id, c.signal);
@@ -78,7 +72,6 @@ export function DetalheFonte() {
       controle.current = null;
       if (!c.signal.aborted) {
         setIniciando(false);
-        setAcompanhando(null);
         void cliente.invalidateQueries();
       }
     }
@@ -104,8 +97,8 @@ export function DetalheFonte() {
         voltar={voltar}
         acoes={
           podeAtualizar && (
-            <Botao onClick={atualizar} disabled={iniciando || !!acompanhando} icone={<RefreshCw />}>
-              {iniciando || acompanhando ? "Atualizando…" : "Atualizar agora"}
+            <Botao onClick={atualizar} disabled={iniciando} icone={<RefreshCw />}>
+              {iniciando ? "Atualizando…" : "Atualizar agora"}
             </Botao>
           )
         }

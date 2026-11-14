@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { Botao } from "@/design-system/componentes/Botao";
 import { CabecalhoTela } from "@/design-system/componentes/CabecalhoTela";
 import { Campo } from "@/design-system/componentes/Campo";
@@ -23,6 +23,7 @@ import { infoEstagio } from "@/features/evento/estagios";
 import type { CenarioPronto } from "./cenarios";
 import { OrdemAtencao } from "./OrdemAtencao";
 import { PainelPremissas } from "./Premissas";
+import { PrevisaoPreventiva, SeletorDias } from "./PrevisaoPreventiva";
 import {
   deAtuais,
   paraPremissas,
@@ -76,8 +77,10 @@ function useAtraso<T>(valor: T, chave: string, ms: number): [T, (v: T) => void] 
  */
 export function TelaSimulador() {
   const clientes = useQueryClient();
-  const [modo, setModo] = useState<"manual" | "atual">("manual");
+  const [params] = useSearchParams();
+  const [modo, setModo] = useState<"manual" | "atual">(params.get("modo") === "atual" ? "atual" : "manual");
   const [horizonteAtual, setHorizonteAtual] = useState<number>(24);
+  const [dia, setDia] = useState("");
   const { pode, usuario } = useSessao();
   const [previaLocal, setPreviaLocal] = useState(false);
   const acessoPrevia = import.meta.env.DEV && usuario?.ambiente === "desenvolvimento" && pode("administrar");
@@ -88,19 +91,30 @@ export function TelaSimulador() {
       setPreviaLocal(true);
     }
   }, [demoAutomatica]);
+  const analise = useConsultaViva<Envelope<ResultadoSimulacao>>(
+    modo === "atual"
+      ? `/cenarios/impacto-previsto?horizonte_h=${horizonteAtual}${dia ? `&dia=${dia}` : ""}`
+      : null,
+  );
+  const periodoMl = !dia || analise.data?.dados.dias?.find((d) => d.data === dia)?.periodo_parcial === false;
   const pesquisa = useConsulta<
     Envelope<
       ResultadoSimulacao["ml_alagamento"] & {
         itens: { territorio_id: string; classe: string; confianca?: string; fatores: string[] }[];
       }
     >
-  >(modo === "atual" && previaLocal && acessoPrevia ? "/risco-alagamento/previa-local" : null, {
-    retry: false,
-    staleTime: 10_000,
-  });
-  const analise = useConsultaViva<Envelope<ResultadoSimulacao>>(
-    modo === "atual" ? `/cenarios/impacto-previsto?horizonte_h=${horizonteAtual}` : null,
+  >(
+    modo === "atual" && previaLocal && acessoPrevia && periodoMl
+      ? `/risco-alagamento/previa-local${dia ? `?dia=${dia}` : ""}`
+      : null,
+    {
+      retry: false,
+      staleTime: 10_000,
+    },
   );
+  useEffect(() => {
+    if (dia && analise.error?.status === 422) setDia("");
+  }, [dia, analise.error]);
   const atuais = useConsulta<Envelope<Partial<Premissas>>>("/cenarios/premissas-atuais", {
     staleTime: 5 * 60_000,
   });
@@ -154,7 +168,7 @@ export function TelaSimulador() {
   const itens = useMemo(() => resultado?.itens ?? [], [resultado]);
   const distritos = useMemo(() => itens.filter((i) => i.nivel === "distrito"), [itens]);
   const bairros = useMemo(() => itens.filter((i) => i.nivel === "bairro"), [itens]);
-  const mapaPesquisa = modo === "atual" && previaLocal && acessoPrevia;
+  const mapaPesquisa = modo === "atual" && previaLocal && acessoPrevia && periodoMl;
   const dadosPesquisa = pesquisa.isError ? undefined : pesquisa.data?.dados;
   const modeloMapa = mapaPesquisa ? dadosPesquisa : resultado?.ml_alagamento;
   const bairrosMapa = useMemo(() => {
@@ -251,6 +265,17 @@ export function TelaSimulador() {
           </p>
         )}
 
+        {modo === "atual" && resultado && !analise.isError && (
+          <SeletorDias
+            dias={resultado.dias}
+            dia={dia}
+            aoDia={(valor) => {
+              setDia(valor);
+              setSel(null);
+              setBairroSel(null);
+            }}
+          />
+        )}
         <div className={estilos.grade}>
           {modo === "manual" ? (
             <PainelPremissas
@@ -269,12 +294,19 @@ export function TelaSimulador() {
           ) : (
             <section className={estilos.painelBloco} aria-label="Previsão atual por distrito">
               <h2>Previsão por distrito</h2>
-              <Segmentado
-                rotulo="Horizonte da previsão"
-                valor={horizonteAtual}
-                opcoes={HORIZONTES.map((h) => ({ valor: h, rotulo: `${h} h` }))}
-                aoMudar={setHorizonteAtual}
-              />
+              {dia && (
+                <Botao variante="secundario" onClick={() => setDia("")}>
+                  Voltar ao horizonte contínuo
+                </Botao>
+              )}
+              {!dia && (
+                <Segmentado
+                  rotulo="Horizonte da previsão"
+                  valor={horizonteAtual}
+                  opcoes={HORIZONTES.map((h) => ({ valor: h, rotulo: `${h} h` }))}
+                  aoMudar={setHorizonteAtual}
+                />
+              )}
               <p>As regras permanecem disponíveis quando há insumos suficientes, mesmo sem modelo de ML.</p>
               {acessoPrevia && (
                 <div>
@@ -291,7 +323,9 @@ export function TelaSimulador() {
                     <p role="status">
                       PRÉVIA NÃO VALIDADA: resultados exclusivamente para pesquisa e demonstração acadêmica.
                       Não são alertas e não podem orientar decisões operacionais.
-                      {pesquisa.isPending && " Carregando classes do modelo local…"}
+                      {!periodoMl &&
+                        " O ML avalia dias locais completos, sem comparação com recortes parciais."}
+                      {periodoMl && pesquisa.isPending && " Carregando classes do modelo local…"}
                       {pesquisa.isError && " Prévia não habilitada no backend ou acesso negado."}
                       {pesquisa.data?.dados?.motivo && ` ${pesquisa.data.dados.motivo}`}
                     </p>
@@ -325,10 +359,22 @@ export function TelaSimulador() {
                 contexto={modo}
                 mlAlagamento={modo === "atual" ? modeloMapa : undefined}
                 previaLocal={mapaPesquisa}
+                preventiva={Boolean(dia && resultado?.dia_selecionado === dia)}
               />
             </Resultado>
           </div>
         </div>
+
+        {modo === "atual" && resultado && !analise.isError && (
+          <PrevisaoPreventiva
+            resultado={resultado}
+            dia={dia}
+            bairros={bairrosMapa}
+            ml={modeloMapa}
+            atualizando={analise.isFetching}
+            fontes={fontes}
+          />
+        )}
 
         {resultado && (
           <>

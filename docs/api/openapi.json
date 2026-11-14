@@ -1574,6 +1574,23 @@
               "default": 24,
               "title": "Horizonte H"
             }
+          },
+          {
+            "name": "dia",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Dia"
+            }
           }
         ],
         "responses": {
@@ -4471,6 +4488,25 @@
         ],
         "summary": "Prévia de PESQUISA de alagamento — somente desenvolvimento e administrador",
         "operationId": "previa_local_api_v1_risco_alagamento_previa_local_get",
+        "parameters": [
+          {
+            "name": "dia",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Dia"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -4478,6 +4514,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/RespostaDados_RiscoAlagamento_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }
@@ -6856,6 +6902,89 @@
         ],
         "title": "ChuvaSemana"
       },
+      "ComparacaoMeteorologica": {
+        "properties": {
+          "territorio_id": {
+            "type": "string",
+            "title": "Territorio Id"
+          },
+          "inicio": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Inicio"
+          },
+          "fim": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Fim"
+          },
+          "observada_mm": {
+            "type": "number",
+            "title": "Observada Mm"
+          },
+          "estacao": {
+            "type": "string",
+            "title": "Estacao"
+          },
+          "atualizada_em": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Atualizada Em"
+          },
+          "previsao_referencia_em": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Previsao Referencia Em"
+          },
+          "prevista_mm": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Prevista Mm"
+          },
+          "compativel": {
+            "type": "boolean",
+            "title": "Compativel"
+          },
+          "motivo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Motivo"
+          }
+        },
+        "type": "object",
+        "required": [
+          "territorio_id",
+          "inicio",
+          "fim",
+          "observada_mm",
+          "estacao",
+          "atualizada_em",
+          "previsao_referencia_em",
+          "prevista_mm",
+          "compativel",
+          "motivo"
+        ],
+        "title": "ComparacaoMeteorologica"
+      },
       "Conta": {
         "properties": {
           "id": {
@@ -7654,6 +7783,66 @@
         ],
         "title": "DetalheEvento"
       },
+      "DiaPreventivo": {
+        "properties": {
+          "data": {
+            "type": "string",
+            "format": "date",
+            "title": "Data"
+          },
+          "inicio": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Inicio"
+          },
+          "fim": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Fim"
+          },
+          "periodo_parcial": {
+            "type": "boolean",
+            "title": "Periodo Parcial"
+          },
+          "horas_periodo": {
+            "type": "integer",
+            "title": "Horas Periodo"
+          },
+          "distritos": {
+            "items": {
+              "$ref": "#/components/schemas/DistritoPreventivo"
+            },
+            "type": "array",
+            "title": "Distritos"
+          },
+          "distritos_em_atencao": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Distritos Em Atencao"
+          },
+          "criterios": {
+            "additionalProperties": {
+              "type": "number"
+            },
+            "type": "object",
+            "title": "Criterios"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data",
+          "inicio",
+          "fim",
+          "periodo_parcial",
+          "horas_periodo",
+          "distritos",
+          "distritos_em_atencao",
+          "criterios"
+        ],
+        "title": "DiaPreventivo"
+      },
       "Diferenca": {
         "properties": {
           "de": {
@@ -7719,6 +7908,105 @@
           "nome"
         ],
         "title": "Distrito"
+      },
+      "DistritoPreventivo": {
+        "properties": {
+          "territorio_id": {
+            "type": "string",
+            "title": "Territorio Id"
+          },
+          "nome": {
+            "type": "string",
+            "title": "Nome"
+          },
+          "chuva_prevista_mm": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Chuva Prevista Mm"
+          },
+          "chuva_disponivel_mm": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Chuva Disponivel Mm"
+          },
+          "horas_validas": {
+            "type": "integer",
+            "title": "Horas Validas"
+          },
+          "horas_esperadas": {
+            "type": "integer",
+            "title": "Horas Esperadas"
+          },
+          "cobertura_completa": {
+            "type": "boolean",
+            "title": "Cobertura Completa"
+          },
+          "desatualizada": {
+            "type": "boolean",
+            "title": "Desatualizada"
+          },
+          "referencia_em": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Referencia Em"
+          },
+          "sinalizacao": {
+            "type": "string",
+            "enum": [
+              "sem_dados",
+              "observacao",
+              "atencao",
+              "alerta",
+              "critico"
+            ],
+            "title": "Sinalizacao"
+          },
+          "chuva_intensa": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Chuva Intensa"
+          }
+        },
+        "type": "object",
+        "required": [
+          "territorio_id",
+          "nome",
+          "chuva_prevista_mm",
+          "chuva_disponivel_mm",
+          "horas_validas",
+          "horas_esperadas",
+          "cobertura_completa",
+          "desatualizada",
+          "referencia_em",
+          "sinalizacao",
+          "chuva_intensa"
+        ],
+        "title": "DistritoPreventivo"
       },
       "EquipamentoResumo": {
         "properties": {
@@ -9273,6 +9561,32 @@
           },
           "ml_alagamento": {
             "$ref": "#/components/schemas/RiscoAlagamento"
+          },
+          "dia_selecionado": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dia Selecionado"
+          },
+          "dias": {
+            "items": {
+              "$ref": "#/components/schemas/DiaPreventivo"
+            },
+            "type": "array",
+            "title": "Dias"
+          },
+          "comparacoes_recentes": {
+            "items": {
+              "$ref": "#/components/schemas/ComparacaoMeteorologica"
+            },
+            "type": "array",
+            "title": "Comparacoes Recentes"
           }
         },
         "type": "object",
@@ -9800,6 +10114,24 @@
               }
             ],
             "description": "Resultado paralelo, somente com modelo publicável"
+          },
+          "sinalizacao_preventiva": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "sem_dados",
+                  "observacao",
+                  "atencao",
+                  "alerta",
+                  "critico"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sinalizacao Preventiva"
           }
         },
         "type": "object",

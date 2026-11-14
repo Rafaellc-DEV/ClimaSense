@@ -5,6 +5,7 @@
  * entendido vira "sem dado", nunca "baixo" nem "seguro" (RN-01). Classe é ordinal, nunca percentual (RN-06).
  */
 import type { ChaveNivel } from "@/design-system/niveis";
+import type { Esquemas } from "@/lib/api";
 import { formatarNumero } from "@/lib/formatos";
 
 export const CAMPOS_NUMERICOS = ["chuva_prevista_mm", "duracao_h", "chuva_acumulada_mm", "mare_m"] as const;
@@ -107,9 +108,13 @@ export interface ItemSimulado {
     limitacoes: string[];
   } | null;
   ml_alagamento?: { classe: string; confianca?: string; fatores: string[] } | null;
+  sinalizacao_preventiva?: string | null;
 }
 
 export interface ResultadoSimulacao {
+  dias?: Esquemas["DiaPreventivo"][];
+  dia_selecionado?: string | null;
+  comparacoes_recentes?: Esquemas["ComparacaoMeteorologica"][];
   itens: ItemSimulado[];
   resumo?: {
     por_classe?: Record<string, number> | null;

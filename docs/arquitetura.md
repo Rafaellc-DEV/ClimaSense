@@ -183,6 +183,15 @@ Reanálise retrospectiva não habilita publicação operacional.
 os agregados SQL e o verificador gold anteriores não são alterados. GET não persiste inferências.
 Detalhes e limites: [integração territorial](ml/integracao-territorial.md).
 
+A mesma API aceita `dia` para selecionar uma fatia de dia nas próximas 72 h.
+`servicos/chuva_preventiva.py` agrupa horas por data de Recife e aplica os limiares
+vigentes, sem banco ou dependência do ML. O serviço territorial lê as séries uma
+vez, prepara o período escolhido e preserva a classificação por regras. Uma
+consulta adicional, em lote por distrito, confere leituras APAC de 1 h com previsões
+arquivadas anteriores à janela. Não há persistência no fluxo de consulta nem nova
+dependência da migração 0025. Contratos, períodos e limitações:
+[comparação meteorológica e prevenção](comparacao-e-prevencao.md).
+
 ## 8. Mapa de pastas do backend
 
 ```text

@@ -23,6 +23,7 @@ import {
   VISOES,
   classeDoItem,
   ordemMlAlagamento,
+  ordemDaClasse,
   type ItemSimulado,
   type ResultadoSimulacao,
   type Visao,
@@ -31,12 +32,13 @@ import estilos from "./Simulador.module.css";
 
 const ROTULO_MAPA =
   "Mapa dos bairros do Recife coloridos pelo risco simulado. Use as setas para mover e as teclas + e - para aproximar. Para escolher um bairro sem o mapa, use a lista Bairros mais afetados.";
-type VisaoMapa = Visao | "ml";
+type VisaoMapa = Visao | "ml" | "preventiva";
 const ROTULO_VISAO: Record<VisaoMapa, string> = {
   situacao: "Estágio",
   alagamento: "Alagamento",
   deslizamento: "Deslizamento",
   ml: "ML de alagamento",
+  preventiva: "Atenção preventiva",
 };
 
 const distritoDe = (i: ItemSimulado) =>
@@ -74,7 +76,7 @@ function Legenda({ visao }: { visao: VisaoMapa }) {
         : [3, 2, 1, 0].map((o) => (
             <li key={o}>
               <i style={{ background: token(TOKEN_ESTAGIO[o]) }} aria-hidden="true" />
-              {ROTULO_CLASSE[o]}
+              {visao === "preventiva" && o === 0 ? "Limite não atingido no período" : ROTULO_CLASSE[o]}
             </li>
           ))}
       <li>
@@ -92,6 +94,15 @@ function Escolhido({ item, aviso, ml }: { item: ItemSimulado; aviso: string | nu
       <h3>
         {item.nome} <small>· {distritoDe(item)}</small>
       </h3>
+      {item.sinalizacao_preventiva && (
+        <p>
+          Sinalização interna de chuva:{" "}
+          {item.sinalizacao_preventiva === "observacao"
+            ? "limite não atingido no período disponível"
+            : item.sinalizacao_preventiva.replace("sem_dados", "dados insuficientes")}
+          . Não é alerta oficial nem confirmação de impacto.
+        </p>
+      )}
       {ml && (
         <p role="status">
           <b>Classificação do ML:</b>{" "}
@@ -145,6 +156,7 @@ export function MapaDoCenario({
   contexto = "manual",
   mlAlagamento,
   previaLocal = false,
+  preventiva = false,
 }: {
   bairros: ItemSimulado[];
   aviso: string | null;
@@ -153,6 +165,7 @@ export function MapaDoCenario({
   contexto?: "manual" | "atual";
   mlAlagamento?: ResultadoSimulacao["ml_alagamento"];
   previaLocal?: boolean;
+  preventiva?: boolean;
 }) {
   const { usuario } = useSessao();
   const geoBairros = useConsulta<ColecaoFeicoes>("/territorios/bairros.geojson", { staleTime: 30 * 60_000 });
@@ -161,26 +174,38 @@ export function MapaDoCenario({
   });
   const [visao, setVisao] = useState<VisaoMapa>("situacao");
   useEffect(() => {
-    if (previaLocal) setVisao("ml");
-  }, [previaLocal]);
+    if (preventiva) setVisao("preventiva");
+  }, [preventiva]);
   useEffect(() => {
-    if (contexto === "manual" && visao === "ml") setVisao("situacao");
-  }, [contexto, visao]);
-  const visaoAtual: VisaoMapa = contexto === "manual" && visao === "ml" ? "situacao" : visao;
+    if (previaLocal && !preventiva) setVisao("ml");
+  }, [previaLocal, preventiva]);
+  useEffect(() => {
+    if ((contexto === "manual" && visao === "ml") || (!preventiva && visao === "preventiva"))
+      setVisao("situacao");
+  }, [contexto, visao, preventiva]);
+  const visaoAtual: VisaoMapa =
+    (contexto === "manual" && visao === "ml") || (!preventiva && visao === "preventiva") ? "situacao" : visao;
   const mapaMl = contexto === "atual" && visaoAtual === "ml";
+  const ordem = useCallback(
+    (item: ItemSimulado | undefined) =>
+      visaoAtual === "preventiva"
+        ? ordemDaClasse(item?.sinalizacao_preventiva)
+        : classeDoItem(item, visaoAtual as Visao),
+    [visaoAtual],
+  );
   const mlDisponivel = mlAlagamento?.disponivel === true;
 
   const porId = useMemo(() => new Map(bairros.map((i) => [i.territorio_id, i] as const)), [bairros]);
   const aparencia = useCallback(
     (id: string): Aparencia => {
-      const ordem = mapaMl ? null : classeDoItem(porId.get(id), visaoAtual as Visao);
-      return { ordem, origem: ordem === null ? "sem_dados" : "declarado" };
+      const valor = mapaMl ? null : ordem(porId.get(id));
+      return { ordem: valor, origem: valor === null ? "sem_dados" : "declarado" };
     },
-    [porId, visaoAtual, mapaMl],
+    [porId, ordem, mapaMl],
   );
   const dica = useCallback(
     (id: string, nome: string) => {
-      const o = mapaMl ? ordemMlAlagamento(porId.get(id)) : classeDoItem(porId.get(id), visaoAtual as Visao);
+      const o = mapaMl ? ordemMlAlagamento(porId.get(id)) : ordem(porId.get(id));
       const rotulo = mapaMl
         ? !mlDisponivel
           ? "ML indisponível"
@@ -189,12 +214,23 @@ export function MapaDoCenario({
             : `${ROTULOS_ML[o]} (ML experimental)`
         : o === null
           ? "Dados insuficientes"
-          : ROTULO_CLASSE[o];
+          : visaoAtual === "preventiva" && o === 0
+            ? "Limite não atingido no período"
+            : ROTULO_CLASSE[o];
       return `<strong>${nome.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!)}</strong><br>${rotulo}`;
     },
-    [porId, visaoAtual, mapaMl, mlDisponivel],
+    [porId, visaoAtual, ordem, mapaMl, mlDisponivel],
   );
   const lista = useMemo(() => {
+    if (visaoAtual === "preventiva")
+      return [...bairros]
+        .filter((b) => (ordem(b) ?? -1) >= 1)
+        .sort(
+          (a, b) =>
+            (ordem(b) ?? -1) - (ordem(a) ?? -1) ||
+            pessoas(b) - pessoas(a) ||
+            a.nome.localeCompare(b.nome, "pt-BR"),
+        );
     if (!mapaMl) return maisAfetados(bairros);
     if (!mlDisponivel) return [];
     return bairros
@@ -206,13 +242,19 @@ export function MapaDoCenario({
           a.nome.localeCompare(b.nome, "pt-BR"),
       )
       .slice(0, 10);
-  }, [bairros, mapaMl, mlDisponivel]);
+  }, [bairros, mapaMl, mlDisponivel, ordem, visaoAtual]);
   const item = selecionado ? porId.get(selecionado) : undefined;
 
   return (
     <section className={estilos.painelBloco} aria-labelledby="sim-mapa">
       <div className={estilos.painelTopo}>
-        <h2 id="sim-mapa">{mapaMl ? "Bairros classificados pelo ML" : "Quais áreas são afetadas"}</h2>
+        <h2 id="sim-mapa">
+          {mapaMl
+            ? "Bairros classificados pelo ML"
+            : visaoAtual === "preventiva"
+              ? "Territórios em atenção preventiva"
+              : "Quais áreas são afetadas"}
+        </h2>
         <Experimental />
       </div>
       <Segmentado
@@ -220,6 +262,7 @@ export function MapaDoCenario({
         opcoes={[
           ...VISOES.map((v) => ({ valor: v.valor as VisaoMapa, rotulo: ROTULO_VISAO[v.valor] })),
           ...(contexto === "atual" ? [{ valor: "ml" as VisaoMapa, rotulo: ROTULO_VISAO.ml }] : []),
+          ...(preventiva ? [{ valor: "preventiva" as VisaoMapa, rotulo: ROTULO_VISAO.preventiva }] : []),
         ]}
         valor={visaoAtual}
         aoMudar={setVisao}
@@ -237,9 +280,11 @@ export function MapaDoCenario({
             rotulo={
               mapaMl
                 ? "Mapa experimental dos bairros do Recife classificados pelo modelo de alagamento. Sem dados não significa risco baixo."
-                : contexto === "atual"
-                  ? ROTULO_MAPA.replace("risco simulado", "avaliação experimental da previsão atual")
-                  : ROTULO_MAPA
+                : visaoAtual === "preventiva"
+                  ? "Mapa da sinalização interna de chuva no dia selecionado, com bairros herdando os limites do distrito. Não é alerta oficial; dados ausentes não significam segurança."
+                  : contexto === "atual"
+                    ? ROTULO_MAPA.replace("risco simulado", "avaliação experimental da previsão atual")
+                    : ROTULO_MAPA
             }
             aparencia={aparencia}
             dica={dica}
@@ -260,9 +305,11 @@ export function MapaDoCenario({
           ? mlDisponivel
             ? `Camada experimental do modelo ${mlAlagamento?.modelo?.versao ?? "sem versão"}. ${previaLocal ? "PRÉVIA ACADÊMICA NÃO VALIDADA PARA USO OPERACIONAL. " : ""}Os resultados não são alertas oficiais e não substituem a avaliação por regras.`
             : `Não há previsão de ML validada para mapear. ${mlAlagamento?.motivo ?? "Aguardando modelo e validação."} Consulte as camadas por regras.`
-          : contexto === "atual"
-            ? "Cor cheia é a avaliação experimental da previsão de cada distrito."
-            : "Cor cheia é o risco simulado de cada bairro."}{" "}
+          : visaoAtual === "preventiva"
+            ? "Sinalização interna para o dia selecionado: os bairros herdam o limiar meteorológico do distrito. Não é alerta oficial; a avaliação territorial por regras pode ter dados insuficientes."
+            : contexto === "atual"
+              ? "Cor cheia é a avaliação experimental da previsão de cada distrito."
+              : "Cor cheia é o risco simulado de cada bairro."}{" "}
         Cinza listrado é falta de dado, não risco baixo.
       </p>
 
@@ -275,14 +322,22 @@ export function MapaDoCenario({
       )}
 
       <div>
-        <h3>{mapaMl ? "Bairros sinalizados pelo ML" : "Bairros mais afetados"}</h3>
+        <h3>
+          {mapaMl
+            ? "Bairros sinalizados pelo ML"
+            : visaoAtual === "preventiva"
+              ? "Bairros em atenção preventiva"
+              : "Bairros mais afetados"}
+        </h3>
         {lista.length === 0 ? (
           <p className={estilos.apoio}>
             {mapaMl
               ? mlDisponivel
                 ? "O modelo não retornou classes válidas para os bairros. Verifique os insumos de cada distrito."
                 : "Ainda não há resultados de ML liberados pela validação para esta camada."
-              : "Os bairros aparecem aqui quando o cenário for calculado."}
+              : visaoAtual === "preventiva"
+                ? "Nenhuma ultrapassagem confirmada nos dados disponíveis. Confira cobertura e dados ausentes; isso não significa ausência de risco."
+                : "Os bairros aparecem aqui quando o cenário for calculado."}
           </p>
         ) : (
           <ol className={estilos.maisAfetados}>
@@ -302,6 +357,8 @@ export function MapaDoCenario({
                     </span>
                     {mapaMl ? (
                       <b>{ROTULOS_ML[ordemMlAlagamento(b)!]} (ML)</b>
+                    ) : visaoAtual === "preventiva" ? (
+                      <b>{ROTULO_CLASSE[ordem(b)!]} (preventiva)</b>
                     ) : (
                       <SeloEstagio estagio={b.estagio_sugerido} pequena />
                     )}

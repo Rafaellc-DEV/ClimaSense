@@ -297,6 +297,7 @@ class ItemSimulacao(BaseModel):
     ml_alagamento: ItemRisco | None = Field(
         default=None, description="Resultado paralelo, somente com modelo publicável"
     )
+    sinalizacao_preventiva: Classe | None = None
 
 
 class PessoasEmAlerta(BaseModel):
@@ -333,9 +334,50 @@ class Simulacao(BaseModel):
     tempo_calculo_ms: int
 
 
+class DistritoPreventivo(BaseModel):
+    territorio_id: str
+    nome: str
+    chuva_prevista_mm: float | None
+    chuva_disponivel_mm: float | None
+    horas_validas: int
+    horas_esperadas: int
+    cobertura_completa: bool
+    desatualizada: bool
+    referencia_em: datetime | None
+    sinalizacao: Classe
+    chuva_intensa: bool | None
+
+
+class DiaPreventivo(BaseModel):
+    data: date
+    inicio: datetime
+    fim: datetime
+    periodo_parcial: bool
+    horas_periodo: int
+    distritos: list[DistritoPreventivo]
+    distritos_em_atencao: list[str]
+    criterios: dict[str, float]
+
+
+class ComparacaoMeteorologica(BaseModel):
+    territorio_id: str
+    inicio: datetime
+    fim: datetime
+    observada_mm: float
+    estacao: str
+    atualizada_em: datetime
+    previsao_referencia_em: datetime | None
+    prevista_mm: float | None
+    compativel: bool
+    motivo: str | None
+
+
 class ImpactoPrevisto(Simulacao):
     contexto: Literal["previsao_atual"]
     ml_alagamento: RiscoAlagamento
+    dia_selecionado: date | None = None
+    dias: list[DiaPreventivo] = Field(default_factory=list)
+    comparacoes_recentes: list[ComparacaoMeteorologica] = Field(default_factory=list)
 
 
 @router.get(
@@ -348,8 +390,12 @@ def impacto_previsto(
     _: Contexto = Depends(consultar),
     db: Session = Depends(obter_sessao),
     agora: datetime = Depends(relogio),
+    dia: date | None = None,
 ) -> RespostaDados[ImpactoPrevisto]:
-    dados = impacto_territorial.analisar(db, agora, horizonte_h)
+    try:
+        dados = impacto_territorial.analisar(db, agora, horizonte_h, dia=dia)
+    except ValueError as erro:
+        raise ErroClimaSense(422, str(erro)) from None
     fs = (
         servico.FONTE_PREVISAO,
         servico.FONTE_MARE,
@@ -365,7 +411,7 @@ def impacto_previsto(
         dados=ImpactoPrevisto(**dados),
         meta=Meta(
             fontes=[servico_fontes.meta(db, f, agora) for f in fs],
-            recorte=RecorteMeta(territorio_id="recife", granularidade="bairro"),
+            recorte=RecorteMeta(territorio_id="recife", granularidade="bairro", inicio=dia, fim=dia),
             dados_insuficientes=all(i["estagio_sugerido"] == "sem_dados" for i in dados["itens"]),
             avisos=impacto_territorial.LIMITACOES,
         ),

@@ -114,6 +114,15 @@ Não aponte `DATABASE_URL_TESTE` para bancos compartilhados ou com dados a prese
 
 ## Estudo de ML: risco de alagamento
 
+**Dias com chuva intensa e comparação meteorológica:** em **Simulador → Previsão
+por distrito**, selecione uma data das próximas 72 horas para destacar os bairros
+dos distritos em atenção. A tela compara chuva Open-Meteo e interpretação por
+regras; APAC só é pareada a previsões arquivadas em períodos compatíveis. A
+sinalização é interna, não um alerta oficial, e independe da aprovação do ML.
+O simulador manual permanece disponível. Há também um acesso direto pela tela
+**Chuva**. Funcionamento, limites, simplificações e verificação local:
+[`docs/comparacao-e-prevencao.md`](docs/comparacao-e-prevencao.md).
+
 **Atualização meteorológica:** diagnóstico, correções do ETL, validação isolada e plano de implantação
 em [`docs/operacao-etl.md`](docs/operacao-etl.md). Iniciar `dev.ps1` não atualiza as fontes.
 O perfil `etl operacional` e os scripts de agendamento estão preparados; a atualização dos bancos

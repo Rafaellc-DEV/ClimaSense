@@ -194,14 +194,21 @@ def _fatores(art: Artefato, x: dict, dia: date, hoje: date, distrito: str) -> li
 
 # ----------------------------------------------------------------------------- API do módulo
 def risco_por_territorio(
-    db: Session, agora: datetime, artefato: Artefato | None = None, *, previa_local: bool = False
+    db: Session,
+    agora: datetime,
+    artefato: Artefato | None = None,
+    *,
+    previa_local: bool = False,
+    dia: date | None = None,
 ) -> dict[str, dict]:
     """Classes por bairro. Prévia não publicável só em rota local, autenticada e explicitamente habilitada."""
     art = artefato if artefato is not None else armazenamento.carregar_em_cache()
     if art is None or not armazenamento.compativel(art) or (not art.publicavel and not previa_local):
         return {}
     hoje = hoje_recife(agora)
-    dias = [hoje, hoje + timedelta(days=1)]
+    dias = [dia] if dia is not None else [hoje, hoje + timedelta(days=1)]
+    if any(d not in (hoje, hoje + timedelta(days=1)) for d in dias):
+        return {}
     chuva = chuva_por_dia(chuva_recente(db, hoje - timedelta(days=6), hoje + timedelta(days=1), agora))
     saida: dict[str, dict] = {}
     for territorio_id, (_, distrito) in bairros(db).items():
@@ -251,7 +258,7 @@ def descricao_modelo(art: Artefato | None) -> dict | None:
     }
 
 
-def payload(db: Session, agora: datetime, nivel: str = "bairro") -> dict:
+def payload(db: Session, agora: datetime, nivel: str = "bairro", *, dia: date | None = None) -> dict:
     """Formato do contrato `GET /risco-alagamento` (specs/foco-chuvas.md §4)."""
     art = armazenamento.carregar_em_cache()
     if art is None:
@@ -263,14 +270,21 @@ def payload(db: Session, agora: datetime, nivel: str = "bairro") -> dict:
         }
     if not art.publicavel:
         return {"disponivel": False, "motivo": art.motivo, "modelo": descricao_modelo(art), "itens": []}
-    riscos = risco_por_territorio(db, agora, art)
+    if dia is not None and dia not in (hoje_recife(agora), hoje_recife(agora) + timedelta(days=1)):
+        return {
+            "disponivel": False,
+            "motivo": "ML 0.2.0 limitado a hoje e amanhã.",
+            "modelo": descricao_modelo(art),
+            "itens": [],
+        }
+    riscos = risco_por_territorio(db, agora, art, dia=dia)
     if nivel == "distrito":
         riscos = por_distrito(riscos, bairros(db))
     itens = [{"territorio_id": t, **r} for t, r in sorted(riscos.items())]
     return {"disponivel": True, "motivo": None, "modelo": descricao_modelo(art), "itens": itens}
 
 
-def payload_previa_local(db: Session, agora: datetime) -> dict:
+def payload_previa_local(db: Session, agora: datetime, *, dia: date | None = None) -> dict:
     """Diagnóstico NÃO OPERACIONAL. Só chamado por endpoint com ambiente+flag+admin.
 
     Não modifica `publicavel`, não grava no banco, não treina e não afeta a API normal.
@@ -284,7 +298,14 @@ def payload_previa_local(db: Session, agora: datetime) -> dict:
             "modelo": None,
             "itens": [],
         }
-    riscos = risco_por_territorio(db, agora, art, previa_local=True)
+    if dia is not None and dia not in (hoje_recife(agora), hoje_recife(agora) + timedelta(days=1)):
+        return {
+            "disponivel": False,
+            "motivo": "ML 0.2.0 limitado a hoje e amanhã.",
+            "modelo": descricao_modelo(art),
+            "itens": [],
+        }
+    riscos = risco_por_territorio(db, agora, art, previa_local=True, dia=dia)
     return {
         "disponivel": True,
         "motivo": (

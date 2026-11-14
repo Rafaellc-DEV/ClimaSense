@@ -59,8 +59,19 @@ test("previsão por distrito preserva mapa, acessibilidade e retorno ao cenário
     inatividade_min: 60,
     mapa_tiles_url: "",
   };
+  const dias = ["2026-05-10", "2026-05-11"].map((data, i) => ({
+    data, inicio: `${data}T03:00:00Z`, fim: `${data}T23:00:00Z`, horas_periodo: 20,
+    periodo_parcial: true, criterios: { atencao_mm: 25, alerta_mm: 50, critico_mm: 90 },
+    distritos_em_atencao: i === 0 ? ["ds-1"] : [],
+    distritos: [{ territorio_id: "ds-1", nome: "Distrito I", chuva_prevista_mm: i === 0 ? 50 : 0,
+      chuva_disponivel_mm: i === 0 ? 50 : 0, horas_validas: 20, horas_esperadas: 20,
+      cobertura_completa: true, desatualizada: false, referencia_em: agora,
+      sinalizacao: i === 0 ? "alerta" : "observacao", chuva_intensa: i === 0 }],
+  }));
   await page.route("**/api/v1/**", async (route) => {
-    const p = new URL(route.request().url()).pathname.replace("/api/v1", "");
+    const url = new URL(route.request().url());
+    const p = url.pathname.replace("/api/v1", "");
+    const dia = url.searchParams.get("dia");
     const rotas: Record<string, unknown> = {
       "/auth/eu": usuario,
       "/cenarios": { dados: [] },
@@ -75,6 +86,8 @@ test("previsão por distrito preserva mapa, acessibilidade e retorno ao cenário
         dados: {
           ...resultado.dados,
           contexto: "previsao_atual",
+          dias, dia_selecionado: dia, comparacoes_recentes: [],
+          itens: [{ ...item, sinalizacao_preventiva: dia === "2026-05-10" ? "alerta" : dia ? "observacao" : null }],
           ml_alagamento: {
             disponivel: false,
             motivo: "Modelo não superou a referência simples",
@@ -95,6 +108,16 @@ test("previsão por distrito preserva mapa, acessibilidade e retorno ao cenário
   await expect(page.locator(".leaflet-container")).toBeVisible();
   await page.getByRole("button", { name: /Bairro de teste/ }).click();
   await expect(page.getByTestId("bairro-escolhido")).toBeVisible();
+  await page.getByRole("radio", { name: /10\/05 · 1 distrito/ }).check();
+  await expect(page.getByRole("radio", { name: "Atenção preventiva", exact: true })).toBeChecked();
+  await expect(page.getByRole("region", { name: "Comparação meteorológica e territorial" })).toBeVisible();
+  await expect(page.getByText(/Não são duas previsões independentes/)).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Bairros em atenção preventiva" })).toBeVisible();
+  const corAtencao = await page.locator(".leaflet-interactive").first().getAttribute("fill");
+  await page.screenshot({ path: `../tmp/alertas-${test.info().project.name}.png`, fullPage: true });
+  await page.getByRole("radio", { name: /11\/05 · 0 distritos/ }).check();
+  await expect(page.getByText(/Nenhuma ultrapassagem confirmada/)).toBeVisible();
+  await expect(page.locator(".leaflet-interactive").first()).not.toHaveAttribute("fill", corAtencao!);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   const a11y = await new AxeBuilder({ page } as unknown as ConstructorParameters<typeof AxeBuilder>[0])
     .withTags(["wcag2a", "wcag2aa"])

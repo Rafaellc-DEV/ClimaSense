@@ -20,6 +20,7 @@ def horaria(valor, n=72):
 
 @pytest.fixture
 def fontes(monkeypatch):
+    monkeypatch.setattr(impacto, "comparacoes_recentes", lambda *args: [])
     est = {
         "distritos": {"ds-1": "Distrito 1", "ds-2": "Distrito 2"},
         "bairros": [("bairro-a", "A", "ds-1"), ("bairro-b", "B", "ds-2")],
@@ -45,7 +46,7 @@ def fontes(monkeypatch):
     monkeypatch.setattr(
         impacto.ml,
         "payload",
-        lambda *a: {"disponivel": False, "motivo": "Reprovado", "modelo": None, "itens": []},
+        lambda *a, **kwargs: {"disponivel": False, "motivo": "Reprovado", "modelo": None, "itens": []},
     )
     return est
 
@@ -176,6 +177,8 @@ def test_persistencia_idempotente_e_sem_ml_reprovado(fontes):
     assert prever.persistir(db, outro) == 0 and db.commits == 2
     with pytest.raises(ValueError, match="previsão atual"):
         prever.registros({"contexto": "cenario_hipotetico"})
+    with pytest.raises(ValueError, match="recorte diário"):
+        prever.registros({"contexto": "previsao_atual", "dia_selecionado": "2026-05-10"})
 
 
 def test_rota_preserva_envelope_metadados_e_nao_grava(fontes, monkeypatch):
@@ -206,3 +209,8 @@ def test_rota_preserva_envelope_metadados_e_nao_grava(fontes, monkeypatch):
     assert r.json()["meta"]["fontes"][0]["id"] == "open-meteo-previsao"
     assert not r.json()["dados"]["ml_alagamento"]["disponivel"]
     assert c.get("/api/v1/cenarios/impacto-previsto?horizonte_h=73").status_code == 422
+    diaria = c.get("/api/v1/cenarios/impacto-previsto?dia=2026-05-11")
+    assert diaria.status_code == 200
+    assert diaria.json()["dados"]["dia_selecionado"] == "2026-05-11"
+    assert diaria.json()["dados"]["itens"][0]["sinalizacao_preventiva"] == "critico"
+    assert c.get("/api/v1/cenarios/impacto-previsto?dia=2026-06-01").status_code == 422

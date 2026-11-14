@@ -1,4 +1,7 @@
 > **Em conflito, vale `docs/PRD.md`.** Este documento é anterior ao PRD (06/11/2026) e fica como histórico.
+> O incremento de comparação meteorológica e sinalização preventiva por data está
+> documentado no [PRD §8.5](../docs/PRD.md#85-comparação-meteorológica-e-sinalização-preventiva-por-dia)
+> e no [guia técnico](../docs/comparacao-e-prevencao.md), preservando estes requisitos históricos.
 >
 > **Mudança de escopo de 06/11/2026 (PRD v3, ADR 0016):** abrigos (locais, abertos, ocupação, desabrigados,
 > capacidade, atendimento nos abrigos) saíram do produto. O foco é chuva, maré, cenário e arboviroses por distrito.

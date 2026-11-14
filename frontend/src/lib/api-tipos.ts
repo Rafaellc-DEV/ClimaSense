@@ -2243,6 +2243,38 @@ export interface components {
       /** Dias Com Dado */
       dias_com_dado: number;
     };
+    /** ComparacaoMeteorologica */
+    ComparacaoMeteorologica: {
+      /** Territorio Id */
+      territorio_id: string;
+      /**
+       * Inicio
+       * Format: date-time
+       */
+      inicio: string;
+      /**
+       * Fim
+       * Format: date-time
+       */
+      fim: string;
+      /** Observada Mm */
+      observada_mm: number;
+      /** Estacao */
+      estacao: string;
+      /**
+       * Atualizada Em
+       * Format: date-time
+       */
+      atualizada_em: string;
+      /** Previsao Referencia Em */
+      previsao_referencia_em: string | null;
+      /** Prevista Mm */
+      prevista_mm: number | null;
+      /** Compativel */
+      compativel: boolean;
+      /** Motivo */
+      motivo: string | null;
+    };
     /** Conta */
     Conta: {
       /**
@@ -2564,6 +2596,36 @@ export interface components {
       /** Linha Do Tempo */
       linha_do_tempo: components["schemas"]["ItemLinhaDoTempo"][];
     };
+    /** DiaPreventivo */
+    DiaPreventivo: {
+      /**
+       * Data
+       * Format: date
+       */
+      data: string;
+      /**
+       * Inicio
+       * Format: date-time
+       */
+      inicio: string;
+      /**
+       * Fim
+       * Format: date-time
+       */
+      fim: string;
+      /** Periodo Parcial */
+      periodo_parcial: boolean;
+      /** Horas Periodo */
+      horas_periodo: number;
+      /** Distritos */
+      distritos: components["schemas"]["DistritoPreventivo"][];
+      /** Distritos Em Atencao */
+      distritos_em_atencao: string[];
+      /** Criterios */
+      criterios: {
+        [key: string]: number;
+      };
+    };
     /** Diferenca */
     Diferenca: {
       /** De */
@@ -2589,6 +2651,34 @@ export interface components {
       id: string;
       /** Nome */
       nome: string;
+    };
+    /** DistritoPreventivo */
+    DistritoPreventivo: {
+      /** Territorio Id */
+      territorio_id: string;
+      /** Nome */
+      nome: string;
+      /** Chuva Prevista Mm */
+      chuva_prevista_mm: number | null;
+      /** Chuva Disponivel Mm */
+      chuva_disponivel_mm: number | null;
+      /** Horas Validas */
+      horas_validas: number;
+      /** Horas Esperadas */
+      horas_esperadas: number;
+      /** Cobertura Completa */
+      cobertura_completa: boolean;
+      /** Desatualizada */
+      desatualizada: boolean;
+      /** Referencia Em */
+      referencia_em: string | null;
+      /**
+       * Sinalizacao
+       * @enum {string}
+       */
+      sinalizacao: "sem_dados" | "observacao" | "atencao" | "alerta" | "critico";
+      /** Chuva Intensa */
+      chuva_intensa: boolean | null;
     };
     /** EquipamentoResumo */
     EquipamentoResumo: {
@@ -3152,6 +3242,12 @@ export interface components {
        */
       contexto: "previsao_atual";
       ml_alagamento: components["schemas"]["RiscoAlagamento"];
+      /** Dia Selecionado */
+      dia_selecionado?: string | null;
+      /** Dias */
+      dias?: components["schemas"]["DiaPreventivo"][];
+      /** Comparacoes Recentes */
+      comparacoes_recentes?: components["schemas"]["ComparacaoMeteorologica"][];
     };
     /** InsumosEstagio */
     InsumosEstagio: {
@@ -3337,6 +3433,8 @@ export interface components {
       } | null;
       /** @description Resultado paralelo, somente com modelo publicável */
       ml_alagamento?: components["schemas"]["ItemRisco"] | null;
+      /** Sinalizacao Preventiva */
+      sinalizacao_preventiva?: ("sem_dados" | "observacao" | "atencao" | "alerta" | "critico") | null;
     };
     /** ItemVulneraveis */
     ItemVulneraveis: {
@@ -6423,6 +6521,7 @@ export interface operations {
     parameters: {
       query?: {
         horizonte_h?: number;
+        dia?: string | null;
       };
       header?: never;
       path?: never;
@@ -8194,7 +8293,9 @@ export interface operations {
   };
   previa_local_api_v1_risco_alagamento_previa_local_get: {
     parameters: {
-      query?: never;
+      query?: {
+        dia?: string | null;
+      };
       header?: never;
       path?: never;
       cookie?: never;
@@ -8208,6 +8309,15 @@ export interface operations {
         };
         content: {
           "application/json": components["schemas"]["RespostaDados_RiscoAlagamento_"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
     };

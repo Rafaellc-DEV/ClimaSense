@@ -26,8 +26,10 @@ def _json(valor) -> str:
 
 def registros(resultado: dict) -> list[dict]:
     """Somente previsão atual; modelo rejeitado nunca produz linha de ML."""
-    if resultado.get("contexto") != "previsao_atual":
-        raise ValueError("Persistência operacional aceita somente análise da previsão atual.")
+    if resultado.get("contexto") != "previsao_atual" or resultado.get("dia_selecionado") is not None:
+        raise ValueError(
+            "Persistência operacional aceita somente análise contínua da previsão atual, sem recorte diário."
+        )
     saida = []
     for item in resultado["itens"]:
         if item["nivel"] != "bairro":

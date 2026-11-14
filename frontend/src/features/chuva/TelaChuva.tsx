@@ -1,4 +1,4 @@
-import { useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { Abas } from "@/design-system/componentes/Abas";
 import { CabecalhoTela } from "@/design-system/componentes/CabecalhoTela";
 import { Historico } from "./Historico";
@@ -16,6 +16,11 @@ export function TelaChuva() {
         titulo="Chuva"
         proposito="Onde pode passar do limite nos próximos dias e como foi até agora."
       />
+      <p>
+        <Link to="/app/simulador?modo=atual">
+          Ver dias de chuva intensa, comparação meteorológica e territórios no mapa
+        </Link>
+      </p>
       <Abas
         rotulo="Chuva"
         valor={aba}

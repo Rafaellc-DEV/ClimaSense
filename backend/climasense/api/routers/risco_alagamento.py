@@ -7,7 +7,7 @@ insuficientes ou desempenho abaixo da referência simples) → `disponivel: fals
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import date, datetime
 from typing import Literal
 
 from fastapi import APIRouter, Depends, Query
@@ -98,10 +98,13 @@ def previa_local(
     config: Configuracao = Depends(configuracao),
     db: Session = Depends(obter_sessao),
     agora: datetime = Depends(relogio),
+    dia: date | None = None,
 ) -> RespostaDados[RiscoAlagamento]:
     if config.ambiente != "desenvolvimento" or not config.ml_previa_experimental_local:
         raise ErroClimaSense(404, "Prévia de pesquisa desabilitada neste ambiente.")
-    dados = servico.payload_previa_local(db, agora)
+    dados = (
+        servico.payload_previa_local(db, agora, dia=dia) if dia else servico.payload_previa_local(db, agora)
+    )
     return RespostaDados(
         dados=RiscoAlagamento(**dados),
         meta=Meta(

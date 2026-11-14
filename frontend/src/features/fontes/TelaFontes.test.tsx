@@ -26,6 +26,36 @@ const fonte = (id: string, extra = {}) => ({
   ...extra,
 });
 
+test("detalhe mantém uma atualização em curso e renova os metadados ao terminar", async () => {
+  const pedidos = simularApi(
+    {
+      "/auth/eu": usuarioTeste(["consultar", "executar_etl"], ["administrador"]),
+      "/fontes/open-meteo-previsao": fonte("open-meteo-previsao", { url: "https://open-meteo.com" }),
+      "/fontes/open-meteo-previsao/execucoes": [],
+    },
+    { "/etl/execucoes": { id: "trabalho", status: "em_andamento" } },
+  );
+  let concluir!: (e: never) => void;
+  vi.mocked(acompanhar).mockImplementationOnce(
+    () =>
+      new Promise((resolve) => {
+        concluir = resolve;
+      }),
+  );
+  window.history.pushState({}, "", "/app/fontes/open-meteo-previsao");
+  render(<App />);
+  const botao = await screen.findByRole("button", { name: "Atualizar agora" });
+  fireEvent.click(botao);
+  fireEvent.click(botao);
+  await waitFor(() => expect(acompanhar).toHaveBeenCalledTimes(1));
+  expect(botao).toBeDisabled();
+  expect(pedidos.filter((p) => p.metodo === "POST")).toHaveLength(1);
+  concluir({ status: "sucesso", gravados: 2 } as never);
+  await screen.findByText("Atualização concluída.");
+  await waitFor(() => expect(screen.getByRole("button", { name: "Atualizar agora" })).toBeEnabled());
+  expect(pedidos.filter((p) => p.url.endsWith("/fontes/open-meteo-previsao"))).toHaveLength(2);
+});
+
 test("trava o botão antes do POST e espera a primeira fonte antes de iniciar a próxima", async () => {
   const pedidos = simularApi(
     {

@@ -66,7 +66,8 @@ def test_payload_previa_nao_muda_publicavel(monkeypatch):
         ("desenvolvimento", True, "administrador", 200),
     ],
 )
-def test_contrato_http_previa_sem_banco(monkeypatch, ambiente, habilitada, papel, status):
+@pytest.mark.parametrize("consulta", ["", "?dia=2026-11-14"])
+def test_contrato_http_previa_sem_banco(monkeypatch, ambiente, habilitada, papel, status, consulta):
     from fastapi import FastAPI
     from fastapi.testclient import TestClient
 
@@ -90,7 +91,7 @@ def test_contrato_http_previa_sem_banco(monkeypatch, ambiente, habilitada, papel
     monkeypatch.setattr(autorizacao, "_contexto", contexto)
     chamadas = []
 
-    def previa(*args):
+    def previa(*args, **kwargs):
         chamadas.append(True)
         return {"disponivel": False, "motivo": "Modelo ausente", "modelo": None, "itens": []}
 
@@ -100,7 +101,7 @@ def test_contrato_http_previa_sem_banco(monkeypatch, ambiente, habilitada, papel
         "meta",
         lambda *args: {"id": args[1], "nome": args[1], "tipo": "prevista", "status": "planejada"},
     )
-    resposta = TestClient(app).get("/api/v1/risco-alagamento/previa-local")
+    resposta = TestClient(app).get("/api/v1/risco-alagamento/previa-local" + consulta)
     assert resposta.status_code == status
     assert bool(chamadas) == (status == 200)
     if status == 200:

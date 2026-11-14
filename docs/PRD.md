@@ -282,11 +282,24 @@ A premissa "Resposta disponível" (abrigos abertos e capacidade) saiu na v3 (ADR
 O cliente informou que a última grande chuva teve poucas ocorrências no distrito sanitário 7, apesar de ele ser muito vulnerável. Isso mostra que os eventos variam muito. O estudo do repositório (`docs/ml/risco-alagamento.md`, 04/11/2026) confirma o problema: o modelo de árvore de decisão não superou a regra simples de limiar de chuva no período de teste (AUC-PR de 0,046 contra 0,050) e por isso não é publicado. A proposta continua híbrida, com as regras na frente:
 
 1. **Base por regras:** os gatilhos de estágio (chuva prevista e acumulada, maré e histórico de alagamento do bairro). É o que o simulador usa na fase 1.
-2. **ML experimental:** roda em paralelo, com selo "Experimental", e só é publicado se cumprir os critérios do estudo: pelo menos 100 casos positivos no treino e 30 no teste, recall da classe "alagou" de pelo menos 0,60 e AUC-PR pelo menos 10% acima da melhor referência simples. Hoje o estudo cobre só alagamento; deslizamento ainda não tem estudo.
+2. **ML experimental:** versão escolhida 0.2.0, com selo "Experimental". O gate estatístico exige pelo menos 100 positivos no treino e 30 no teste, recall ≥ 0,60 e AUC-PR pelo menos 10% acima da melhor referência simples. Além disso, exige validação operacional independente: reanálise retrospectiva não libera publicação. O modelo continua bloqueado; recall próximo de 80% não é acurácia nem precisão, e 2024 já foi consultado repetidamente. A prévia acadêmica é restrita a administrador em desenvolvimento. Hoje o estudo cobre só alagamento.
 3. **Limiar sensível:** o modelo aceita mais falsos positivos que falsos negativos, conforme a preferência do cliente.
-4. **Recalibração:** após cada evento, as ocorrências reais são registradas e usadas para melhorar o modelo.
+4. **Recalibração futura:** ocorrências auditadas poderão apoiar estudos posteriores. Não há retreinamento automático por evento no fluxo atual.
 
-Os dados de treino atuais são os atendimentos da Defesa Civil (Dados Abertos do Recife), a chuva e a maré da Open-Meteo. Ainda faltam área e faixa hídrica por bairro (a base territorial só tem geometria de distrito) e ocorrências de deslizamento com bairro e data.
+Os dados de treino atuais são atendimentos da Defesa Civil, chuva e maré da Open-Meteo. Área e faixa hídrica não entram nos seis atributos do modelo 0.2.0, embora a malha de bairros já esteja disponível. Os experimentos de distrito, inundação SGB e picos de chuva permanecem reproduzíveis e fora do fluxo operacional.
+
+### 8.5 Comparação meteorológica e sinalização preventiva por dia
+
+Incremento implementado sobre RF-23–25, RF-28, RF-36, RF-38 e RF-42:
+
+- **Consulta e seleção:** a análise por distrito deve apresentar os dias cobertos pelas próximas 72 horas completas, em Recife, com início/fim e partes de dia explícitos. Selecionar a data atualiza o mapa, a lista de bairros e a interpretação territorial; o modo manual permanece disponível.
+- **Sinalização interna:** usa os limites meteorológicos configurados. Não depende da aprovação do ML ou da carga de histórico territorial. Não equivale a alerta oficial, estágio declarado ou ocorrência confirmada. Ausência, incompletude e desatualização não significam ausência de risco.
+- **Comparação:** chuva Open-Meteo e classes do ClimaSense são insumo e interpretação da mesma previsão. APAC só pode ser pareada a uma previsão já disponível antes de uma janela observada coincidente, no próprio distrito. Não se apresenta acurácia sem avaliação histórica compatível.
+- **ML complementar:** somente com período compatível, mantendo o modelo 0.2.0 e o gate científico. Recortes parciais e dias posteriores a amanhã não herdam classificações de outro período. A prévia acadêmica conserva ambiente, flag e permissão; produção não a disponibiliza.
+- **Atualização:** a interface reconsulta a previsão armazenada, mostra fonte e horários e atualiza os territórios. Não dispara ETL, migrações, persistência de inferências, notificações externas ou agendamentos.
+
+Método, critérios de cobertura, execução e limitações estão em
+[comparação e prevenção](comparacao-e-prevencao.md). A nova consulta não exige a migração 0025.
 
 ## 9. Dados e integrações
 

@@ -198,3 +198,11 @@ def test_dia_parcial_nao_esconde_falta_de_amanha(art, monkeypatch):
     monkeypatch.setattr(servico, "bairros", lambda _: {"bairro-a": ("A", "ds-1")})
     r = servico.risco_por_territorio(None, datetime(2026, 5, 10, 15, tzinfo=UTC), art)
     assert r["bairro-a"]["classe"] == "sem_dados"
+    diario = servico.risco_por_territorio(
+        None, datetime(2026, 5, 10, 15, tzinfo=UTC), art, dia=date(2026, 5, 10)
+    )
+    assert diario["bairro-a"]["classe"] != "sem_dados"
+    assert (
+        servico.risco_por_territorio(None, datetime(2026, 5, 10, 15, tzinfo=UTC), art, dia=date(2026, 5, 12))
+        == {}
+    )
