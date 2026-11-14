@@ -8,7 +8,9 @@ from datetime import UTC, datetime, timedelta, timezone
 
 import pandas as pd
 import requests
+from requests.adapters import HTTPAdapter
 from sqlalchemy import text
+from urllib3.util.retry import Retry
 
 # O Recife não tem horário de verão desde 2019: UTC−3 fixo (evita depender do tzdata no Windows).
 FUSO_RECIFE = timezone(timedelta(hours=-3), "America/Recife")
@@ -16,9 +18,29 @@ AGENTE = "ClimaSense-ETL/1.0 (Vigilancia em Saude do Recife)"
 GEOCODE_RECIFE = "2611606"
 
 
+class RetentativasLimitadas(Retry):
+    def get_retry_after(self, response):
+        espera = super().get_retry_after(response)
+        return min(espera, 15) if espera is not None else None
+
+
 def sessao_http() -> requests.Session:
     s = requests.Session()
     s.headers["User-Agent"] = AGENTE  # algumas APIs públicas reiniciam a conexão sem User-Agent
+    # Só GET: nunca repetimos escrita. Duas novas tentativas, espera exponencial limitada.
+    politica = RetentativasLimitadas(
+        total=2,
+        connect=2,
+        read=2,
+        status=2,
+        allowed_methods=frozenset({"GET"}),
+        status_forcelist=(429, 500, 502, 503, 504),
+        backoff_factor=1,
+        backoff_max=8,
+        respect_retry_after_header=True,
+    )
+    s.mount("https://", HTTPAdapter(max_retries=politica))
+    s.mount("http://", HTTPAdapter(max_retries=politica))
     return s
 
 

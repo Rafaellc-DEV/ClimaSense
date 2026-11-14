@@ -1,0 +1,22 @@
+{
+  "poligonos_por_classe": {
+    "alta": 26,
+    "media": 264,
+    "baixa": 132
+  },
+  "descartes": {},
+  "anos_informados": [
+    2014
+  ],
+  "fontes_declaradas_na_camada": [
+    "Produto obtido através da modelagem (ver Nota Técnica Explicativa do projeto) validado por trabalho de campo pela CPRM entre os anos de 2012 e 2014."
+  ],
+  "bairros_total": 94,
+  "bairros_com_carta": 90,
+  "bairros_sem_carta": 4,
+  "sobreposicao_entre_classes_km2": 0.0,
+  "observacao": "Área sem carta = desconhecida, não suscetibilidade baixa. Classes alta/média/baixa não são probabilidades.",
+  "fonte": "SGB/CPRM, Carta de Suscetibilidade do Recife, 2015, escala 1:45.000",
+  "url": "https://geoportal.sgb.gov.br/server/rest/services/gestaoterritorial/inundacao/FeatureServer/0",
+  "gerado_em": "2026-11-14T02:54:18.925332+00:00"
+}

@@ -16,7 +16,7 @@ from climasense.api.erros import ErroClimaSense
 from climasense.dominio.papeis import Permissao
 from climasense.etl import execucao
 from climasense.etl.conectores import CONECTORES
-from climasense.infra.postgres import engine_do_dono, obter_sessao
+from climasense.infra.postgres import obter_sessao
 from climasense.servicos import fontes as servico_fontes
 
 router = APIRouter(tags=["Fontes de dados"])
@@ -33,6 +33,10 @@ class Fonte(BaseModel):
     licenca: str | None
     status: str
     ultima_atualizacao: datetime | None
+    ultima_execucao_em: datetime | None = None
+    ultima_execucao_status: str | None = None
+    ultima_execucao_lidos: int | None = None
+    ultima_execucao_gravados: int | None = None
     limite_desatualizacao_h: int
     limite_frescor_h: float | None = Field(
         default=None, description="Limite de frescor (RF-19); null = sem limite"
@@ -110,7 +114,7 @@ def executor_em_segundo_plano(request: Request):
     config = request.app.state.config
 
     def rodar(fonte_id: str, execucao_id: str, limite: int | None) -> None:
-        execucao.executar(engine_do_dono(config), mongo(request), config, fonte_id, execucao_id, limite)
+        execucao.executar_preparado(config, fonte_id, execucao_id, limite, obter_mongo=lambda: mongo(request))
 
     return rodar
 
@@ -130,16 +134,10 @@ def disparar(
 ) -> Execucao:
     if pedido.fonte_id not in CONECTORES:
         raise ErroClimaSense(404, f"Fonte “{pedido.fonte_id}” não existe.")
-    novo = (
-        db.execute(
-            text(
-                "insert into app.etl_execucoes (fonte_id, status, disparado_por) values (:f, 'em_andamento', :u) returning *"
-            ),
-            {"f": pedido.fonte_id, "u": ctx.usuario.id},
-        )
-        .mappings()
-        .one()
-    )
+    try:
+        novo = execucao.reservar(db, pedido.fonte_id, ctx.usuario.id)
+    except execucao.ExecucaoEmAndamento as erro:
+        raise ErroClimaSense(409, str(erro)) from None
     db.execute(
         text(
             "insert into app.auditoria (usuario_id, acao, alvo_tipo, alvo_id, ip) values (:u, 'etl_disparado', 'fonte', :f, :ip)"
@@ -147,6 +145,7 @@ def disparar(
         {"u": ctx.usuario.id, "f": pedido.fonte_id, "ip": ctx.ip},
     )
     db.commit()
+    execucao.invalidar_leituras()
     tarefas.add_task(rodar, pedido.fonte_id, str(novo["id"]), pedido.limite)
     return Execucao(**novo)
 

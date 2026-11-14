@@ -54,7 +54,7 @@ def previsao_por_emissao(
 
 
 def previsao_por_emissao_distritos(
-    db: Session, distritos: list[str], desde: datetime
+    db: Session, distritos: list[str], desde: datetime, emitida_ate: datetime | None = None
 ) -> dict[str, dict[datetime, list[tuple[datetime, float | None]]]]:
     """`previsao_por_emissao` de vários distritos em 1 consulta (a de cada distrito custava 2): por distrito, as
     últimas `EMISSOES_PARA_FAIXA` emissões dele, hora a hora. Hora com algum valor nulo sai nula (RN-02)."""
@@ -64,13 +64,21 @@ def previsao_por_emissao_distritos(
         text(
             "with e as (select territorio_id, emitido_em, dense_rank() over (partition by territorio_id "
             "order by emitido_em desc) as ordem from (select distinct territorio_id, emitido_em "
-            "from silver.observacoes where fonte_id = :f and emitido_em is not null and territorio_id = any(:ts)) x) "
+            "from silver.observacoes where fonte_id = :f and emitido_em is not null and territorio_id = any(:ts) "
+            "and (cast(:ate as timestamptz) is null or (emitido_em <= :ate and coletado_em <= :ate))) x) "
             "select o.territorio_id, o.emitido_em, o.observado_em, avg(o.valor) as valor, count(o.valor) as n, "
             "count(*) as total from silver.observacoes o join e on e.territorio_id = o.territorio_id "
             "and e.emitido_em = o.emitido_em where o.fonte_id = :f and e.ordem <= :n and o.observado_em >= :d "
+            "and (cast(:ate as timestamptz) is null or o.coletado_em <= :ate) "
             "group by o.territorio_id, o.emitido_em, o.observado_em order by o.emitido_em, o.observado_em"
         ),
-        {"f": FONTE_PREVISAO, "ts": list(distritos), "n": EMISSOES_PARA_FAIXA, "d": desde},
+        {
+            "f": FONTE_PREVISAO,
+            "ts": list(distritos),
+            "n": EMISSOES_PARA_FAIXA,
+            "d": desde,
+            "ate": emitida_ate,
+        },
     ).all()
     saida: dict[str, dict[datetime, list[tuple[datetime, float | None]]]] = {}
     for ds, emitido, hora, valor, n, total in linhas:

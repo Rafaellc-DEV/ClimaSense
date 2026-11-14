@@ -13,11 +13,11 @@ from __future__ import annotations
 from datetime import UTC, date, datetime, timedelta
 
 import pandas as pd
-import requests
 from sqlalchemy import text
 
 from climasense.etl import gold
-from climasense.etl.conectores.base import Conector, ExecucaoCtx, FonteInfo
+from climasense.etl.conectores import comum
+from climasense.etl.conectores.base import Conector, ExecucaoCtx, FonteInfo, FonteSemDados
 from climasense.territorio.carga import geo_local
 from climasense.territorio.geometria import ponto_representativo
 
@@ -37,10 +37,11 @@ class _OpenMeteo(Conector):
     variavel: str
     unidade: str
     parametros_extra: dict = {}
+    minimo_horas_futuras = 0
 
     def __init__(self, http=None, **kw) -> None:
         super().__init__(**kw)
-        self.http = http or requests.Session()
+        self.http = http or comum.sessao_http()
 
     def pontos(self) -> list[tuple[str, float, float]]:
         return pontos_distritos()
@@ -62,12 +63,36 @@ class _OpenMeteo(Conector):
             r = self.http.get(self.url, params=params, timeout=60)
             r.raise_for_status()
             corpo = r.json()
-            horas, valores = corpo["hourly"]["time"], corpo["hourly"][self.variavel_api]
+            hourly = corpo.get("hourly", {}) if isinstance(corpo, dict) else {}
+            horas, valores = hourly.get("time"), hourly.get(self.variavel_api)
+            if (
+                not isinstance(horas, list)
+                or not isinstance(valores, list)
+                or not horas
+                or len(horas) != len(valores)
+            ):
+                raise FonteSemDados("Open-Meteo sem série horária válida para um dos territórios.")
             registros.extend(
                 {"territorio_id": territorio_id, "hora_utc": h, "valor": v, "lat": lat, "lon": lon}
                 for h, v in zip(horas, valores, strict=True)
             )
         return registros
+
+    def validar(self, df: pd.DataFrame, ctx: ExecucaoCtx) -> None:
+        if df.empty:
+            raise FonteSemDados("Open-Meteo sem registros utilizáveis nesta coleta.")
+        validos = df[df["valor"].notna()]
+        if set(validos["territorio_id"]) != {t for t, _, _ in self.pontos()}:
+            raise FonteSemDados("Open-Meteo sem valores utilizáveis para todos os territórios da fonte.")
+        inicio = ctx.agora.replace(minute=0, second=0, microsecond=0)
+        esperadas = {inicio + timedelta(hours=h) for h in range(self.minimo_horas_futuras)}
+        if esperadas and any(
+            not esperadas.issubset(set(grupo["observado_em"])) or grupo["observado_em"].duplicated().any()
+            for _, grupo in validos.groupby("territorio_id")
+        ):
+            raise FonteSemDados(
+                "Open-Meteo sem cobertura horária completa das próximas 72 h; carga anterior preservada."
+            )
 
     def transformar(self, bruto: pd.DataFrame, ctx: ExecucaoCtx) -> pd.DataFrame:
         df = pd.DataFrame(
@@ -75,7 +100,7 @@ class _OpenMeteo(Conector):
                 "fonte_id": self.id,
                 "territorio_id": bruto["territorio_id"],
                 "variavel": self.variavel,
-                "valor": pd.to_numeric(bruto["valor"], errors="coerce"),  # nulo continua nulo (RN-02)
+                "valor": bruto["valor"].map(comum.numero if self.variavel == "chuva_mm" else comum.real),
                 "unidade": self.unidade,
                 "tipo": self.fonte.tipo,
                 "observado_em": pd.to_datetime(bruto["hora_utc"], utc=True),
@@ -157,6 +182,7 @@ class ConectorOpenMeteoHistorico(_OpenMeteo):
 
 
 class ConectorOpenMeteoPrevisao(_OpenMeteo):
+    minimo_horas_futuras = 72
     id = "open-meteo-previsao"
     fonte = FonteInfo(
         "Chuva prevista por distrito (até 72 h)",
@@ -169,10 +195,12 @@ class ConectorOpenMeteoPrevisao(_OpenMeteo):
     variavel_api, variavel, unidade = "precipitation", "chuva_mm", "mm"
     # past_days: as horas já passadas do modelo cobrem os ~7 dias em que a ERA5 ainda não chegou (fallback da
     # chuva recente, depois da APAC observada). Cada emissão é acumulativa na silver (nada é sobrescrito).
-    parametros_extra = {"forecast_days": 3, "past_days": 7}
+    # Dias de calendário: três dias deixam menos de 72 h futuras após a meia-noite UTC.
+    parametros_extra = {"forecast_days": 4, "past_days": 7}
 
 
 class ConectorOpenMeteoMare(_OpenMeteo):
+    minimo_horas_futuras = 72
     id = "open-meteo-mare"
     fonte = FonteInfo(
         "Nível do mar previsto em frente ao Recife (inclui a maré)",
@@ -183,7 +211,7 @@ class ConectorOpenMeteoMare(_OpenMeteo):
     )
     url = "https://marine-api.open-meteo.com/v1/marine"
     variavel_api, variavel, unidade = "sea_level_height_msl", "mare_m", "m"
-    parametros_extra = {"forecast_days": 3}
+    parametros_extra = {"forecast_days": 4}
 
     def pontos(self):
         return [("recife", *PONTO_MARE_RECIFE)]
@@ -237,7 +265,7 @@ class ConectorOpenMeteoSolo(Conector):
 
     def __init__(self, http=None, **kw) -> None:
         super().__init__(**kw)
-        self.http = http or requests.Session()
+        self.http = http or comum.sessao_http()
         self.descartes: dict[str, int] = {}
 
     def colecao_bronze(self, ctx: ExecucaoCtx):

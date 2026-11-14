@@ -129,8 +129,14 @@ class ConectorApacChuva(Conector):
         if ctx.modo not in (None, "tempo-real"):
             raise ValueError(f"Modo desconhecido: {ctx.modo}")
         corpo = self._get("precipitacao_acumulada", {"municipio": "Recife"})
-        if not isinstance(corpo, list):
-            raise FonteSemDados(f"APAC sem dados de chuva acumulada: {str(corpo.get('erro', corpo))[:200]}")
+        if not isinstance(corpo, list) or not corpo:
+            # Não publica corpo arbitrário do provedor no histórico da aplicação.
+            motivo = (
+                " Município inválido."
+                if isinstance(corpo, dict) and corpo.get("erro") == "Município inválido"
+                else ""
+            )
+            raise FonteSemDados("APAC sem dados de chuva acumulada." + motivo)
         try:  # o cadastro só marca a saúde das estações: a chuva não depende dele
             cadastro = self._get("estacoes", {"municipio": "Recife"})
         except Exception:  # noqa: BLE001
@@ -140,6 +146,14 @@ class ConectorApacChuva(Conector):
         else:
             self.cadastro_indisponivel = True  # só a marcação de saúde das estações fica sem dado
         return corpo
+
+    def validar(self, df: pd.DataFrame, ctx: ExecucaoCtx) -> None:
+        if df.empty or not df["valor_mm"].notna().any():
+            raise FonteSemDados("APAC sem medições utilizáveis nesta coleta.")
+        if ctx.modo != "historico":
+            atuais = df["lida_em"].between(ctx.agora - timedelta(minutes=LIMITE_DESATUALIZADA_MIN), ctx.agora)
+            if not (atuais & df["valor_mm"].notna()).any():
+                raise FonteSemDados("APAC respondeu, mas sem leitura utilizável nas últimas 2 h.")
 
     def _extrair_historico(self, ctx: ExecucaoCtx) -> list[dict]:
         hoje = ctx.agora.astimezone(comum.FUSO_RECIFE).date()

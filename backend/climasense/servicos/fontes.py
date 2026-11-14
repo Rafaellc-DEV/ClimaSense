@@ -19,7 +19,12 @@ SQL_FONTES = """
 select f.*, (select status from app.etl_execucoes e where e.fonte_id = f.id and e.status <> 'em_andamento'
              order by inicio desc limit 1) as ultima_status,
        (select max(fim) from app.etl_execucoes e where e.fonte_id = f.id and e.status = 'sucesso') as ultimo_sucesso
-from app.fontes f where f.ativa
+       , ult.inicio as ultima_execucao_em, ult.status as ultima_execucao_status,
+       ult.lidos as ultima_execucao_lidos, ult.gravados as ultima_execucao_gravados
+from app.fontes f left join lateral (
+    select inicio,status,lidos,gravados from app.etl_execucoes e
+    where e.fonte_id=f.id order by inicio desc limit 1
+) ult on true where f.ativa
 """
 
 

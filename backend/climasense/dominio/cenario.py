@@ -96,7 +96,8 @@ def estimar(insumos: Insumos, horizonte_h: int, emitida_em: datetime) -> Estimat
     chuva = [(t, v) for t, v in insumos.chuva_prevista if emitida_em <= t < limite]
     mare = [(t, v) for t, v in insumos.mare_prevista if emitida_em <= t < limite and v is not None]
     faltas = []
-    if not chuva or any(v is None for _, v in chuva):
+    esperadas = {emitida_em + timedelta(hours=h) for h in range(horizonte_h)}
+    if len(chuva) != horizonte_h or {t for t, _ in chuva} != esperadas or any(v is None for _, v in chuva):
         faltas.append("a previsão de chuva para todo o horizonte")
     if not mare:
         faltas.append("a previsão de maré")

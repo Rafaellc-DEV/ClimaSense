@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import argparse
 import sys
+from urllib.parse import urlsplit
 
 from climasense.config import obter_configuracao
 from climasense.etl import execucao, gold, orquestrador
@@ -46,8 +47,21 @@ def main(argv: list[str] | None = None) -> int:
     a.add_argument("--sem-territorio", action="store_true", help="Não recarrega a base territorial")
     sub.add_parser("tempo-real", help="Só as fontes rápidas: APAC e alertas oficiais")
     sub.add_parser("semanal", help="Só as séries de saúde: InfoDengue e SINAN leptospirose")
+    op = sub.add_parser("operacional", help="Rotina única de clima atual, com cadência por fonte")
+    op.add_argument(
+        "--permitir-remoto", action="store_true", help="Autoriza destinos remotos após aprovação do operador"
+    )
     args = p.parse_args(argv)
     config = obter_configuracao()
+    if args.comando == "operacional" and not args.permitir_remoto:
+        from climasense.infra.postgres import url_do_dono
+
+        destinos = [url_do_dono(config), config.exigir("mongo_uri")]
+        if any(urlsplit(u).hostname not in ("localhost", "127.0.0.1", "::1") for u in destinos):
+            print(
+                "Destinos remotos: este comando exige aprovação prévia e --permitir-remoto.", file=sys.stderr
+            )
+            return 2
     if args.comando == "listar":
         for fid, classe in sorted(CONECTORES.items()):
             estado = "implementada" if fid in IMPLEMENTADOS else "planejada"
@@ -62,18 +76,32 @@ def main(argv: list[str] | None = None) -> int:
         return 0 if not any(dif.values()) else 1
     if args.comando == "atualizar":
         return _atualizar(engine, config, args)
-    if args.comando in ("tempo-real", "semanal"):
-        ordem = orquestrador.ORDEM_TEMPO_REAL if args.comando == "tempo-real" else orquestrador.ORDEM_SEMANAL
+    if args.comando in ("tempo-real", "semanal", "operacional"):
+        ordem = {
+            "tempo-real": orquestrador.ORDEM_TEMPO_REAL,
+            "semanal": orquestrador.ORDEM_SEMANAL,
+            "operacional": orquestrador.ORDEM_OPERACIONAL,
+        }[args.comando]
         with conectar(config) as mongo:
-            passos = orquestrador.atualizar(engine, mongo, config, forcar=True, ordem=ordem)
+            opcoes = (
+                {"intervalos_min": orquestrador.INTERVALOS_OPERACIONAIS_MIN}
+                if args.comando == "operacional"
+                else {}
+            )
+            passos = orquestrador.atualizar(engine, mongo, config, forcar=True, ordem=ordem, **opcoes)
         for ps in passos:
             print(f"{ps.nome:28} {ps.status:8} {ps.detalhe}")
         return 0 if all(ps.status != "falha" for ps in passos) else 1
     if args.modo and args.modo not in MODOS.get(args.fonte, ()):
         print(f"{args.fonte} não tem o modo “{args.modo}”.", file=sys.stderr)
         return 2
-    execucao_id = execucao.iniciar(engine, args.fonte)
+    # Abre o cliente antes da reserva: erros de URI/DNS não deixam nova execução aberta.
     with conectar(config) as mongo:
+        try:
+            execucao_id = execucao.iniciar(engine, args.fonte)
+        except execucao.ExecucaoEmAndamento as erro:
+            print(str(erro), file=sys.stderr)
+            return 1
         r = execucao.executar(engine, mongo, config, args.fonte, execucao_id, args.limite, modo=args.modo)
     print(
         f"{args.fonte}: {r['status']} · lidos {r['lidos']} · gravados {r['gravados']} · descartados {r['descartados']}"
@@ -115,4 +143,8 @@ def _atualizar(engine, config, args) -> int:
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    try:
+        raise SystemExit(main())
+    except Exception as erro:  # noqa: BLE001 — sem traceback que exponha URI ou parâmetros do banco
+        print(execucao.mensagem_segura(erro), file=sys.stderr)
+        raise SystemExit(1) from None

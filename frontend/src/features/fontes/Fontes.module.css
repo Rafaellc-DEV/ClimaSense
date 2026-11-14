@@ -2,6 +2,13 @@
   display: grid;
   gap: var(--e-5);
 }
+.estadoFonte {
+  display: grid;
+  gap: var(--e-2);
+}
+.estadoFonte small {
+  color: var(--cs-tinta-2);
+}
 .resumo {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));

@@ -48,6 +48,7 @@ def executar(
     engine=None,
     usar_banco: bool = True,
     grade: dict | None = None,
+    conjuntos: dict[str, list[str]] | None = None,
     janela_dias: int = base.JANELA_ROTULO_DIAS,
     diagnosticos: bool = True,
 ) -> Estudo:
@@ -60,7 +61,9 @@ def executar(
     engine = engine if engine is not None else (_engine_ou_nada() if usar_banco else None)
     horaria = clima.chuva_horaria(INICIO - pd.Timedelta(days=7), fim, engine=engine)
     diaria = clima.chuva_diaria(horaria)
-    harmonicos = clima.ajustar_mare(clima.serie_mare_real(fim=date.today()))
+    # Não ajustar com o teste de 2024 ou dados posteriores. Os folds anteriores a 2023
+    # ainda são retrospectivos: não há maré disponível antes deles. Isso impede publicação.
+    harmonicos = clima.ajustar_mare(clima.serie_mare_real(fim=date(modelo.ANO_TESTE - 1, 12, 31)))
     mare = clima.mare_max_diaria(harmonicos, pd.date_range(INICIO, fim, freq="D"))
 
     def tabela_para(r: pd.DataFrame, janela: int) -> pd.DataFrame:
@@ -73,7 +76,7 @@ def executar(
     def rodar(t: pd.DataFrame, ano_teste: int, janela: int) -> modelo.Resultado:
         _, teste = modelo.dividir(t, ano_teste)
         ref = referencia.nivel_por_linha(teste, niveis)
-        return modelo.treinar(t, ref, grade, ano_teste=ano_teste, janela_dias=janela)
+        return modelo.treinar(t, ref, grade, conjuntos=conjuntos, ano_teste=ano_teste, janela_dias=janela)
 
     resultado = rodar(tabela, modelo.ANO_TESTE, janela_dias)
     extras: dict[str, modelo.Resultado] = {}

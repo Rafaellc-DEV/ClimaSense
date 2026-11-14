@@ -123,6 +123,10 @@ class ConectorApacPrevisao(Conector):
                 linhas.extend(self._radar(r))
         return pd.DataFrame(linhas)
 
+    def validar(self, df: pd.DataFrame, ctx: ExecucaoCtx) -> None:
+        if df.empty:
+            raise FonteSemDados("APAC sem previsão, tendência ou radar utilizável para o Recife.")
+
     def _descartar(self, motivo: str) -> list[dict]:
         self.descartes[motivo] = self.descartes.get(motivo, 0) + 1
         return []

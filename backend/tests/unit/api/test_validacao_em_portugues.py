@@ -26,7 +26,12 @@ def test_mensagens_de_validacao_em_portugues_e_limites_de_acao_e_cenario():
 
 
 def test_resposta_422_traz_mensagem_em_portugues():
-    c = TestClient(criar_app(configuracao_teste()))
+    from climasense.infra.postgres import obter_sessao
+
+    app = criar_app(configuracao_teste())
+    # Validação do corpo não requer conexão; dependências são resolvidas antes dela.
+    app.dependency_overrides[obter_sessao] = lambda: None
+    c = TestClient(app)
     r = c.post("/api/v1/auth/entrar", json={"email": "a@b.co"})
     assert r.status_code == 422
     assert r.json()["campos"][0]["mensagem"] == "Campo obrigatório."

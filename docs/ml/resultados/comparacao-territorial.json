@@ -1,0 +1,84 @@
+{
+  "gerado_em": "2026-11-14T02:29:53+00:00",
+  "configuracao": {
+    "max_depth": [
+      4
+    ],
+    "min_samples_leaf": [
+      20
+    ],
+    "class_weight": [
+      "balanced"
+    ]
+  },
+  "periodo_treino": [
+    "2014-01-01",
+    "2023-12-28"
+  ],
+  "periodo_teste": [
+    "2024-01-01",
+    "2024-12-28"
+  ],
+  "novas_colunas": [
+    "ds_ds-1",
+    "ds_ds-2",
+    "ds_ds-3",
+    "ds_ds-4",
+    "ds_ds-5",
+    "ds_ds-6",
+    "ds_ds-7",
+    "ds_ds-8"
+  ],
+  "metrica_oof_territorial": 0.0482700646637709,
+  "modelo_original": {
+    "recall": 0.8005952380952381,
+    "precisao": 0.03377275580665411,
+    "auc_pr": 0.04597146431251091,
+    "alertas_pct": 23.342711447160188,
+    "vp": 269,
+    "fp": 7696,
+    "fn": 67,
+    "vn": 26090,
+    "f1": 0.06481146849777135,
+    "eventos": 84,
+    "eventos_avisados": 80,
+    "dias_com_atendimento": 8,
+    "dias_com_atendimento_avisados": 7
+  },
+  "modelo_com_distrito": {
+    "recall": 0.8005952380952381,
+    "precisao": 0.03377275580665411,
+    "auc_pr": 0.04525521956774324,
+    "alertas_pct": 23.342711447160188,
+    "vp": 269,
+    "fp": 7696,
+    "fn": 67,
+    "vn": 26090,
+    "f1": 0.06481146849777135,
+    "eventos": 84,
+    "eventos_avisados": 80,
+    "dias_com_atendimento": 8,
+    "dias_com_atendimento_avisados": 7
+  },
+  "melhor_referencia": {
+    "recall": 0.8928571428571429,
+    "precisao": 0.01677946193858717,
+    "auc_pr": 0.04962360599648521,
+    "alertas_pct": 52.397280346990215,
+    "vp": 300,
+    "fp": 17579,
+    "fn": 36,
+    "vn": 16207,
+    "f1": 0.032939884710403516,
+    "eventos": 84,
+    "eventos_avisados": 84,
+    "dias_com_atendimento": 8,
+    "dias_com_atendimento_avisados": 8
+  },
+  "observacoes": [
+    "Distrito sanitário é variável territorial categórica; não equivale a risco físico ou suscetibilidade.",
+    "Resultado exploratório com hiperparâmetros fixados previamente; não altera modelo operacional.",
+    "Dados retrospectivos podem não representar a qualidade de uma previsão emitida antes do evento.",
+    "Não usar o conjunto de teste para ajustar variáveis ou hiperparâmetros; novos experimentos requerem holdout futuro."
+  ]
+}

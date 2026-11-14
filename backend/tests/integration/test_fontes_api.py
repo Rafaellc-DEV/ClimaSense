@@ -23,6 +23,8 @@ def test_status_das_fontes_e_disparo_pelo_administrador(sessao):
     assert r.status_code == 202 and r.json()["status"] == "em_andamento"
     execucao_id = r.json()["id"]
     assert chamadas and chamadas[0][0] == "open-meteo-previsao"
+    repetida = c.post("/api/v1/etl/execucoes", json={"fonte_id": "open-meteo-previsao"})
+    assert repetida.status_code == 409 and len(chamadas) == 1
     sessao.execute(
         text("update app.etl_execucoes set status='falha', fim=now() + interval '1 hour' where id = :i"),
         {"i": execucao_id},

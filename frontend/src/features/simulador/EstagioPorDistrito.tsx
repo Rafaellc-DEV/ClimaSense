@@ -8,6 +8,7 @@ import { impactoDe } from "@/features/mapa/modeloCamadas";
 import { ListaAgravos } from "./DistritosArboviroses";
 import { NIVEL_CLASSE, ROTULO_CLASSE, ordemDaClasse, type ItemSimulado } from "./tipos";
 import estilos from "./Simulador.module.css";
+import { EvidenciasImpacto } from "./EvidenciasImpacto";
 
 const LEGENDA = ["critico", "alerta", "atencao", "observacao"] as const;
 
@@ -184,6 +185,7 @@ export function DetalheDistrito({ item, aviso }: { item: ItemSimulado; aviso: st
           <PessoasExpostas impacto={impacto} aviso={aviso} unidade="distrito" />
         </div>
       </div>
+      <EvidenciasImpacto item={item} />
       <h3>Arboviroses (contexto)</h3>
       <ListaAgravos arboviroses={item.arboviroses} />
     </section>

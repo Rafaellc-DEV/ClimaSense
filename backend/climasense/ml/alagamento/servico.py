@@ -19,7 +19,7 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from climasense.ml.alagamento import armazenamento
-from climasense.ml.alagamento.base import NOMES
+from climasense.ml.alagamento.base import NOMES, atributos_diarios
 from climasense.ml.alagamento.clima import FUSO_RECIFE, mare_max_diaria
 from climasense.ml.alagamento.modelo import Artefato, classificar
 
@@ -28,7 +28,7 @@ FONTE_PREVISAO = "open-meteo-previsao"
 FONTE_ROTULO = "recife-alagamento"
 ORDEM = {"sem_dados": -1, "baixo": 0, "moderado": 1, "alto": 2}
 AVISO_EXPERIMENTAL = (
-    "Experimental (RN-11): modelo de árvore de decisão validado no passado, não é previsão oficial. "
+    "Experimental (RN-11): árvore de decisão avaliada retrospectivamente; isso não comprova validação operacional. "
     "Classe de risco, nunca probabilidade (RN-06). Confira na APAC e no Cemaden."
 )
 MESES = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro",
@@ -47,19 +47,29 @@ def hoje_recife(agora: datetime) -> date:
 
 
 # ----------------------------------------------------------------------------- insumos do banco
-def chuva_recente(db: Session, inicio: date, fim: date) -> pd.DataFrame:
+def chuva_recente(db: Session, inicio: date, fim: date, agora: datetime | None = None) -> pd.DataFrame:
     """Chuva horária (hora local) por distrito: reanálise ERA5 quando existe; senão a previsão mais recente
     para aquela hora. Somente leitura."""
     a = datetime.combine(inicio, datetime.min.time()) - FUSO_RECIFE
     b = datetime.combine(fim + timedelta(days=1), datetime.min.time()) - FUSO_RECIFE
+    agora = agora or datetime.now(UTC)
     linhas = db.execute(
         text(
             "select distinct on (territorio_id, observado_em, fonte_id) territorio_id, observado_em, valor, "
             "fonte_id from silver.observacoes where fonte_id = any(:fs) and observado_em >= :a "
-            "and observado_em < :b and territorio_id like 'ds-%' "
+            "and observado_em < :b and territorio_id like 'ds-%' and variavel = 'chuva_mm' "
+            "and coletado_em <= :agora and ((fonte_id = :hist and observado_em < :agora) or "
+            "(fonte_id = :prev and emitido_em <= :agora and emitido_em >= :agora - interval '6 hours')) "
             "order by territorio_id, observado_em, fonte_id, emitido_em desc nulls last"
         ),
-        {"fs": [FONTE_HISTORICO, FONTE_PREVISAO], "a": a, "b": b},
+        {
+            "fs": [FONTE_HISTORICO, FONTE_PREVISAO],
+            "a": a,
+            "b": b,
+            "agora": agora,
+            "hist": FONTE_HISTORICO,
+            "prev": FONTE_PREVISAO,
+        },
     ).all()
     df = pd.DataFrame(linhas, columns=["territorio_id", "observado_em", "mm", "fonte_id"])
     if df.empty:
@@ -86,10 +96,15 @@ def chuva_por_dia(horaria: pd.DataFrame) -> dict[str, dict[date, tuple[float, bo
     saida: dict[str, dict[date, tuple[float, bool]]] = {}
     if horaria.empty:
         return saida
+    horaria = horaria[horaria["hora"] == horaria["hora"].dt.floor("h")]
+    horaria = horaria.drop_duplicates(["territorio_id", "hora"])
+    # Uma hora inválida invalida o dia inteiro; a soma não pode mascarar negativos ou infinitos.
+    mm = pd.to_numeric(horaria["mm"], errors="coerce")
+    horaria = horaria.assign(mm=mm.where(np.isfinite(mm) & (mm >= 0)))
     h = horaria.assign(dia=horaria["hora"].dt.date, prev=horaria["fonte_id"] == FONTE_PREVISAO)
     g = h.groupby(["territorio_id", "dia"]).agg(mm=("mm", "sum"), n=("mm", "count"), prev=("prev", "any"))
     for (ds, dia), r in g.iterrows():
-        if r["n"] >= 24:
+        if r["n"] == 24:
             saida.setdefault(ds, {})[dia] = (float(r["mm"]), bool(r["prev"]))
     return saida
 
@@ -101,17 +116,17 @@ def atributos(
     if any(d not in chuva_ds for d in janela):
         return None
     mm = [chuva_ds[d][0] for d in janela]
-    inicio = pd.Timestamp(art.inicio_historico)
-    anos = max((pd.Timestamp(dia) - inicio).days / 365.25, 1.0)
-    return {
-        "chuva_1d": mm[0],
-        "chuva_3d": sum(mm[:3]),
-        "chuva_7d": sum(mm),
-        "mare_max_m": float(mare_max_diaria(art.mare_harmonicos, [pd.Timestamp(dia)]).iloc[0]),
-        "mes": dia.month,
-        "hist_dias_ano": art.historico_bairros.get(territorio_id, 0) / anos,
-        "_usa_previsao": any(chuva_ds[d][1] for d in janela[:3]),
-    }
+    mare = float(mare_max_diaria(art.mare_harmonicos, [pd.Timestamp(dia)]).iloc[0])
+    x = atributos_diarios(
+        dict(zip(janela, mm, strict=True)),
+        dia,
+        mare,
+        art.dias_atendimento_bairros.get(territorio_id, []),
+        art.inicio_historico,
+    )
+    if x is not None:
+        x["_usa_previsao"] = any(chuva_ds[d][1] for d in janela)
+    return x
 
 
 def _texto_condicao(atributo: str, minimo: float | None, maximo: float | None) -> str:
@@ -169,20 +184,34 @@ def _fatores(art: Artefato, x: dict, dia: date, hoje: date, distrito: str) -> li
         f"Histórico: {n} dia(s) com atendimento de alagamento da Defesa Civil entre "
         f"{art.inicio_historico[:4]} e {art.fim_historico[:4]}."
     )
+    fatores.append(
+        "Histórico congelado no treino; ausência de atendimento não comprova ausência de alagamento."
+    )
+    if dia.year > int(art.fim_historico[:4]):
+        fatores.append("Período posterior ao treino: generalização temporal ainda exige acompanhamento.")
     return fatores
 
 
 # ----------------------------------------------------------------------------- API do módulo
-def risco_por_territorio(db: Session, agora: datetime, artefato: Artefato | None = None) -> dict[str, dict]:
-    """territorio_id (bairro) → {classe, fatores}. `{}` quando o modelo não está publicado (RF-12.10)."""
+def risco_por_territorio(
+    db: Session, agora: datetime, artefato: Artefato | None = None, *, previa_local: bool = False
+) -> dict[str, dict]:
+    """Classes por bairro. Prévia não publicável só em rota local, autenticada e explicitamente habilitada."""
     art = artefato if artefato is not None else armazenamento.carregar_em_cache()
-    if art is None or not art.publicavel:
+    if art is None or not armazenamento.compativel(art) or (not art.publicavel and not previa_local):
         return {}
     hoje = hoje_recife(agora)
     dias = [hoje, hoje + timedelta(days=1)]
-    chuva = chuva_por_dia(chuva_recente(db, hoje - timedelta(days=6), hoje + timedelta(days=1)))
+    chuva = chuva_por_dia(chuva_recente(db, hoje - timedelta(days=6), hoje + timedelta(days=1), agora))
     saida: dict[str, dict] = {}
     for territorio_id, (_, distrito) in bairros(db).items():
+        if art.territorios.get(territorio_id) != distrito:
+            saida[territorio_id] = {
+                "classe": "sem_dados",
+                "confianca": "insuficiente",
+                "fatores": ["Território ou distrito desconhecido pelo modelo."],
+            }
+            continue
         candidatos = []
         for dia in dias:
             x = atributos(art, chuva.get(distrito, {}), territorio_id, dia)
@@ -191,9 +220,10 @@ def risco_por_territorio(db: Session, agora: datetime, artefato: Artefato | None
             x["_territorio_id"] = territorio_id
             score = art.modelo.predict_proba(pd.DataFrame([{c: x[c] for c in art.atributos}]))[:, 1]
             candidatos.append((str(classificar(score, art.limiares)[0]), dia, x))
-        if not candidatos:
+        if len(candidatos) != len(dias):
             saida[territorio_id] = {
                 "classe": "sem_dados",
+                "confianca": "insuficiente",
                 "fatores": [
                     f"Falta chuva completa (horária) do distrito {distrito} em algum dos últimos 7 dias ou na "
                     "previsão: sem esse insumo o modelo não classifica (dado ausente não é risco baixo)."
@@ -201,12 +231,16 @@ def risco_por_territorio(db: Session, agora: datetime, artefato: Artefato | None
             }
             continue
         classe, dia, x = max(candidatos, key=lambda c: (ORDEM[c[0]], c[1] == hoje))
-        saida[territorio_id] = {"classe": classe, "fatores": _fatores(art, x, dia, hoje, distrito)}
+        saida[territorio_id] = {
+            "classe": classe,
+            "confianca": "baixa",
+            "fatores": _fatores(art, x, dia, hoje, distrito),
+        }
     return saida
 
 
 def descricao_modelo(art: Artefato | None) -> dict | None:
-    if art is None:
+    if art is None or not armazenamento.compativel(art):
         return None
     return {
         "versao": art.versao,
@@ -223,7 +257,7 @@ def payload(db: Session, agora: datetime, nivel: str = "bairro") -> dict:
     if art is None:
         return {
             "disponivel": False,
-            "motivo": "Modelo ainda não treinado neste ambiente (rode `python -m climasense.ml alagamento`).",
+            "motivo": "Modelo ausente, inválido ou incompatível. É necessária avaliação da versão corrigida.",
             "modelo": None,
             "itens": [],
         }
@@ -234,6 +268,32 @@ def payload(db: Session, agora: datetime, nivel: str = "bairro") -> dict:
         riscos = por_distrito(riscos, bairros(db))
     itens = [{"territorio_id": t, **r} for t, r in sorted(riscos.items())]
     return {"disponivel": True, "motivo": None, "modelo": descricao_modelo(art), "itens": itens}
+
+
+def payload_previa_local(db: Session, agora: datetime) -> dict:
+    """Diagnóstico NÃO OPERACIONAL. Só chamado por endpoint com ambiente+flag+admin.
+
+    Não modifica `publicavel`, não grava no banco, não treina e não afeta a API normal.
+    `disponivel` aqui significa somente que a prévia local foi calculada.
+    """
+    art = armazenamento.carregar_em_cache()
+    if art is None or not armazenamento.compativel(art):
+        return {
+            "disponivel": False,
+            "motivo": "Falta artefato local compatível com a versão atual. Gere a prévia de pesquisa.",
+            "modelo": None,
+            "itens": [],
+        }
+    riscos = risco_por_territorio(db, agora, art, previa_local=True)
+    return {
+        "disponivel": True,
+        "motivo": (
+            "PRÉVIA LOCAL NÃO VALIDADA — sem uso operacional e sem liberação pelo gate científico. "
+            + (art.motivo or "Requer validação temporal e operacional.")
+        ),
+        "modelo": descricao_modelo(art),
+        "itens": [{"territorio_id": t, **r} for t, r in sorted(riscos.items())],
+    }
 
 
 def por_distrito(riscos: dict[str, dict], mapa: dict[str, tuple[str, str]]) -> dict[str, dict]:
@@ -249,6 +309,7 @@ def por_distrito(riscos: dict[str, dict], mapa: dict[str, tuple[str, str]]) -> d
         nomes = sorted(n for n, r in itens if r["classe"] == maior)
         saida[ds] = {
             "classe": maior,
+            "confianca": "insuficiente" if maior == "sem_dados" else "baixa",
             "fatores": [
                 f"Maior classe entre os bairros do distrito: {', '.join(nomes[:8])}"
                 + (f" e mais {len(nomes) - 8}" if len(nomes) > 8 else "")

@@ -80,7 +80,8 @@ Com o `.env` preenchido, dentro de `backend` (cada comando busca a fonte real pe
 
 Ou fonte a fonte: `etl run open-meteo-historico`, `etl run open-meteo-previsao`, `etl run open-meteo-mare` e `etl verificar-gold` (também `python scripts/verificar_gold.py`). Mapa das APIs, fluxo bronze → silver → gold e agendamento: [`docs/apis-e-etl.md`](docs/apis-e-etl.md).
 
-As fontes planejadas (ANA, APAC, INMET, Cemaden, alagamentos, tábua da Marinha) estão descritas em [`docs/dicionario-dados/`](docs/dicionario-dados/) e não geram dados até terem conector.
+O catálogo de conectores implementados e planejados está em [`docs/apis-e-etl.md`](docs/apis-e-etl.md), com detalhes em
+[`docs/dicionario-dados/`](docs/dicionario-dados/). Conector implementado não comprova carga bem-sucedida no banco.
 
 ## Rodar em desenvolvimento
 
@@ -97,20 +98,59 @@ Para desligar, aperte **Ctrl+C** no terminal.
 ## Testes
 
 ```powershell
-cd backend;  ..\.venv\Scripts\pytest            # unidade; integração com Postgres real se DATABASE_URL_TESTE estiver definido
-#   Ex.: $env:DATABASE_URL_TESTE="postgresql://climasense:climasense@localhost:5432/climasense"  (docker compose up -d)
-cd frontend; npm test; npm run lint
+.\.venv\Scripts\python.exe scripts/testar_backend_local.py -q -m "not atlas and not integracao"
+.\.venv\Scripts\ruff.exe check backend
+.\.venv\Scripts\ruff.exe format --check backend
+cd frontend
+npm test
+npm run lint
+npm run build
+cd ..
 ```
+
+O executor isolado remove URLs de bancos e não lê `.env`. Testes de integração
+exigem um Postgres **descartável**: suas fixtures apagam e recriam esquemas.
+Não aponte `DATABASE_URL_TESTE` para bancos compartilhados ou com dados a preservar.
 
 ## Estudo de ML: risco de alagamento
 
-Árvore de decisão com validação temporal que estima o risco de alagamento por bairro e dia, a partir dos atendimentos da Defesa Civil e da chuva e maré da Open-Meteo. Método, resultado e por que o modelo ainda não é exibido no produto: [`docs/ml/risco-alagamento.md`](docs/ml/risco-alagamento.md).
+**Atualização meteorológica:** diagnóstico, correções do ETL, validação isolada e plano de implantação
+em [`docs/operacao-etl.md`](docs/operacao-etl.md). Iniciar `dev.ps1` não atualiza as fontes.
+O perfil `etl operacional` e os scripts de agendamento estão preparados; a atualização dos bancos
+compartilhados e o registro da tarefa dependem de autorização e da verificação de capacidade.
+
+**Integração territorial:** no Simulador, “Cenário hipotético” mantém as premissas manuais e “Previsão por distrito”
+analisa as emissões armazenadas de cada distrito, sem copiar o máximo municipal para todos. O ML é um resultado
+paralelo, somente quando publicável; sua ausência não interrompe as regras. O modelo escolhido é o
+`0.2.0`, **não validado para uso operacional**. Operação, testes isolados, migração opcional de persistência e
+limitações estão em [`docs/ml/integracao-territorial.md`](docs/ml/integracao-territorial.md).
+
+Árvore de decisão com avaliação temporal retrospectiva por bairro-dia, a partir dos atendimentos da
+Defesa Civil e da chuva e maré da Open-Meteo. Recall de 80,06% **não é acurácia**:
+a precisão observada foi 3,38%, com 7.696 falsos positivos. A AUC-PR foi 0,045971,
+abaixo da referência simples de chuva (0,049624). Os experimentos de distrito, SGB
+e picos horários não trouxeram melhoria relevante; 2024 já não é holdout independente.
+Métodos, números verificáveis, reprodução e limitações:
+[`docs/ml/risco-alagamento.md`](docs/ml/risco-alagamento.md).
+
+**Demonstração acadêmica automática:** no `.env` do backend, configure
+`AMBIENTE=desenvolvimento` e `ML_PREVIA_EXPERIMENTAL_LOCAL=true`. Copie
+`frontend/.env.example` para `frontend/.env.local`, ligue `VITE_ML_DEMO_ACADEMICA=true`
+e reinicie o Vite. Ao abrir o Simulador como administrador, a camada ML mostra a
+prévia local com o aviso **não validada para uso operacional**. A rota exige
+ambiente + configuração + permissão; o bloqueio científico das rotas normais permanece.
 
 ```powershell
 cd backend
-..\.venv\Scripts\python -m climasense.ml alagamento   # treina, valida no tempo, salva o modelo e grava o relatório em docs/ml
+..\.venv\Scripts\python -m climasense.ml alagamento-previa-local --sem-banco  # configuração fixa; só se faltar o artefato local
 ..\.venv\Scripts\python -m pytest tests/unit/ml        # testes (dados sintéticos, sem banco)
+cd ..
 ```
+
+O treinamento completo continua disponível em `python -m climasense.ml alagamento`;
+escolha `--saida` e `--modelo` para não sobrescrever as evidências desta entrega.
+A [revisão da consolidação](docs/ml/consolidacao-academica.md) registra patches,
+arquivos locais preservados e validações executadas.
 
 ## Situação atual
 
@@ -122,7 +162,7 @@ cd backend
 | M3 Autenticação e papéis | Concluído |
 | M4 Território (Atlas, GeoJSON, mapa portátil) | Concluído |
 | M5 ETL em POO e fontes reais (Open-Meteo) | Concluído |
-| M6 em diante (séries, cenários, avaliações, telas da equipe) | Planejado — ver [`specs/tasks.md`](specs/tasks.md) |
+| M6 em diante (séries, cenários, avaliações, telas da equipe) | Implementações presentes; análise territorial integrada ao Simulador. Aceite e limitações em [`docs/ml/integracao-territorial.md`](docs/ml/integracao-territorial.md); o plano histórico está em [`specs/tasks.md`](specs/tasks.md) |
 
 ## Origem do código
 

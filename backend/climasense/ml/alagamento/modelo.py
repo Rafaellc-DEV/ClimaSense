@@ -16,19 +16,23 @@ A pontuação da árvore é interna: nunca é exibida e não é probabilidade (R
 from __future__ import annotations
 
 import itertools
+import math
+import platform
 from dataclasses import asdict, dataclass, field
 from datetime import UTC, datetime
 
+import joblib
 import numpy as np
 import pandas as pd
+import sklearn
 from sklearn.metrics import average_precision_score
 from sklearn.tree import DecisionTreeClassifier, export_text
 
-from climasense.ml.alagamento.base import ATRIBUTOS
+from climasense.ml.alagamento.base import ATRIBUTOS, VERSAO_ATRIBUTOS
 
-VERSAO = "0.1.0"
+VERSAO = "0.2.0"
 METODO = "arvore-decisao-temporal"
-ANO_TESTE = 2024  # 2024 inteiro fica de fora até a avaliação final
+ANO_TESTE = 2024  # fora do ajuste; já consultado em pesquisas, não é mais holdout independente
 N_FOLDS = 5
 RECALL_MODERADO = 0.80
 RECALL_ALTO = 0.40
@@ -94,6 +98,7 @@ def metricas(y, alerta, pontuacao=None, teste: pd.DataFrame | None = None, janel
     vp = int((alerta & (y == 1)).sum())
     fp = int((alerta & (y == 0)).sum())
     fn = int((~alerta & (y == 1)).sum())
+    vn = int((~alerta & (y == 0)).sum())
     saida = {
         "recall": vp / (vp + fn) if vp + fn else None,
         "precisao": vp / (vp + fp) if vp + fp else None,
@@ -102,6 +107,8 @@ def metricas(y, alerta, pontuacao=None, teste: pd.DataFrame | None = None, janel
         "vp": vp,
         "fp": fp,
         "fn": fn,
+        "vn": vn,
+        "f1": 2 * vp / (2 * vp + fp + fn) if 2 * vp + fp + fn else None,
     }
     if teste is not None:
         saida.update(eventos_avisados(teste, alerta, janela_dias))
@@ -134,18 +141,37 @@ class Resultado:
     colunas: list[str] = field(default_factory=list)
     publicavel: bool = False
     motivo: str | None = None
+    janela_dias: int = 0
 
 
-def dividir(base: pd.DataFrame, ano_teste: int = ANO_TESTE) -> tuple[pd.DataFrame, pd.DataFrame]:
+def dividir(
+    base: pd.DataFrame, ano_teste: int = ANO_TESTE, janela_dias: int | None = None
+) -> tuple[pd.DataFrame, pd.DataFrame]:
+    janela = base.attrs.get("janela_rotulo_dias", 0) if janela_dias is None else janela_dias
     base = base.dropna(subset=ATRIBUTOS)
-    return base[base["ano"] < ano_teste], base[base["ano"] >= ano_teste]
+    base = base.copy()
+    base[ATRIBUTOS] = base[ATRIBUTOS].astype(float)
+    corte = pd.Timestamp(ano_teste, 1, 1)
+    # Rótulos [D, D+janela] não podem atravessar o corte nem o fim da observação.
+    treino = base[base["data"] < corte - pd.Timedelta(days=janela)].copy()
+    teste = base[
+        (base["data"] >= corte) & (base["data"] <= base["data"].max() - pd.Timedelta(days=janela))
+    ].copy()
+    treino.attrs["janela_rotulo_dias"] = janela
+    return treino, teste
 
 
 def folds_temporais(treino: pd.DataFrame, n: int = N_FOLDS) -> list[tuple[pd.Index, pd.Index]]:
     """Janela crescente: para cada um dos `n` últimos anos do treino, treina nos anteriores e valida nele."""
     anos = sorted(treino["ano"].unique())
+    janela = treino.attrs.get("janela_rotulo_dias", 0)
     return [
-        (treino.index[treino["ano"] < a], treino.index[treino["ano"] == a]) for a in anos[-n:] if a > anos[0]
+        (
+            treino.index[treino["data"] < pd.Timestamp(a, 1, 1) - pd.Timedelta(days=janela)],
+            treino.index[treino["ano"] == a],
+        )
+        for a in anos[-n:]
+        if a > anos[0]
     ]
 
 
@@ -242,6 +268,10 @@ def avaliar_publicacao(perf: dict, teste: dict) -> tuple[bool, str | None]:
         k: v["auc_pr"] for k, v in teste.items() if not k.startswith("modelo") and v.get("auc_pr") is not None
     }
     melhor_nome, melhor = max(refs.items(), key=lambda kv: kv[1]) if refs else ("nenhuma", 0.0)
+    if not refs or any(
+        v is None or not math.isfinite(v) for v in (m.get("recall"), m.get("auc_pr"), *refs.values())
+    ):
+        return False, "Métricas ausentes ou inválidas: não é possível aprovar a publicação."
     if (m["recall"] or 0) < MIN_RECALL_TESTE:
         return False, (
             f"Recall no período de teste ({m['recall']:.2f}) abaixo do mínimo de {MIN_RECALL_TESTE:.2f}: "
@@ -261,11 +291,12 @@ def treinar(
     grade: dict | None = None,
     conjuntos: dict | None = None,
     ano_teste: int = ANO_TESTE,
-    janela_dias: int = 0,
+    janela_dias: int | None = None,
 ) -> Resultado:
     """`referencia_teste`: nível 0..3 do EstimadorReferencia por linha do teste (mesmo índice); nulo = sem dado."""
     conjuntos = conjuntos or CONJUNTOS
-    treino, teste = dividir(base, ano_teste)
+    janela_dias = base.attrs.get("janela_rotulo_dias", 0) if janela_dias is None else janela_dias
+    treino, teste = dividir(base, ano_teste, janela_dias)
     perf = perfil(base, treino, teste)
     tentativas, oof = buscar(treino, grade, conjuntos)
     escolhida = escolher(tentativas)
@@ -317,6 +348,7 @@ def treinar(
         colunas=colunas,
         publicavel=publicavel,
         motivo=motivo,
+        janela_dias=janela_dias,
     )
 
 
@@ -338,13 +370,20 @@ class Artefato:
     motivo: str | None
     fonte_rotulo: str
     criterio_rotulo: str = "evento"
+    versao_atributos: str = VERSAO_ATRIBUTOS
+    dias_atendimento_bairros: dict[str, list[str]] = field(default_factory=dict)
+    territorios: dict[str, str] = field(default_factory=dict)
+    ambiente: dict[str, str] = field(default_factory=dict)
 
 
 def montar_artefato(
     r: Resultado, base: pd.DataFrame, harmonicos: dict, fonte_rotulo: str, criterio: str = "evento"
 ) -> Artefato:
     """O modelo salvo é EXATAMENTE o validado (treinado só no período de treino)."""
-    pos = base[base["alagou"] == 1]
+    treino, _ = dividir(base, int(r.perfil["teste"]["periodo"][0][:4]), r.janela_dias)
+    # Nunca contar dias positivos expandidos nem incorporar o teste ao histórico do artefato.
+    pos = treino[treino["registro"] == 1]
+    dias = {b: sorted(set(g["data"].dt.strftime("%Y-%m-%d"))) for b, g in pos.groupby("territorio_id")}
     validacao = {
         "tipo": "temporal",
         "treino": r.perfil["treino"]["periodo"],
@@ -357,6 +396,10 @@ def montar_artefato(
         "metricas_teste": r.teste,
         "recall_alvo_moderado": RECALL_MODERADO,
         "recall_alvo_alto": RECALL_ALTO,
+        "janela_rotulo_dias": r.janela_dias,
+        "versao_atributos": VERSAO_ATRIBUTOS,
+        "natureza": "retrospectiva-reanalise",
+        "avaliacao_operacional": False,
     }
     return Artefato(
         versao=VERSAO,
@@ -368,12 +411,24 @@ def montar_artefato(
         mare_harmonicos=harmonicos,
         historico_bairros={k: int(v) for k, v in pos.groupby("territorio_id").size().items()},
         inicio_historico=str(base["data"].min().date()),
-        fim_historico=str(base["data"].max().date()),
+        fim_historico=str(treino["data"].max().date()),
         validacao=validacao,
-        publicavel=r.publicavel,
-        motivo=r.motivo,
+        publicavel=False,
+        motivo=r.motivo
+        or "Validação retrospectiva com reanálise: falta validar previsões disponíveis no instante de emissão.",
         fonte_rotulo=fonte_rotulo,
         criterio_rotulo=criterio,
+        dias_atendimento_bairros=dias,
+        territorios=dict(
+            base[["territorio_id", "distrito_id"]].drop_duplicates().itertuples(index=False, name=None)
+        ),
+        ambiente={
+            "python": platform.python_version(),
+            "scikit-learn": sklearn.__version__,
+            "numpy": np.__version__,
+            "pandas": pd.__version__,
+            "joblib": joblib.__version__,
+        },
     )
 
 

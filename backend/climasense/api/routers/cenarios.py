@@ -17,13 +17,14 @@ from sqlalchemy.orm import Session
 from climasense.api.autorizacao import Contexto, exige, relogio
 from climasense.api.envelope import FonteMeta, Meta, RecorteMeta, RespostaDados
 from climasense.api.erros import ErroClimaSense
+from climasense.api.routers.risco_alagamento import ItemRisco, RiscoAlagamento
 from climasense.dominio import cenario
 from climasense.dominio import simulador as dom_sim
 from climasense.dominio.evento import RegistroInvalido
 from climasense.dominio.papeis import Permissao
 from climasense.dominio.recorte import granularidade
 from climasense.infra.postgres import obter_sessao
-from climasense.servicos import arboviroses_cenario
+from climasense.servicos import arboviroses_cenario, impacto_territorial
 from climasense.servicos import cenarios as servico
 from climasense.servicos import fontes as servico_fontes
 from climasense.servicos import simulador as sim
@@ -290,6 +291,12 @@ class ItemSimulacao(BaseModel):
     arboviroses: ArbovirosesDistrito | None = Field(
         default=None, description="Só nos itens de distrito; contexto, não previsão (RN-11)"
     )
+    avaliacao: dict | None = Field(
+        default=None, description="Insumos, fonte, validade e contexto territorial da previsão atual"
+    )
+    ml_alagamento: ItemRisco | None = Field(
+        default=None, description="Resultado paralelo, somente com modelo publicável"
+    )
 
 
 class PessoasEmAlerta(BaseModel):
@@ -324,6 +331,45 @@ class Simulacao(BaseModel):
     experimental: Literal[True] = True
     calculado_em: datetime
     tempo_calculo_ms: int
+
+
+class ImpactoPrevisto(Simulacao):
+    contexto: Literal["previsao_atual"]
+    ml_alagamento: RiscoAlagamento
+
+
+@router.get(
+    "/impacto-previsto",
+    response_model=RespostaDados[ImpactoPrevisto],
+    summary="Analisar a previsão atual de cada distrito, com regras e ML quando publicável",
+)
+def impacto_previsto(
+    horizonte_h: int = Query(default=24, ge=1, le=72),
+    _: Contexto = Depends(consultar),
+    db: Session = Depends(obter_sessao),
+    agora: datetime = Depends(relogio),
+) -> RespostaDados[ImpactoPrevisto]:
+    dados = impacto_territorial.analisar(db, agora, horizonte_h)
+    fs = (
+        servico.FONTE_PREVISAO,
+        servico.FONTE_MARE,
+        sim.FONTE_APAC,
+        sim.FONTE_OCORRENCIAS,
+        impacto_territorial.FONTE_SGB,
+        "ibge-censo-2022-bairro",
+        "cnes-equipamentos",
+        arboviroses_cenario.FONTE_SEMANAL,
+        arboviroses_cenario.FONTE_ANUAL,
+    )
+    return RespostaDados(
+        dados=ImpactoPrevisto(**dados),
+        meta=Meta(
+            fontes=[servico_fontes.meta(db, f, agora) for f in fs],
+            recorte=RecorteMeta(territorio_id="recife", granularidade="bairro"),
+            dados_insuficientes=all(i["estagio_sugerido"] == "sem_dados" for i in dados["itens"]),
+            avisos=impacto_territorial.LIMITACOES,
+        ),
+    )
 
 
 def _fontes_simulacao(db: Session, agora: datetime) -> list[FonteMeta]:

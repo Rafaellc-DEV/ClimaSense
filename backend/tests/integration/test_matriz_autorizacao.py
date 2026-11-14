@@ -53,6 +53,10 @@ def _url(caminho: str) -> str:
 
 @pytest.mark.parametrize("papel", list(Papel), ids=lambda p: p.value)
 def test_matriz_rota_por_papel(sessao, papel):
+    # Rotas analíticas (inclusive a nova análise territorial) requerem o cadastro oficial.
+    from climasense.territorio import carga
+
+    carga.sincronizar_territorios(sessao, carga.geo_local())
     c = cliente(sessao, Relogio())
     criar_conta(sessao, f"{papel.value}@recife.pe.gov.br", [papel.value])
     entrar(c, f"{papel.value}@recife.pe.gov.br")

@@ -500,7 +500,7 @@ def test_atlas_vazio_e_ausente_zero_continua_zero():
 
 
 def test_atlas_csv_sem_registro_do_recife_ou_sem_coluna_falha_com_mensagem():
-    cab = _bytes("atlas_recife_amostra.csv").split(b"\r\n")[0]
+    cab = _bytes("atlas_recife_amostra.csv").splitlines()[0]
     with pytest.raises(FonteSemDados, match="nenhum registro do Recife"):
         atlas.ConectorAtlasDesastres(http=_http_atlas(cab + b"\r\n")).extrair(ctx())
     with pytest.raises(FonteSemDados, match="Cod_IBGE_Mun"):

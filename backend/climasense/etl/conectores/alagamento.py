@@ -15,9 +15,10 @@ Rótulo fraco: a data é da solicitação/vistoria (pode vir dias depois do alag
 prova que não alagou. `silver.ocorrencias.ocorrido_em` fica nulo; `registrado_em` é o dia da vistoria (00:00 do
 Recife) e `confirmada` fica nulo.
 
-Bronze: um resumo de cada arquivo anual (url, sha256, linhas, cabeçalho) + as linhas brutas que citam
+Bronze: um resumo de cada arquivo anual (url, sha256, linhas, cabeçalho) + os campos sanitizados das linhas que citam
 "alag", "desliz" ou "conten" em qualquer campo (superconjunto do critério; o arquivo inteiro tem ~890 mil linhas e 150 MB, e não cabe
-no Atlas gratuito a cada carga). A silver é refeita a partir dessas linhas lidas de volta do Mongo.
+no Atlas gratuito a cada carga). Endereço nunca é persistido em novas cargas. A silver é refeita a partir
+dos registros lidos de volta do Mongo; lotes antigos continuam legíveis, sem serem regravados.
 """
 
 from __future__ import annotations
@@ -93,11 +94,21 @@ class ConectorRecifeAlagamento(Conector):
                     "cabecalho": linhas[0] if linhas else "",
                 }
             )
-            registros.extend(
-                {"tipo": "linha", "ano": ano, "n_linha": i, "linha": linha}
-                for i, linha in enumerate(linhas[1:], start=2)
-                if _ALAG.search(linha)
-            )
+            for i, linha in enumerate(linhas[1:], start=2):
+                if not _ALAG.search(linha):
+                    continue
+                reg = next(_ocorrencias().ler_registros(("cabecalho\n" + linha).encode("utf-8")), None)
+                # LGPD: a linha original pode conter endereço. Só os campos necessários
+                # à classificação e associação territorial chegam à bronze.
+                if reg is not None:
+                    registros.append(
+                        {
+                            "tipo": "linha",
+                            "ano": ano,
+                            "n_linha": i,
+                            "registro": {k: reg[k] for k in ("data", "bairro", "ocorrencia", "solicitacao")},
+                        }
+                    )
         if not any(r["tipo"] == "linha" for r in registros):
             raise FonteSemDados(
                 "A Defesa Civil não publicou nenhum atendimento que cite alagamento ou deslizamento."
@@ -113,7 +124,9 @@ class ConectorRecifeAlagamento(Conector):
             self.descartes[m] = self.descartes.get(m, 0) + 1
 
         for r in bruto[bruto["tipo"] == "linha"].to_dict("records"):
-            reg = next(oc.ler_registros(("cabecalho\n" + r["linha"]).encode("utf-8")), None)
+            reg = r.get("registro")
+            if not isinstance(reg, dict):  # leitura compatível de lotes antigos; não cria novas linhas brutas
+                reg = next(oc.ler_registros(("cabecalho\n" + r["linha"]).encode("utf-8")), None)
             if reg is None:
                 conta("linha_malformada")
                 continue

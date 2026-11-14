@@ -26,6 +26,8 @@ codificação mista). A leitura é por linha e ancora os campos pelas datas no f
 
 from __future__ import annotations
 
+import csv
+import io
 import re
 from collections import Counter
 from collections.abc import Iterator
@@ -113,7 +115,7 @@ def baixar(pasta: Path | None = None, http=None) -> list[Path]:
         if not destino.exists():
             r = http.get(url, timeout=300)
             r.raise_for_status()
-            destino.write_bytes(r.content)
+            destino.write_bytes(csv_sanitizado(r.content))
         arquivos.append(destino)
     return arquivos
 
@@ -133,7 +135,11 @@ def ler_registros(conteudo: bytes) -> Iterator[dict]:
     campos são fixos (Bairro, Localidade, Grau, Data_da_Acao, Tipo_da_Acao, Quantidade, Altura, Largura,
     Area), então o bairro é sempre o 9º a partir do fim, mesmo quando o endereço quebra em dois campos.
     """
-    linhas = _texto(conteudo).splitlines()
+    texto = _texto(conteudo)
+    linhas = texto.splitlines()
+    if linhas and linhas[0].strip() == "data;bairro;ocorrencia;solicitacao;acao":
+        yield from csv.DictReader(io.StringIO(texto), delimiter=";")
+        return
     for linha in linhas[1:]:
         campos = [c.strip().strip('"').strip() for c in linha.split(";")]
         if len(campos) < 14:
@@ -148,6 +154,20 @@ def ler_registros(conteudo: bytes) -> Iterator[dict]:
             "bairro": campos[-9],
             "acao": campos[-5],
         }
+
+
+def csv_sanitizado(conteudo: bytes) -> bytes:
+    """Cache novo contém somente campos usados no estudo, nunca endereço ou localidade."""
+    saida = io.StringIO(newline="")
+    escritor = csv.DictWriter(
+        saida,
+        fieldnames=["data", "bairro", "ocorrencia", "solicitacao", "acao"],
+        delimiter=";",
+        lineterminator="\n",
+    )
+    escritor.writeheader()
+    escritor.writerows(ler_registros(conteudo))
+    return saida.getvalue().encode("utf-8")
 
 
 def e_alagamento(registro: dict, criterio: str = "evento") -> bool:

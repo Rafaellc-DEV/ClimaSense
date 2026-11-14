@@ -131,9 +131,13 @@ def chuva_diaria(horaria: pd.DataFrame) -> pd.DataFrame:
     """Soma diária por distrito, só para dias com as 24 horas (dia incompleto fica de fora, RN-01)."""
     if horaria.empty:
         return pd.DataFrame(columns=["territorio_id", "data", "mm"])
+    horaria = horaria[horaria["hora"] == horaria["hora"].dt.floor("h")]
+    horaria = horaria.drop_duplicates(["territorio_id", "hora"])
+    mm = pd.to_numeric(horaria["mm"], errors="coerce")
+    horaria = horaria.assign(mm=mm.where(np.isfinite(mm) & (mm >= 0)))
     h = horaria.assign(data=horaria["hora"].dt.normalize())
     g = h.groupby(["territorio_id", "data"])["mm"].agg(["sum", "count"]).reset_index()
-    return g[g["count"] >= 24].rename(columns={"sum": "mm"})[["territorio_id", "data", "mm"]]
+    return g[g["count"] == 24].rename(columns={"sum": "mm"})[["territorio_id", "data", "mm"]]
 
 
 # ----------------------------------------------------------------------------- maré astronômica

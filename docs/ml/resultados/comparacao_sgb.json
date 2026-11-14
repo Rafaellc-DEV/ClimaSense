@@ -1,0 +1,173 @@
+{
+  "gerado_em": "2026-11-14T02:55:00.371752+00:00",
+  "status": "PESQUISA_LOCAL_NAO_VALIDADA",
+  "features_originais": [
+    "chuva_1d",
+    "chuva_3d",
+    "chuva_7d",
+    "mare_max_m",
+    "mes",
+    "hist_dias_ano"
+  ],
+  "features_novas": [
+    "sgb_frac_alta",
+    "sgb_frac_media",
+    "sgb_cobertura",
+    "sgb_sem_carta"
+  ],
+  "hiperparametros_fixos": {
+    "max_depth": 4,
+    "min_samples_leaf": 20,
+    "class_weight": "balanced"
+  },
+  "periodo_minimo": "2016-01-01",
+  "periodo_teste_exploratorio": [
+    "2024-01-01",
+    "2024-12-28"
+  ],
+  "bairros_total_sgb": 94,
+  "bairros_com_carta": 90,
+  "modelo_original_mesma_amostra": {
+    "metricas_teste_exploratorio": {
+      "recall": 1.0,
+      "precisao": 0.01619355149645766,
+      "auc_pr": 0.043978699209590674,
+      "alertas_pct": 60.8082761854522,
+      "vp": 336,
+      "fp": 20413,
+      "fn": 0,
+      "vn": 13373,
+      "f1": 0.03187099834005217,
+      "eventos": 84,
+      "eventos_avisados": 84,
+      "dias_com_atendimento": 8,
+      "dias_com_atendimento_avisados": 8
+    },
+    "auc_pr_oof_treino": 0.039275667017401684,
+    "linhas_treino": 274386,
+    "linhas_teste": 34122,
+    "positivos_treino": 1064,
+    "positivos_teste": 336,
+    "importancias": [
+      [
+        "chuva_7d",
+        0.508453
+      ],
+      [
+        "hist_dias_ano",
+        0.284806
+      ],
+      [
+        "mes",
+        0.183595
+      ],
+      [
+        "chuva_3d",
+        0.014107
+      ],
+      [
+        "mare_max_m",
+        0.009038
+      ],
+      [
+        "chuva_1d",
+        0.0
+      ]
+    ],
+    "limiares_internos": {
+      "moderado": 0.20080690575275711,
+      "alto": 0.7812033423045807
+    }
+  },
+  "modelo_com_sgb_mesma_amostra": {
+    "metricas_teste_exploratorio": {
+      "recall": 1.0,
+      "precisao": 0.016533805727782697,
+      "auc_pr": 0.04402730695692282,
+      "alertas_pct": 59.55688412168103,
+      "vp": 336,
+      "fp": 19986,
+      "fn": 0,
+      "vn": 13800,
+      "f1": 0.03252977054893988,
+      "eventos": 84,
+      "eventos_avisados": 84,
+      "dias_com_atendimento": 8,
+      "dias_com_atendimento_avisados": 8
+    },
+    "auc_pr_oof_treino": 0.041055497571513305,
+    "linhas_treino": 274386,
+    "linhas_teste": 34122,
+    "positivos_treino": 1064,
+    "positivos_teste": 336,
+    "importancias": [
+      [
+        "chuva_7d",
+        0.507042
+      ],
+      [
+        "hist_dias_ano",
+        0.28103
+      ],
+      [
+        "mes",
+        0.183086
+      ],
+      [
+        "chuva_3d",
+        0.014068
+      ],
+      [
+        "mare_max_m",
+        0.009013
+      ],
+      [
+        "sgb_frac_media",
+        0.00576
+      ],
+      [
+        "chuva_1d",
+        0.0
+      ],
+      [
+        "sgb_frac_alta",
+        0.0
+      ],
+      [
+        "sgb_cobertura",
+        0.0
+      ],
+      [
+        "sgb_sem_carta",
+        0.0
+      ]
+    ],
+    "limiares_internos": {
+      "moderado": 0.03630643951425261,
+      "alto": 0.781203342304664
+    }
+  },
+  "referencia_chuva_mesma_amostra": {
+    "recall": 0.8154761904761905,
+    "precisao": 0.017919037342227453,
+    "auc_pr": 0.04962360599648521,
+    "alertas_pct": 44.812730789519954,
+    "vp": 274,
+    "fp": 15017,
+    "fn": 62,
+    "vn": 18769,
+    "f1": 0.035067511358546105,
+    "eventos": 84,
+    "eventos_avisados": 84,
+    "dias_com_atendimento": 8,
+    "dias_com_atendimento_avisados": 8
+  },
+  "observacoes": [
+    "A carta é datada de 2015; a análise foi limitada a 2016 em diante.",
+    "A ausência de carta é mantida distinta de suscetibilidade baixa.",
+    "Imputação ajustada apenas em treino/fold; não utiliza rótulos do teste.",
+    "2024 já foi consultado para outros experimentos: não é holdout independente.",
+    "Não substitui o modelo 0.2.0, não salva joblib e não altera o gate científico.",
+    "Suscetibilidade não é probabilidade, nem risco operacional de alagamento."
+  ]
+}

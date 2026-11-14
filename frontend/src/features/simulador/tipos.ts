@@ -88,6 +88,25 @@ export interface ItemSimulado {
   motivos?: string[] | null;
   impacto_pessoas?: unknown;
   arboviroses?: ArbovirosesDistrito | null;
+  avaliacao?: {
+    metodo: string;
+    versao: string;
+    horizonte_h: number;
+    inicio_validade: string;
+    fim_validade: string;
+    emitido_em_fonte: string | null;
+    fonte_meteorologica: string;
+    chuva_no_horizonte_mm: number | null;
+    chuva_observada_72h_mm: number | null;
+    observada_em: string | null;
+    estacoes_validas: number;
+    contexto_deslizamento?: string;
+    suscetibilidade?: Record<string, number> | null;
+    fonte_territorial?: string;
+    faltando: string[];
+    limitacoes: string[];
+  } | null;
+  ml_alagamento?: { classe: string; confianca?: string; fatores: string[] } | null;
 }
 
 export interface ResultadoSimulacao {
@@ -102,6 +121,12 @@ export interface ResultadoSimulacao {
   experimental?: boolean;
   calculado_em?: string | null;
   tempo_calculo_ms?: number | null;
+  contexto?: "previsao_atual";
+  ml_alagamento?: {
+    disponivel: boolean;
+    motivo: string | null;
+    modelo?: { versao: string; treinado_em: string } | null;
+  };
 }
 
 export interface CenarioSalvo {
@@ -110,6 +135,18 @@ export interface CenarioSalvo {
   criado_em?: string | null;
   criado_por?: string | null;
   premissas?: Partial<Premissas> | null;
+}
+
+/** Escala ordinal própria do ML de alagamento; NÃO corresponde aos estágios do COP. */
+export const CLASSES_ML = ["baixo", "moderado", "alto"] as const;
+export const ROTULOS_ML = ["Baixo", "Moderado", "Alto"] as const;
+export const TOKENS_ML = ["--n-sem", "--n-atencao", "--n-critico"] as const;
+
+/** Uma classe ausente, desconhecida ou `sem_dados` nunca vira risco baixo. */
+export function ordemMlAlagamento(item: ItemSimulado | undefined): number | null {
+  const classe = item?.ml_alagamento?.classe;
+  const ordem = CLASSES_ML.indexOf(classe as (typeof CLASSES_ML)[number]);
+  return ordem >= 0 ? ordem : null;
 }
 
 export type Visao = "alagamento" | "deslizamento" | "situacao";

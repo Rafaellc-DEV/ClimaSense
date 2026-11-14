@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { RefreshCw } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
@@ -12,7 +12,7 @@ import { FalhaCarga, Painel } from "@/design-system/componentes/Painel";
 import { Pilula } from "@/design-system/componentes/Pilula";
 import { VazioConvidativo } from "@/design-system/componentes/VazioConvidativo";
 import { ListaAdaptavel } from "@/features/fluxo/ListaAdaptavel";
-import { api, enviar, type Esquemas } from "@/lib/api";
+import { type Esquemas } from "@/lib/api";
 import { useConsulta } from "@/lib/consultas";
 import { noProduto } from "@/lib/fontes";
 import { formatarDataHora, formatarNumero } from "@/lib/formatos";
@@ -20,6 +20,7 @@ import { useSessao } from "@/lib/sessao";
 import { TIPOS_FONTE } from "@/textos/glossario";
 import { Frescor, StatusFonte } from "./StatusFonte";
 import estilos from "./Fontes.module.css";
+import { acompanhar, apiComPrazo } from "./acompanhar";
 
 type Fonte = Esquemas["Fonte"];
 type Execucao = Esquemas["Execucao"];
@@ -41,70 +42,93 @@ export const PLANOS: Record<string, string> = {
 };
 
 /**
- * “Buscar dados mais recentes”: quem pode executar o ETL dispara todas as fontes em uso de uma vez e acompanha
- * até terminarem; os demais papéis apenas verificam de novo o status (RF-16.2).
+ * Atualiza uma fonte por vez; os demais papéis apenas verificam o status (RF-16.2).
  */
 function useBuscarRecentes(ativas: Fonte[], aoVerificar: () => Promise<unknown>) {
   const { pode } = useSessao();
   const aviso = useAviso();
   const cliente = useQueryClient();
-  const [pendentes, setPendentes] = useState<string[]>([]);
   const [verificando, setVerificando] = useState(false);
+  const [buscando, setBuscando] = useState(false);
+  const controle = useRef<AbortController | null>(null);
   const podeExecutar = pode("executar_etl");
 
-  useEffect(() => {
-    if (!pendentes.length) return;
-    const t = setInterval(async () => {
-      const lista = await Promise.all(
-        pendentes.map((id) => api<Execucao>(`/etl/execucoes/${id}`).catch(() => null)),
-      );
-      if (lista.some((e) => !e || e.status === "em_andamento")) return;
-      setPendentes([]);
-      const falhas = lista.filter((e) => e!.status === "falha").length;
-      const gravados = lista.reduce((s, e) => s + e!.gravados, 0);
-      aviso(
-        falhas
-          ? {
-              tipo: "erro",
-              titulo: `${falhas} de ${lista.length} fontes falharam.`,
-              texto: "Abra a fonte para ver o motivo e tente de novo.",
-            }
-          : { titulo: "Dados atualizados.", texto: `${formatarNumero(gravados)} registros gravados.` },
-      );
-      void cliente.invalidateQueries();
-    }, 3000);
-    return () => clearInterval(t);
-  }, [pendentes, aviso, cliente]);
+  useEffect(() => () => controle.current?.abort(), []);
 
   async function buscar() {
-    if (!podeExecutar) {
-      setVerificando(true);
-      await aoVerificar();
-      setVerificando(false);
-      aviso({ titulo: "Status verificado agora.", texto: "Só a administração pode buscar dados novos." });
-      return;
+    if (controle.current) return;
+    const c = new AbortController();
+    controle.current = c;
+    try {
+      if (!podeExecutar) {
+        setVerificando(true);
+        await aoVerificar();
+        aviso({ titulo: "Status verificado agora.", texto: "Só a administração pode buscar dados novos." });
+        return;
+      }
+      setBuscando(true);
+      const alvos = ativas.filter((x) => !SEM_CONECTOR_MANUAL.has(x.id));
+      aviso({
+        titulo: "Buscando os dados mais recentes.",
+        texto: `${alvos.length} fontes, uma por vez. Pode levar alguns minutos.`,
+      });
+      let falhas = 0,
+        gravados = 0,
+        semNovos = 0,
+        concluidas = 0;
+      for (const alvo of alvos) {
+        if (c.signal.aborted) return;
+        try {
+          const e = await apiComPrazo<Execucao>("/etl/execucoes", c.signal, {
+            method: "POST",
+            body: JSON.stringify({
+              fonte_id: alvo.id,
+              ...(alvo.id === "open-meteo-historico" ? { limite: 45 } : {}),
+            }),
+          });
+          const fim = await acompanhar(e.id, c.signal);
+          concluidas++;
+          if (fim.status === "falha") falhas++;
+          else {
+            gravados += fim.gravados;
+            if (!fim.gravados) semNovos++;
+          }
+        } catch (erro) {
+          if (c.signal.aborted) return;
+          falhas++;
+          aviso({
+            tipo: "erro",
+            titulo: `Coleta de ${alvo.nome} não concluída.`,
+            texto: (erro as Error).message,
+          });
+          // Não inicia outra carga enquanto a situação desta permanece desconhecida.
+          break;
+        }
+        void cliente.invalidateQueries();
+      }
+      if (!c.signal.aborted)
+        aviso({
+          tipo: falhas ? "erro" : undefined,
+          titulo: falhas ? "Atualização terminou com pendências." : "Coletas concluídas.",
+          texto: `${concluidas} de ${alvos.length} fontes concluídas; ${formatarNumero(gravados)} registros gravados; ${semNovos} cargas sem novos registros; ${falhas} falhas. Consulte o histórico das fontes.`,
+        });
+    } catch (erro) {
+      if (!c.signal.aborted)
+        aviso({ tipo: "erro", titulo: "Não foi possível verificar.", texto: (erro as Error).message });
+    } finally {
+      controle.current = null;
+      if (!c.signal.aborted) {
+        setBuscando(false);
+        setVerificando(false);
+        void cliente.invalidateQueries();
+      }
     }
-    const alvos = ativas.filter((x) => !SEM_CONECTOR_MANUAL.has(x.id));
-    const iniciadas = await Promise.all(
-      alvos.map((x) => enviar<Execucao>("/etl/execucoes", { fonte_id: x.id }).catch(() => null)),
-    );
-    const ids = iniciadas.filter((e): e is Execucao => !!e).map((e) => e.id);
-    if (!ids.length) {
-      aviso({ tipo: "erro", titulo: "Não foi possível iniciar.", texto: "Tente de novo em instantes." });
-      return;
-    }
-    setPendentes(ids);
-    aviso({
-      titulo: "Buscando os dados mais recentes.",
-      texto: `${ids.length} fontes em atualização. Pode levar alguns minutos; avisamos quando terminar.`,
-    });
-    void aoVerificar();
   }
 
-  const ocupado = pendentes.length > 0 || verificando;
+  const ocupado = buscando || verificando;
   const botao = (
     <Botao onClick={buscar} disabled={ocupado} icone={<RefreshCw />}>
-      {pendentes.length
+      {buscando
         ? "Buscando dados…"
         : verificando
           ? "Verificando…"
@@ -177,7 +201,26 @@ export function TelaFontes() {
                     </span>
                   ),
                 },
-                { chave: "status", titulo: "Status", celula: (x) => <StatusFonte status={x.status} /> },
+                {
+                  chave: "status",
+                  titulo: "Status",
+                  celula: (x) => (
+                    <div className={estilos.estadoFonte}>
+                      <StatusFonte status={x.status} />
+                      {x.ultima_execucao_status === "em_andamento" && (
+                        <small>
+                          Coleta em andamento desde{" "}
+                          {x.ultima_execucao_em
+                            ? formatarDataHora(x.ultima_execucao_em)
+                            : "horário indisponível"}
+                        </small>
+                      )}
+                      {x.ultima_execucao_status === "sucesso" && x.ultima_execucao_gravados === 0 && (
+                        <small>Última carga sem novos registros.</small>
+                      )}
+                    </div>
+                  ),
+                },
                 {
                   chave: "frescor",
                   titulo: "Frescor",

@@ -15,7 +15,10 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from climasense.api.autorizacao import Contexto, exige, relogio
+from climasense.api.deps import configuracao
 from climasense.api.envelope import Meta, RecorteMeta, RespostaDados
+from climasense.api.erros import ErroClimaSense
+from climasense.config import Configuracao
 from climasense.dominio.papeis import Permissao
 from climasense.infra.postgres import obter_sessao
 from climasense.ml.alagamento import servico
@@ -39,6 +42,7 @@ class ItemRisco(BaseModel):
     territorio_id: str
     classe: Classe
     fatores: list[str]
+    confianca: Literal["baixa", "insuficiente"] = "baixa"
 
 
 class RiscoAlagamento(BaseModel):
@@ -77,6 +81,42 @@ def risco_alagamento(
             ],
             recorte=RecorteMeta(territorio_id="recife", granularidade=nivel),
             avisos=avisos,
-            dados_insuficientes=not dados["disponivel"],
+            dados_insuficientes=not dados["disponivel"]
+            or not dados["itens"]
+            or all(i["classe"] == "sem_dados" for i in dados["itens"]),
+        ),
+    )
+
+
+@router.get(
+    "/previa-local",
+    response_model=RespostaDados[RiscoAlagamento],
+    summary="Prévia de PESQUISA de alagamento — somente desenvolvimento e administrador",
+)
+def previa_local(
+    _: Contexto = Depends(exige(Permissao.ADMINISTRAR)),
+    config: Configuracao = Depends(configuracao),
+    db: Session = Depends(obter_sessao),
+    agora: datetime = Depends(relogio),
+) -> RespostaDados[RiscoAlagamento]:
+    if config.ambiente != "desenvolvimento" or not config.ml_previa_experimental_local:
+        raise ErroClimaSense(404, "Prévia de pesquisa desabilitada neste ambiente.")
+    dados = servico.payload_previa_local(db, agora)
+    return RespostaDados(
+        dados=RiscoAlagamento(**dados),
+        meta=Meta(
+            fontes=[
+                servico_fontes.meta(db, f, agora)
+                for f in (servico.FONTE_PREVISAO, servico.FONTE_HISTORICO, servico.FONTE_ROTULO)
+            ],
+            recorte=RecorteMeta(territorio_id="recife", granularidade="bairro"),
+            avisos=[
+                "Prévia local apenas para pesquisa. Modelo não validado; não é alerta e não deve ser publicado."
+            ],
+            dados_insuficientes=(
+                not dados["disponivel"]
+                or not dados["itens"]
+                or all(i["classe"] == "sem_dados" for i in dados["itens"])
+            ),
         ),
     )

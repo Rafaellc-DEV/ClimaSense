@@ -60,6 +60,9 @@ class Premissas:
     chuva_acumulada_mm: float | None
     mare_m: float | None
     horizonte_h: int
+    # Só análise de série horária real: maiores somas em até 24/72 h do horizonte.
+    # Cenário manual continua com a distribuição uniforme original.
+    acumulados_janelas: tuple[float, float] | None = None
 
 
 @dataclass(frozen=True)
@@ -112,6 +115,8 @@ def _m(v: float) -> str:
 
 def chuva_na_janela(p: Premissas, horas: int) -> float:
     """Chuva prevista que cai na janela mais chuvosa de `horas` horas (distribuição uniforme na duração)."""
+    if p.acumulados_janelas is not None:
+        return p.acumulados_janelas[0 if horas == 24 else 1]
     return round(p.chuva_prevista_mm * min(1.0, horas / p.duracao_h), 1)
 
 

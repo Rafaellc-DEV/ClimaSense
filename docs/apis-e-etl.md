@@ -69,23 +69,27 @@ Carga real local de 04–05/11/2026 (Docker): Open-Meteo 408.576 horas (01/01/20
 
 ## Agendamento
 
-Windows (Agendador de Tarefas), diariamente às 06:00:
+O diagnóstico e o plano para os bancos compartilhados estão em [`operacao-etl.md`](operacao-etl.md).
+`dev.ps1` não atualiza as fontes. Nenhuma tarefa é criada ao iniciar os servidores.
+Usar um único responsável pelo agendamento; não combinar esta rotina com os antigos exemplos de
+`atualizar` diário e `tempo-real` a cada 15 minutos.
+
+Na raiz, validar a definição Windows **sem registrar ou executar o ETL**:
 
 ```powershell
-schtasks /Create /SC DAILY /ST 06:00 /TN "ClimaSense ETL" /TR "cmd /c cd /d C:\Users\rlc3\Documents\Projetos\ClimaSense\backend && ..\.venv\Scripts\python -m climasense.etl atualizar >> ..\tmp\etl.log 2>&1"
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/preparar-agendamento.ps1
 ```
 
-Windows, a cada 15 minutos (chuva observada e alertas):
+A definição usa `IgnoreNew`, intervalo de 15 minutos e o comando `etl operacional`, que verifica a cadência
+de cada fonte antes de coletar. Requer máquina ligada e usuário conectado. Não é um serviço de disponibilidade contínua.
+Somente após autorização, confirmação de backup e orçamento de armazenamento:
 
 ```powershell
-schtasks /Create /SC MINUTE /MO 15 /TN "ClimaSense ETL tempo real" /TR "cmd /c cd /d C:\Users\rlc3\Documents\Projetos\ClimaSense\backend && ..\.venv\Scripts\python -m climasense.etl tempo-real >> ..\tmp\etl-tempo-real.log 2>&1"
+# REGISTRA UMA TAREFA QUE ESCREVE NOS DESTINOS CONFIGURADOS:
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/preparar-agendamento.ps1 -Registrar -PermitirRemoto
 ```
 
-Linux / cron (`atualizar` 4 vezes ao dia mantém a previsão fresca; os conjuntos estáticos se auto-pulam):
-
-```cron
-0 */6 * * * cd /opt/climasense/backend && ../.venv/bin/python -m climasense.etl atualizar >> /var/log/climasense-etl.log 2>&1
-*/15 * * * * cd /opt/climasense/backend && ../.venv/bin/python -m climasense.etl tempo-real >> /var/log/climasense-etl-tr.log 2>&1
-```
-
-O `.env` precisa estar na raiz do projeto. O código de saída diferente de zero permite alertar no agendador.
+O `.env` fica na raiz; seus valores não devem ir para logs. O comando novo recusa destino remoto sem
+`--permitir-remoto`; essa opção não substitui a autorização do grupo. Para uma rodada manual aprovada,
+`scripts/atualizar-operacional.ps1 -PermitirRemoto`. A saída diferente de zero sinaliza falha em algum passo.
+Execução abandonada não é encerrada automaticamente: inspecionar trabalhador e histórico antes da recuperação.

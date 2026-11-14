@@ -241,6 +241,8 @@ def _artefato(sintetica, publicavel=True) -> modelo.Artefato:
     harm = {"componentes": list(clima.COMPONENTES), "coeficientes": [0.0] * (1 + 2 * len(clima.COMPONENTES))}
     art = modelo.montar_artefato(r, tabela, harm, "sintetico")
     art.publicavel, art.motivo = publicavel, None if publicavel else "teste"
+    # Aprovação exclusivamente sintética para exercitar inferência; nunca salva dado no produto.
+    art.validacao["avaliacao_operacional"] = publicavel
     return art
 
 
@@ -261,7 +263,7 @@ def test_risco_por_territorio_classes_fatores_e_sem_dados(sintetica, monkeypatch
     agora = datetime(2026, 5, 10, 15, 0, tzinfo=UTC)
     dias = pd.date_range("2026-05-04", "2026-05-11", freq="D")
     chuva = _chuva_fake({"ds-1": {d: 40.0 for d in dias}})  # ds-2 sem chuva → sem_dados
-    monkeypatch.setattr(servico, "chuva_recente", lambda db, a, b: chuva)
+    monkeypatch.setattr(servico, "chuva_recente", lambda db, a, b, agora=None: chuva)
     monkeypatch.setattr(servico, "bairros", lambda db: {"bairro-a": ("A", "ds-1"), "bairro-d": ("D", "ds-2")})
     r = servico.risco_por_territorio(None, agora, art)
     assert r["bairro-a"]["classe"] in {"moderado", "alto"}
@@ -297,6 +299,8 @@ def test_por_distrito_pega_a_maior_classe():
         {"b1": ("B1", "ds-1"), "b2": ("B2", "ds-1")},
     )
     assert r["ds-1"]["classe"] == "alto" and "B2" in r["ds-1"]["fatores"][0]
+    sem = servico.por_distrito({"b": {"classe": "sem_dados", "fatores": []}}, {"b": ("B", "ds-1")})
+    assert sem["ds-1"]["confianca"] == "insuficiente"
 
 
 def test_armazenamento_salva_e_le(sintetica, tmp_path):

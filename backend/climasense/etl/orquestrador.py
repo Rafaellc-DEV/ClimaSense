@@ -61,6 +61,23 @@ ORDEM_SEMANAL: tuple[tuple[str, str | None, int | None], ...] = (
     ("infodengue", None, None),
     ("sinan-leptospirose", None, None),
 )
+# Um único agendamento de 15 min; cada fonte só é baixada na sua cadência.
+# Não muda limites de frescor do produto nem cria agendamento na máquina.
+INTERVALOS_OPERACIONAIS_MIN = {
+    "open-meteo-previsao": 60,
+    "open-meteo-mare": 180,
+    "apac-chuva": 15,
+    "apac-previsao": 60,
+    "apac-rios": 15,
+    "alertas-oficiais": 15,
+    "open-meteo-historico": 1440,
+}
+ORDEM_OPERACIONAL = (
+    ("open-meteo-previsao", None, None),
+    ("open-meteo-mare", None, None),
+    *ORDEM_TEMPO_REAL,
+    ("open-meteo-historico", None, JANELA_HISTORICO_DIAS),
+)
 ESTATICAS = {
     ("recife-alagamento", None),
     ("sinan-leptospirose", None),
@@ -106,12 +123,25 @@ def atualizar(
     carregar_territorio: Callable[[], tuple[int, int]] | None = None,
     executar=execucao.executar,
     ordem=ORDEM_FONTES,
+    intervalos_min: dict[str, int] | None = None,
 ) -> list[Passo]:
     passos: list[Passo] = []
     if carregar_territorio is not None:
         passos.append(_territorio(engine, carregar_territorio))
     for fonte, modo, limite in ordem:
         nome = f"{fonte} ({modo})" if modo else fonte
+        if intervalos_min and fonte in intervalos_min:
+            with engine.connect() as c:
+                recente = c.execute(
+                    text(
+                        "select exists(select 1 from app.etl_execucoes where fonte_id=:f "
+                        "and status='sucesso' and fim > now() - :min * interval '1 minute')"
+                    ),
+                    {"f": fonte, "min": intervalos_min[fonte]},
+                ).scalar_one()
+            if recente:
+                passos.append(Passo(nome, "pulado", "coleta bem-sucedida dentro da cadência operacional"))
+                continue
         if (fonte, modo) in ESTATICAS and not forcar and _recente(engine, fonte):
             passos.append(
                 Passo(
@@ -122,8 +152,12 @@ def atualizar(
                 )
             )
             continue
-        eid = execucao.iniciar(engine, fonte)
-        r = executar(engine, mongo, config, fonte, eid, limite, modo=modo)
+        try:
+            eid = execucao.iniciar(engine, fonte)
+            r = executar(engine, mongo, config, fonte, eid, limite, modo=modo)
+        except Exception as erro:  # noqa: BLE001 — finalização indisponível não impede as outras fontes
+            passos.append(Passo(nome, "falha", execucao.mensagem_segura(erro)))
+            continue
         detalhe = f"lidos {r['lidos']} · gravados {r['gravados']} · descartados {r['descartados']}"
         passos.append(Passo(nome, r["status"], r["erro"] or detalhe if r["status"] != "sucesso" else detalhe))
     with engine.connect() as c:

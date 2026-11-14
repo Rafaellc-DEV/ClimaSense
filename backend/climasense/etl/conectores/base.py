@@ -77,6 +77,10 @@ class Conector(ABC):
     def gerar_gold(self, ctx: ExecucaoCtx) -> None:  # opcional por fonte
         return None
 
+    def validar(self, df: pd.DataFrame, ctx: ExecucaoCtx) -> None:
+        """Validação de utilidade específica da fonte, antes de escrever na silver."""
+        return None
+
     def ler_bronze(self, ctx: ExecucaoCtx) -> pd.DataFrame:
         docs = list(
             self.colecao_bronze(ctx).find(
@@ -88,13 +92,15 @@ class Conector(ABC):
 
     def executar(self, ctx: ExecucaoCtx) -> ResultadoExecucao:
         resultado = ResultadoExecucao()
+        self.resultado_execucao = resultado
         registros = self.extrair(ctx)
         resultado.lidos = len(registros)
         self.load.salvar_bronze(self.colecao_bronze(ctx), registros, self.id, ctx.execucao_id)
         bruto = self.ler_bronze(ctx)
         df = self.transformar(bruto, ctx) if not bruto.empty else bruto
-        resultado.gravados = self.gravar_silver(df, ctx) if not df.empty else 0
         resultado.motivos = dict(getattr(self, "descartes", {}))
         resultado.descartados = sum(resultado.motivos.values())
+        self.validar(df, ctx)
+        resultado.gravados = self.gravar_silver(df, ctx) if not df.empty else 0
         self.gerar_gold(ctx)
         return resultado

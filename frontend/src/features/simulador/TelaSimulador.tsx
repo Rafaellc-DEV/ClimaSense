@@ -8,10 +8,12 @@ import { Dialogo } from "@/design-system/componentes/Dialogo";
 import { CarregandoLista } from "@/design-system/componentes/Esqueleto";
 import { EstadoDados } from "@/design-system/componentes/EstadoDados";
 import { Experimental } from "@/design-system/componentes/Pilula";
+import { Segmentado } from "@/design-system/componentes/Segmentado";
 import { api, enviar, type ErroApi } from "@/lib/api";
-import { useConsulta } from "@/lib/consultas";
+import { useConsulta, useConsultaViva } from "@/lib/consultas";
 import { quandoRelativo } from "@/lib/formatos";
 import { juntarFontes, type FonteMeta } from "@/lib/frescor";
+import { useSessao } from "@/lib/sessao";
 import { EstadoConsulta } from "@/features/evento/Evento";
 import { quandoAs } from "@/features/evento/textos";
 import { limiaresDe } from "@/features/evento/tipos";
@@ -26,6 +28,7 @@ import {
   paraPremissas,
   podeSimular,
   temAlgumDado,
+  HORIZONTES,
   type CampoNumerico,
   type CenarioSalvo,
   type Formulario,
@@ -73,6 +76,31 @@ function useAtraso<T>(valor: T, chave: string, ms: number): [T, (v: T) => void] 
  */
 export function TelaSimulador() {
   const clientes = useQueryClient();
+  const [modo, setModo] = useState<"manual" | "atual">("manual");
+  const [horizonteAtual, setHorizonteAtual] = useState<number>(24);
+  const { pode, usuario } = useSessao();
+  const [previaLocal, setPreviaLocal] = useState(false);
+  const acessoPrevia = import.meta.env.DEV && usuario?.ambiente === "desenvolvimento" && pode("administrar");
+  const demoAutomatica = acessoPrevia && import.meta.env.VITE_ML_DEMO_ACADEMICA === "true";
+  useEffect(() => {
+    if (demoAutomatica) {
+      setModo("atual");
+      setPreviaLocal(true);
+    }
+  }, [demoAutomatica]);
+  const pesquisa = useConsulta<
+    Envelope<
+      ResultadoSimulacao["ml_alagamento"] & {
+        itens: { territorio_id: string; classe: string; confianca?: string; fatores: string[] }[];
+      }
+    >
+  >(modo === "atual" && previaLocal && acessoPrevia ? "/risco-alagamento/previa-local" : null, {
+    retry: false,
+    staleTime: 10_000,
+  });
+  const analise = useConsultaViva<Envelope<ResultadoSimulacao>>(
+    modo === "atual" ? `/cenarios/impacto-previsto?horizonte_h=${horizonteAtual}` : null,
+  );
   const atuais = useConsulta<Envelope<Partial<Premissas>>>("/cenarios/premissas-atuais", {
     staleTime: 5 * 60_000,
   });
@@ -117,25 +145,33 @@ export function TelaSimulador() {
   const calculo = useQuery<Envelope<ResultadoSimulacao>, ErroApi>({
     queryKey: ["simulador", pronto ? JSON.stringify(pronto) : null],
     queryFn: () => enviar<Envelope<ResultadoSimulacao>>("/cenarios/simular", pronto),
-    enabled: pronto !== null && podeSimular(pronto),
+    enabled: modo === "manual" && pronto !== null && podeSimular(pronto),
     placeholderData: keepPreviousData,
     staleTime: 5 * 60_000,
     retry: false,
   });
-  const resultado = calculo.data?.dados;
+  const resultado = modo === "atual" ? analise.data?.dados : calculo.data?.dados;
   const itens = useMemo(() => resultado?.itens ?? [], [resultado]);
   const distritos = useMemo(() => itens.filter((i) => i.nivel === "distrito"), [itens]);
   const bairros = useMemo(() => itens.filter((i) => i.nivel === "bairro"), [itens]);
+  const mapaPesquisa = modo === "atual" && previaLocal && acessoPrevia;
+  const dadosPesquisa = pesquisa.isError ? undefined : pesquisa.data?.dados;
+  const modeloMapa = mapaPesquisa ? dadosPesquisa : resultado?.ml_alagamento;
+  const bairrosMapa = useMemo(() => {
+    if (!mapaPesquisa || !dadosPesquisa?.disponivel) return bairros;
+    const porId = new Map(dadosPesquisa.itens.map((i) => [i.territorio_id, i]));
+    return bairros.map((b) => ({ ...b, ml_alagamento: porId.get(b.territorio_id) ?? null }));
+  }, [bairros, mapaPesquisa, dadosPesquisa]);
   const [sel, setSel] = useState<string | null>(null);
   const [bairroSel, setBairroSel] = useState<string | null>(null);
   const item: ItemSimulado | undefined = distritos.find((d) => d.territorio_id === sel);
-  const calculando = calculo.isFetching;
+  const calculando = modo === "atual" ? analise.isFetching : calculo.isFetching;
   const estagios = new Set(distritos.map((d) => d.estagio_sugerido ?? "sem_dados"));
   const todosIguais = distritos.length > 1 && estagios.size === 1 && [...estagios][0] !== "sem_dados";
   const rotuloIgual = infoEstagio([...estagios][0]).rotulo;
 
   // ---- aviso único quando a previsão atual está velha (RF-19)
-  const fontes = juntarFontes(atuais.data);
+  const fontes = juntarFontes(modo === "atual" ? analise.data : atuais.data);
   const previsaoVelha = fontes.filter(
     (f: FonteMeta) => f.id.includes("previsao") && f.desatualizado === true,
   );
@@ -157,6 +193,7 @@ export function TelaSimulador() {
     mutationFn: (id: string) => api<Envelope<CenarioSalvo>>(`/cenarios/${encodeURIComponent(id)}`),
     onSuccess: (r) => {
       setAvisoSalvar(null);
+      setModo("manual");
       aplicar(deAtuais(r.dados.premissas));
       setDialogo(null);
     },
@@ -167,19 +204,43 @@ export function TelaSimulador() {
     <>
       <CabecalhoTela
         titulo="Simulador de cenário"
-        proposito="Mude as premissas e veja quais distritos pedem atenção primeiro. Cálculo por regras: o resultado é estágio sugerido, não probabilidade."
-        atualizadoEm={atuais.dataUpdatedAt}
+        proposito={
+          modo === "manual"
+            ? "Mude as premissas e veja quais distritos pedem atenção primeiro. Cálculo por regras: o resultado é estágio sugerido, não probabilidade."
+            : "Analise a previsão de cada distrito com evidências territoriais. Regras e ML experimental apoiam a decisão humana."
+        }
+        atualizadoEm={modo === "atual" ? analise.dataUpdatedAt : atuais.dataUpdatedAt}
         acoes={
           <div className={estilos.acoesTopo}>
             <Experimental />
             <Botao variante="secundario" onClick={() => setDialogo("salvos")}>
               Cenários salvos
             </Botao>
-            <Botao onClick={() => setDialogo("salvar")}>Salvar cenário</Botao>
+            <Botao disabled={modo === "atual"} onClick={() => setDialogo("salvar")}>
+              Salvar cenário
+            </Botao>
           </div>
         }
       />
       <div className={estilos.pagina}>
+        <Segmentado
+          rotulo="Tipo de análise"
+          valor={modo}
+          opcoes={[
+            { valor: "manual", rotulo: "Cenário hipotético" },
+            { valor: "atual", rotulo: "Previsão por distrito" },
+          ]}
+          aoMudar={(m) => {
+            setModo(m);
+            setSel(null);
+            setBairroSel(null);
+          }}
+        />
+        <p role="status">
+          {modo === "manual"
+            ? "Cenário hipotético: as premissas escolhidas são aplicadas aos territórios; não representam a previsão específica de cada distrito."
+            : "Previsão atual: cada bairro herda os valores do seu distrito. Avaliação experimental, não é estágio oficial."}
+        </p>
         {previsaoVelha.length > 0 && (
           <p className={estilos.avisoVelho} role="status">
             <b>A previsão atual está desatualizada</b>
@@ -191,34 +252,79 @@ export function TelaSimulador() {
         )}
 
         <div className={estilos.grade}>
-          <PainelPremissas
-            form={form}
-            atuais={valoresAtuais}
-            fontes={fontes}
-            fontePorPremissa={fontePorPremissaDe(atuais.data)}
-            limiares={limiares}
-            carregando={atuais.isPending}
-            indisponivel={atuais.isError}
-            aoMudar={mudar}
-            aoHorizonte={mudarHorizonte}
-            aoUsarAtual={() => setEditado(null)}
-            aoCenario={aplicarCenario}
-          />
+          {modo === "manual" ? (
+            <PainelPremissas
+              form={form}
+              atuais={valoresAtuais}
+              fontes={fontes}
+              fontePorPremissa={fontePorPremissaDe(atuais.data)}
+              limiares={limiares}
+              carregando={atuais.isPending}
+              indisponivel={atuais.isError}
+              aoMudar={mudar}
+              aoHorizonte={mudarHorizonte}
+              aoUsarAtual={() => setEditado(null)}
+              aoCenario={aplicarCenario}
+            />
+          ) : (
+            <section className={estilos.painelBloco} aria-label="Previsão atual por distrito">
+              <h2>Previsão por distrito</h2>
+              <Segmentado
+                rotulo="Horizonte da previsão"
+                valor={horizonteAtual}
+                opcoes={HORIZONTES.map((h) => ({ valor: h, rotulo: `${h} h` }))}
+                aoMudar={setHorizonteAtual}
+              />
+              <p>As regras permanecem disponíveis quando há insumos suficientes, mesmo sem modelo de ML.</p>
+              {acessoPrevia && (
+                <div>
+                  <button
+                    type="button"
+                    aria-pressed={previaLocal}
+                    onClick={() => setPreviaLocal((anterior) => !anterior)}
+                  >
+                    {previaLocal
+                      ? "Fechar prévia local NÃO VALIDADA"
+                      : "Ver prévia de pesquisa do ML (somente local)"}
+                  </button>
+                  {previaLocal && (
+                    <p role="status">
+                      PRÉVIA NÃO VALIDADA: resultados exclusivamente para pesquisa e demonstração acadêmica.
+                      Não são alertas e não podem orientar decisões operacionais.
+                      {pesquisa.isPending && " Carregando classes do modelo local…"}
+                      {pesquisa.isError && " Prévia não habilitada no backend ou acesso negado."}
+                      {pesquisa.data?.dados?.motivo && ` ${pesquisa.data.dados.motivo}`}
+                    </p>
+                  )}
+                </div>
+              )}
+              {resultado?.ml_alagamento && (
+                <p role="status">
+                  {resultado.ml_alagamento.disponivel
+                    ? `ML experimental disponível, versão ${resultado.ml_alagamento.modelo?.versao ?? "não informada"}. Resultado paralelo à avaliação por regras.`
+                    : `ML de alagamento indisponível: ${resultado.ml_alagamento.motivo ?? "aguarda validação"}`}
+                </p>
+              )}
+            </section>
+          )}
 
           <div className={estilos.colunaResultado} aria-busy={calculando}>
             <Resultado
-              pronto={pronto}
-              invalido={premissas === null}
-              carregandoAtuais={atuais.isPending}
-              erro={calculo.error}
+              pronto={modo === "atual" ? null : pronto}
+              invalido={modo === "manual" && premissas === null}
+              carregandoAtuais={modo === "atual" ? analise.isPending : atuais.isPending}
+              erro={modo === "atual" ? analise.error : calculo.error}
               resultado={resultado}
-              aoTentar={() => void calculo.refetch()}
+              aoTentar={() => void (modo === "atual" ? analise.refetch() : calculo.refetch())}
             >
               <MapaDoCenario
-                bairros={bairros}
+                bairros={bairrosMapa}
                 aviso={resultado?.resumo?.impacto_pessoas_aviso ?? null}
                 selecionado={bairroSel}
                 aoSelecionar={setBairroSel}
+                contexto={modo}
+                mlAlagamento={modo === "atual" ? modeloMapa : undefined}
+                previaLocal={mapaPesquisa}
               />
             </Resultado>
           </div>
@@ -228,8 +334,8 @@ export function TelaSimulador() {
           <>
             {todosIguais && (
               <p className={estilos.aviso} role="status">
-                Neste cenário todos os distritos ficam em <b>{rotuloIgual}</b>: a diferença está no risco de
-                cada bairro (veja o mapa).
+                {modo === "manual" ? "Neste cenário" : "Nesta avaliação"} todos os distritos ficam em{" "}
+                <b>{rotuloIgual}</b>: a diferença está no risco de cada bairro (veja o mapa).
               </p>
             )}
             <EstagioPorDistrito distritos={distritos} selecionado={sel} aoEscolher={setSel} />

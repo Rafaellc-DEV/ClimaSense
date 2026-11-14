@@ -3,16 +3,36 @@ import userEvent from "@testing-library/user-event";
 import { App } from "@/app/App";
 import { AGORA, simularApi, usuarioTeste } from "@/features/evento/testes";
 import { clienteConsultas } from "@/lib/api";
-import { contar, fraseResumo, ordemDaClasse, type ItemSimulado, type Premissas } from "./tipos";
+import {
+  contar,
+  fraseResumo,
+  ordemDaClasse,
+  ordemMlAlagamento,
+  type ItemSimulado,
+  type Premissas,
+} from "./tipos";
 import { dicaDoControle } from "./Premissas";
 import { textoArboviroses } from "./DistritosArboviroses";
 
 vi.mock("@/map/MapaBairros", () => ({
-  MapaBairros: () => <div data-testid="mapa" />,
+  MapaBairros: ({
+    modoCor,
+    valorPorBairro,
+  }: {
+    modoCor?: string;
+    valorPorBairro?: (id: string) => number | null;
+  }) => (
+    <div
+      data-testid="mapa"
+      data-modo={modoCor ?? "estagio"}
+      data-ml-ibura={modoCor === "valor" ? (valorPorBairro?.("bairro-ibura") ?? "sem-dados") : undefined}
+    />
+  ),
 }));
 
 afterEach(() => {
   vi.unstubAllGlobals();
+  vi.unstubAllEnvs();
   clienteConsultas.clear();
 });
 
@@ -212,12 +232,252 @@ function abrir() {
   return render(<App />);
 }
 
+describe("Demonstração acadêmica local", () => {
+  const adminLocal = () => ({
+    ...usuarioTeste(["consultar", "editar", "administrar"], ["administrador"]),
+    ambiente: "desenvolvimento",
+  });
+  const resposta = {
+    ...resultado,
+    dados: {
+      ...resultado.dados,
+      contexto: "previsao_atual",
+      ml_alagamento: { disponivel: false, motivo: "Gate científico reprovado", modelo: null },
+    },
+  };
+
+  it("abre automaticamente a prévia e mapeia classes sem liberar o modelo operacional", async () => {
+    vi.stubEnv("VITE_ML_DEMO_ACADEMICA", "true");
+    const pedidos = simularApi(
+      rotas({
+        "/auth/eu": adminLocal(),
+        "/cenarios/impacto-previsto": resposta,
+        "/risco-alagamento/previa-local": {
+          dados: {
+            disponivel: true,
+            motivo: "Modelo não validado para uso operacional",
+            modelo: { versao: "0.2.0" },
+            itens: [{ territorio_id: "bairro-ibura", classe: "alto", fatores: ["Pesquisa local"] }],
+          },
+        },
+      }),
+    );
+    abrir();
+    await waitFor(() => expect(screen.getByTestId("mapa")).toHaveAttribute("data-ml-ibura", "2"));
+    expect(screen.getByText(/PRÉVIA ACADÊMICA NÃO VALIDADA PARA USO OPERACIONAL/)).toBeInTheDocument();
+    expect(screen.getByText(/ML de alagamento indisponível: Gate científico reprovado/)).toBeInTheDocument();
+    expect(pedidos.filter((p) => p.url.includes("/previa-local"))).toHaveLength(1);
+    simularApi(
+      rotas({
+        "/auth/eu": adminLocal(),
+        "/cenarios/impacto-previsto": resposta,
+        "/risco-alagamento/previa-local": { status: 503 },
+      }),
+    );
+    await clienteConsultas.invalidateQueries({ queryKey: ["/risco-alagamento/previa-local"] });
+    await screen.findByText(/Prévia não habilitada no backend ou acesso negado/);
+    expect(screen.getByTestId("mapa")).toHaveAttribute("data-ml-ibura", "sem-dados");
+    await userEvent.click(screen.getByRole("radio", { name: "Cenário hipotético" }));
+    expect(screen.queryByRole("radio", { name: "ML de alagamento" })).not.toBeInTheDocument();
+  });
+
+  it.each([
+    ["sem permissão", true, { ...usuarioTeste(), ambiente: "desenvolvimento" }],
+    ["backend em produção", true, { ...adminLocal(), ambiente: "producao" }],
+    ["build de produção", false, adminLocal()],
+  ])("não consulta a prévia %s mesmo com a flag ligada", async (_nome, dev, usuario) => {
+    vi.stubEnv("DEV", dev);
+    vi.stubEnv("VITE_ML_DEMO_ACADEMICA", "true");
+    const pedidos = simularApi(rotas({ "/auth/eu": usuario, "/cenarios/impacto-previsto": resposta }), {
+      "/cenarios/simular": resultado,
+    });
+    abrir();
+    await userEvent.click(await screen.findByRole("radio", { name: "Previsão por distrito" }));
+    await screen.findByText(/ML de alagamento indisponível: Gate científico reprovado/);
+    expect(screen.queryByRole("button", { name: /Ver prévia de pesquisa/ })).not.toBeInTheDocument();
+    expect(pedidos.some((p) => p.url.includes("/previa-local"))).toBe(false);
+  });
+
+  it("informa falha da prévia e mantém as regras sem mostrar classes antigas", async () => {
+    vi.stubEnv("VITE_ML_DEMO_ACADEMICA", "true");
+    simularApi(
+      rotas({
+        "/auth/eu": adminLocal(),
+        "/cenarios/impacto-previsto": resposta,
+        "/risco-alagamento/previa-local": { status: 404 },
+      }),
+    );
+    abrir();
+    await screen.findByText(/Prévia não habilitada no backend ou acesso negado/);
+    expect(screen.getByTestId("mapa")).toHaveAttribute("data-ml-ibura", "sem-dados");
+    await userEvent.click(screen.getByRole("radio", { name: /^Estágio$/ }));
+    expect(screen.getByTestId("mapa")).toHaveAttribute("data-modo", "estagio");
+  });
+});
+
+describe("Análise da previsão atual", () => {
+  it("preserva o mapa, separa o cenário manual e mostra o ML reprovado com o motivo", async () => {
+    const resposta = {
+      ...resultado,
+      dados: {
+        ...resultado.dados,
+        contexto: "previsao_atual",
+        ml_alagamento: { disponivel: false, motivo: "Não superou a referência simples", modelo: null },
+      },
+    };
+    const pedidos = simularApi(rotas({ "/cenarios/impacto-previsto": resposta }), {
+      "/cenarios/simular": resultado,
+    });
+    abrir();
+    expect(await screen.findByText(/Cenário hipotético: as premissas/)).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("radio", { name: "Previsão por distrito" }));
+    expect(await screen.findByText(/ML de alagamento indisponível: Não superou/)).toBeInTheDocument();
+    expect(screen.getByTestId("mapa")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Salvar cenário" })).toBeDisabled();
+    expect(pedidos.some((p) => p.url.includes("/impacto-previsto?horizonte_h=24"))).toBe(true);
+    await userEvent.click(screen.getByRole("radio", { name: "72 h" }));
+    await waitFor(() =>
+      expect(pedidos.some((p) => p.url.includes("/impacto-previsto?horizonte_h=72"))).toBe(true),
+    );
+    await userEvent.click(screen.getByRole("radio", { name: "Cenário hipotético" }));
+    expect(screen.getByRole("button", { name: "Salvar cenário" })).toBeEnabled();
+    expect(screen.getByText(/Cenário hipotético: as premissas/)).toBeInTheDocument();
+  });
+
+  it("mostra a camada do ML como indisponível quando o gate reprova o modelo", async () => {
+    const resposta = {
+      ...resultado,
+      dados: {
+        ...resultado.dados,
+        contexto: "previsao_atual",
+        ml_alagamento: { disponivel: false, motivo: "AUC-PR abaixo da referência", modelo: null },
+      },
+    };
+    simularApi(rotas({ "/cenarios/impacto-previsto": resposta }), { "/cenarios/simular": resultado });
+    abrir();
+    await userEvent.click(await screen.findByRole("radio", { name: "Previsão por distrito" }));
+    await userEvent.click(await screen.findByRole("radio", { name: "ML de alagamento" }));
+    expect(screen.getByTestId("mapa")).toHaveAttribute("data-modo", "valor");
+    expect(screen.getByTestId("mapa")).toHaveAttribute("data-ml-ibura", "sem-dados");
+    expect(screen.getByText(/Não há previsão de ML validada para mapear/)).toBeInTheDocument();
+    expect(screen.getByText(/Ainda não há resultados de ML liberados/)).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("radio", { name: "Cenário hipotético" }));
+    expect(screen.queryByRole("radio", { name: "ML de alagamento" })).not.toBeInTheDocument();
+  });
+
+  it("mapeia e ordena apenas classes do ML disponíveis, separadas das regras", async () => {
+    const itens = resultado.dados.itens.map((b) => ({
+      ...b,
+      ml_alagamento:
+        b.territorio_id === "bairro-ibura"
+          ? { classe: "alto", confianca: "baixa", fatores: ["Chuva distrital elevada."] }
+          : b.territorio_id === "bairro-cohab"
+            ? { classe: "moderado", confianca: "baixa", fatores: ["Histórico de atendimentos."] }
+            : null,
+    }));
+    const resposta = {
+      ...resultado,
+      dados: {
+        ...resultado.dados,
+        contexto: "previsao_atual",
+        itens,
+        ml_alagamento: {
+          disponivel: true,
+          motivo: null,
+          modelo: { versao: "0.2.0", treinado_em: AGORA },
+        },
+      },
+    };
+    simularApi(rotas({ "/cenarios/impacto-previsto": resposta }), { "/cenarios/simular": resultado });
+    abrir();
+    await userEvent.click(await screen.findByRole("radio", { name: "Previsão por distrito" }));
+    await userEvent.click(await screen.findByRole("radio", { name: "ML de alagamento" }));
+    expect(screen.getByTestId("mapa")).toHaveAttribute("data-modo", "valor");
+    expect(screen.getByTestId("mapa")).toHaveAttribute("data-ml-ibura", "2");
+    expect(screen.getByText(/Camada experimental do modelo 0.2.0/)).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Bairros sinalizados pelo ML" })).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: /Ibura.*Alto.*ML/ }));
+    expect(screen.getByTestId("bairro-escolhido")).toHaveTextContent("Classificação do ML: Alto");
+    expect(screen.getByTestId("bairro-escolhido")).toHaveTextContent("Estimativa experimental");
+  });
+
+  it("mostra fontes, validade e suscetibilidade no bairro sem criar probabilidade", async () => {
+    const bairro = resultado.dados.itens.find((i) => i.territorio_id === "bairro-ibura")!;
+    const resposta = {
+      dados: {
+        ...resultado.dados,
+        contexto: "previsao_atual",
+        itens: [
+          {
+            ...bairro,
+            avaliacao: {
+              metodo: "regras-previsao-distrital",
+              versao: "1.0.0",
+              horizonte_h: 24,
+              inicio_validade: AGORA,
+              fim_validade: AGORA,
+              emitido_em_fonte: AGORA,
+              fonte_meteorologica: "open-meteo-previsao",
+              chuva_no_horizonte_mm: 80,
+              chuva_observada_72h_mm: null,
+              observada_em: null,
+              estacoes_validas: 0,
+              suscetibilidade: { alta: 0.4 },
+              fonte_territorial: "sgb-suscetibilidade-deslizamento",
+              contexto_deslizamento: "Suscetibilidade do terreno, não previsão de deslizamento.",
+              faltando: [],
+              limitacoes: ["Experimental: avaliação humana obrigatória."],
+            },
+          },
+        ],
+      },
+    };
+    simularApi(rotas({ "/cenarios/impacto-previsto": resposta }), { "/cenarios/simular": resultado });
+    abrir();
+    await userEvent.click(await screen.findByRole("radio", { name: "Previsão por distrito" }));
+    await userEvent.click(await screen.findByRole("button", { name: /Ibura.*Idosos/ }));
+    const detalhe = screen.getByTestId("bairro-escolhido");
+    expect(within(detalhe).getByText(/Fonte: open-meteo-previsao/)).toBeInTheDocument();
+    expect(within(detalhe).getByText(/Chuva medida em 72 h: Dados insuficientes/)).toBeInTheDocument();
+    expect(within(detalhe).getByText(/há área de alta suscetibilidade/)).toBeInTheDocument();
+    expect(detalhe.textContent).not.toContain("%");
+    expect(within(detalhe).getByText(/Validade:/)).toBeInTheDocument();
+  });
+
+  it("falha da análise atual não quebra a volta ao cenário manual", async () => {
+    simularApi(
+      rotas({ "/cenarios/impacto-previsto": { status: 503, corpo: { detail: "Fonte indisponível" } } }),
+      { "/cenarios/simular": resultado },
+    );
+    abrir();
+    await userEvent.click(await screen.findByRole("radio", { name: "Previsão por distrito" }));
+    expect(await screen.findByText(/Fonte indisponível/)).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("radio", { name: "Cenário hipotético" }));
+    expect(await screen.findByTestId("mapa")).toBeInTheDocument();
+  });
+});
+
 describe("regras do Simulador", () => {
   const item = (c: string | null, e: string | null = null): ItemSimulado => ({
     territorio_id: "x",
     nome: "X",
     classe_alagamento: c,
     estagio_sugerido: e,
+  });
+
+  it("classe ML ausente ou desconhecida é sem dado, nunca baixa", () => {
+    expect(ordemMlAlagamento(undefined)).toBeNull();
+    expect(ordemMlAlagamento({ territorio_id: "a", nome: "A", ml_alagamento: null })).toBeNull();
+    expect(
+      ordemMlAlagamento({
+        territorio_id: "a",
+        nome: "A",
+        ml_alagamento: { classe: "sem_dados", fatores: [] },
+      }),
+    ).toBeNull();
+    expect(
+      ordemMlAlagamento({ territorio_id: "a", nome: "A", ml_alagamento: { classe: "alto", fatores: [] } }),
+    ).toBe(2);
   });
 
   it("classe sem reconhecimento é falta de dado, não baixa", () => {

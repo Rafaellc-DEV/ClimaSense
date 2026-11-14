@@ -31,3 +31,10 @@ Thumbs.db
 .idea/
 tmp/
 *.log
+
+# Pacotes locais já consolidados no código; preservar cópias sem versioná-las.
+/climasense_*.patch
+/climasense_*.zip
+# Script de recuperação pontual de uma execução antiga; não faz parte da aplicação.
+/recuperar_etl_seguro_corrigido.py
+*.joblib

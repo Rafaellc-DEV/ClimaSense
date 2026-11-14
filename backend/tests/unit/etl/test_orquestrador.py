@@ -85,6 +85,30 @@ def test_semanal_roda_so_a_saude(ambiente):
     assert [p.nome for p in passos] == ["infodengue", "sinan-leptospirose", "verificar-gold"]
 
 
+def test_operacional_respeita_cadencia_sem_pular_a_fonte_vencida(ambiente, monkeypatch):
+    class Resposta:
+        def __init__(self, recente):
+            self.recente = recente
+
+        def scalar_one(self):
+            return self.recente
+
+    monkeypatch.setattr(
+        _Conexao, "execute", lambda self, sql, p: Resposta(p["f"] == "open-meteo-previsao"), raising=False
+    )
+    passos = orquestrador.atualizar(
+        _Engine(),
+        None,
+        None,
+        executar=_ok,
+        ordem=(("open-meteo-previsao", None, None), ("open-meteo-mare", None, None)),
+        intervalos_min=orquestrador.INTERVALOS_OPERACIONAIS_MIN,
+    )
+    assert passos[0].status == "pulado" and passos[1].status == "sucesso"
+    assert ("iniciar", "open-meteo-previsao") not in ambiente
+    assert ("iniciar", "open-meteo-mare") in ambiente
+
+
 def test_falha_de_uma_fonte_nao_impede_as_demais_mas_aparece_no_resumo(ambiente):
     def executar(engine, mongo, config, fonte, eid, limite=None, modo=None):
         if fonte == "open-meteo-previsao":

@@ -164,7 +164,24 @@ As migrações em `backend/migrations/versions/` são a fonte da verdade do Post
 | Testes automatizados | `teste` | Postgres descartável (`DATABASE_URL_TESTE`) e mongomock para o Atlas |
 | Produção | `producao` | Atlas + Neon |
 
-Em produção, a API serve o build do frontend num único processo. O ETL roda agendado.
+Servir o build do frontend junto da API em produção permanece tarefa de hospedagem (ADR 0013).
+O ETL deve rodar agendado, separado das requisições.
+
+### Análise territorial e ML
+
+`GET /cenarios/impacto-previsto` lê as emissões silver por distrito e chama
+`servicos/impacto_territorial.py`: prepara janelas horárias completas, reutiliza o domínio do simulador,
+acrescenta suscetibilidade como contexto e consulta a inferência de ML sem treinamento. O cenário manual
+`POST /cenarios/simular` conserva seu significado. O mesmo mapa React exibe os dois contextos.
+
+O treinamento explícito permanece na CLI `python -m climasense.ml alagamento`. Artefatos corrigidos têm
+contrato de atributos versionado; artefatos antigos/inválidos e modelos reprovados ficam indisponíveis.
+Reanálise retrospectiva não habilita publicação operacional.
+
+`python -m climasense.ml prever-impacto` consulta; `--persistir` insere o histórico horário das regras na
+`silver.inferencias_impacto` (migração 0025). A view `gold.previsoes_impacto` deriva somente dessa silver:
+os agregados SQL e o verificador gold anteriores não são alterados. GET não persiste inferências.
+Detalhes e limites: [integração territorial](ml/integracao-territorial.md).
 
 ## 8. Mapa de pastas do backend
 

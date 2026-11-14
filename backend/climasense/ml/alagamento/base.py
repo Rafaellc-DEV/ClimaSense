@@ -13,15 +13,19 @@ Rótulo `alagou` do dia D: houve atendimento de alagamento no bairro entre D e D
 logo antes de um atendimento também vira positivo; por isso o relatório também mede "dias com
 ocorrência avisados".
 
-Não há geometria de bairro na base territorial (só de distrito), então área e faixa hídrica por bairro
-não entram; ficam como pendência documentada.
+Área e faixa hídrica não integram as seis features do modelo 0.2.0. A malha de bairros
+está disponível para experimentos separados, sem alterar o contrato desta versão.
 """
 
 from __future__ import annotations
 
+from datetime import date
+from math import isfinite
+
 import pandas as pd
 
 JANELA_ROTULO_DIAS = 3
+VERSAO_ATRIBUTOS = "2-dias-reais-anteriores"
 ATRIBUTOS = ["chuva_1d", "chuva_3d", "chuva_7d", "mare_max_m", "mes", "hist_dias_ano"]
 NOMES = {
     "chuva_1d": "chuva do dia",
@@ -31,6 +35,37 @@ NOMES = {
     "mes": "mês",
     "hist_dias_ano": "histórico de alagamento do bairro",
 }
+
+
+def taxa_historica(n: int, dia, inicio) -> float:
+    """Mesma unidade no treino e na inferência: dias REAIS anteriores / anos decorridos."""
+    anos = max((pd.Timestamp(dia) - pd.Timestamp(inicio)).days / 365.25, 1.0)
+    return float(n) / anos
+
+
+def atributos_diarios(
+    chuva: dict[date, float], dia: date, mare: float, dias_atendimento: list[str], inicio: str
+) -> dict[str, float] | None:
+    """Contrato compartilhado: dia local completo e janelas terminando em D, nunca zero por falta."""
+    dias = [pd.Timestamp(dia).date() - pd.Timedelta(days=k) for k in range(7)]
+    valores = [chuva.get(d) for d in dias]
+    if any(v is None or not isfinite(v) or v < 0 for v in valores) or not isfinite(mare):
+        return None
+    n = sum(inicio <= d < dia.isoformat() for d in set(dias_atendimento))
+    return dict(
+        zip(
+            ATRIBUTOS,
+            [
+                valores[0],
+                sum(valores[:3]),
+                sum(valores),
+                mare,
+                float(dia.month),
+                taxa_historica(n, dia, inicio),
+            ],
+            strict=True,
+        )
+    )
 
 
 def acumulados(diaria: pd.DataFrame, inicio: pd.Timestamp, fim: pd.Timestamp) -> pd.DataFrame:
@@ -59,12 +94,12 @@ def historico(
 ) -> pd.DataFrame:
     """Taxa de dias com alagamento por ano, por bairro, usando só os dias ANTERIORES (shift de 1 dia)."""
     marcados = set(zip(rotulos["territorio_id"], rotulos["data"], strict=True))
-    anos = ((dias - inicio_historico).days / 365.25).to_numpy().clip(min=1.0)
     partes = []
     for b in bairros:
         alvo = pd.Series([(b, d) in marcados for d in dias], index=dias, dtype=float)
         anteriores = alvo.cumsum().shift(1, fill_value=0.0).to_numpy()
-        partes.append(pd.DataFrame({"territorio_id": b, "data": dias, "hist_dias_ano": anteriores / anos}))
+        taxas = [taxa_historica(int(n), d, inicio_historico) for n, d in zip(anteriores, dias, strict=True)]
+        partes.append(pd.DataFrame({"territorio_id": b, "data": dias, "hist_dias_ano": taxas}))
     return pd.concat(partes, ignore_index=True)
 
 
@@ -105,4 +140,5 @@ def montar_base(
     base["alagou"] = rotulo_com_janela(rotulos, base, janela_dias)
     base["registro"] = rotulo_com_janela(rotulos, base, 0)  # atendimento exatamente no dia (para métricas)
     base["ano"] = base["data"].dt.year
+    base.attrs["janela_rotulo_dias"] = janela_dias
     return base

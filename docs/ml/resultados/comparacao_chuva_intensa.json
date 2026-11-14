@@ -1,0 +1,214 @@
+{
+  "gerado_em": "2026-11-14T03:08:56.795233+00:00",
+  "status": "PESQUISA_LOCAL_NAO_VALIDADA",
+  "features_originais": [
+    "chuva_1d",
+    "chuva_3d",
+    "chuva_7d",
+    "mare_max_m",
+    "mes",
+    "hist_dias_ano"
+  ],
+  "features_novas": [
+    "chuva_pico_1h",
+    "chuva_pico_3h",
+    "chuva_pico_6h"
+  ],
+  "configuracao_fixa": {
+    "max_depth": 4,
+    "min_samples_leaf": 20,
+    "class_weight": "balanced"
+  },
+  "definicao_feature": "máximo dos totais móveis de 1, 3 e 6h, janelas encerradas em D; mm",
+  "janela_rotulo_dias": 3,
+  "periodo_teste_exploratorio": [
+    "2024-01-01",
+    "2024-12-28"
+  ],
+  "qualidade_dados": {
+    "linhas_base": 377692,
+    "linhas_originais_completas": 377692,
+    "linhas_comuns_completas": 377692,
+    "linhas_removidas_por_picos_ausentes": 0,
+    "cobertura_pct_dentre_originais": 100.0,
+    "distritos_com_picos": 8,
+    "dias_com_picos": 4025
+  },
+  "modelo_original_mesma_amostra": {
+    "auc_pr_oof_treino": 0.048432971229351696,
+    "metricas_teste_exploratorio": {
+      "recall": 0.8005952380952381,
+      "precisao": 0.03377275580665411,
+      "auc_pr": 0.04597146431251091,
+      "alertas_pct": 23.342711447160188,
+      "vp": 269,
+      "fp": 7696,
+      "fn": 67,
+      "vn": 26090,
+      "f1": 0.06481146849777135,
+      "eventos": 84,
+      "eventos_avisados": 80,
+      "dias_com_atendimento": 8,
+      "dias_com_atendimento_avisados": 7
+    },
+    "importancias": [
+      [
+        "chuva_7d",
+        0.456073
+      ],
+      [
+        "hist_dias_ano",
+        0.334795
+      ],
+      [
+        "mes",
+        0.133826
+      ],
+      [
+        "chuva_3d",
+        0.05891
+      ],
+      [
+        "mare_max_m",
+        0.009482
+      ],
+      [
+        "chuva_1d",
+        0.006914
+      ]
+    ],
+    "limiares_internos": {
+      "moderado": 0.498946664257843,
+      "alto": 0.7861092481178641
+    },
+    "folds_validacao": [
+      2019,
+      2020,
+      2021,
+      2022,
+      2023
+    ],
+    "linhas_treino": 343006,
+    "linhas_teste": 34122,
+    "positivos_treino": 1347,
+    "positivos_teste": 336,
+    "topk_exploratorio": {
+      "10": {
+        "positivos_bairro_dia_capturados": 70,
+        "positivos_bairro_dia_total": 336,
+        "cobertura_pct": 20.83
+      },
+      "20": {
+        "positivos_bairro_dia_capturados": 158,
+        "positivos_bairro_dia_total": 336,
+        "cobertura_pct": 47.02
+      }
+    }
+  },
+  "modelo_com_picos_mesma_amostra": {
+    "auc_pr_oof_treino": 0.04843015954627952,
+    "metricas_teste_exploratorio": {
+      "recall": 0.8005952380952381,
+      "precisao": 0.03377275580665411,
+      "auc_pr": 0.045719812694015226,
+      "alertas_pct": 23.342711447160188,
+      "vp": 269,
+      "fp": 7696,
+      "fn": 67,
+      "vn": 26090,
+      "f1": 0.06481146849777135,
+      "eventos": 84,
+      "eventos_avisados": 80,
+      "dias_com_atendimento": 8,
+      "dias_com_atendimento_avisados": 7
+    },
+    "importancias": [
+      [
+        "chuva_7d",
+        0.454127
+      ],
+      [
+        "hist_dias_ano",
+        0.333366
+      ],
+      [
+        "mes",
+        0.133255
+      ],
+      [
+        "chuva_3d",
+        0.036308
+      ],
+      [
+        "chuva_pico_1h",
+        0.026617
+      ],
+      [
+        "mare_max_m",
+        0.009441
+      ],
+      [
+        "chuva_1d",
+        0.006885
+      ],
+      [
+        "chuva_pico_3h",
+        0.0
+      ],
+      [
+        "chuva_pico_6h",
+        0.0
+      ]
+    ],
+    "limiares_internos": {
+      "moderado": 0.4989466642577344,
+      "alto": 0.786109248117937
+    },
+    "folds_validacao": [
+      2019,
+      2020,
+      2021,
+      2022,
+      2023
+    ],
+    "linhas_treino": 343006,
+    "linhas_teste": 34122,
+    "positivos_treino": 1347,
+    "positivos_teste": 336,
+    "topk_exploratorio": {
+      "10": {
+        "positivos_bairro_dia_capturados": 70,
+        "positivos_bairro_dia_total": 336,
+        "cobertura_pct": 20.83
+      },
+      "20": {
+        "positivos_bairro_dia_capturados": 158,
+        "positivos_bairro_dia_total": 336,
+        "cobertura_pct": 47.02
+      }
+    }
+  },
+  "referencia_chuva_1d_mesma_amostra": {
+    "recall": 0.8928571428571429,
+    "precisao": 0.01677946193858717,
+    "auc_pr": 0.04962360599648521,
+    "alertas_pct": 52.397280346990215,
+    "vp": 300,
+    "fp": 17579,
+    "fn": 36,
+    "vn": 16207,
+    "f1": 0.032939884710403516,
+    "eventos": 84,
+    "eventos_avisados": 84,
+    "dias_com_atendimento": 8,
+    "dias_com_atendimento_avisados": 8
+  },
+  "observacoes": [
+    "Chuva horária é reanálise/observação retrospectiva; não representa a previsão que existia na véspera.",
+    "Atributos de D exigem dia D completo; rótulo atual inclui atendimentos em D..D+3: NÃO é previsão prospectiva.",
+    "Ausência de horas nunca é preenchida com 0; dias com menos de 29h consecutivas não são comparados.",
+    "Ambos os classificadores foram avaliados na MESMA amostra, com mesmo modelo e hiperparâmetros.",
+    "2024 foi consultado em experimentos anteriores: não é holdout independente; não aprovar produção.",
+    "Não grava bancos, não troca artefato joblib, não altera mapas nem gate científico."
+  ]
+}

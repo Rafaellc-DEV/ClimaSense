@@ -110,7 +110,10 @@ def definir_senha_do_papel_app(url_dono: str) -> tuple[str, str]:
 
 def gravar_no_env(caminho: Path, valores: dict[str, str]) -> None:
     """Troca (ou acrescenta) só as variáveis indicadas; as demais linhas ficam como estão."""
-    texto = caminho.read_text(encoding="utf-8", newline="") if caminho.exists() else ""
+    texto = ""
+    if caminho.exists():
+        with caminho.open(encoding="utf-8", newline="") as arquivo:
+            texto = arquivo.read()
     quebra = "\r\n" if "\r\n" in texto else "\n"
     linhas = texto.split(quebra) if texto else []
     pendentes = dict(valores)

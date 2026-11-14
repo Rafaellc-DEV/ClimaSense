@@ -91,8 +91,8 @@ def montar(estudo) -> str:
     h = estudo.harmonicos
     decisao = (
         "**Publicável como experimental**: passou nos critérios abaixo."
-        if r.publicavel
-        else f"**Não publicar no produto** (`disponivel: false`). Motivo: {r.motivo}"
+        if art.publicavel
+        else f"**Não publicar no produto** (`disponivel: false`). Motivo: {art.motivo}"
     )
     sem_territorio = (
         ", ".join(f"{k} ({v})" for k, v in attrs.get("registros_sem_territorio", {}).items()) or "nenhum"
@@ -131,8 +131,8 @@ no teste ≥ {modelo.MIN_GANHO_AUC_PR:.2f} × a melhor referência simples. Sem 
 ## Dados
 
 - **Rótulo** (real): conjunto `registro-de-atendimentos-da-defesa-civil` dos Dados Abertos do Recife (ODbL),
-  {attrs.get("fonte")}. O conector `recife-alagamento` do ETL ainda não existe e `silver.ocorrencias` está
-  vazia; o estudo baixa os CSVs para `tmp/alagamento/` (fora do Git), sem tocar no ETL nem no banco.
+  {attrs.get("fonte")}. O conector `recife-alagamento` existe; o estudo não presume que sua carga foi executada.
+  Baixa os CSVs para `tmp/alagamento/` (fora do Git), sem gravar no ETL nem no banco.
 - {attrs.get("registros_lidos", 0):,} registros lidos (2014 em diante); {attrs.get("registros_alagamento", 0):,} são de
   alagamento pelo critério `evento` (ocorrência `Alagamentos`/`Imóveis Alagados`, ou solicitação
   `Vistoria Alagado`/`Vistoria Setor Alagado`/`Monitoramento Setor Alagado`). Registros cujo bairro não
@@ -147,7 +147,8 @@ no teste ≥ {modelo.MIN_GANHO_AUC_PR:.2f} × a melhor referência simples. Sem 
 - **Maré**: o histórico do Open-Meteo Marine começa no fim de 2022. Ajuste harmônico ({len(h["componentes"])}
   componentes) na série real de {h["periodo"][0][:10]} a {h["periodo"][1][:10]}: R² = {h["r2"]:.3f},
   RMSE = {h["rmse_m"]:.3f} m. A maré de cada dia é a maré astronômica calculada (sem efeito de vento).
-- Área e faixa hídrica por bairro **não entram**: a base territorial só tem geometria de distrito.
+- Área e faixa hídrica por bairro **não entram** nas seis features desta versão. A malha de bairros já está
+  disponível, mas acrescentar atributos exigirá outro experimento e validação.
 
 ### Desequilíbrio de classes
 
@@ -170,7 +171,9 @@ taxa de positivos).
 
 1. Atributos por bairro e dia: {", ".join(f"`{a}` ({NOMES[a]})" for a in NOMES)}. O histórico usa só dias
    anteriores ao dia avaliado.
-2. **Validação temporal**: treino até {modelo.ANO_TESTE - 1}, teste em {modelo.ANO_TESTE} (nunca visto até o fim).
+2. **Validação temporal**: treino até {modelo.ANO_TESTE - 1}, teste em {modelo.ANO_TESTE}.
+   Esse ano já foi consultado em vários experimentos; seus resultados são exploratórios,
+   não um holdout independente para seleção de modelos. Exige-se validação temporal futura.
    Dentro do treino, janela crescente: para cada um dos últimos {modelo.N_FOLDS} anos, treina nos anteriores e
    valida nele. Nota = AUC-PR das pontuações fora da amostra de todos esses anos juntos.
 3. Busca: 3 conjuntos de atributos × grade {modelo.GRADE} = {len(r.tentativas)} tentativas.
@@ -179,6 +182,11 @@ taxa de positivos).
    recall-alvo no treino ({r.limiar_chuva_mm:.1f} mm no dia).
 5. `EstimadorReferencia` aplicado a cada distrito e dia do teste com a chuva REAL do dia como se fosse a
    previsão (vantagem para a regra), a maré calculada e o histórico de chuva anterior.
+6. Intervalo de segurança de {estudo.janela_dias} dias entre treino e validação/teste e exclusão dos rótulos
+   censurados no fim da base. Histórico salvo somente de dias reais com atendimento no treino.
+7. Este é um diagnóstico retrospectivo: a reanálise não demonstra antecedência operacional. A maré foi ajustada
+   antes do teste principal, mas posteriormente aos primeiros folds. Não há validação operacional e o artefato
+   permanece bloqueado, mesmo se cumprir os critérios estatísticos.
 
 ### Tentativas (15 melhores pela validação temporal)
 
@@ -224,24 +232,27 @@ false`, motivo e lista vazia.
 
 ## Pendências
 
-- Conector `recife-alagamento` no ETL (com a regra de critério deste estudo) e carga em `silver.ocorrencias`.
+- Confirmar carga real do conector `recife-alagamento` e sua cobertura em `silver.ocorrencias`.
 - Pluviômetros APAC/Cemaden (2022+) como atributo de chuva observada; tábua de maré da APAC/Marinha.
-- Geometria de bairro para área e faixa hídrica; chamados de drenagem da EMLURB (156) como vulnerabilidade.
+- Avaliar atributos espaciais da malha de bairros em estudo separado; não acrescentar colunas ao artefato salvo.
 - Validar as classes com a equipe do Vigidesastres antes de qualquer uso operacional.
 """
     )
 
 
 def gravar(estudo, pasta: Path | None = None) -> Path:
-    pasta = Path(pasta) if pasta else PASTA_DOCS
+    # Preserva o estudo v0.1.0 como evidência histórica.
+    pasta = Path(pasta) if pasta else PASTA_DOCS / f"v{modelo.VERSAO}"
     pasta.mkdir(parents=True, exist_ok=True)
     destino = pasta / "risco-alagamento.md"
     destino.write_text(montar(estudo), encoding="utf-8")
     r = estudo.resultado
     metricas = {
         "versao": estudo.artefato.versao,
-        "publicavel": r.publicavel,
-        "motivo": r.motivo,
+        "publicavel": estudo.artefato.publicavel,
+        "motivo": estudo.artefato.motivo,
+        "criterios_estatisticos_atendidos": r.publicavel,
+        "validacao": estudo.artefato.validacao,
         "perfil": r.perfil,
         "escolhida": {"conjunto": r.escolhida.conjunto, "parametros": r.escolhida.parametros},
         "limiares_recall": {"moderado": modelo.RECALL_MODERADO, "alto": modelo.RECALL_ALTO},

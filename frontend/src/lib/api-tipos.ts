@@ -651,6 +651,23 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/v1/cenarios/impacto-previsto": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Analisar a previsão atual de cada distrito, com regras e ML quando publicável */
+    get: operations["impacto_previsto_api_v1_cenarios_impacto_previsto_get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/api/v1/cenarios/premissas-atuais": {
     parameters: {
       query?: never;
@@ -1240,6 +1257,109 @@ export interface paths {
     patch: operations["atualizar_api_v1_acoes__acao_id__patch"];
     trace?: never;
   };
+  "/api/v1/eventos": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Listar eventos de chuva registrados */
+    get: operations["listar_api_v1_eventos_get"];
+    put?: never;
+    /** Abrir evento de chuva */
+    post: operations["abrir_api_v1_eventos_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/eventos/{evento_id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Abrir um evento com a linha do tempo */
+    get: operations["detalhe_api_v1_eventos__evento_id__get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/eventos/{evento_id}/itens": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Registrar item na linha do tempo (comunicado, estágio, ação ou observação) */
+    post: operations["registrar_item_api_v1_eventos__evento_id__itens_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/eventos/{evento_id}/encerrar": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Encerrar o evento com situação final e pendências (falta a aprovação de outra pessoa) */
+    post: operations["encerrar_api_v1_eventos__evento_id__encerrar_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/eventos/{evento_id}/aprovar": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Aprovar a situação final (RN-05: outra pessoa, que não abriu nem encerrou o evento) */
+    post: operations["aprovar_api_v1_eventos__evento_id__aprovar_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/eventos/{evento_id}/relatorio": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Relatório executivo do evento, só com dados reais; cada bloco com fonte e hora */
+    get: operations["relatorio_api_v1_eventos__evento_id__relatorio_get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/api/v1/boletim": {
     parameters: {
       query?: never;
@@ -1291,6 +1411,23 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/v1/risco-alagamento/previa-local": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Prévia de PESQUISA de alagamento — somente desenvolvimento e administrador */
+    get: operations["previa_local_api_v1_risco_alagamento_previa_local_get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/api/v1/saude/resumo": {
     parameters: {
       query?: never;
@@ -1334,6 +1471,23 @@ export interface paths {
     };
     /** Casos confirmados de dengue ou chikungunya por bairro de residência em um ano (histórico) */
     get: operations["bairros_api_v1_saude_bairros_get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/situacao/chuva": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Chuva medida por distrito, estações sem leitura e série prevista de chuva e maré */
+    get: operations["chuva_api_v1_situacao_chuva_get"];
     put?: never;
     post?: never;
     delete?: never;
@@ -1476,6 +1630,32 @@ export interface components {
       fonte_semanal: string;
       /** Fonte Anual */
       fonte_anual: string;
+    };
+    /** AgravoJanela */
+    AgravoJanela: {
+      /** Fonte */
+      fonte: string;
+      /** Atualizado Em */
+      atualizado_em: string | null;
+      /** Suficiente */
+      suficiente: boolean;
+      /** Motivo */
+      motivo: string | null;
+      /** Agravo */
+      agravo: string;
+      /** Nome */
+      nome: string;
+      /**
+       * Semanas
+       * @description ano, semana, inicio, casos, confirmados, casos_estimados, ic_inf, ic_sup, nivel_alerta, incompleta, suprimido (casos nulos com suprimido = contagem pequena escondida, RN-13)
+       */
+      semanas: {
+        [key: string]: unknown;
+      }[];
+      /** Total Casos */
+      total_casos: number | null;
+      /** Suprimido */
+      suprimido: boolean;
     };
     /** AjusteFonte */
     AjusteFonte: {
@@ -1649,6 +1829,238 @@ export interface components {
       /** Fonte Atualizada Em */
       fonte_atualizada_em?: string | null;
     };
+    /** BlocoAcoes */
+    BlocoAcoes: {
+      /** Fonte */
+      fonte: string;
+      /** Atualizado Em */
+      atualizado_em: string | null;
+      /** Suficiente */
+      suficiente: boolean;
+      /** Motivo */
+      motivo: string | null;
+      /** Contagens */
+      contagens: {
+        [key: string]: number;
+      };
+      /** Itens */
+      itens: {
+        [key: string]: unknown;
+      }[];
+    };
+    /** BlocoChuva */
+    BlocoChuva: {
+      /** Fonte */
+      fonte: string;
+      /** Atualizado Em */
+      atualizado_em: string | null;
+      /** Suficiente */
+      suficiente: boolean;
+      /** Motivo */
+      motivo: string | null;
+      /** Pico Diario Mm */
+      pico_diario_mm: number | null;
+      /** Pico Dia */
+      pico_dia?: string | null;
+      /** Pico Distrito Nome */
+      pico_distrito_nome?: string | null;
+      /**
+       * Dias
+       * @description dia, maximo_mm (nulo = sem dado), distrito_nome, distritos_com_dado
+       */
+      dias: {
+        [key: string]: unknown;
+      }[];
+    };
+    /** BlocoComunicados */
+    BlocoComunicados: {
+      /** Fonte */
+      fonte: string;
+      /** Atualizado Em */
+      atualizado_em: string | null;
+      /** Suficiente */
+      suficiente: boolean;
+      /** Motivo */
+      motivo: string | null;
+      /**
+       * Itens
+       * @description ocorrido_em, texto, fonte, autor_nome
+       */
+      itens: {
+        [key: string]: unknown;
+      }[];
+    };
+    /** BlocoDistritos */
+    BlocoDistritos: {
+      /** Fonte */
+      fonte: string;
+      /** Atualizado Em */
+      atualizado_em: string | null;
+      /** Suficiente */
+      suficiente: boolean;
+      /** Motivo */
+      motivo: string | null;
+      /**
+       * Com Estagio Declarado
+       * @description distrito_id, distrito_nome, maior_estagio, maior_estagio_rotulo, n_declaracoes, ultima_em
+       */
+      com_estagio_declarado: {
+        [key: string]: unknown;
+      }[];
+      /**
+       * Registrados
+       * @description distrito_id, distrito_nome (marcados pela equipe)
+       */
+      registrados: {
+        [key: string]: unknown;
+      }[];
+    };
+    /** BlocoEquipes */
+    BlocoEquipes: {
+      /** Fonte */
+      fonte: string;
+      /** Atualizado Em */
+      atualizado_em: string | null;
+      /** Suficiente */
+      suficiente: boolean;
+      /** Motivo */
+      motivo: string | null;
+      /** Maior Numero */
+      maior_numero: number | null;
+      /**
+       * Registros
+       * @description ocorrido_em, equipes_mobilizadas, fonte
+       */
+      registros: {
+        [key: string]: unknown;
+      }[];
+    };
+    /** BlocoEvento */
+    BlocoEvento: {
+      /** Fonte */
+      fonte: string;
+      /** Atualizado Em */
+      atualizado_em: string | null;
+      /** Suficiente */
+      suficiente: boolean;
+      /** Motivo */
+      motivo: string | null;
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string;
+      /** Nome */
+      nome: string;
+      /**
+       * Situacao
+       * @enum {string}
+       */
+      situacao: "aberto" | "encerrado" | "aprovado";
+      /** Situacao Rotulo */
+      situacao_rotulo: string;
+      /** Retrospectivo */
+      retrospectivo: boolean;
+      /**
+       * Inicio Em
+       * Format: date-time
+       */
+      inicio_em: string;
+      /** Fim Em */
+      fim_em: string | null;
+      /** Duracao Horas */
+      duracao_horas: number | null;
+      /** Aberto Por Nome */
+      aberto_por_nome: string;
+      /**
+       * Aberto Em
+       * Format: date-time
+       */
+      aberto_em: string;
+      /** Encerrado Por Nome */
+      encerrado_por_nome: string | null;
+      /** Encerrado Em */
+      encerrado_em: string | null;
+      /** Aprovado Por Nome */
+      aprovado_por_nome: string | null;
+      /** Aprovado Em */
+      aprovado_em: string | null;
+      /** Aprovado */
+      aprovado: boolean;
+    };
+    /** BlocoLinhaDoTempo */
+    BlocoLinhaDoTempo: {
+      /** Fonte */
+      fonte: string;
+      /** Atualizado Em */
+      atualizado_em: string | null;
+      /** Suficiente */
+      suficiente: boolean;
+      /** Motivo */
+      motivo: string | null;
+      /**
+       * Itens
+       * @description em, tipo, texto, fonte, em ordem de hora
+       */
+      itens: {
+        [key: string]: unknown;
+      }[];
+    };
+    /** BlocoMare */
+    BlocoMare: {
+      /** Fonte */
+      fonte: string;
+      /** Atualizado Em */
+      atualizado_em: string | null;
+      /** Suficiente */
+      suficiente: boolean;
+      /** Motivo */
+      motivo: string | null;
+      /** Maximo M */
+      maximo_m: number | null;
+      /**
+       * Dias
+       * @description dia, maximo_m, minimo_m, horas_com_dado
+       */
+      dias: {
+        [key: string]: unknown;
+      }[];
+    };
+    /** BlocoSaude */
+    BlocoSaude: {
+      /** Supressao Minima */
+      supressao_minima: number;
+      /** Suficiente */
+      suficiente: boolean;
+      /** Itens */
+      itens: components["schemas"]["AgravoJanela"][];
+    };
+    /** BlocoSituacaoFinal */
+    BlocoSituacaoFinal: {
+      /** Fonte */
+      fonte: string;
+      /** Atualizado Em */
+      atualizado_em: string | null;
+      /** Suficiente */
+      suficiente: boolean;
+      /** Motivo */
+      motivo: string | null;
+      /** Situacao Final */
+      situacao_final: string | null;
+      /** Pendencias */
+      pendencias: string | null;
+      /** Encerrado Por Nome */
+      encerrado_por_nome?: string | null;
+      /**
+       * Aprovada
+       * @default false
+       */
+      aprovada: boolean;
+      /** Aprovado Por Nome */
+      aprovado_por_nome?: string | null;
+      /** Aprovado Em */
+      aprovado_em?: string | null;
+    };
     /** Boletim */
     Boletim: {
       /** Territorio Id */
@@ -1778,6 +2190,46 @@ export interface components {
       chuva_prev_72h_territorio: string | null;
       /** Previsao Emitida Em */
       previsao_emitida_em: string | null;
+    };
+    /** ChuvaDistrito */
+    ChuvaDistrito: {
+      /** Territorio Id */
+      territorio_id: string;
+      /** Territorio Nome */
+      territorio_nome: string;
+      /**
+       * Chuva 24H Mm
+       * @description Maior acumulado de 24 h entre os pluviômetros do distrito (APAC); null sem leitura nas últimas 2 h
+       */
+      chuva_24h_mm: number | null;
+      /**
+       * Chuva 72H Mm
+       * @description Soma dos 3 dias locais (hoje e 2 anteriores) do maior valor diário; null sem os 3 dias medidos
+       */
+      chuva_72h_mm: number | null;
+      /**
+       * Fonte Chuva
+       * @description Fonte da chuva medida deste distrito ('apac-chuva'); null sem medição
+       */
+      fonte_chuva: string | null;
+      /** Lida Em */
+      lida_em: string | null;
+      /** Estacoes Total */
+      estacoes_total: number | null;
+      /** Estacoes Com Leitura */
+      estacoes_com_leitura: number | null;
+      /** Estacoes Sem Leitura */
+      estacoes_sem_leitura: number | null;
+      /**
+       * Medicao Propria
+       * @description false = distrito sem pluviômetro próprio: não mostra chuva medida
+       */
+      medicao_propria: boolean;
+      /**
+       * Motivo
+       * @description 'Dados insuficientes: ...' quando falta medição; null com dado
+       */
+      motivo: string | null;
     };
     /** ChuvaSemana */
     ChuvaSemana: {
@@ -2051,6 +2503,67 @@ export interface components {
       /** Frases Longas */
       frases_longas: components["schemas"]["FraseLonga"][];
     };
+    /** DetalheEvento */
+    DetalheEvento: {
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string;
+      /** Nome */
+      nome: string;
+      /**
+       * Inicio Em
+       * Format: date-time
+       */
+      inicio_em: string;
+      /** Fim Em */
+      fim_em: string | null;
+      /**
+       * Situacao
+       * @enum {string}
+       */
+      situacao: "aberto" | "encerrado" | "aprovado";
+      /** Situacao Rotulo */
+      situacao_rotulo: string;
+      /** Retrospectivo */
+      retrospectivo: boolean;
+      /**
+       * Distritos Afetados
+       * @description Ids dos distritos marcados pela equipe (ds-1 a ds-8)
+       */
+      distritos_afetados: string[];
+      /** Situacao Final */
+      situacao_final: string | null;
+      /** Pendencias */
+      pendencias: string | null;
+      /** Duracao Horas */
+      duracao_horas: number | null;
+      /**
+       * Aguarda Aprovacao
+       * @description true = encerrado, falta a aprovação de OUTRA pessoa (RN-05)
+       */
+      aguarda_aprovacao: boolean;
+      /** Aberto Por Nome */
+      aberto_por_nome: string;
+      /**
+       * Aberto Em
+       * Format: date-time
+       */
+      aberto_em: string;
+      /** Encerrado Por Nome */
+      encerrado_por_nome: string | null;
+      /** Encerrado Em */
+      encerrado_em: string | null;
+      /** Aprovado Por Nome */
+      aprovado_por_nome: string | null;
+      /** Aprovado Em */
+      aprovado_em: string | null;
+      /** Distritos */
+      distritos: components["schemas"]["Distrito"][];
+      /** Linha Do Tempo */
+      linha_do_tempo: components["schemas"]["ItemLinhaDoTempo"][];
+    };
     /** Diferenca */
     Diferenca: {
       /** De */
@@ -2070,6 +2583,13 @@ export interface components {
         };
       };
     };
+    /** Distrito */
+    Distrito: {
+      /** Id */
+      id: string;
+      /** Nome */
+      nome: string;
+    };
     /** EquipamentoResumo */
     EquipamentoResumo: {
       /** Cnes */
@@ -2078,6 +2598,17 @@ export interface components {
       nome: string;
       /** Tipo */
       tipo: string | null;
+    };
+    /** EstacoesResumo */
+    EstacoesResumo: {
+      /** Total */
+      total: number | null;
+      /** Com Leitura */
+      com_leitura: number | null;
+      /** Sem Leitura */
+      sem_leitura: number | null;
+      /** Lida Em */
+      lida_em: string | null;
     };
     /** EstadoPublico */
     EstadoPublico: {
@@ -2202,6 +2733,63 @@ export interface components {
       limite_atencao_mm: number | null;
       /** Limite Alerta Mm */
       limite_alerta_mm: number | null;
+    };
+    /** Evento */
+    Evento: {
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string;
+      /** Nome */
+      nome: string;
+      /**
+       * Inicio Em
+       * Format: date-time
+       */
+      inicio_em: string;
+      /** Fim Em */
+      fim_em: string | null;
+      /**
+       * Situacao
+       * @enum {string}
+       */
+      situacao: "aberto" | "encerrado" | "aprovado";
+      /** Situacao Rotulo */
+      situacao_rotulo: string;
+      /** Retrospectivo */
+      retrospectivo: boolean;
+      /**
+       * Distritos Afetados
+       * @description Ids dos distritos marcados pela equipe (ds-1 a ds-8)
+       */
+      distritos_afetados: string[];
+      /** Situacao Final */
+      situacao_final: string | null;
+      /** Pendencias */
+      pendencias: string | null;
+      /** Duracao Horas */
+      duracao_horas: number | null;
+      /**
+       * Aguarda Aprovacao
+       * @description true = encerrado, falta a aprovação de OUTRA pessoa (RN-05)
+       */
+      aguarda_aprovacao: boolean;
+      /** Aberto Por Nome */
+      aberto_por_nome: string;
+      /**
+       * Aberto Em
+       * Format: date-time
+       */
+      aberto_em: string;
+      /** Encerrado Por Nome */
+      encerrado_por_nome: string | null;
+      /** Encerrado Em */
+      encerrado_em: string | null;
+      /** Aprovado Por Nome */
+      aprovado_por_nome: string | null;
+      /** Aprovado Em */
+      aprovado_em: string | null;
     };
     /** EventoAcao */
     EventoAcao: {
@@ -2375,6 +2963,14 @@ export interface components {
       status: string;
       /** Ultima Atualizacao */
       ultima_atualizacao: string | null;
+      /** Ultima Execucao Em */
+      ultima_execucao_em?: string | null;
+      /** Ultima Execucao Status */
+      ultima_execucao_status?: string | null;
+      /** Ultima Execucao Lidos */
+      ultima_execucao_lidos?: number | null;
+      /** Ultima Execucao Gravados */
+      ultima_execucao_gravados?: number | null;
       /** Limite Desatualizacao H */
       limite_desatualizacao_h: number;
       /**
@@ -2490,6 +3086,27 @@ export interface components {
       /** Periodo Fim */
       periodo_fim: string | null;
     };
+    /** HoraObservada */
+    HoraObservada: {
+      /**
+       * T
+       * Format: date-time
+       * @description Início da hora (UTC)
+       */
+      t: string;
+      /**
+       * Municipio Mm
+       * @description Maior acumulado de 1 h entre as estações do município nesta hora
+       */
+      municipio_mm: number;
+      /**
+       * Distritos
+       * @description Mesmo valor por distrito ('ds-1'...); distrito sem leitura na hora não aparece
+       */
+      distritos: {
+        [key: string]: number;
+      };
+    };
     /** ImpactoPessoas */
     ImpactoPessoas: {
       /**
@@ -2510,6 +3127,31 @@ export interface components {
       total_pessoas: number | null;
       /** Criterio */
       criterio: string;
+    };
+    /** ImpactoPrevisto */
+    ImpactoPrevisto: {
+      /** Itens */
+      itens: components["schemas"]["ItemSimulacao"][];
+      resumo: components["schemas"]["ResumoSimulacao"];
+      /**
+       * Experimental
+       * @default true
+       * @constant
+       */
+      experimental: true;
+      /**
+       * Calculado Em
+       * Format: date-time
+       */
+      calculado_em: string;
+      /** Tempo Calculo Ms */
+      tempo_calculo_ms: number;
+      /**
+       * Contexto
+       * @constant
+       */
+      contexto: "previsao_atual";
+      ml_alagamento: components["schemas"]["RiscoAlagamento"];
     };
     /** InsumosEstagio */
     InsumosEstagio: {
@@ -2568,6 +3210,44 @@ export interface components {
        */
       alertas_oficiais?: components["schemas"]["AlertaOficial"][];
     };
+    /** ItemLinhaDoTempo */
+    ItemLinhaDoTempo: {
+      /** Id */
+      id: number;
+      /**
+       * Tipo
+       * @enum {string}
+       */
+      tipo: "comunicado" | "estagio" | "acao" | "observacao";
+      /** Tipo Rotulo */
+      tipo_rotulo: string;
+      /** Texto */
+      texto: string;
+      /**
+       * Fonte
+       * @description Origem do registro (RF-19); “Registro da equipe” quando não é informada
+       */
+      fonte: string;
+      /** Estagio */
+      estagio: ("observacao" | "atencao" | "alerta" | "critico") | null;
+      /**
+       * Equipes Mobilizadas
+       * @description Número agregado de equipes; nunca nomes (RN-13)
+       */
+      equipes_mobilizadas: number | null;
+      /**
+       * Ocorrido Em
+       * Format: date-time
+       */
+      ocorrido_em: string;
+      /**
+       * Registrado Em
+       * Format: date-time
+       */
+      registrado_em: string;
+      /** Autor Nome */
+      autor_nome: string;
+    };
     /** ItemRevisao */
     ItemRevisao: {
       /** Tipo */
@@ -2598,6 +3278,12 @@ export interface components {
       classe: "baixo" | "moderado" | "alto" | "sem_dados";
       /** Fatores */
       fatores: string[];
+      /**
+       * Confianca
+       * @default baixa
+       * @enum {string}
+       */
+      confianca: "baixa" | "insuficiente";
     };
     /** ItemSimulacao */
     ItemSimulacao: {
@@ -2642,6 +3328,15 @@ export interface components {
       impacto_pessoas: components["schemas"]["ImpactoPessoas"] | null;
       /** @description Só nos itens de distrito; contexto, não previsão (RN-11) */
       arboviroses?: components["schemas"]["ArbovirosesDistrito"] | null;
+      /**
+       * Avaliacao
+       * @description Insumos, fonte, validade e contexto territorial da previsão atual
+       */
+      avaliacao?: {
+        [key: string]: unknown;
+      } | null;
+      /** @description Resultado paralelo, somente com modelo publicável */
+      ml_alagamento?: components["schemas"]["ItemRisco"] | null;
     };
     /** ItemVulneraveis */
     ItemVulneraveis: {
@@ -2830,6 +3525,26 @@ export interface components {
       parametros_versao: number | null;
       /** Itens */
       itens: components["schemas"]["ItemEstagio"][];
+    };
+    /** ListaEventos */
+    ListaEventos: {
+      /** Itens */
+      itens: components["schemas"]["Evento"][];
+      /** Contagens */
+      contagens: {
+        [key: string]: number;
+      };
+      /** Total */
+      total: number;
+    };
+    /** MaiorChuva */
+    MaiorChuva: {
+      /** Territorio Id */
+      territorio_id: string;
+      /** Territorio Nome */
+      territorio_nome: string;
+      /** Mm */
+      mm: number;
     };
     /** MareBoletim */
     MareBoletim: {
@@ -3218,6 +3933,18 @@ export interface components {
       /** Justificativa */
       justificativa: string;
     };
+    /** PedidoEncerramento */
+    PedidoEncerramento: {
+      /** Situacao Final */
+      situacao_final: string;
+      /** Pendencias */
+      pendencias?: string | null;
+      /**
+       * Fim Em
+       * @description Vazio = agora
+       */
+      fim_em?: string | null;
+    };
     /** PedidoEntrada */
     PedidoEntrada: {
       /**
@@ -3243,12 +3970,78 @@ export interface components {
       /** Observacao */
       observacao?: string | null;
     };
+    /** PedidoEvento */
+    PedidoEvento: {
+      /**
+       * Nome
+       * @description Vazio = “Evento de dd/mm/aaaa”
+       */
+      nome?: string | null;
+      /**
+       * Inicio Em
+       * @description Vazio = agora
+       */
+      inicio_em?: string | null;
+      /**
+       * Fim Em
+       * @description Só em evento retrospectivo
+       */
+      fim_em?: string | null;
+      /**
+       * Retrospectivo
+       * @description Evento antigo: exige início, término e situação final; sem linha do tempo horária
+       * @default false
+       */
+      retrospectivo: boolean;
+      /** Distritos Afetados */
+      distritos_afetados?: string[];
+      /**
+       * Situacao Final
+       * @description Só retrospectivo
+       */
+      situacao_final?: string | null;
+      /**
+       * Pendencias
+       * @description Só retrospectivo
+       */
+      pendencias?: string | null;
+    };
     /** PedidoExecucao */
     PedidoExecucao: {
       /** Fonte Id */
       fonte_id: string;
       /** Limite */
       limite?: number | null;
+    };
+    /** PedidoItem */
+    PedidoItem: {
+      /**
+       * Tipo
+       * @enum {string}
+       */
+      tipo: "comunicado" | "estagio" | "acao" | "observacao";
+      /** Texto */
+      texto: string;
+      /**
+       * Fonte
+       * @description Obrigatória em comunicado (órgão)
+       */
+      fonte?: string | null;
+      /**
+       * Estagio
+       * @description Obrigatório em tipo=estagio
+       */
+      estagio?: ("observacao" | "atencao" | "alerta" | "critico") | null;
+      /**
+       * Equipes Mobilizadas
+       * @description Número agregado
+       */
+      equipes_mobilizadas?: number | null;
+      /**
+       * Ocorrido Em
+       * @description Vazio = agora
+       */
+      ocorrido_em?: string | null;
     };
     /** PedidoLiberacao */
     PedidoLiberacao: {
@@ -3379,6 +4172,30 @@ export interface components {
       /** Evidencias */
       evidencias?: components["schemas"]["Evidencia"][];
     };
+    /** Periodo */
+    Periodo: {
+      /**
+       * Inicio Em
+       * Format: date-time
+       */
+      inicio_em: string;
+      /** Fim Em */
+      fim_em: string | null;
+      /**
+       * Desde
+       * Format: date
+       * @description Primeiro dia (Recife)
+       */
+      desde: string;
+      /**
+       * Ate
+       * Format: date
+       * @description Último dia (Recife); hoje se o evento estiver em andamento
+       */
+      ate: string;
+      /** Em Andamento */
+      em_andamento: boolean;
+    };
     /** PeriodoBoletim */
     PeriodoBoletim: {
       /**
@@ -3500,6 +4317,29 @@ export interface components {
       /** Horizonte H */
       horizonte_h: number;
     };
+    /** PrevisaoSituacao */
+    PrevisaoSituacao: {
+      /** Horizonte H */
+      horizonte_h: number;
+      /** Previsao Emitida Em */
+      previsao_emitida_em: string | null;
+      /** Mare Emitida Em */
+      mare_emitida_em: string | null;
+      /** Emissoes Na Faixa */
+      emissoes_na_faixa: number;
+      /**
+       * Faixa Disponivel
+       * @description true com 2 ou mais emissões: `min` e `max` de cada hora valem
+       */
+      faixa_disponivel: boolean;
+      /**
+       * Chuva
+       * @description Chuva prevista por hora (média dos distritos) com faixa min/max
+       */
+      chuva: components["schemas"]["PontoChuva"][];
+      /** Mare */
+      mare: components["schemas"]["PontoMare"][];
+    };
     /** PrioridadeVulnerabilidade */
     PrioridadeVulnerabilidade: {
       /** Itens */
@@ -3576,6 +4416,30 @@ export interface components {
         [key: string]: unknown;
       };
     };
+    /** RelatorioEvento */
+    RelatorioEvento: {
+      /**
+       * Gerado Em
+       * Format: date-time
+       */
+      gerado_em: string;
+      periodo: components["schemas"]["Periodo"];
+      /**
+       * Aviso
+       * @description Rascunho enquanto a situação final não foi aprovada (RN-05)
+       */
+      aviso: string | null;
+      evento: components["schemas"]["BlocoEvento"];
+      comunicados: components["schemas"]["BlocoComunicados"];
+      equipes_mobilizadas: components["schemas"]["BlocoEquipes"];
+      distritos_afetados: components["schemas"]["BlocoDistritos"];
+      chuva: components["schemas"]["BlocoChuva"];
+      mare: components["schemas"]["BlocoMare"];
+      saude: components["schemas"]["BlocoSaude"];
+      acoes: components["schemas"]["BlocoAcoes"];
+      linha_do_tempo: components["schemas"]["BlocoLinhaDoTempo"];
+      situacao_final: components["schemas"]["BlocoSituacaoFinal"];
+    };
     /** RespostaDados[BairrosSaude] */
     RespostaDados_BairrosSaude_: {
       dados: components["schemas"]["BairrosSaude"];
@@ -3609,6 +4473,11 @@ export interface components {
     /** RespostaDados[HistoricoOcorrencias] */
     RespostaDados_HistoricoOcorrencias_: {
       dados: components["schemas"]["HistoricoOcorrencias"];
+      meta: components["schemas"]["Meta"];
+    };
+    /** RespostaDados[ImpactoPrevisto] */
+    RespostaDados_ImpactoPrevisto_: {
+      dados: components["schemas"]["ImpactoPrevisto"];
       meta: components["schemas"]["Meta"];
     };
     /** RespostaDados[PremissasAtuais] */
@@ -3664,6 +4533,11 @@ export interface components {
     /** RespostaDados[Simulacao] */
     RespostaDados_Simulacao_: {
       dados: components["schemas"]["Simulacao"];
+      meta: components["schemas"]["Meta"];
+    };
+    /** RespostaDados[SituacaoChuva] */
+    RespostaDados_SituacaoChuva_: {
+      dados: components["schemas"]["SituacaoChuva"];
       meta: components["schemas"]["Meta"];
     };
     /** RespostaDados[Union[EstagioOficial, NoneType]] */
@@ -3744,7 +4618,19 @@ export interface components {
       nome: string;
       /** Fonte Id */
       fonte_id: string;
-      /** @description null enquanto a fonte não tiver carga (RN-01) */
+      /**
+       * Utilizavel
+       * @description true = a semana mais recente com dado não é mais velha que o limite de frescor da fonte. false = série parada ou sem dado: nenhuma contagem é devolvida (vêm nulas) e `motivo` explica
+       */
+      utilizavel: boolean;
+      /** @description Semana mais recente com casos publicados (mesmo quando não utilizável); null sem nenhum dado */
+      ultima_semana_com_dado: components["schemas"]["SemanaRef"] | null;
+      /**
+       * Motivo
+       * @description 'Dados insuficientes: ...' quando não utilizável; null quando utilizável
+       */
+      motivo?: string | null;
+      /** @description Semana a que se referem as contagens; null quando não utilizável (RN-01) */
       ultima_semana: components["schemas"]["SemanaRef"] | null;
       /**
        * Casos
@@ -4082,13 +4968,30 @@ export interface components {
       /** Senha Temporaria */
       senha_temporaria: string;
     };
+    /** SerieObservada */
+    SerieObservada: {
+      /** Fonte */
+      fonte: string;
+      /** Janela H */
+      janela_h: number;
+      /**
+       * Serie
+       * @description Últimas 72 h, uma barra por hora com leitura (lacuna, não zero)
+       */
+      serie: components["schemas"]["HoraObservada"][];
+      /**
+       * Motivo
+       * @description 'Dados insuficientes: ...' com a fonte que falta; null com série
+       */
+      motivo: string | null;
+    };
     /** SerieSaude */
     SerieSaude: {
       /**
        * Agravo
        * @enum {string}
        */
-      agravo: "dengue" | "chikungunya" | "leptospirose";
+      agravo: "dengue" | "chikungunya" | "leptospirose" | "zika";
       /**
        * Desde
        * Format: date
@@ -4098,6 +5001,11 @@ export interface components {
       itens: components["schemas"]["SemanaSaude"][];
       /** Chuva */
       chuva: components["schemas"]["ChuvaSemana"][];
+      /**
+       * Motivo
+       * @description 'Dados insuficientes: ...' com a fonte que falta (zika); null com série
+       */
+      motivo?: string | null;
     };
     /** SerieTemporal */
     SerieTemporal: {
@@ -4138,6 +5046,22 @@ export interface components {
       calculado_em: string;
       /** Tempo Calculo Ms */
       tempo_calculo_ms: number;
+    };
+    /** SituacaoChuva */
+    SituacaoChuva: {
+      /**
+       * Gerado Em
+       * Format: date-time
+       */
+      gerado_em: string;
+      /** Distritos */
+      distritos: components["schemas"]["ChuvaDistrito"][];
+      /** @description Distrito de maior chuva medida em 24 h; null sem medição */
+      maior_24h: components["schemas"]["MaiorChuva"] | null;
+      maior_72h: components["schemas"]["MaiorChuva"] | null;
+      estacoes: components["schemas"]["EstacoesResumo"];
+      observada: components["schemas"]["SerieObservada"];
+      previsao: components["schemas"]["PrevisaoSituacao"];
     };
     /** Sugerido */
     Sugerido: {
@@ -4410,7 +5334,7 @@ export interface components {
       nivel: "distrito" | "bairro";
       /**
        * Posicao
-       * @description 1 = mais atendimentos; empatados dividem a posição
+       * @description 1 = mais atendimentos; única e consecutiva (empate: mais alagamento, nome e id)
        */
       posicao: number;
       /** Ocorrencias Alagamento */
@@ -5482,6 +6406,37 @@ export interface operations {
         };
         content: {
           "application/json": components["schemas"]["RespostaDados_Cenario_"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  impacto_previsto_api_v1_cenarios_impacto_previsto_get: {
+    parameters: {
+      query?: {
+        horizonte_h?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["RespostaDados_ImpactoPrevisto_"];
         };
       };
       /** @description Validation Error */
@@ -6910,6 +7865,233 @@ export interface operations {
       };
     };
   };
+  listar_api_v1_eventos_get: {
+    parameters: {
+      query?: {
+        situacao?: ("aberto" | "encerrado" | "aprovado") | null;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ListaEventos"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  abrir_api_v1_eventos_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["PedidoEvento"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["DetalheEvento"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  detalhe_api_v1_eventos__evento_id__get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        evento_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["DetalheEvento"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  registrar_item_api_v1_eventos__evento_id__itens_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        evento_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["PedidoItem"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["DetalheEvento"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  encerrar_api_v1_eventos__evento_id__encerrar_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        evento_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["PedidoEncerramento"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["DetalheEvento"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  aprovar_api_v1_eventos__evento_id__aprovar_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        evento_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["DetalheEvento"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  relatorio_api_v1_eventos__evento_id__relatorio_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        evento_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["RelatorioEvento"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
   boletim_api_v1_boletim_get: {
     parameters: {
       query?: {
@@ -7010,6 +8192,26 @@ export interface operations {
       };
     };
   };
+  previa_local_api_v1_risco_alagamento_previa_local_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["RespostaDados_RiscoAlagamento_"];
+        };
+      };
+    };
+  };
   resumo_api_v1_saude_resumo_get: {
     parameters: {
       query?: never;
@@ -7033,7 +8235,7 @@ export interface operations {
   semanal_api_v1_saude_semanal_get: {
     parameters: {
       query?: {
-        agravo?: "dengue" | "chikungunya" | "leptospirose";
+        agravo?: "dengue" | "chikungunya" | "leptospirose" | "zika";
         /** @description AAAA-MM-DD; padrão: 104 semanas atrás */
         desde?: string | null;
       };
@@ -7092,6 +8294,26 @@ export interface operations {
         };
         content: {
           "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  chuva_api_v1_situacao_chuva_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["RespostaDados_SituacaoChuva_"];
         };
       };
     };

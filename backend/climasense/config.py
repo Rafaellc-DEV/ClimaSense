@@ -30,6 +30,8 @@ class Configuracao(BaseSettings):
     )
 
     ambiente: Literal["desenvolvimento", "teste", "producao"] = "desenvolvimento"
+    # Prévia de pesquisa: desligada por padrão, nunca habilitada em produção.
+    ml_previa_experimental_local: bool = False
 
     mongo_uri: SecretStr | None = None
     mongo_db_territorio: str = "Recife"

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { CircleCheck, Loader, RefreshCw, TriangleAlert } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
@@ -10,7 +10,7 @@ import { FalhaCarga, Painel } from "@/design-system/componentes/Painel";
 import { Pilula, type TomPilula } from "@/design-system/componentes/Pilula";
 import { semDado } from "@/design-system/componentes/Tabela";
 import { VazioConvidativo } from "@/design-system/componentes/VazioConvidativo";
-import { enviar, type Esquemas } from "@/lib/api";
+import { type Esquemas } from "@/lib/api";
 import { useConsulta } from "@/lib/consultas";
 import { formatarDataHora, formatarNumero } from "@/lib/formatos";
 import { useSessao } from "@/lib/sessao";
@@ -21,6 +21,7 @@ import { ListaAdaptavel } from "@/features/fluxo/ListaAdaptavel";
 import { Frescor, limiteTexto, StatusFonte } from "./StatusFonte";
 import { PLANOS } from "./TelaFontes";
 import estilos from "./Fontes.module.css";
+import { acompanhar, apiComPrazo } from "./acompanhar";
 
 type Execucao = Esquemas["Execucao"];
 const STATUS_EXECUCAO: Record<string, { rotulo: string; tom: TomPilula; icone: JSX.Element }> = {
@@ -37,35 +38,49 @@ export function DetalheFonte() {
   const aviso = useAviso();
   const cliente = useQueryClient();
   const [acompanhando, setAcompanhando] = useState<string | null>(null);
+  const [iniciando, setIniciando] = useState(false);
+  const controle = useRef<AbortController | null>(null);
   const fonte = useConsulta<Esquemas["Fonte"]>(`/fontes/${id}`, {
     refetchInterval: acompanhando ? 2000 : false,
   });
   const execucoes = useConsulta<Execucao[]>(`/fontes/${id}/execucoes`, {
     refetchInterval: acompanhando ? 2000 : false,
   });
-  const andamento = execucoes.data?.find((e) => e.id === acompanhando);
-  useEffect(() => {
-    if (!acompanhando || !andamento || andamento.status === "em_andamento") return;
-    setAcompanhando(null);
-    aviso(
-      andamento.status === "sucesso"
-        ? {
-            titulo: "Atualização concluída.",
-            texto: `${formatarNumero(andamento.gravados)} registros gravados.`,
-          }
-        : { tipo: "erro", titulo: "A atualização falhou.", texto: andamento.erro ?? undefined },
-    );
-    void cliente.invalidateQueries({ queryKey: ["/fontes"] });
-  }, [acompanhando, andamento, aviso, cliente]);
+  useEffect(() => () => controle.current?.abort(), []);
 
   async function atualizar() {
+    if (controle.current) return;
+    const c = new AbortController();
+    controle.current = c;
+    setIniciando(true);
     try {
-      const e = await enviar<Execucao>("/etl/execucoes", { fonte_id: id });
+      const e = await apiComPrazo<Execucao>("/etl/execucoes", c.signal, {
+        method: "POST",
+        body: JSON.stringify({ fonte_id: id }),
+      });
       setAcompanhando(e.id);
       aviso({ titulo: RETORNO.atualizarFonte, texto: "O status muda aqui quando terminar." });
       void execucoes.refetch();
+      const fim = await acompanhar(e.id, c.signal);
+      if (!c.signal.aborted)
+        aviso(
+          fim.status === "sucesso"
+            ? {
+                titulo: fim.gravados ? "Atualização concluída." : "Coleta concluída sem novos registros.",
+                texto: `${formatarNumero(fim.gravados)} registros gravados. A validade dos dados continua indicada na fonte.`,
+              }
+            : { tipo: "erro", titulo: "A atualização falhou.", texto: fim.erro ?? undefined },
+        );
     } catch (x) {
-      aviso({ tipo: "erro", titulo: "Não foi possível iniciar.", texto: (x as Error).message });
+      if (!c.signal.aborted)
+        aviso({ tipo: "erro", titulo: "Atualização com pendência.", texto: (x as Error).message });
+    } finally {
+      controle.current = null;
+      if (!c.signal.aborted) {
+        setIniciando(false);
+        setAcompanhando(null);
+        void cliente.invalidateQueries();
+      }
     }
   }
 
@@ -89,8 +104,8 @@ export function DetalheFonte() {
         voltar={voltar}
         acoes={
           podeAtualizar && (
-            <Botao onClick={atualizar} disabled={!!acompanhando} icone={<RefreshCw />}>
-              {acompanhando ? "Atualizando…" : "Atualizar agora"}
+            <Botao onClick={atualizar} disabled={iniciando || !!acompanhando} icone={<RefreshCw />}>
+              {iniciando || acompanhando ? "Atualizando…" : "Atualizar agora"}
             </Botao>
           )
         }

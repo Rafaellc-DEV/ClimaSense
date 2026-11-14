@@ -33,6 +33,7 @@ TABELAS = {
         "evento_chuva_itens",
     },
     "silver": {
+        "inferencias_impacto",
         "estacoes",
         "observacoes",
         "ocorrencias",

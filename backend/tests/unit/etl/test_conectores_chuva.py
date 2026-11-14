@@ -187,6 +187,10 @@ def test_alertas_poligono_que_intercepta_o_recife_conta_como_recife():
 def test_uma_origem_fora_do_ar_nao_derruba_as_outras():
     c = alertas.ConectorAlertasOficiais(http=_http_alertas(quebrar=("idapfile", "cemaden")))
     registros = c.extrair(ctx())
+    for registro in registros:
+        assert "linha" not in registro
+        if registro["tipo"] == "linha":
+            assert set(registro["registro"]) == {"data", "bairro", "ocorrencia", "solicitacao"}
     assert c.descartes == {"origem_indisponivel:cemaden": 1, "origem_indisponivel:idap": 1}
     assert any(r["origem"] == "apac" and r["tipo"] == "aviso" for r in registros)
     with pytest.raises(FonteSemDados):

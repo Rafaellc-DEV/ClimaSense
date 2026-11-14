@@ -1,0 +1,113 @@
+{
+  "versao": "0.2.0",
+  "metodo": "arvore-decisao-temporal",
+  "treinado_em": "2026-11-14T02:09:09+00:00",
+  "atributos": [
+    "chuva_1d",
+    "chuva_3d",
+    "chuva_7d",
+    "mare_max_m",
+    "mes",
+    "hist_dias_ano"
+  ],
+  "validacao": {
+    "tipo": "temporal",
+    "treino": [
+      "2014-01-01",
+      "2023-12-28"
+    ],
+    "teste": [
+      "2024-01-01",
+      "2024-12-28"
+    ],
+    "positivos_treino": 1347,
+    "positivos_teste": 336,
+    "taxa_positivos_teste_pct": 0.9847,
+    "conjunto": "completo",
+    "parametros": {
+      "max_depth": 4,
+      "min_samples_leaf": 20,
+      "class_weight": "balanced"
+    },
+    "metricas_teste": {
+      "modelo": {
+        "recall": 0.8005952380952381,
+        "precisao": 0.03377275580665411,
+        "auc_pr": 0.04597146431251091,
+        "alertas_pct": 23.342711447160188,
+        "vp": 269,
+        "fp": 7696,
+        "fn": 67,
+        "vn": 26090,
+        "f1": 0.06481146849777135,
+        "eventos": 84,
+        "eventos_avisados": 80,
+        "dias_com_atendimento": 8,
+        "dias_com_atendimento_avisados": 7
+      },
+      "modelo_alto": {
+        "recall": 0.5446428571428571,
+        "precisao": 0.05009581166164796,
+        "auc_pr": null,
+        "alertas_pct": 10.705703065470958,
+        "vp": 183,
+        "fp": 3470,
+        "fn": 153,
+        "vn": 30316,
+        "f1": 0.0917523188769115,
+        "eventos": 84,
+        "eventos_avisados": 57,
+        "dias_com_atendimento": 8,
+        "dias_com_atendimento_avisados": 7
+      },
+      "limiar_chuva": {
+        "recall": 0.8928571428571429,
+        "precisao": 0.01677946193858717,
+        "auc_pr": 0.04962360599648521,
+        "alertas_pct": 52.397280346990215,
+        "vp": 300,
+        "fp": 17579,
+        "fn": 36,
+        "vn": 16207,
+        "f1": 0.032939884710403516,
+        "eventos": 84,
+        "eventos_avisados": 84,
+        "dias_com_atendimento": 8,
+        "dias_com_atendimento_avisados": 8
+      },
+      "estimador_referencia": {
+        "recall": 0.25,
+        "precisao": 0.0502092050209205,
+        "auc_pr": 0.019199537070076794,
+        "alertas_pct": 4.902995135103453,
+        "vp": 84,
+        "fp": 1589,
+        "fn": 252,
+        "vn": 32197,
+        "f1": 0.08362369337979095,
+        "eventos": 84,
+        "eventos_avisados": 58,
+        "dias_com_atendimento": 8,
+        "dias_com_atendimento_avisados": 6,
+        "sem_dados_pct": 0.0
+      }
+    },
+    "recall_alvo_moderado": 0.8,
+    "recall_alvo_alto": 0.4,
+    "janela_rotulo_dias": 3,
+    "versao_atributos": "2-dias-reais-anteriores",
+    "natureza": "retrospectiva-reanalise",
+    "avaliacao_operacional": false
+  },
+  "publicavel": false,
+  "motivo": "O modelo não supera com folga a referência 'limiar_chuva' no período de teste (AUC-PR 0.046 contra 0.050); a regra simples é preferível.",
+  "ambiente": {
+    "python": "3.12.10",
+    "scikit-learn": "1.9.1",
+    "numpy": "2.5.4",
+    "pandas": "3.0.6",
+    "joblib": "1.6.0"
+  },
+  "proveniencia": "Metadados extraidos do artefato local existente; sem novo treinamento.",
+  "sha256_joblib": "f5218a20109654c5a8d944d7569b368f51e72da45db384a1ed59a0d0f1536f1b"
+}
