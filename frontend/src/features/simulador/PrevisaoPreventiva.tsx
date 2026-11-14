@@ -2,7 +2,7 @@ import { Segmentado } from "@/design-system/componentes/Segmentado";
 import { formatarNumero } from "@/lib/formatos";
 import { infoEstagio } from "@/features/evento/estagios";
 import type { FonteMeta } from "@/lib/frescor";
-import type { ItemSimulado, ResultadoSimulacao } from "./tipos";
+import { ordemMlAlagamento, ROTULOS_ML, type ItemSimulado, type ResultadoSimulacao } from "./tipos";
 import estilos from "./Simulador.module.css";
 
 const dataLocal = (data: string) =>
@@ -195,13 +195,13 @@ export function PrevisaoPreventiva({
                   <tbody>
                     {escolhido.distritos.map((d) => {
                       const regra = distritos.find((i) => i.territorio_id === d.territorio_id);
+                      const bairrosMl = bairros.filter((b) => b.distrito_id === d.territorio_id);
                       const classesMl = [
-                        ...new Set(
-                          bairros
-                            .filter((b) => b.distrito_id === d.territorio_id)
-                            .map((b) => b.ml_alagamento?.classe)
-                            .filter(Boolean),
-                        ),
+                        ...new Set(bairrosMl.map(ordemMlAlagamento).filter((c) => c !== null)),
+                      ];
+                      const semClasse = bairrosMl.filter((b) => ordemMlAlagamento(b) === null);
+                      const motivosMl = [
+                        ...new Set(semClasse.flatMap((b) => b.ml_alagamento?.fatores ?? [])),
                       ];
                       return (
                         <tr key={d.territorio_id}>
@@ -225,11 +225,25 @@ export function PrevisaoPreventiva({
                           </td>
                           <td>{infoEstagio(regra?.estagio_sugerido).rotulo}</td>
                           <td>
-                            {ml?.disponivel
-                              ? classesMl.length
-                                ? classesMl.join(", ")
-                                : "Sem dados nos bairros"
-                              : "Indisponível"}
+                            {ml?.disponivel ? (
+                              classesMl.length ? (
+                                <>
+                                  {classesMl.map((c) => ROTULOS_ML[c]).join(", ")}
+                                  {semClasse.length > 0 && (
+                                    <small>
+                                      Há bairros sem classificação.
+                                      {motivosMl.length > 0 && ` ${motivosMl.join(" ")}`}
+                                    </small>
+                                  )}
+                                </>
+                              ) : motivosMl.length > 0 ? (
+                                `Sem classificação: ${motivosMl.join(" ")}`
+                              ) : (
+                                "Sem classificação para os bairros deste distrito na resposta da prévia."
+                              )
+                            ) : (
+                              (ml?.motivo ?? "Prévia experimental não consultada.")
+                            )}
                           </td>
                         </tr>
                       );
@@ -243,7 +257,10 @@ export function PrevisaoPreventiva({
                 pôde ser realizada; a previsão da Open-Meteo continua disponível acima.
               </p>
               <p className={estilos.apoio}>
-                ML experimental: {ml?.motivo ?? "classes de pesquisa; não validado para uso operacional"}.
+                ML experimental 0.2.0:{" "}
+                {ml?.disponivel
+                  ? "prévia acadêmica calculada. As classes não são alertas oficiais nem previsões validadas para uso operacional."
+                  : (ml?.motivo ?? "prévia experimental não consultada.")}
               </p>
             </>
           )}

@@ -348,6 +348,148 @@ describe("Prevenção por dia e comparação meteorológica", () => {
   });
 });
 
+describe("Prévia experimental na tabela meteorológica", () => {
+  // Respostas artificiais somente para regressão da integração; não são métricas ou previsões reais.
+  const caminho = "/risco-alagamento/previa-local?dia=2026-05-11";
+  const modelo = {
+    versao: "0.2.0",
+    metodo: "arvore-decisao-temporal",
+    treinado_em: AGORA,
+    experimental: true,
+    validacao: { avaliacao_operacional: false },
+  };
+  const previa = (classe = "alto", fatores = ["Chuva distrital elevada."]) => ({
+    dados: {
+      disponivel: true,
+      motivo: "PRÉVIA NÃO VALIDADA. AUC-PR abaixo da referência.",
+      modelo,
+      itens: [{ territorio_id: "bairro-ibura", classe, confianca: "baixa", fatores }],
+    },
+  });
+  const analise = (selecionado: boolean, parcial: boolean) => ({
+    ...resultado,
+    dados: {
+      ...resultado.dados,
+      contexto: "previsao_atual",
+      dia_selecionado: selecionado ? "2026-05-11" : null,
+      dias: [
+        {
+          data: "2026-05-11",
+          inicio: "2026-05-11T03:00:00Z",
+          fim: "2026-05-12T03:00:00Z",
+          periodo_parcial: parcial,
+          horas_periodo: parcial ? 12 : 24,
+          criterios: { atencao_mm: 25, alerta_mm: 50, critico_mm: 90 },
+          distritos_em_atencao: ["ds-8"],
+          distritos: [
+            {
+              territorio_id: "ds-8",
+              nome: "Distrito Sanitário VIII",
+              chuva_prevista_mm: 60,
+              chuva_disponivel_mm: 60,
+              horas_validas: parcial ? 12 : 24,
+              horas_esperadas: parcial ? 12 : 24,
+              cobertura_completa: true,
+              desatualizada: false,
+              referencia_em: AGORA,
+              sinalizacao: "alerta",
+              chuva_intensa: true,
+            },
+          ],
+        },
+      ],
+      itens: [...resultado.dados.itens, distrito(8, "alerta")].map((i) => ({
+        ...i,
+        ml_alagamento: { classe: "baixo", fatores: ["Resultado operacional não deve substituir a prévia."] },
+      })),
+      ml_alagamento: { disponivel: false, motivo: "AUC-PR abaixo da referência", modelo },
+    },
+  });
+  function celulaMl() {
+    const tabela = within(screen.getByRole("region", { name: "Comparação meteorológica e territorial" }));
+    return within(tabela.getByRole("row", { name: /Distrito Sanitário VIII/ }))
+      .getAllByRole("cell")
+      .at(-1)!;
+  }
+  async function consultar(respostaPrevia: unknown, { ativa = true, parcial = false } = {}) {
+    vi.stubEnv("VITE_ML_DEMO_ACADEMICA", ativa ? "true" : "false");
+    const pedidos = simularApi(
+      rotas({
+        "/auth/eu": {
+          ...usuarioTeste(["consultar", "editar", "administrar"], ["administrador"]),
+          ambiente: "desenvolvimento",
+        },
+        "/cenarios/impacto-previsto?horizonte_h=24&dia=2026-05-11": analise(true, parcial),
+        "/cenarios/impacto-previsto": analise(false, parcial),
+        [caminho]: respostaPrevia,
+        "/risco-alagamento/previa-local": previa("baixo"),
+      }),
+      { "/cenarios/simular": resultado },
+    );
+    abrir();
+    if (!ativa) await userEvent.click(await screen.findByRole("radio", { name: "Previsão por distrito" }));
+    await userEvent.click(await screen.findByRole("radio", { name: /11\/05 · 1 distrito/ }));
+    await screen.findByRole("region", { name: "Comparação meteorológica e territorial" });
+    return pedidos;
+  }
+
+  it("prioriza a classificação acadêmica da data e separa o bloqueio operacional; falha de renovação remove classes antigas", async () => {
+    const pedidos = await consultar(previa());
+    await waitFor(() => expect(celulaMl()).toHaveTextContent("Alto"));
+    expect(celulaMl()).not.toHaveTextContent("Baixo");
+    expect(celulaMl()).not.toHaveTextContent("AUC-PR");
+    expect(screen.getByText(/ML experimental 0.2.0:/)).toHaveTextContent("prévia acadêmica calculada");
+    expect(screen.getByText(/ML operacional indisponível: AUC-PR/)).toBeInTheDocument();
+    expect(pedidos.filter((p) => p.url.includes(caminho))).toHaveLength(1);
+    simularApi({ [caminho]: { status: 500, corpo: { detail: "Algo deu errado do nosso lado." } } });
+    await clienteConsultas.invalidateQueries({ queryKey: [caminho] });
+    await waitFor(() => expect(celulaMl()).toHaveTextContent("Erro ao consultar a prévia experimental"));
+    expect(celulaMl()).not.toHaveTextContent("Alto");
+    expect(celulaMl()).not.toHaveTextContent("Baixo");
+  });
+
+  it("informa prévia desativada sem recorrer às classes operacionais", async () => {
+    const pedidos = await consultar(previa(), { ativa: false });
+    expect(celulaMl()).toHaveTextContent("Prévia experimental desativada nesta tela");
+    expect(celulaMl()).not.toHaveTextContent("AUC-PR");
+    expect(pedidos.some((p) => p.url.includes("/previa-local"))).toBe(false);
+  });
+
+  it("explica o recorte parcial sem consultar nem extrapolar a prévia para essa data", async () => {
+    const pedidos = await consultar(previa(), { parcial: true });
+    expect(celulaMl()).toHaveTextContent("Dia selecionado parcial");
+    expect(celulaMl()).toHaveTextContent("exige um dia local completo");
+    expect(pedidos.some((p) => p.url.includes(caminho))).toBe(false);
+    expect(celulaMl()).not.toHaveTextContent("Baixo");
+  });
+
+  it.each([
+    "ML 0.2.0 limitado a hoje e amanhã.",
+    "Falta artefato local compatível com a versão atual. Gere a prévia de pesquisa.",
+  ])("preserva o motivo real devolvido pelo backend: %s", async (motivo) => {
+    await consultar({ dados: { disponivel: false, motivo, modelo: null, itens: [] } });
+    await waitFor(() => expect(celulaMl()).toHaveTextContent(motivo));
+    expect(celulaMl()).not.toHaveTextContent("AUC-PR");
+  });
+
+  it("mostra a falta de chuva informada pelo modelo em vez de exibir sem_dados como classe", async () => {
+    const motivo =
+      "Falta chuva completa (horária) do distrito ds-8 em algum dos últimos 7 dias ou na previsão.";
+    await consultar(previa("sem_dados", [motivo]));
+    await waitFor(() => expect(celulaMl()).toHaveTextContent(motivo));
+    expect(celulaMl()).not.toHaveTextContent("sem_dados");
+    expect(celulaMl()).not.toHaveTextContent("Baixo");
+  });
+
+  it("informa a desativação no backend a partir do erro efetivamente retornado", async () => {
+    await consultar({ status: 404, corpo: { detail: "Prévia de pesquisa desabilitada neste ambiente." } });
+    await waitFor(() =>
+      expect(celulaMl()).toHaveTextContent("Prévia de pesquisa desabilitada neste ambiente"),
+    );
+    expect(celulaMl()).not.toHaveTextContent("AUC-PR");
+  });
+});
+
 describe("Demonstração acadêmica local", () => {
   const adminLocal = () => ({
     ...usuarioTeste(["consultar", "editar", "administrar"], ["administrador"]),
@@ -381,7 +523,7 @@ describe("Demonstração acadêmica local", () => {
     abrir();
     await waitFor(() => expect(screen.getByTestId("mapa")).toHaveAttribute("data-ml-ibura", "2"));
     expect(screen.getByText(/PRÉVIA ACADÊMICA NÃO VALIDADA PARA USO OPERACIONAL/)).toBeInTheDocument();
-    expect(screen.getByText(/ML de alagamento indisponível: Gate científico reprovado/)).toBeInTheDocument();
+    expect(screen.getByText(/ML operacional indisponível: Gate científico reprovado/)).toBeInTheDocument();
     expect(pedidos.filter((p) => p.url.includes("/previa-local"))).toHaveLength(1);
     simularApi(
       rotas({
@@ -391,7 +533,9 @@ describe("Demonstração acadêmica local", () => {
       }),
     );
     await clienteConsultas.invalidateQueries({ queryKey: ["/risco-alagamento/previa-local"] });
-    await screen.findByText(/Prévia não habilitada no backend ou acesso negado/);
+    await within(await screen.findByRole("region", { name: "Previsão atual por distrito" })).findByText(
+      /Erro ao consultar a prévia experimental/,
+    );
     expect(screen.getByTestId("mapa")).toHaveAttribute("data-ml-ibura", "sem-dados");
     await userEvent.click(screen.getByRole("radio", { name: "Cenário hipotético" }));
     expect(screen.queryByRole("radio", { name: "ML de alagamento" })).not.toBeInTheDocument();
@@ -409,7 +553,7 @@ describe("Demonstração acadêmica local", () => {
     });
     abrir();
     await userEvent.click(await screen.findByRole("radio", { name: "Previsão por distrito" }));
-    await screen.findByText(/ML de alagamento indisponível: Gate científico reprovado/);
+    await screen.findByText(/ML operacional indisponível: Gate científico reprovado/);
     expect(screen.queryByRole("button", { name: /Ver prévia de pesquisa/ })).not.toBeInTheDocument();
     expect(pedidos.some((p) => p.url.includes("/previa-local"))).toBe(false);
   });
@@ -424,7 +568,9 @@ describe("Demonstração acadêmica local", () => {
       }),
     );
     abrir();
-    await screen.findByText(/Prévia não habilitada no backend ou acesso negado/);
+    await within(await screen.findByRole("region", { name: "Previsão atual por distrito" })).findByText(
+      /Erro ao consultar a prévia experimental/,
+    );
     expect(screen.getByTestId("mapa")).toHaveAttribute("data-ml-ibura", "sem-dados");
     await userEvent.click(screen.getByRole("radio", { name: /^Estágio$/ }));
     expect(screen.getByTestId("mapa")).toHaveAttribute("data-modo", "estagio");
@@ -447,7 +593,7 @@ describe("Análise da previsão atual", () => {
     abrir();
     expect(await screen.findByText(/Cenário hipotético: as premissas/)).toBeInTheDocument();
     await userEvent.click(screen.getByRole("radio", { name: "Previsão por distrito" }));
-    expect(await screen.findByText(/ML de alagamento indisponível: Não superou/)).toBeInTheDocument();
+    expect(await screen.findByText(/ML operacional indisponível: Não superou/)).toBeInTheDocument();
     expect(screen.getByTestId("mapa")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Salvar cenário" })).toBeDisabled();
     expect(pedidos.some((p) => p.url.includes("/impacto-previsto?horizonte_h=24"))).toBe(true);

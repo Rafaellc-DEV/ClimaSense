@@ -96,22 +96,19 @@ export function TelaSimulador() {
       ? `/cenarios/impacto-previsto?horizonte_h=${horizonteAtual}${dia ? `&dia=${dia}` : ""}`
       : null,
   );
-  const periodoMl = !dia || analise.data?.dados.dias?.find((d) => d.data === dia)?.periodo_parcial === false;
+  const diaMl = analise.data?.dados.dias?.find((d) => d.data === dia);
+  const periodoMl = !dia || diaMl?.periodo_parcial === false;
+  const previaAtiva = modo === "atual" && previaLocal && acessoPrevia;
   const pesquisa = useConsulta<
     Envelope<
       ResultadoSimulacao["ml_alagamento"] & {
         itens: { territorio_id: string; classe: string; confianca?: string; fatores: string[] }[];
       }
     >
-  >(
-    modo === "atual" && previaLocal && acessoPrevia && periodoMl
-      ? `/risco-alagamento/previa-local${dia ? `?dia=${dia}` : ""}`
-      : null,
-    {
-      retry: false,
-      staleTime: 10_000,
-    },
-  );
+  >(previaAtiva && periodoMl ? `/risco-alagamento/previa-local${dia ? `?dia=${dia}` : ""}` : null, {
+    retry: false,
+    staleTime: 10_000,
+  });
   useEffect(() => {
     if (dia && analise.error?.status === 422) setDia("");
   }, [dia, analise.error]);
@@ -168,12 +165,30 @@ export function TelaSimulador() {
   const itens = useMemo(() => resultado?.itens ?? [], [resultado]);
   const distritos = useMemo(() => itens.filter((i) => i.nivel === "distrito"), [itens]);
   const bairros = useMemo(() => itens.filter((i) => i.nivel === "bairro"), [itens]);
-  const mapaPesquisa = modo === "atual" && previaLocal && acessoPrevia && periodoMl;
-  const dadosPesquisa = pesquisa.isError ? undefined : pesquisa.data?.dados;
-  const modeloMapa = mapaPesquisa ? dadosPesquisa : resultado?.ml_alagamento;
+  const mapaPesquisa = previaAtiva;
+  const dadosPesquisa = previaAtiva && periodoMl && !pesquisa.isError ? pesquisa.data?.dados : undefined;
+  const motivoPrevia = !acessoPrevia
+    ? "Prévia experimental restrita a administrador em desenvolvimento."
+    : !previaLocal
+      ? "Prévia experimental desativada nesta tela. Ative a prévia local para consultar as classes."
+      : dia && !diaMl
+        ? "Aguardando as informações do dia selecionado."
+        : !periodoMl
+          ? "Dia selecionado parcial: o ML 0.2.0 exige um dia local completo."
+          : pesquisa.isError
+            ? `Erro ao consultar a prévia experimental: ${pesquisa.error.message}`
+            : pesquisa.isPending
+              ? "Consultando a prévia experimental…"
+              : null;
+  const modeloExperimental: ResultadoSimulacao["ml_alagamento"] = motivoPrevia
+    ? { disponivel: false, motivo: motivoPrevia }
+    : (dadosPesquisa ?? { disponivel: false, motivo: "A prévia não retornou classificações." });
+  const modeloMapa = mapaPesquisa ? modeloExperimental : resultado?.ml_alagamento;
   const bairrosMapa = useMemo(() => {
-    if (!mapaPesquisa || !dadosPesquisa?.disponivel) return bairros;
-    const porId = new Map(dadosPesquisa.itens.map((i) => [i.territorio_id, i]));
+    if (!mapaPesquisa) return bairros;
+    const porId = new Map(
+      (dadosPesquisa?.disponivel ? dadosPesquisa.itens : []).map((i) => [i.territorio_id, i]),
+    );
     return bairros.map((b) => ({ ...b, ml_alagamento: porId.get(b.territorio_id) ?? null }));
   }, [bairros, mapaPesquisa, dadosPesquisa]);
   const [sel, setSel] = useState<string | null>(null);
@@ -323,11 +338,9 @@ export function TelaSimulador() {
                     <p role="status">
                       PRÉVIA NÃO VALIDADA: resultados exclusivamente para pesquisa e demonstração acadêmica.
                       Não são alertas e não podem orientar decisões operacionais.
-                      {!periodoMl &&
-                        " O ML avalia dias locais completos, sem comparação com recortes parciais."}
-                      {periodoMl && pesquisa.isPending && " Carregando classes do modelo local…"}
-                      {pesquisa.isError && " Prévia não habilitada no backend ou acesso negado."}
-                      {pesquisa.data?.dados?.motivo && ` ${pesquisa.data.dados.motivo}`}
+                      {modeloExperimental?.disponivel
+                        ? " Prévia acadêmica calculada. Consulte as classes e os bairros sem classificação na tabela."
+                        : ` ${modeloExperimental?.motivo}`}
                     </p>
                   )}
                 </div>
@@ -335,8 +348,8 @@ export function TelaSimulador() {
               {resultado?.ml_alagamento && (
                 <p role="status">
                   {resultado.ml_alagamento.disponivel
-                    ? `ML experimental disponível, versão ${resultado.ml_alagamento.modelo?.versao ?? "não informada"}. Resultado paralelo à avaliação por regras.`
-                    : `ML de alagamento indisponível: ${resultado.ml_alagamento.motivo ?? "aguarda validação"}`}
+                    ? `ML operacional disponível, versão ${resultado.ml_alagamento.modelo?.versao ?? "não informada"}. Resultado paralelo à avaliação por regras.`
+                    : `ML operacional indisponível: ${resultado.ml_alagamento.motivo ?? "aguarda validação"}. Consulte separadamente o estado da prévia acadêmica.`}
                 </p>
               )}
             </section>
@@ -370,7 +383,7 @@ export function TelaSimulador() {
             resultado={resultado}
             dia={dia}
             bairros={bairrosMapa}
-            ml={modeloMapa}
+            ml={modeloExperimental}
             atualizando={analise.isFetching}
             fontes={fontes}
           />

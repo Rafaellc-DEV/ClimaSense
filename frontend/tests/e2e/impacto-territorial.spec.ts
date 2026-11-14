@@ -103,7 +103,7 @@ test("previsão por distrito preserva mapa, acessibilidade e retorno ao cenário
   await page.goto("/app/simulador");
   await expect(page.getByText(/Cenário hipotético: as premissas/)).toBeVisible();
   await page.getByRole("radio", { name: "Previsão por distrito", exact: true }).check();
-  await expect(page.getByText(/ML de alagamento indisponível: Modelo não superou/)).toBeVisible();
+  await expect(page.getByText(/ML operacional indisponível: Modelo não superou/)).toBeVisible();
   await expect(page.getByRole("button", { name: "Salvar cenário" })).toBeDisabled();
   await expect(page.locator(".leaflet-container")).toBeVisible();
   await page.getByRole("button", { name: /Bairro de teste/ }).click();

@@ -304,7 +304,9 @@ export function MapaDoCenario({
         {mapaMl
           ? mlDisponivel
             ? `Camada experimental do modelo ${mlAlagamento?.modelo?.versao ?? "sem versão"}. ${previaLocal ? "PRÉVIA ACADÊMICA NÃO VALIDADA PARA USO OPERACIONAL. " : ""}Os resultados não são alertas oficiais e não substituem a avaliação por regras.`
-            : `Não há previsão de ML validada para mapear. ${mlAlagamento?.motivo ?? "Aguardando modelo e validação."} Consulte as camadas por regras.`
+            : previaLocal
+              ? `Prévia acadêmica sem classificações para mapear. ${mlAlagamento?.motivo ?? "Aguardando a resposta da prévia."}`
+              : `Não há previsão de ML validada para mapear. ${mlAlagamento?.motivo ?? "Aguardando modelo e validação."} Consulte as camadas por regras.`
           : visaoAtual === "preventiva"
             ? "Sinalização interna para o dia selecionado: os bairros herdam o limiar meteorológico do distrito. Não é alerta oficial; a avaliação territorial por regras pode ter dados insuficientes."
             : contexto === "atual"
@@ -334,7 +336,9 @@ export function MapaDoCenario({
             {mapaMl
               ? mlDisponivel
                 ? "O modelo não retornou classes válidas para os bairros. Verifique os insumos de cada distrito."
-                : "Ainda não há resultados de ML liberados pela validação para esta camada."
+                : previaLocal
+                  ? "A prévia acadêmica não retornou classes para esta camada. Consulte o motivo acima."
+                  : "Ainda não há resultados de ML liberados pela validação para esta camada."
               : visaoAtual === "preventiva"
                 ? "Nenhuma ultrapassagem confirmada nos dados disponíveis. Confira cobertura e dados ausentes; isso não significa ausência de risco."
                 : "Os bairros aparecem aqui quando o cenário for calculado."}

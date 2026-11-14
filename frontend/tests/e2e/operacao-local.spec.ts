@@ -44,7 +44,7 @@ test("apresenta previsão real dos oito distritos, seus insumos e limitações",
   });
   await page.goto("/app/simulador");
   await page.getByRole("radio", { name: "Previsão por distrito", exact: true }).check();
-  await expect(page.getByText(/ML de alagamento indisponível/)).toBeVisible();
+  await expect(page.getByText(/ML operacional indisponível/)).toBeVisible();
   await expect(page.locator(".leaflet-container")).toBeVisible();
   const bairro = atual.dados.itens.find((i) => i.nivel === "bairro")!;
   await page.getByRole("button", { name: bairro.nome }).click();
