@@ -282,3 +282,66 @@ test("a barra de formatação só aparece ao editar e aplica negrito, tamanho e 
   await u.click(screen.getByRole("button", { name: "Concluir edição" }));
   expect(screen.queryByRole("toolbar", { name: "Formatação do texto" })).not.toBeInTheDocument();
 });
+
+describe("exportar e enviar", () => {
+  test("Baixar gera BOL-AAAA-MMDD-HHMM.html autocontido com a marca e os estilos", async () => {
+    simularApi(base());
+    window.history.pushState({}, "", "/app/acoes");
+    render(<App />);
+    const u = userEvent.setup();
+    await screen.findByRole("region", { name: "Resumo" });
+    let blob: Blob | undefined;
+    URL.createObjectURL = vi.fn((b: Blob) => {
+      blob = b;
+      return "blob:teste";
+    });
+    URL.revokeObjectURL = vi.fn();
+    let nome = "";
+    const clique = vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(function (
+      this: HTMLAnchorElement,
+    ) {
+      nome = this.download;
+    });
+    await u.click(screen.getByRole("button", { name: "Baixar" }));
+    expect(nome).toMatch(/^BOL-\d{4}-\d{4}-\d{4}\.html$/);
+    expect(clique).toHaveBeenCalled();
+    const html = await new Promise<string>((ok) => {
+      const leitor = new FileReader();
+      leitor.onload = () => ok(String(leitor.result));
+      leitor.readAsText(blob!);
+    });
+    expect(html).toContain("<style>");
+    expect(html).toContain('aria-label="ClimaSense"');
+    expect(html).toContain("Relatório executivo — Secretaria de Saúde");
+    expect(html).not.toMatch(/<script|https?:\/\/(?!wa\.me)/);
+    clique.mockRestore();
+  });
+
+  test("Baixar com falha mostra o aviso", async () => {
+    simularApi(base());
+    window.history.pushState({}, "", "/app/acoes");
+    render(<App />);
+    const u = userEvent.setup();
+    await screen.findByRole("region", { name: "Resumo" });
+    URL.createObjectURL = vi.fn(() => {
+      throw new Error("falhou");
+    });
+    await u.click(screen.getByRole("button", { name: "Baixar" }));
+    expect(await screen.findByText("Não foi possível baixar o relatório.")).toBeInTheDocument();
+  });
+
+  test("Enviar no WhatsApp abre wa.me com o texto codificado em nova aba", async () => {
+    simularApi(base());
+    window.history.pushState({}, "", "/app/acoes");
+    render(<App />);
+    const u = userEvent.setup();
+    await screen.findByRole("region", { name: "Resumo" });
+    const abrir = vi.spyOn(window, "open").mockReturnValue(null);
+    await u.click(screen.getByRole("button", { name: "Enviar no WhatsApp" }));
+    const [url, alvo] = abrir.mock.calls[0];
+    expect(String(url)).toMatch(/^https:\/\/wa\.me\/\?text=/);
+    expect(decodeURIComponent(String(url).split("?text=")[1])).toContain("Relatório executivo ClimaSense");
+    expect(alvo).toBe("_blank");
+    abrir.mockRestore();
+  });
+});

@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { Check, Copy, PencilLine, Printer, RotateCcw } from "lucide-react";
+import { Check, Copy, Download, PencilLine, Printer, RotateCcw, Send } from "lucide-react";
 import { useTerritorios } from "@/app/FiltroFrase";
 import { useAviso } from "@/design-system/componentes/Aviso";
 import { Botao } from "@/design-system/componentes/Botao";
@@ -26,6 +26,7 @@ import {
 } from "./relatorio";
 import { BarraEdicao } from "./BarraEdicao";
 import estilos from "./Boletim.module.css";
+import { documentoHtml } from "./exportar";
 
 /**
  * Relatório executivo (RF-17) para a Secretaria de Saúde, dentro da tela de Ações: documento de uma página com a
@@ -111,6 +112,34 @@ export function DocumentoRelatorio() {
     }
   }
 
+  function textoAtual(): string {
+    const daFolha = folha.current?.innerText || folha.current?.textContent || "";
+    return (editado !== null ? daFolha : texto).trim();
+  }
+
+  function enviarWhatsApp() {
+    const url = `https://wa.me/?text=${encodeURIComponent(textoAtual())}`;
+    window.open(url, "_blank", "noopener,noreferrer");
+  }
+
+  function baixar() {
+    try {
+      if (!folha.current) throw new Error("sem documento");
+      const html = documentoHtml(numero, folha.current.innerHTML);
+      const url = URL.createObjectURL(new Blob([html], { type: "text/html;charset=utf-8" }));
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${numero}.html`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      avisar({ titulo: "Relatório baixado.", texto: `Arquivo ${numero}.html.` });
+    } catch {
+      avisar({ titulo: "Não foi possível baixar o relatório.", tipo: "erro" });
+    }
+  }
+
   return (
     <section className={estilos.bloco} aria-labelledby="bo-bloco">
       <div className={`${estilos.naoImprimir} ${estilos.barra}`}>
@@ -121,7 +150,7 @@ export function DocumentoRelatorio() {
           <p className={estilos.blocoProposito}>
             {editando
               ? "Clique no texto da folha para editar. Ao terminar, clique em Concluir edição."
-              : "O resumo do evento em uma página, para a Secretaria de Saúde. Imprima ou copie o texto."}
+              : "O resumo do evento em uma página, para a Secretaria de Saúde. Baixe, imprima ou envie o texto."}
           </p>
         </div>
         <div className={estilos.botoes}>
@@ -141,6 +170,12 @@ export function DocumentoRelatorio() {
           )}
           <Botao variante="secundario" icone={<Copy />} onClick={copiar} disabled={!b || editando}>
             Copiar para WhatsApp
+          </Botao>
+          <Botao variante="secundario" icone={<Send />} onClick={enviarWhatsApp} disabled={!b || editando}>
+            Enviar no WhatsApp
+          </Botao>
+          <Botao variante="secundario" icone={<Download />} onClick={baixar} disabled={!b || editando}>
+            Baixar
           </Botao>
           <Botao icone={<Printer />} onClick={() => window.print()} disabled={editando}>
             Imprimir / salvar PDF
