@@ -28,7 +28,7 @@ export function OrdemAtencao({
       <h2 id="sim-ordem">Ordem de atenção dos distritos</h2>
       <p className={estilos.apoio}>
         Do mais para o menos afetado pela chuva simulada; no empate, pela classe de arboviroses. É ordem de
-        atenção, não probabilidade.
+        atenção, não probabilidade. Confiança é a da estimativa do cálculo.
       </p>
       <ListaAdaptavel
         legenda="Ordem de atenção dos distritos"

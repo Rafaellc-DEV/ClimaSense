@@ -148,15 +148,22 @@ describe("Mapa: camadas e painel do bairro", () => {
     const painel = await screen.findByRole("complementary", { name: "Ibura" });
     expect(await within(painel).findByText("4.210")).toBeInTheDocument();
     expect(within(painel).getByText("< 5")).toBeInTheDocument();
-    expect(within(painel).getAllByText("Fonte: IBGE, Censo 2022")).toHaveLength(2);
+    // a fonte aparece uma vez só, no rodapé do painel, com a hora
+    const rodape = within(painel).getByRole("contentinfo");
+    expect(rodape).toHaveTextContent(/Fonte: IBGE, Censo 2022/);
+    expect(within(painel).getAllByText(/IBGE, Censo 2022/)).toHaveLength(1);
+    expect(rodape).toHaveTextContent(/Consultado às \d{2}:\d{2}/);
     expect(
       within(painel).getByText(/Dados insuficientes: não há dado público por bairro/),
     ).toBeInTheDocument();
     expect(within(painel).getByText("UPA Ibura").closest("li")).toHaveTextContent("em área de risco");
     expect(within(painel).getByText("UBS Ibura").closest("li")).not.toHaveTextContent("em área de risco");
     expect(within(painel).getAllByText(/cobertura parcial/i).length).toBeGreaterThan(0);
-    expect(within(painel).getAllByText("Fonte: CNES").length).toBeGreaterThan(0);
-    expect(within(painel).getByText("Fonte: Defesa Civil")).toBeInTheDocument();
+    // grade de números com rótulo curto; lista de equipamentos cabe nos 3 primeiros
+    expect(within(painel).getByText("Equipamentos de saúde").closest("div")).toHaveTextContent(
+      /^Equipamentos de saúde21 em área de risco$/,
+    );
+    expect(within(painel).getByText("Áreas de risco").closest("div")).toHaveTextContent("7");
   });
 
   it("painel do bairro: dados_insuficientes nomeia a fonte e não mostra número", async () => {

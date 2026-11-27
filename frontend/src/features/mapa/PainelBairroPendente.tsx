@@ -6,7 +6,7 @@
 import { nomeDoDistrito } from "@/map/paleta";
 import { useEffect, useRef } from "react";
 import { ChevronLeft, X } from "lucide-react";
-import { ResumoBairro } from "./ResumoBairro";
+import { ResumoBairro, RodapeFontes } from "./ResumoBairro";
 import estilos from "./Mapa.module.css";
 
 export function PainelBairroPendente({
@@ -30,25 +30,28 @@ export function PainelBairroPendente({
     <aside className={estilos.painel} aria-labelledby="painel-nome">
       <header className={estilos.painelTopo}>
         <div>
-          {distritoId && aoVoltarDistrito && (
-            <button type="button" className={estilos.voltarNivel} onClick={aoVoltarDistrito}>
-              <ChevronLeft aria-hidden="true" size={18} />
-              {nomeDoDistrito(distritoId)}
-            </button>
-          )}
           <h2 id="painel-nome" ref={titulo} tabIndex={-1}>
             {nome}
           </h2>
-          <p className={estilos.painelDistrito}>
-            {distritoId ? nomeDoDistrito(distritoId) : "Distrito não informado"}
-          </p>
+          {distritoId && aoVoltarDistrito ? (
+            <button type="button" className={estilos.voltarNivel} onClick={aoVoltarDistrito}>
+              <ChevronLeft aria-hidden="true" size={16} />
+              {nomeDoDistrito(distritoId)}
+            </button>
+          ) : (
+            <p className={estilos.painelDistrito}>
+              {distritoId ? nomeDoDistrito(distritoId) : "Distrito não informado"}
+            </p>
+          )}
         </div>
         <button type="button" className={estilos.fechar} onClick={aoFechar} aria-label="Fechar o painel">
-          <X aria-hidden="true" size={24} />
+          <X aria-hidden="true" size={22} />
         </button>
       </header>
       <section className={estilos.bloco} aria-labelledby="painel-estagio">
-        <h3 id="painel-estagio">Estágio</h3>
+        <h3 id="painel-estagio" className="so-leitor">
+          Estágio
+        </h3>
         {carregando ? (
           <p className={estilos.apagado} role="status">
             Carregando o estágio…
@@ -61,6 +64,7 @@ export function PainelBairroPendente({
         )}
       </section>
       <ResumoBairro territorioId={id} />
+      <RodapeFontes territorioId={id} />
     </aside>
   );
 }

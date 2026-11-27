@@ -1,4 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Link, useSearchParams } from "react-router-dom";
+import { ChartColumn } from "lucide-react";
+import { classesBotao } from "@/design-system/componentes/Botao";
 import { CabecalhoTela } from "@/design-system/componentes/CabecalhoTela";
 import { Dialogo } from "@/design-system/componentes/Dialogo";
 import { Esqueleto } from "@/design-system/componentes/Esqueleto";
@@ -19,9 +22,9 @@ import { MapaBairros, type Aparencia, type ColecaoFeicoes, type ModoCor } from "
 import type { ColecaoDistritos } from "@/map/MapaTerritorio";
 import { siglaDoDistrito, nomeDoDistrito } from "@/map/paleta";
 import { EstadoConsulta, MensagemPronta } from "@/features/evento/Evento";
+import { infoEstagio } from "@/features/evento/estagios";
 import { listaDe, type ItemEstagio, type MensagemWhatsApp } from "@/features/evento/tipos";
 import { DialogoDeclarar, DialogoEncerrar } from "@/features/situacao/Declarar";
-import { ESTAGIOS } from "@/features/evento/estagios";
 import { ROTULO_ESTAGIO, TOKEN_ESTAGIO } from "@/features/territorio/indicadoresMapa";
 import { CoberturaNoMapa, ControleCamadas, LegendaCamadas } from "./PainelCamadas";
 import { ChipsDistritos, SeletorColorir, VoltarRecife } from "./ControlesMapa";
@@ -34,20 +37,26 @@ import {
   distritosPorPrioridade,
   rotulosPrioridade,
   type Colorir,
+  type Perigo,
 } from "./distritos";
 import { useCamadas } from "./usarCamadas";
 import { INDICADORES, textoPessoas, valorDe } from "./modeloCamadas";
-import { FaixaOficial } from "./EstagioOficial";
+import { BotaoInformarCop } from "./EstagioOficial";
+import { KpisPainel } from "@/features/dashboards/Kpis";
+import { useDadosDecisao } from "@/features/dashboards/usarDadosDecisao";
 import { ListaBairros, Prioritarios } from "./Listas";
 import { PainelTerritorio } from "./PainelTerritorio";
 import {
-  contarPorEstagio,
   ehBairro,
   emVigor,
   ordenarPorGravidade,
+  periodoOcorrencias,
+  textoPeriodo,
   type ItemPrioridadeTerritorio,
 } from "./tipos";
 import estilos from "./Mapa.module.css";
+
+const SEM_ESMAECER = new Set<string>();
 
 const ROTULO_MAPA =
   "Mapa dos bairros do Recife, cada distrito sanitário em uma cor. Use as setas para mover e as teclas + e - para aproximar. " +
@@ -66,6 +75,8 @@ export function TelaMapa() {
   const podeDeclarar = pode("editar");
 
   const camadas = useCamadas();
+  const agoraTopo = useMemo(() => new Date(), []);
+  const decisao = useDadosDecisao({ janela: 24, completo: false });
   const oficial = useConsultaViva<unknown>("/estagios/oficial");
   const distritos = useConsultaViva<unknown>(`/estagios${consulta({ nivel: "distrito" })}`);
   const bairros = useConsultaViva<unknown>(`/estagios${consulta({ nivel: "bairro" })}`);
@@ -98,7 +109,6 @@ export function TelaMapa() {
     [itensBairro],
   );
   const ordenados = useMemo(() => ordenarPorGravidade(itensBairro, posicao), [itensBairro, posicao]);
-  const contagem = useMemo(() => contarPorEstagio(itensBairro), [itensBairro]);
   const ordemDistritos = useMemo(() => distritosPorPrioridade(listaPrioridade), [listaPrioridade]);
 
   /** Sem o arquivo de bairros (404), o mapa mostra os 8 distritos e diz isso. */
@@ -131,13 +141,24 @@ export function TelaMapa() {
 
   const secaoMapa = useRef<HTMLElement>(null);
   const [colorir, setColorir] = useState<Colorir>("distrito");
+  const [perigo, setPerigo] = useState<Perigo>("alagamento");
   const [distrito, setDistrito] = useState<string | null>(null);
   const [bairro, setBairro] = useState<string | null>(null);
   const [declarar, setDeclarar] = useState<ItemEstagio | null>(null);
   const [retirar, setRetirar] = useState<ItemEstagio | null>(null);
   const [mensagem, setMensagem] = useState<MensagemWhatsApp | null>(null);
+  const escolherRef = useRef<(id: string) => void>(() => {});
   const sel = bairro ?? distrito;
   const item = sel ? porId.get(sel) : undefined;
+
+  // vindo dos Dashboards ("Revisar no Mapa"): abre o território indicado na lista de decisões pendentes
+  const [params, setParams] = useSearchParams();
+  const alvo = params.get("territorio");
+  useEffect(() => {
+    if (!alvo || (!porId.has(alvo) && !distritoDoBairro.has(alvo))) return;
+    escolherRef.current(alvo);
+    setParams({}, { replace: true });
+  }, [alvo, porId, distritoDoBairro, setParams]);
 
   const voltarAoRecife = useCallback(() => {
     setDistrito(null);
@@ -156,6 +177,7 @@ export function TelaMapa() {
     },
     [distritoDoBairro, porId],
   );
+  escolherRef.current = escolher;
   /** Clique no mapa: primeiro o distrito (aproxima); já dentro dele, o bairro. */
   const aoClicarNoMapa = useCallback(
     (id: string) => {
@@ -190,12 +212,42 @@ export function TelaMapa() {
     return () => document.removeEventListener("keydown", aoTeclar);
   }, [sel, bairro, temDialogo]);
 
+  const classesImpacto = useMemo(
+    () =>
+      new Map(
+        (decisao.dadosImpacto?.itens ?? [])
+          .filter((i) => i.nivel === "bairro")
+          .map((i) => [i.territorio_id, i]),
+      ),
+    [decisao.dadosImpacto],
+  );
+  const classeDe = useCallback(
+    (id: string) => {
+      const i = classesImpacto.get(id);
+      return (perigo === "alagamento" ? i?.classe_alagamento : i?.classe_deslizamento) ?? "sem_dados";
+    },
+    [classesImpacto, perigo],
+  );
+  const impactoDisponivel = useMemo(
+    () =>
+      [...classesImpacto.values()].some(
+        (i) =>
+          (i.classe_alagamento ?? "sem_dados") !== "sem_dados" ||
+          (i.classe_deslizamento ?? "sem_dados") !== "sem_dados",
+      ),
+    [classesImpacto],
+  );
   const aparencia = useCallback(
     (id: string): Aparencia => {
+      if (colorir === "impacto") {
+        // classe prevista (Experimental): listrada, como toda sugestão do sistema; sem dado fica hachurada (RN-01)
+        const ordem = infoEstagio(classeDe(id)).ordem;
+        return ordem >= 0 ? { ordem, origem: "sugerido" } : { ordem: null, origem: "sem_dados" };
+      }
       const v = emVigor(porId.get(id));
       return { ordem: v.ordem, origem: v.origem };
     },
-    [porId],
+    [porId, colorir, classeDe],
   );
   const valorPorBairro = useCallback(
     (id: string) => classePrioridade(posicao.get(id), totalBairrosPrioridade),
@@ -215,6 +267,11 @@ export function TelaMapa() {
         return `${quem}<br>${rotulo}: ${textoPessoas(pop)}`;
       }
       if (colorir === "distrito") return quem;
+      if (colorir === "impacto") {
+        const c = infoEstagio(classeDe(id));
+        const nomePerigo = perigo === "alagamento" ? "Alagamento" : "Deslizamento";
+        return `${quem}<br>${nomePerigo}: ${c.ordem >= 0 ? `${c.rotulo} (previsto, experimental)` : "Dados insuficientes"}`;
+      }
       if (colorir === "prioridade") {
         const p = posicao.get(id);
         return `${quem}<br>${p ? `Prioridade ${p}º de ${totalBairrosPrioridade}` : "Prioridade: dados insuficientes"}`;
@@ -232,32 +289,29 @@ export function TelaMapa() {
       porBairroPop,
       indicadorPop,
       colorir,
+      perigo,
+      classeDe,
       posicao,
       totalBairrosPrioridade,
       distritoDoBairro,
     ],
   );
 
-  const semBairros = bairros.isError
-    ? "o servidor ainda não oferece os estágios por bairro."
-    : bairros.isSuccess && itensBairro.length === 0
-      ? "nenhum bairro tem estágio calculado ou declarado."
-      : null;
-
-  // "Estágio" só pinta diferente quando há estágios diferentes: senão, uma linha explica
-  const estagiosPresentes = useMemo(() => new Set(itensBairro.map((i) => emVigor(i).estagio)), [itensBairro]);
-  const avisoEstagio =
-    colorir === "estagio" && bairros.isSuccess && itensBairro.length > 0 && estagiosPresentes.size === 1
-      ? estagiosPresentes.has("sem_dados")
-        ? "Dados insuficientes: nenhum bairro tem estágio, falta a previsão de chuva e de maré."
-        : `Todos os bairros estão em ${ESTAGIOS[[...estagiosPresentes][0]].rotulo}. Não há diferença de estágio para mostrar; use Distritos ou Prioridade.`
-      : null;
-
-  const modoCor: ModoCor = modoPopulacao ? "populacao" : colorir === "prioridade" ? "valor" : colorir;
+  const modoCor: ModoCor = modoPopulacao
+    ? "populacao"
+    : colorir === "prioridade"
+      ? "valor"
+      : colorir === "impacto"
+        ? "estagio"
+        : colorir;
   const pronto =
     modoPopulacao ||
     colorir === "distrito" ||
-    (colorir === "estagio" ? !bairros.isPending : !prioridade.isPending);
+    (colorir === "estagio"
+      ? !bairros.isPending
+      : colorir === "impacto"
+        ? !decisao.impacto.isPending
+        : !prioridade.isPending);
   const colorindoPorOutra = camadas.ligadas.populacao;
 
   const fontes = fontesDado(juntarFontes(bairros.data, distritos.data));
@@ -267,19 +321,33 @@ export function TelaMapa() {
 
   return (
     <>
-      <CabecalhoTela titulo="Mapa" proposito="Toque em um distrito." atualizadoEm={momento} />
+      <CabecalhoTela
+        titulo="Mapa"
+        atualizadoEm={momento}
+        acoes={
+          <Link to="/app/dashboards" className={classesBotao("secundario")}>
+            <ChartColumn aria-hidden="true" size={18} /> Ver dashboards
+          </Link>
+        }
+      />
       <div className={estilos.pagina}>
-        <FaixaOficial
-          oficial={oficial}
-          contagem={contagem}
-          totalBairros={itensBairro.length}
-          semBairros={semBairros}
-          carregandoBairros={bairros.isPending}
-          podeInformar={podeDeclarar}
+        <KpisPainel
+          d={decisao}
+          janela={24}
+          agora={agoraTopo}
+          esmaecer={SEM_ESMAECER}
+          compacto
+          acaoCop={<BotaoInformarCop oficial={oficial} podeInformar={podeDeclarar} />}
         />
 
         <div className={estilos.ferramentas}>
-          <SeletorColorir valor={colorir} aoMudar={setColorir} />
+          <SeletorColorir
+            valor={colorir}
+            aoMudar={setColorir}
+            impacto={{ disponivel: impactoDisponivel, carregando: decisao.impacto.isPending }}
+            perigo={perigo}
+            aoMudarPerigo={setPerigo}
+          />
           {!modoDistrito && (
             <ChipsDistritos
               ids={ordemDistritos}
@@ -289,18 +357,6 @@ export function TelaMapa() {
             />
           )}
         </div>
-        {colorindoPorOutra && (
-          <p className={estilos.avisoLinha}>
-            A população está colorindo o mapa. Desligue-a em “Mais camadas” para voltar a colorir por{" "}
-            {colorir === "distrito" ? "distritos" : colorir === "estagio" ? "estágio" : "prioridade"}.
-          </p>
-        )}
-        {avisoEstagio && !colorindoPorOutra && (
-          <p className={estilos.avisoLinha} role="status" data-aviso="estagio-igual">
-            {avisoEstagio}
-          </p>
-        )}
-
         <div className={estilos.corpo} data-com-painel={!!sel}>
           <div className={estilos.colunaMapa}>
             <section ref={secaoMapa} className={estilos.mapa} aria-label="Mapa dos bairros do Recife">
@@ -335,7 +391,11 @@ export function TelaMapa() {
               )}
               {territorios && !pronto && (
                 <p className={estilos.carregandoValores} role="status">
-                  {colorir === "estagio" ? "Carregando os estágios…" : "Carregando as prioridades…"}
+                  {colorir === "estagio"
+                    ? "Carregando os estágios…"
+                    : colorir === "impacto"
+                      ? "Carregando o impacto previsto…"
+                      : "Carregando as prioridades…"}
                 </p>
               )}
               {sel && (
@@ -350,8 +410,12 @@ export function TelaMapa() {
                 Mostrando os 8 distritos, com o estágio de cada um. Os bairros continuam na lista.
               </EstadoDados>
             )}
-            {colorir === "estagio" && !colorindoPorOutra && (
-              <LegendaEstagios fontes={fontes} consultadoEm={bairros.dataUpdatedAt} />
+            {(colorir === "estagio" || colorir === "impacto") && !colorindoPorOutra && (
+              <LegendaEstagios
+                fontes={fontes}
+                consultadoEm={colorir === "impacto" ? decisao.impacto.dataUpdatedAt : bairros.dataUpdatedAt}
+                impacto={colorir === "impacto" ? perigo : null}
+              />
             )}
             {colorir === "prioridade" && !colorindoPorOutra && (
               <LegendaPrioridade
@@ -391,6 +455,10 @@ export function TelaMapa() {
                     carregandoPrioridade={prioridade.isPending}
                     fontesPrioridade={fontesDado(fontesDe(prioridade.data))}
                     prioridadeEm={prioridade.dataUpdatedAt}
+                    periodoOcorrencias={textoPeriodo(
+                      periodoOcorrencias(prioridade.data),
+                      listaPrioridade.find((x) => x.territorio_id === distrito)?.ultima_ocorrencia,
+                    )}
                     podeDeclarar={podeDeclarar}
                     aoDeclarar={setDeclarar}
                     aoRetirar={setRetirar}
@@ -401,6 +469,8 @@ export function TelaMapa() {
                 {(bairro || modoDistrito) && item && (
                   <PainelTerritorio
                     item={item}
+                    distritoItem={item.distrito_id ? porId.get(item.distrito_id) : undefined}
+                    limiares={decisao.limiares}
                     podeDeclarar={podeDeclarar}
                     aoDeclarar={setDeclarar}
                     aoRetirar={setRetirar}
@@ -423,12 +493,6 @@ export function TelaMapa() {
                   />
                 )}
               </div>
-            )}
-            {!sel && (
-              <p className={estilos.dicaClique}>
-                Toque em um distrito, no mapa ou nos botões, para aproximar. Depois toque em um bairro para
-                ver o estágio, os alertas e a população vulnerável.
-              </p>
             )}
             <Prioritarios consulta={prioridade} selecionado={sel} aoEscolher={escolher} />
             <ListaBairros bairros={ordenados} selecionado={bairro} aoEscolher={escolher} />
@@ -500,7 +564,7 @@ function LegendaPrioridade({
               Dados insuficientes
             </li>
           </ul>
-          <p className={estilos.legendaNota}>Prioridade não é a chance de acontecer: é onde agir primeiro.</p>
+          <p className={estilos.legendaNota}>Prioridade é onde agir primeiro, não chance de acontecer.</p>
         </>
       )}
       <LegendaFonte fontes={fontesP}>
@@ -518,9 +582,12 @@ function LegendaPrioridade({
 function LegendaEstagios({
   fontes,
   consultadoEm,
+  impacto,
 }: {
   fontes: ReturnType<typeof fontesDado>;
   consultadoEm: number;
+  /** Colorindo pela classe prevista de um perigo (Experimental): sem declarado nem sugerido, só a classe. */
+  impacto: Perigo | null;
 }) {
   useTemaAtual();
   return (
@@ -534,39 +601,33 @@ function LegendaEstagios({
         ))}
         <li>
           <i className={estilos.corSemDado} aria-hidden="true" />
-          Dados insuficientes
+          Dados insuficientes (não é risco baixo)
         </li>
+        {!impacto && (
+          <>
+            <li>
+              <i className={estilos.corCheia} aria-hidden="true" />
+              Cheio: declarado
+            </li>
+            <li>
+              <i className={estilos.corListrada} aria-hidden="true" />
+              Listrado: sugerido
+            </li>
+          </>
+        )}
       </ul>
-      <ul>
-        <li>
-          <i className={estilos.corCheia} aria-hidden="true" />
-          Cor cheia: declarado pela equipe
-        </li>
-        <li>
-          <i className={estilos.corListrada} aria-hidden="true" />
-          Listrado: sugerido pelo sistema
-        </li>
-        <li>
-          <i className={estilos.contorno} aria-hidden="true" />
-          Linha grossa: distritos
-        </li>
-      </ul>
-      <p className={estilos.legendaNota}>Cinza tracejado não quer dizer risco baixo: falta dado.</p>
       <p className={estilos.legendaFonteTxt}>
-        Fonte: estágios do ClimaSense (declaração da equipe e sugestão do sistema)
+        {impacto
+          ? `Classe prevista de ${impacto === "alagamento" ? "alagamento" : "deslizamento"} (experimental): regras sobre a previsão de chuva da Open-Meteo e o histórico da Defesa Civil. É ordem de atenção, não chance de acontecer`
+          : "Fonte: estágios do ClimaSense (declaração da equipe e sugestão do sistema)"}
         {consultadoEm ? `, consultado às ${formatarHoraMinuto(consultadoEm)}` : ""}.
+        {fontes.some((f) => f.desatualizado === true) && (
+          <>
+            {" "}
+            <SeloDesatualizado /> Alguma fonte da sugestão está vencida: confira antes de decidir.
+          </>
+        )}
       </p>
-      {fontes.some((f) => f.desatualizado === true) && (
-        <p className={estilos.legendaNota} data-aviso="desatualizado">
-          <SeloDesatualizado /> Alguma fonte da sugestão está vencida: confira antes de decidir.
-        </p>
-      )}
-      {fontes.length > 0 && (
-        <details className={estilos.fontesLegenda}>
-          <summary>Fontes da sugestão e hora de cada uma ({fontes.length})</summary>
-          <LegendaFonte fontes={fontes} />
-        </details>
-      )}
     </div>
   );
 }

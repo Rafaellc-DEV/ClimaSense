@@ -11,7 +11,7 @@ import { listaDe, type ItemEstagio } from "@/features/evento/tipos";
 import { nomeDistrito } from "@/lib/distritos";
 import { formatarNumero } from "@/lib/formatos";
 import { fontesDe } from "@/lib/frescor";
-import { emVigor, semAcento, type ItemPrioridadeTerritorio } from "./tipos";
+import { emVigor, periodoOcorrencias, semAcento, textoPeriodo, type ItemPrioridadeTerritorio } from "./tipos";
 import estilos from "./Mapa.module.css";
 
 interface Consulta {
@@ -45,6 +45,7 @@ export function Prioritarios({
     [consulta.data],
   );
   const visiveis = todos ? itens : itens.slice(0, LIMITE);
+  const periodo = periodoOcorrencias(consulta.data);
   return (
     <Painel
       id="mapa-prioritarios"
@@ -86,18 +87,11 @@ export function Prioritarios({
                       <span className="so-leitor">, prioridade {p.posicao}. Mostrar no mapa</span>
                     </b>
                     <span className={estilos.prioNumeros}>
-                      {contagem(
-                        p.ocorrencias_alagamento,
-                        "ocorrência de alagamento",
-                        "ocorrências de alagamento",
-                      )}
+                      {contagem(p.ocorrencias_alagamento, "alagamento", "alagamentos")}
                       {" · "}
-                      {contagem(
-                        p.ocorrencias_deslizamento,
-                        "ocorrência de deslizamento",
-                        "ocorrências de deslizamento",
-                      )}
+                      {contagem(p.ocorrencias_deslizamento, "deslizamento", "deslizamentos")}
                     </span>
+                    <small data-periodo="true">{textoPeriodo(periodo, p.ultima_ocorrencia)}</small>
                     {p.criterio && <small>{p.criterio}</small>}
                   </span>
                 </button>

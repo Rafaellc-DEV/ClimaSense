@@ -6,10 +6,29 @@ import { Undo2 } from "lucide-react";
 import { Botao } from "@/design-system/componentes/Botao";
 import { Segmentado } from "@/design-system/componentes/Segmentado";
 import { corDoDistrito, siglaDoDistrito, nomeDoDistrito } from "@/map/paleta";
-import { OPCOES_COLORIR, type Colorir } from "./distritos";
+import { SeloExp } from "@/features/dashboards/CartaoPainel";
+import { OPCOES_COLORIR, type Colorir, type Perigo } from "./distritos";
 import estilos from "./Mapa.module.css";
 
-export function SeletorColorir({ valor, aoMudar }: { valor: Colorir; aoMudar: (v: Colorir) => void }) {
+export function SeletorColorir({
+  valor,
+  aoMudar,
+  impacto,
+  perigo,
+  aoMudarPerigo,
+}: {
+  valor: Colorir;
+  aoMudar: (v: Colorir) => void;
+  /** "Impacto previsto" só liga com classes por bairro vindas do servidor; senão fica desabilitado (RN-01). */
+  impacto: { disponivel: boolean; carregando: boolean };
+  perigo: Perigo;
+  aoMudarPerigo: (p: Perigo) => void;
+}) {
+  const opcoes = OPCOES_COLORIR.map((o) =>
+    o.valor === "impacto" && !impacto.disponivel && !impacto.carregando
+      ? { ...o, desabilitado: true, dica: "Ainda não disponível" }
+      : o,
+  );
   return (
     <div className={estilos.colorir}>
       <span aria-hidden="true" className={estilos.colorirLongo}>
@@ -18,7 +37,22 @@ export function SeletorColorir({ valor, aoMudar }: { valor: Colorir; aoMudar: (v
       <span aria-hidden="true" className={estilos.colorirCurto}>
         Colorir
       </span>
-      <Segmentado rotulo="Colorir por" rotuloOculto opcoes={OPCOES_COLORIR} valor={valor} aoMudar={aoMudar} />
+      <Segmentado rotulo="Colorir por" rotuloOculto opcoes={opcoes} valor={valor} aoMudar={aoMudar} />
+      {valor === "impacto" && (
+        <>
+          <Segmentado
+            rotulo="Perigo"
+            rotuloOculto
+            opcoes={[
+              { valor: "alagamento" as const, rotulo: "Alagamento" },
+              { valor: "deslizamento" as const, rotulo: "Deslizamento" },
+            ]}
+            valor={perigo}
+            aoMudar={aoMudarPerigo}
+          />
+          <SeloExp />
+        </>
+      )}
     </div>
   );
 }

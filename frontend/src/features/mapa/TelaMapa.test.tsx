@@ -204,13 +204,17 @@ test("/app abre o Mapa; o menu tem Mapa primeiro e a Situação do evento contin
 
 test("sem estágio do COP: Dados insuficientes, nunca observação, e o botão para informar", async () => {
   await abrir(base());
-  const faixa = await screen.findByRole("region", { name: "Estágio oficial da cidade (COP)" });
-  expect(await within(faixa).findByText(/ninguém informou o estágio do COP/)).toBeInTheDocument();
-  expect(within(faixa).getByText(/Dados insuficientes:/)).toBeInTheDocument();
-  expect(within(faixa).getByRole("button", { name: "Informar estágio do COP" })).toBeInTheDocument();
+  const numeros = await screen.findByRole("list", { name: "Números principais" });
+  const situacao = (await within(numeros).findByText("Situação agora")).closest("li")!;
+  expect(await within(situacao).findByText("Dados insuficientes")).toBeInTheDocument();
+  expect(within(situacao).getByText("Falta: estágio do COP")).toBeInTheDocument();
+  // o estágio do COP não vira "observação"; a sugestão do sistema aparece à parte e com o nome de sugestão
+  expect(within(situacao).queryByText("Observação")).not.toBeInTheDocument();
+  expect(within(situacao).getByText(/Sistema sugere/)).toBeInTheDocument();
+  expect(within(situacao).getByRole("button", { name: "Informar estágio do COP" })).toBeInTheDocument();
 });
 
-test("com estágio do COP: estágio, hora, autor e fonte", async () => {
+test("com estágio do COP: estágio, hora e fonte no cartão Situação agora", async () => {
   await abrir(
     base({
       "/estagios/oficial": {
@@ -226,12 +230,13 @@ test("com estágio do COP: estágio, hora, autor e fonte", async () => {
       },
     }),
   );
-  const faixa = await screen.findByRole("region", { name: "Estágio oficial da cidade (COP)" });
-  expect(await within(faixa).findByText(/Informado pelo COP/)).toBeInTheDocument();
-  expect(within(faixa).getAllByText("Alerta").length).toBeGreaterThanOrEqual(1); // selo do COP
-  expect(within(faixa).getByText(/registrado por Rita Souza/)).toBeInTheDocument();
-  expect(within(faixa).getByText(/Fonte: COP do Recife/)).toBeInTheDocument();
-  expect(within(faixa).getByText(/Chuva forte na zona sul/)).toBeInTheDocument();
+  const numeros = await screen.findByRole("list", { name: "Números principais" });
+  const situacao = (await within(numeros).findByText("Situação agora")).closest("li")!;
+  expect(await within(situacao).findByText("Alerta")).toBeInTheDocument();
+  expect(situacao).toHaveTextContent(/COP do Recife/);
+  expect(within(situacao).getByRole("button", { name: "Informar estágio do COP" })).toHaveTextContent(
+    "Atualizar",
+  );
 });
 
 test("informar o estágio do COP envia estágio, hora e observação, com o aviso de privacidade", async () => {
@@ -252,7 +257,7 @@ test("informar o estágio do COP envia estágio, hora e observação, com o avis
 
 test("sem permissão de editar, não há botão de informar nem de declarar", async () => {
   await abrir(base({}, ["consultar"]));
-  await screen.findByText(/ninguém informou o estágio do COP/);
+  await screen.findByText("Falta: estágio do COP");
   expect(screen.queryByRole("button", { name: "Informar estágio do COP" })).not.toBeInTheDocument();
   const u = userEvent.setup();
   await escolherBairro(u, "Ibura");
@@ -260,18 +265,74 @@ test("sem permissão de editar, não há botão de informar nem de declarar", as
   expect(screen.queryByRole("button", { name: /Declarar/ })).not.toBeInTheDocument();
 });
 
-test("a contagem vira chips pequenos: só estágios com bairro, declarado e sugerido na dica, sem dados não vira observação", async () => {
+test("topo no estilo dos Dashboards: quatro cartões com fonte, link para os dashboards e sem a contagem por estágio", async () => {
+  await abrir(
+    base({
+      "/situacao/chuva": {
+        dados: {
+          distritos: [],
+          maior_24h: { territorio_id: "ds-4", territorio_nome: "Distrito Sanitário IV", mm: 38 },
+          maior_72h: null,
+          estacoes: { total: 19, com_leitura: 12, sem_leitura: 7 },
+          previsao: { chuva: [], mare: [] },
+        },
+        meta: {
+          fontes: [{ id: "apac-chuva", nome: "APAC", atualizado_em: AGORA, desatualizado: false }],
+        },
+      },
+    }),
+  );
+  const numeros = await screen.findByRole("list", { name: "Números principais" });
+  // um bairro (Cohab) tem sugestão e nenhuma declaração; outro (Aflitos) está sem dados e fica à parte
+  expect(await within(numeros).findByText(/Sugestão acima do declarado · 1 sem dados/)).toBeInTheDocument();
+  expect(numeros).toHaveTextContent("Decisões pendentes");
+  expect(await within(numeros).findByText(/Distrito 4 · 12 de 19 estações/)).toBeInTheDocument();
+  expect(numeros).toHaveTextContent(/APAC \d{2}:\d{2}/);
+  expect(screen.getByRole("link", { name: /Ver dashboards/ })).toHaveAttribute("href", "/app/dashboards");
+  expect(screen.queryByRole("region", { name: "Situação dos bairros" })).not.toBeInTheDocument();
+  expect(screen.queryByText(/em observação/)).not.toBeInTheDocument();
+});
+
+test("Colorir por Impacto previsto: classe por bairro com selo Experimental; sem a rota fica desabilitado", async () => {
+  await abrir(
+    base({
+      "/cenarios/impacto-previsto": {
+        dados: {
+          itens: [
+            {
+              territorio_id: "bairro-ibura",
+              nome: "Ibura",
+              nivel: "bairro",
+              distrito_id: "ds-8",
+              classe_alagamento: "alerta",
+              classe_deslizamento: "atencao",
+              estagio_sugerido: "alerta",
+              impacto_pessoas: null,
+            },
+          ],
+        },
+        meta: { fontes: [] },
+      },
+    }),
+  );
+  const u = userEvent.setup();
+  await u.click(await screen.findByRole("radio", { name: "Impacto previsto" }));
+  const mapa = await screen.findByTestId("mapa");
+  expect(mapa).toHaveAttribute("data-modo-cor", "estagio");
+  expect(screen.getByRole("radio", { name: "Alagamento" })).toBeChecked();
+  expect(screen.getAllByText("Experimental").length).toBeGreaterThan(0);
+  // só o Ibura tem classe: os outros ficam sem dado (hachurados), nunca "baixo"
+  const itens = within(mapa).getAllByRole("listitem");
+  expect(itens.map((i) => i.getAttribute("data-origem"))).toEqual(["sugerido", "sem_dados", "sem_dados"]);
+  await u.click(screen.getByRole("radio", { name: "Deslizamento" }));
+  expect(screen.getByRole("radio", { name: "Deslizamento" })).toBeChecked();
+});
+
+test("sem classes de impacto no servidor, Impacto previsto fica desabilitado: Ainda não disponível", async () => {
   await abrir(base());
-  const contagem = await screen.findByRole("region", { name: "Bairros por estágio" });
-  const critico = (await within(contagem).findByText("Crítico")).closest("li")!;
-  expect(critico).toHaveTextContent("1");
-  expect(critico).toHaveAttribute("title", "1 declarado, 0 sugeridos");
-  const atencao = within(contagem).getByText("Atenção").closest("li")!;
-  expect(atencao).toHaveAttribute("title", "0 declarados, 1 sugerido");
-  const semDados = within(contagem).getByText("Sem dados").closest("li")!;
-  expect(semDados).toHaveAttribute("title", "o sistema não consegue sugerir");
-  expect(within(contagem).queryByText("Observação")).not.toBeInTheDocument();
-  expect(contagem).toHaveTextContent("3 bairros: 1 declarado pela equipe, 1 sugerido pelo sistema");
+  const opcao = await screen.findByRole("radio", { name: "Impacto previsto" });
+  await waitFor(() => expect(opcao).toBeDisabled());
+  expect(opcao.closest("label")).toHaveAttribute("title", "Ainda não disponível");
 });
 
 test("o mapa recebe os bairros e diz a origem (declarado, sugerido ou sem dados)", async () => {
@@ -299,7 +360,7 @@ test("clicar no bairro abre o painel: estágio declarado e sugerido, alertas e E
   );
   expect(within(painel).getByRole("link", { name: /Cemaden/ })).toBeInTheDocument();
   // sem o resumo no servidor: avisa, sem número inventado
-  expect(await within(painel).findByText("Ainda não disponível")).toBeInTheDocument();
+  expect((await within(painel).findAllByText("Ainda não disponível")).length).toBeGreaterThan(0);
   expect(within(painel).queryByText("Em breve.")).not.toBeInTheDocument();
   expect(within(painel).getByRole("button", { name: /Declarar/ })).toBeInTheDocument();
 });
@@ -309,9 +370,9 @@ test("bairro sem alerta e sem sugestão: diz o que falta e não diz que está se
   const u = userEvent.setup();
   await escolherBairro(u, "Aflitos");
   const painel = await screen.findByRole("complementary", { name: "Aflitos" });
-  expect(within(painel).getByText("Dados insuficientes")).toBeInTheDocument();
+  expect(within(painel).getAllByText("Dados insuficientes").length).toBeGreaterThan(0);
   expect(within(painel).getByText(/Falta previsão de chuva/)).toBeInTheDocument();
-  expect(within(painel).getByText(/Nenhum alerta oficial ativo registrado/)).toBeInTheDocument();
+  expect(within(painel).getByText(/sem alerta oficial ativo/)).toBeInTheDocument();
   expect(painel).not.toHaveTextContent(/seguro|risco baixo\.$/i);
 });
 
@@ -341,15 +402,64 @@ test("territórios prioritários: o mais vulnerável primeiro, com critério e n
   const lista = await screen.findByRole("region", { name: "Territórios prioritários" });
   const itens = await within(lista).findAllByRole("listitem");
   expect(itens[0]).toHaveTextContent("Distrito 7");
-  expect(itens[0]).toHaveTextContent("120 ocorrências de alagamento");
-  expect(itens[0]).toHaveTextContent("8 ocorrências de deslizamento");
+  expect(itens[0]).toHaveTextContent("120 alagamentos");
+  expect(itens[0]).toHaveTextContent("8 deslizamentos");
   expect(itens[0]).toHaveTextContent("Mais ocorrências de alagamento e deslizamento registradas.");
   // sem dado não vira zero
-  expect(itens[1]).toHaveTextContent("ocorrências de deslizamento: sem dado");
+  expect(itens[1]).toHaveTextContent("deslizamentos: sem dado");
   expect(lista).not.toHaveTextContent("%");
   const u = userEvent.setup();
   await u.click(within(itens[1]).getByRole("button"));
   expect(await screen.findByRole("complementary", { name: "Ibura" })).toBeInTheDocument();
+});
+
+test("ocorrências sempre com período e fonte; sem período na fonte, diz que não foi informado", async () => {
+  await abrir(base());
+  const lista = await screen.findByRole("region", { name: "Territórios prioritários" });
+  const itens = await within(lista).findAllByRole("listitem");
+  // o endpoint não trouxe o período: nada de ano inventado
+  expect(itens[0]).toHaveTextContent("período não informado pela fonte · Defesa Civil");
+  expect(itens[0]).not.toHaveTextContent(/(19|20)\d{2}/);
+  expect(itens[0]).not.toHaveTextContent("última:");
+});
+
+test("ocorrências com período da fonte: desde o ano, nome da fonte e a mais recente quando a API informa", async () => {
+  const m = base({
+    "/territorios/prioridade": {
+      dados: {
+        desde: 2014,
+        itens: [
+          {
+            territorio_id: "ds-7",
+            nome: "Distrito 7",
+            nivel: "distrito",
+            posicao: 1,
+            ocorrencias_alagamento: 48,
+            ocorrencias_deslizamento: 1237,
+            ultima_ocorrencia: "2024-03-18T10:00:00Z",
+            criterio: "Mais atendimentos desde 2014.",
+          },
+        ],
+      },
+      meta: { fontes: [{ id: "dc", nome: "Defesa Civil", atualizado_em: AGORA, desatualizado: false }] },
+    },
+  });
+  await abrir(m);
+  const lista = await screen.findByRole("region", { name: "Territórios prioritários" });
+  const item = (await within(lista).findAllByRole("listitem"))[0];
+  expect(item).toHaveTextContent("48 alagamentos · 1.237 deslizamentos");
+  expect(item).toHaveTextContent("desde 2014 · Defesa Civil · última: mar/2024");
+  // painel do distrito: o mesmo período junto de cada número de ocorrências
+  const u = userEvent.setup();
+  await u.click(
+    within(screen.getByRole("group", { name: "Distritos sanitários" })).getByRole("button", { name: /^D7,/ }),
+  );
+  const painel = await screen.findByRole("complementary", { name: /Distrito 7$/ });
+  const alag = within(painel).getByText("Ocorrências de alagamento").closest("div")!;
+  expect(alag).toHaveTextContent("48");
+  expect(alag).toHaveTextContent("desde 2014 · Defesa Civil · última: mar/2024");
+  const desl = within(painel).getByText("Ocorrências de deslizamento").closest("div")!;
+  expect(desl).toHaveTextContent("desde 2014 · Defesa Civil");
 });
 
 test("a lista de bairros é a alternativa ao mapa: mais grave primeiro, com busca", async () => {
@@ -374,9 +484,9 @@ test("rotas novas ainda não prontas (404): dizem Ainda não disponível, sem in
   delete (m as Record<string, unknown>)["/estagios/oficial"];
   delete (m as Record<string, unknown>)["/territorios/prioridade"];
   await abrir(m);
-  const faixa = await screen.findByRole("region", { name: "Estágio oficial da cidade (COP)" });
-  expect(await within(faixa).findByText("Ainda não disponível.")).toBeInTheDocument();
-  expect(within(faixa).queryByRole("button", { name: "Informar estágio do COP" })).not.toBeInTheDocument();
+  const numeros = await screen.findByRole("list", { name: "Números principais" });
+  expect(await within(numeros).findByText(/COP .ainda não disponível./)).toBeInTheDocument();
+  expect(within(numeros).queryByRole("button", { name: "Informar estágio do COP" })).not.toBeInTheDocument();
   const lista = screen.getByRole("region", { name: "Territórios prioritários" });
   expect(await within(lista).findByText("Ainda não disponível.")).toBeInTheDocument();
 });
@@ -405,10 +515,8 @@ test("no modo Estágio: legenda com fonte e hora, cinza não é risco baixo, e o
   expect(screen.queryByRole("group", { name: "Legenda do mapa" })).not.toBeInTheDocument();
   await u.click(await screen.findByRole("radio", { name: "Estágio" }));
   const legenda = await screen.findByRole("group", { name: "Legenda do mapa" });
-  expect(await within(legenda).findByText(/Estágios do ClimaSense/)).toBeInTheDocument();
-  expect(
-    within(legenda).getByText("Cinza tracejado não quer dizer risco baixo: falta dado."),
-  ).toBeInTheDocument();
+  expect(await within(legenda).findByText(/estágios do ClimaSense/)).toBeInTheDocument();
+  expect(within(legenda).getByText(/Dados insuficientes \(não é risco baixo\)/)).toBeInTheDocument();
   expect(document.querySelector("[data-atualizado-as]")).toHaveTextContent(/Atualizado às \d{2}:\d{2}/);
 });
 
@@ -478,38 +586,11 @@ test("painel do distrito mostra idosos do Censo e 'Dados insuficientes' para o q
     }),
   );
   const painel = await screen.findByRole("complementary", { name: /Distrito 7$/ });
-  const idosos = within(painel).getByText("Idosos (60 anos ou mais)").closest("div")!;
+  const idosos = within(painel).getByText("Idosos (60+)").closest("div")!;
   await waitFor(() => expect(idosos).toHaveTextContent("24.619"));
-  const criancas = within(painel).getByText("Crianças (0 a 14 anos)").closest("div")!;
+  const criancas = within(painel).getByText("Crianças (0 a 14)").closest("div")!;
   expect(criancas).toHaveTextContent("Dados insuficientes");
   expect(painel).toHaveTextContent("1º de 1");
-});
-
-test("Estágio com todos os bairros iguais: uma linha explica em vez de pintar tudo igual sem aviso", async () => {
-  const todosObservacao = bairros.map((b) =>
-    itemEstagio({
-      ...b,
-      declarado: null,
-      sugerido: { estagio: "observacao", motivos: [], insumos: {}, calculado_em: AGORA },
-    }),
-  );
-  await abrir(
-    base({
-      "/estagios?nivel=bairro": { dados: { itens: todosObservacao }, meta: { fontes: [] } },
-    }),
-  );
-  const u = userEvent.setup();
-  expect(screen.queryByText(/Todos os bairros estão em/)).not.toBeInTheDocument();
-  await u.click(await screen.findByRole("radio", { name: "Estágio" }));
-  expect(await screen.findByText(/Todos os bairros estão em Observação/)).toBeInTheDocument();
-  expect(screen.getByTestId("mapa")).toHaveAttribute("data-modo-cor", "estagio");
-});
-
-test("Estágio com estágios diferentes não mostra o aviso de 'todos iguais'", async () => {
-  await abrir(base());
-  await userEvent.setup().click(await screen.findByRole("radio", { name: "Estágio" }));
-  await screen.findByRole("group", { name: "Legenda do mapa" });
-  expect(screen.queryByText(/Todos os bairros estão em/)).not.toBeInTheDocument();
 });
 
 test("Prioridade: escala de uma cor, legenda do mais ao menos prioritário, sem posição vira sem dado", async () => {
@@ -536,7 +617,7 @@ test("Prioridade: escala de uma cor, legenda do mais ao menos prioritário, sem 
   expect(legenda).toHaveTextContent("Mais prioritários");
   expect(legenda).toHaveTextContent("Menos prioritários");
   expect(legenda).toHaveTextContent("Dados insuficientes");
-  expect(legenda).toHaveTextContent("Prioridade não é a chance de acontecer");
+  expect(legenda).toHaveTextContent("não chance de acontecer");
 });
 
 test("enquanto os dados lentos carregam: o mapa já está lá, cinza liso e com o texto Carregando", async () => {

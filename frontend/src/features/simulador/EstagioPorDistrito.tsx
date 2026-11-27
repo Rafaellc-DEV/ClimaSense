@@ -13,7 +13,7 @@ import { EvidenciasImpacto } from "./EvidenciasImpacto";
 const LEGENDA = ["critico", "alerta", "atencao", "observacao"] as const;
 
 const maiuscula = (t: string) => t.charAt(0).toUpperCase() + t.slice(1);
-export const textoConfianca = (c: string | null | undefined) => (c ? maiuscula(c) : "sem dado");
+export const textoConfianca = (c: string | null | undefined) => (c ? maiuscula(c) : "Dados insuficientes");
 
 export const ordemNome = (a: ItemSimulado, b: ItemSimulado) =>
   nomeDistrito(a.nome).localeCompare(nomeDistrito(b.nome), "pt-BR", { numeric: true });

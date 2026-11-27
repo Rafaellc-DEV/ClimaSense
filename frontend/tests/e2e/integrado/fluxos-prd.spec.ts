@@ -31,8 +31,8 @@ test("ver o mapa: bairros, estágio do COP sem dado e camadas liga/desliga (RF-0
   await expect(page.getByRole("heading", { name: "Mapa", level: 1 })).toBeVisible();
   await expect(page.locator(".leaflet-overlay-pane path").first()).toBeVisible();
   // sem registro do COP: "Dados insuficientes", nunca "observação" nem "risco baixo" (RN-01)
-  await expect(page.getByText(/Dados insuficientes: ninguém informou o estágio do COP/)).toBeVisible();
-  await expect(page.getByText("Bairros por estágio")).toBeVisible();
+  await expect(page.getByText(/Falta o estágio informado pelo COP/)).toBeVisible();
+  await expect(page.getByText("Decisões pendentes")).toBeVisible();
   await expect(page.getByText(/consultado às/).first()).toBeVisible();
   // as três camadas do PRD, cada uma liga e desliga
   for (const nome of ["População vulnerável", "Áreas de risco", "Equipamentos de saúde"]) {

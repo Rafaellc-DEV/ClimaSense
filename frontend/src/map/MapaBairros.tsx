@@ -107,6 +107,8 @@ const semMovimento = () => matchMedia("(prefers-reduced-motion: reduce)").matche
 const ALTURA_PAINEL_CELULAR = 0.5;
 /** Do zoom 14 em diante os rótulos dos distritos somem: já se enxergam os bairros. */
 const ZOOM_SEM_ROTULOS = 14;
+/** Folga em volta do Recife inteiro (px): a cidade toda à vista, sem encostar nas bordas do mapa. */
+const ENQUADRE_RECIFE: L.PointExpression = [28, 28];
 
 type Feicao = GeoJSON.Feature<GeoJSON.Geometry, PropsFeicao>;
 
@@ -258,7 +260,14 @@ export function MapaBairros(props: Props) {
   // criação (uma vez)
   useEffect(() => {
     if (!caixa.current) return;
-    const m = L.map(caixa.current, { zoomControl: true, keyboard: true, attributionControl: true });
+    // zoomSnap 0,25: o Recife inteiro cabe com folga em qualquer tamanho de tela, sem pular para um zoom exagerado
+    const m = L.map(caixa.current, {
+      zoomControl: true,
+      keyboard: true,
+      attributionControl: true,
+      zoomSnap: 0.25,
+      zoomDelta: 0.5,
+    });
     mapa.current = m;
     m.setView([-8.05, -34.92], 12);
     m.zoomControl.setPosition("bottomright");
@@ -300,9 +309,14 @@ export function MapaBairros(props: Props) {
       },
     }).addTo(m);
     grupo.current = g;
-    m.fitBounds(g.getBounds(), { padding: [16, 16], animate: false });
+    m.fitBounds(g.getBounds(), { padding: ENQUADRE_RECIFE, animate: false });
 
-    const ro = new ResizeObserver(() => m.invalidateSize({ pan: false }));
+    // o tamanho da caixa muda depois da criação (fontes, painel): sem nada escolhido, enquadra o Recife de novo
+    const ro = new ResizeObserver(() => {
+      m.invalidateSize({ pan: false });
+      if (!atuais.current.selecionado && !atuais.current.distritoEmFoco && !atuais.current.enquadrar?.length)
+        m.fitBounds(g.getBounds(), { padding: ENQUADRE_RECIFE, animate: false });
+    });
     ro.observe(caixa.current);
     const lista = camadas.current;
     const nomes = feicoes.current;
@@ -484,7 +498,7 @@ export function MapaBairros(props: Props) {
           animate: animar,
         });
     } else if (focoAnterior.current !== null && grupo.current) {
-      m.fitBounds(grupo.current.getBounds(), { padding: [16, 16], animate: animar });
+      m.fitBounds(grupo.current.getBounds(), { padding: ENQUADRE_RECIFE, animate: animar });
     }
     focoAnterior.current = foco;
   }, [props.selecionado, props.distritoEmFoco]);

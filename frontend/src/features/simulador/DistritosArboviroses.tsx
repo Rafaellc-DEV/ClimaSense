@@ -15,6 +15,8 @@ export const nomeAgravo = (a: string) => NOME_AGRAVO[a.toLowerCase()] ?? a;
  */
 export function textoArboviroses(a: ArbovirosesDistrito | null | undefined): string {
   if (!a || a.agravos.length === 0) return "Dados insuficientes";
+  if (a.agravos.every((g) => !g.classe_impacto || g.dados_insuficientes))
+    return `${a.agravos.map((g) => g.nome).join(", ")}: dados insuficientes`;
   return a.agravos
     .map((g) =>
       g.classe_impacto && !g.dados_insuficientes

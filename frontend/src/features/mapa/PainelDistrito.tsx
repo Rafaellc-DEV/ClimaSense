@@ -9,10 +9,9 @@ import { LegendaFonte, type FonteDado } from "@/design-system/componentes/Estado
 import { SeloEstagio } from "@/features/evento/Evento";
 import type { ItemEstagio } from "@/features/evento/tipos";
 import { formatarHoraMinuto, formatarNumero } from "@/lib/formatos";
-import { corDoDistrito, siglaDoDistrito, nomeDoDistrito } from "@/map/paleta";
-import { PainelTerritorio, type PropsPainel } from "./PainelTerritorio";
-import { VoltarRecife } from "./ControlesMapa";
-import { contarPorEstagio, emVigor, type ItemPrioridadeTerritorio } from "./tipos";
+import { corDoDistrito, nomeDoDistrito } from "@/map/paleta";
+import { PainelTerritorio, textoOrigem, type PropsPainel } from "./PainelTerritorio";
+import { contarPorEstagio, emVigor, frasePorEstagio, type ItemPrioridadeTerritorio } from "./tipos";
 import estilos from "./Mapa.module.css";
 
 export interface PropsPainelDistrito {
@@ -29,6 +28,8 @@ export interface PropsPainelDistrito {
   carregandoPrioridade: boolean;
   fontesPrioridade: FonteDado[];
   prioridadeEm: number;
+  /** Período e fonte das ocorrências, já em texto (ver `textoPeriodo`). */
+  periodoOcorrencias: string;
   podeDeclarar: boolean;
   aoDeclarar: PropsPainel["aoDeclarar"];
   aoRetirar: PropsPainel["aoRetirar"];
@@ -40,22 +41,27 @@ function Numero({
   rotulo,
   valor,
   carregando,
+  apoio,
 }: {
+  apoio?: string;
   rotulo: string;
   valor: number | null | undefined;
   carregando: boolean;
 }) {
+  const texto =
+    carregando && valor === undefined
+      ? "Carregando…"
+      : valor == null
+        ? "Dados insuficientes"
+        : formatarNumero(valor);
   return (
     <div>
       <dt>{rotulo}</dt>
       <dd>
-        <b className="numeros">
-          {carregando && valor === undefined
-            ? "Carregando…"
-            : valor == null
-              ? "Dados insuficientes"
-              : formatarNumero(valor)}
+        <b className="numeros" data-semdado={typeof valor === "number" ? undefined : ""}>
+          {texto}
         </b>
+        {apoio && typeof valor === "number" && <small>{apoio}</small>}
       </dd>
     </div>
   );
@@ -90,28 +96,21 @@ export function PainelDistrito(p: PropsPainelDistrito) {
             <i className={estilos.chipCor} style={{ background: corDoDistrito(p.id) }} aria-hidden="true" />
             {nome}
           </h2>
-          <p className={estilos.painelDistrito}>
-            {siglaDoDistrito(p.id)} · {p.bairros.length} bairros
-          </p>
+          <p className={estilos.painelDistrito}>Distrito sanitário · {p.bairros.length} bairros</p>
         </div>
         <button type="button" className={estilos.fechar} onClick={p.aoVoltar} aria-label="Fechar o painel">
-          <X aria-hidden="true" size={24} />
+          <X aria-hidden="true" size={22} />
         </button>
       </header>
-      <VoltarRecife aoClicar={p.aoVoltar} />
 
       <section className={estilos.bloco} aria-labelledby="distrito-estagio">
-        <h3 id="distrito-estagio">Estágio do distrito</h3>
+        <h3 id="distrito-estagio" className="so-leitor">
+          Estágio do distrito
+        </h3>
         {vigor ? (
           <p className={estilos.estagioVigor}>
             <SeloEstagio estagio={vigor.estagio} />
-            <span>
-              {vigor.origem === "declarado"
-                ? "declarado pela equipe"
-                : vigor.origem === "sugerido"
-                  ? "sugerido pelo sistema; ninguém declarou"
-                  : "o sistema não consegue sugerir e ninguém declarou"}
-            </span>
+            <span>· {textoOrigem(vigor.origem)}</span>
           </p>
         ) : p.carregandoEstagios ? (
           <p className={estilos.apagado} role="status">
@@ -123,10 +122,10 @@ export function PainelDistrito(p: PropsPainelDistrito) {
           </p>
         )}
         {contagem.length > 0 && (
-          <ul className={estilos.miniContagem} aria-label="Bairros por estágio">
+          <ul className={estilos.miniContagem} aria-label="Situação dos bairros deste distrito">
             {contagem.map((c) => (
               <li key={c.estagio} data-estagio={c.estagio}>
-                <b>{c.declarados + c.sugeridos}</b> {c.rotulo.toLowerCase()}
+                <b>{c.declarados + c.sugeridos}</b> {frasePorEstagio(c.estagio, c.declarados + c.sugeridos)}
               </li>
             ))}
           </ul>
@@ -139,32 +138,34 @@ export function PainelDistrito(p: PropsPainelDistrito) {
           <div>
             <dt>Prioridade</dt>
             <dd>
-              <b className="numeros">
+              <b className="numeros" data-semdado={pr ? undefined : ""}>
                 {pr
                   ? `${pr.posicao}º de ${p.totalDistritos}`
                   : p.carregandoPrioridade
                     ? "Carregando…"
                     : "Dados insuficientes"}
               </b>
-              <small>1º é o mais vulnerável. Não é chance de acontecer.</small>
+              <small>1º = mais vulnerável (não é chance de acontecer)</small>
             </dd>
           </div>
           <Numero
-            rotulo="Idosos (60 anos ou mais)"
+            rotulo="Idosos (60+)"
             valor={pr ? (pr.idosos_60_mais ?? null) : undefined}
             carregando={p.carregandoPrioridade}
           />
           <Numero
-            rotulo="Crianças (0 a 14 anos)"
+            rotulo="Crianças (0 a 14)"
             valor={pr ? (pr.criancas_0_14 ?? null) : undefined}
             carregando={p.carregandoPrioridade}
           />
           <Numero
+            apoio={p.periodoOcorrencias}
             rotulo="Ocorrências de alagamento"
             valor={pr ? (pr.ocorrencias_alagamento ?? null) : undefined}
             carregando={p.carregandoPrioridade}
           />
           <Numero
+            apoio={p.periodoOcorrencias}
             rotulo="Ocorrências de deslizamento"
             valor={pr ? (pr.ocorrencias_deslizamento ?? null) : undefined}
             carregando={p.carregandoPrioridade}
@@ -182,12 +183,12 @@ export function PainelDistrito(p: PropsPainelDistrito) {
 
       <section className={estilos.bloco} aria-labelledby="distrito-bairros">
         <h3 id="distrito-bairros">Bairros do distrito</h3>
-        <p className={estilos.apagado}>Os mais vulneráveis primeiro. Toque em um bairro para ver o resumo.</p>
+        <p className={estilos.apagado}>Mais vulneráveis primeiro. Toque para abrir o bairro.</p>
         <ul className={estilos.bairrosDoDistrito}>
           {itens.map((b) => (
             <li key={b.id}>
               <button type="button" onClick={() => p.aoEscolherBairro(b.id)}>
-                <MapPin aria-hidden="true" size={18} />
+                <MapPin aria-hidden="true" size={16} />
                 <span className={estilos.nomeBairro}>{b.nome}</span>
                 {b.item ? (
                   <SeloEstagio estagio={emVigor(b.item).estagio} pequena />
@@ -202,7 +203,7 @@ export function PainelDistrito(p: PropsPainelDistrito) {
 
       {p.item && (
         <details className={estilos.maisDetalhe}>
-          <summary>Alertas oficiais e declaração do estágio do distrito</summary>
+          <summary>Alertas oficiais e declarar estágio do distrito</summary>
           <PainelTerritorio
             item={p.item}
             semTopo

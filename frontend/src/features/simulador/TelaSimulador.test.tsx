@@ -628,6 +628,13 @@ describe("Simulador", () => {
     );
     expect(linhas[1]).toHaveTextContent("Distrito 3");
     expect(linhas[1]).toHaveTextContent("Dados insuficientes");
+    // "Baixa" na linha é a confiança da estimativa, nunca classe de arboviroses sem dado (RN-01)
+    expect(linhas[0]).toHaveTextContent(/Zika: dados insuficientes\s*Média/);
+    expect(
+      textoArboviroses({
+        agravos: [{ nome: "Zika", classe_impacto: "baixa", dados_insuficientes: true }],
+      } as never),
+    ).toBe("Zika: dados insuficientes");
     expect(secao).toHaveTextContent("não previsão causal");
     expect(secao).toHaveTextContent(/InfoDengue/);
     expect(secao).not.toHaveTextContent("%");

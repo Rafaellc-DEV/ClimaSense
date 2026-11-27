@@ -28,6 +28,52 @@ export interface ItemPrioridadeTerritorio {
   /** Só nos distritos: contagens agregadas do Censo 2022 (nunca zero no lugar de ausente, RN-01). */
   idosos_60_mais?: number | null;
   criancas_0_14?: number | null;
+  /** Data da ocorrência mais recente, se a API informar (não inventamos). */
+  ultima_ocorrencia?: string | null;
+}
+
+/** Período das ocorrências contadas, como a fonte informa. Campo ausente = `null` (nunca inventado). */
+export interface PeriodoOcorrencias {
+  inicio: string | null;
+  fim: string | null;
+  ultima: string | null;
+  fonte: string;
+}
+
+const MESES = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"];
+
+function ano(v: unknown): string | null {
+  const t = v == null ? "" : String(v).slice(0, 4);
+  return /^\d{4}$/.test(t) ? t : null;
+}
+
+function mesAno(v: unknown): string | null {
+  if (typeof v !== "string") return null;
+  const m = /^(\d{4})-(\d{2})/.exec(v);
+  return m && Number(m[2]) >= 1 && Number(m[2]) <= 12 ? `${MESES[Number(m[2]) - 1]}/${m[1]}` : null;
+}
+
+/** Lê o período em `dados` (`desde`, `periodo_inicio`, `periodo_fim`, `ultima_ocorrencia`) e a fonte em `meta.fontes`. */
+export function periodoOcorrencias(resposta: unknown): PeriodoOcorrencias {
+  const r = (resposta ?? {}) as { dados?: Record<string, unknown>; meta?: { fontes?: { nome?: string }[] } };
+  const d = r.dados ?? {};
+  return {
+    inicio: ano(d.periodo_inicio ?? d.desde),
+    fim: ano(d.periodo_fim),
+    ultima: mesAno(d.ultima_ocorrencia),
+    fonte: r.meta?.fontes?.[0]?.nome ?? "Defesa Civil",
+  };
+}
+
+/** "2014–2024 · Defesa Civil · última: mar/2024"; sem período: "período não informado pela fonte". */
+export function textoPeriodo(p: PeriodoOcorrencias, ultimaDoItem?: string | null): string {
+  const periodo = p.inicio
+    ? p.fim
+      ? `${p.inicio}–${p.fim}`
+      : `desde ${p.inicio}`
+    : "período não informado pela fonte";
+  const ultima = mesAno(ultimaDoItem) ?? p.ultima;
+  return `${periodo} · ${p.fonte}${ultima ? ` · última: ${ultima}` : ""}`;
 }
 
 export interface PropsTerritorio {
@@ -82,6 +128,20 @@ export function contarPorEstagio(itens: ItemEstagio[]): ContagemEstagio[] {
       sugeridos: v.filter((x) => x.origem !== "declarado").length,
     };
   });
+}
+
+const FRASE_ESTAGIO: Record<Estagio, string> = {
+  critico: "em estágio crítico",
+  alerta: "em alerta",
+  atencao: "em atenção",
+  observacao: "em observação",
+  sem_dados: "com dados insuficientes",
+  encerrado: "encerrados",
+};
+
+/** Contagem em linguagem de bate-olho: "94 bairros em observação", "1 bairro em alerta" (o número vem à parte). */
+export function frasePorEstagio(estagio: Estagio, n: number): string {
+  return `${n === 1 ? "bairro" : "bairros"} ${FRASE_ESTAGIO[estagio]}`;
 }
 
 /** Id do bairro nas feições e nos itens da API: `bairro-…`. Distritos: `ds-N`. */

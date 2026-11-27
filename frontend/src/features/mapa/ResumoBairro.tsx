@@ -1,8 +1,9 @@
 /**
  * Resumo de vulnerabilidade do bairro (RF-07, RF-04): idosos e crianças residentes, equipamentos de saúde (com
- * "em área de risco"), áreas de risco mapeadas e cobertura. Cada número com a sua fonte (RF-19). Só contagens
- * agregadas (RNF-03); falta de dado nunca vira zero (RN-01).
+ * "em área de risco") e áreas de risco mapeadas, em uma grade de números. A fonte e a hora aparecem uma vez só, no
+ * rodapé do painel (RF-19). Só contagens agregadas (RNF-03); falta de dado nunca vira zero (RN-01).
  */
+import type { ReactNode } from "react";
 import { EstadoDados, LegendaFonte, fontesDado } from "@/design-system/componentes/EstadoDados";
 import { EstadoConsulta } from "@/features/evento/Evento";
 import { ErroApi } from "@/lib/api";
@@ -17,9 +18,10 @@ import {
   valorDe,
   type ResumoVulnerabilidade,
 } from "./modeloCamadas";
+import { Dica } from "./Dica";
 import estilos from "./Mapa.module.css";
 
-const LIMITE_EQUIPAMENTOS = 5;
+const LIMITE_EQUIPAMENTOS = 3;
 
 type Resposta = { dados?: ResumoVulnerabilidade } & ResumoVulnerabilidade;
 
@@ -32,7 +34,6 @@ export function useResumoVulnerabilidade(territorioId: string | null) {
 
 export function ResumoBairro({ territorioId }: { territorioId: string }) {
   const q = useResumoVulnerabilidade(territorioId);
-  const titulo = <h3 id="painel-vulneravel">População vulnerável e equipamentos de saúde</h3>;
   let corpo;
   if (q.isPending) corpo = <p className={estilos.apagado}>Carregando…</p>;
   else if (q.isError && !q.data) {
@@ -52,22 +53,77 @@ export function ResumoBairro({ territorioId }: { territorioId: string }) {
           Falta a fonte {falta || "IBGE (Censo 2022) e CNES"}. Isso não quer dizer que não haja.
         </EstadoDados>
       ) : (
-        <Conteudo
-          r={(q.data?.dados ?? q.data) as ResumoVulnerabilidade}
-          resposta={q.data}
-          em={q.dataUpdatedAt}
-        />
+        <Conteudo r={(q.data?.dados ?? q.data) as ResumoVulnerabilidade} />
       );
   }
   return (
     <section className={estilos.bloco} aria-labelledby="painel-vulneravel">
-      {titulo}
+      <h3 id="painel-vulneravel">População e saúde no bairro</h3>
       {corpo}
     </section>
   );
 }
 
-function Conteudo({ r, resposta, em }: { r: ResumoVulnerabilidade; resposta: unknown; em: number }) {
+/**
+ * Rodapé único do painel do bairro: a fonte e a hora de tudo o que está nele (RF-19), uma vez só.
+ * Fonte vencida continua com o selo de aviso (vem de `LegendaFonte`).
+ */
+export function RodapeFontes({
+  territorioId,
+  fonteEstagio,
+}: {
+  territorioId: string | null;
+  /** Fonte e hora do estágio sugerido; vazio quando o sistema não sugeriu. */
+  fonteEstagio?: string | null;
+}) {
+  const q = useResumoVulnerabilidade(territorioId);
+  const temResumo = !!q.data && faltaDe(q.data) === null;
+  const fontes = temResumo ? fontesDado(fontesDe(q.data)) : [];
+  if (!fonteEstagio && !temResumo) return null;
+  return (
+    <footer className={estilos.rodape} aria-label="Fontes e hora da atualização">
+      {fonteEstagio && <p>Estágio: {fonteEstagio}.</p>}
+      {temResumo && (
+        <LegendaFonte fontes={fontes}>
+          {fontes.length === 0 && <span>Fonte: IBGE (Censo 2022), CNES e Defesa Civil.</span>}{" "}
+          <span>Consultado às {formatarHoraMinuto(q.dataUpdatedAt)}.</span>
+        </LegendaFonte>
+      )}
+    </footer>
+  );
+}
+
+function Numero({
+  rotulo,
+  valor,
+  apoio,
+  dica,
+  destaque,
+}: {
+  rotulo: string;
+  valor: ReactNode;
+  apoio?: ReactNode;
+  dica?: string;
+  destaque?: boolean;
+}) {
+  return (
+    <div className={destaque ? estilos.numeroAlerta : undefined}>
+      <dt>
+        {rotulo}
+        {dica && <Dica texto={dica} rotulo={`Saiba mais sobre ${rotulo.toLowerCase()}`} />}
+      </dt>
+      <dd>
+        <b data-semdado={valor === "Dados insuficientes" ? "" : undefined}>{valor}</b>
+        {apoio && <small>{apoio}</small>}
+      </dd>
+    </div>
+  );
+}
+
+const AVISO_PARCIAL =
+  "Só parte do Recife foi mapeada: bairro sem área mapeada não quer dizer bairro sem risco.";
+
+function Conteudo({ r }: { r: ResumoVulnerabilidade }) {
   const idosos = valorDe(r, "idosos_60_mais");
   const criancas = valorDe(r, "criancas_0_14");
   const equipamentos = r.equipamentos ?? null;
@@ -78,114 +134,95 @@ function Conteudo({ r, resposta, em }: { r: ResumoVulnerabilidade; resposta: unk
       ? r.equipamentos_em_area_de_risco
       : null;
   const parcial = r.cobertura_risco_parcial === true;
-  const fontes = fontesDado(fontesDe(resposta));
+  const apoioPessoas = (v: typeof idosos) =>
+    v.suprimido ? "poucos moradores, número oculto" : v.valor !== null ? "moradores" : undefined;
+
   return (
     <>
       <dl className={estilos.numeros}>
-        <div>
-          <dt>Idosos (60 anos ou mais)</dt>
-          <dd>
-            <b>{textoPessoas(idosos)}</b>
-            {idosos.suprimido ? (
-              <small>residentes; número pequeno, oculto para proteger a privacidade</small>
-            ) : null}
-            {!idosos.suprimido && idosos.valor !== null && <small>residentes</small>}
-            <small>Fonte: IBGE, Censo 2022</small>
-          </dd>
-        </div>
-        <div>
-          <dt>Crianças (0 a 14 anos)</dt>
-          <dd>
-            <b>{textoPessoas(criancas)}</b>
-            {criancas.suprimido ? (
-              <small>residentes; número pequeno, oculto para proteger a privacidade</small>
-            ) : null}
-            {!criancas.suprimido && criancas.valor !== null && <small>residentes</small>}
-            <small>Fonte: IBGE, Censo 2022</small>
-          </dd>
-        </div>
-        <div>
-          <dt>Pessoas com deficiência</dt>
-          <dd>
-            <b>Dados insuficientes</b>
-            <small>{AVISO_DEFICIENCIA}</small>
-          </dd>
-        </div>
+        <Numero rotulo="Idosos (60+)" valor={textoPessoas(idosos)} apoio={apoioPessoas(idosos)} />
+        <Numero rotulo="Crianças (0 a 14)" valor={textoPessoas(criancas)} apoio={apoioPessoas(criancas)} />
+        <Numero
+          rotulo="Equipamentos de saúde"
+          valor={equipamentos === null ? "Dados insuficientes" : formatarNumero(equipamentos.length)}
+          apoio={
+            equipamentos === null
+              ? "falta a fonte CNES"
+              : qtdEmRisco !== null && qtdEmRisco > 0
+                ? `${formatarNumero(qtdEmRisco)} em área de risco`
+                : equipamentos.length === 0
+                  ? "nenhum registrado no CNES"
+                  : undefined
+          }
+          destaque={qtdEmRisco !== null && qtdEmRisco > 0}
+        />
+        <Numero
+          rotulo="Áreas de risco"
+          valor={typeof r.areas_risco !== "number" ? "Dados insuficientes" : formatarNumero(r.areas_risco)}
+          apoio={
+            typeof r.areas_risco !== "number"
+              ? "falta a fonte Defesa Civil"
+              : parcial
+                ? "mapeadas, cobertura parcial"
+                : r.areas_risco === 1
+                  ? "mapeada"
+                  : "mapeadas"
+          }
+          dica={parcial ? AVISO_PARCIAL : undefined}
+        />
       </dl>
+      <p className={estilos.linhaApoio}>
+        <b>Pessoas com deficiência:</b> {AVISO_DEFICIENCIA}
+      </p>
 
-      <h4>Equipamentos de saúde</h4>
-      {equipamentos === null ? (
-        <p>
-          <b>Dados insuficientes:</b> falta a fonte CNES.
-        </p>
-      ) : equipamentos.length === 0 ? (
-        <p>Nenhum equipamento de saúde registrado no CNES neste bairro.</p>
-      ) : (
+      {equipamentos !== null && equipamentos.length > 0 && (
         <>
-          <p>
-            <b>{formatarNumero(equipamentos.length)}</b>{" "}
-            {equipamentos.length === 1 ? "equipamento" : "equipamentos"} neste bairro
-            {qtdEmRisco !== null && qtdEmRisco > 0 && (
-              <>
-                , <b>{formatarNumero(qtdEmRisco)} em área de risco</b>
-              </>
-            )}
-            .
-          </p>
-          <ul className={estilos.itens}>
+          <ul className={estilos.itens} aria-label="Equipamentos de saúde do bairro">
             {equipamentos.slice(0, LIMITE_EQUIPAMENTOS).map((e, i) => (
-              <li key={`${e.cnes ?? e.nome}-${i}`}>
-                <span className={estilos.itemNome}>{e.nome ?? "Equipamento sem nome"}</span>
-                {e.tipo && <small>{e.tipo}</small>}
-                {e.cnes != null && emRisco.has(String(e.cnes)) && (
-                  <span className={estilos.etiquetaRisco}>em área de risco</span>
-                )}
-              </li>
+              <ItemEquipamento key={`${e.cnes ?? e.nome}-${i}`} e={e} emRisco={emRisco} />
             ))}
           </ul>
           {equipamentos.length > LIMITE_EQUIPAMENTOS && (
-            <p className={estilos.apagado}>
-              e mais {formatarNumero(equipamentos.length - LIMITE_EQUIPAMENTOS)}. Ligue a camada “Equipamentos
-              de saúde” para ver todos no mapa.
-            </p>
+            <details className={estilos.verTodos}>
+              <summary>Ver todos os {formatarNumero(equipamentos.length)} equipamentos</summary>
+              <ul className={estilos.itens}>
+                {equipamentos.slice(LIMITE_EQUIPAMENTOS).map((e, i) => (
+                  <ItemEquipamento key={`${e.cnes ?? e.nome}-${i}`} e={e} emRisco={emRisco} />
+                ))}
+              </ul>
+            </details>
           )}
           {qtdEmRisco === null && (
-            <p className={estilos.apagado}>
+            <p className={estilos.linhaApoio}>
               Dados insuficientes para dizer quais estão em área de risco
               {parcial ? " (cobertura parcial)" : ""}.
             </p>
           )}
           {qtdEmRisco === 0 && parcial && (
-            <p className={estilos.apagado}>
-              Nenhum em área de risco nos locais mapeados. A cobertura é parcial.
+            <p className={estilos.linhaApoio}>
+              Nenhum em área de risco nos locais mapeados (cobertura parcial).
             </p>
           )}
-          <small className={estilos.fonteLinha}>Fonte: CNES</small>
         </>
       )}
-
-      <h4>Áreas de risco mapeadas</h4>
-      {typeof r.areas_risco !== "number" ? (
-        <p>
-          <b>Dados insuficientes:</b> falta a fonte Defesa Civil (áreas de risco).
-        </p>
-      ) : (
-        <p>
-          <b>{formatarNumero(r.areas_risco)}</b> {r.areas_risco === 1 ? "área mapeada" : "áreas mapeadas"}
-          {parcial && ", cobertura parcial"}.
-          {parcial && (
-            <>
-              {" "}
-              <span className={estilos.apagado}>
-                Só parte do Recife foi mapeada: bairro sem área não quer dizer bairro sem risco.
-              </span>
-            </>
-          )}{" "}
-          <small className={estilos.fonteLinha}>Fonte: Defesa Civil</small>
-        </p>
-      )}
-      <p className={estilos.apagado}>Consultado às {formatarHoraMinuto(em)}.</p>
-      <LegendaFonte fontes={fontes} />
     </>
+  );
+}
+
+function ItemEquipamento({
+  e,
+  emRisco,
+}: {
+  e: NonNullable<ResumoVulnerabilidade["equipamentos"]>[number];
+  emRisco: Set<string>;
+}) {
+  return (
+    <li>
+      <span className={estilos.itemNome}>{e.nome ?? "Equipamento sem nome"}</span>
+      {e.tipo && <small>{e.tipo}</small>}
+      {e.cnes != null && emRisco.has(String(e.cnes)) && (
+        <span className={estilos.etiquetaRisco}>em área de risco</span>
+      )}
+    </li>
   );
 }

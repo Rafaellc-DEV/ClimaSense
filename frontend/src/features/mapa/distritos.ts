@@ -6,12 +6,14 @@ import { IDS_DISTRITO } from "@/map/paleta";
 import type { ColecaoFeicoes } from "@/map/MapaBairros";
 import type { ItemPrioridadeTerritorio } from "./tipos";
 
-export type Colorir = "distrito" | "estagio" | "prioridade";
+export type Colorir = "distrito" | "estagio" | "prioridade" | "impacto";
+export type Perigo = "alagamento" | "deslizamento";
 
 export const OPCOES_COLORIR: { valor: Colorir; rotulo: string }[] = [
   { valor: "distrito", rotulo: "Distritos" },
   { valor: "estagio", rotulo: "Estágio" },
   { valor: "prioridade", rotulo: "Prioridade" },
+  { valor: "impacto", rotulo: "Impacto previsto" },
 ];
 
 /** Distritos do mais ao menos prioritário (RF-22); sem a lista de prioridade, em ordem numérica. */
