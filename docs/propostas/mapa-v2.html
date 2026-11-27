@@ -1,0 +1,837 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mapa v2 (protótipo)</title>
+<meta name="description" content="Proposta alternativa da tela Mapa do ClimaSense: protótipo estático com dados de exemplo.">
+<meta name="theme-color" content="#f2f6f8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Next:wght@400;500;700;800&family=Outfit:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+/* Tokens: os mesmos de frontend/src/design-system/tokens.css, mais a rampa de preenchimento da grade (proposta). */
+:root {
+  color-scheme: light;
+  --cs-mare: #0f4c75; --cs-mare-forte: #0a3a5c; --cs-mare-suave: rgba(15,76,117,.08);
+  --cs-mangue: #0b6f6c; --cs-sol: #edb105; --cs-foco: #b35c00;
+  --cs-papel: #ffffff; --cs-nevoa: #f2f6f8; --cs-tinta: #0e2433; --cs-tinta-2: #44596a;
+  --cs-linha: #d5e0e7; --cs-linha-forte: #7a8e9c;
+  --sup-mare: #0f4c75; --sup-sobre: #ffffff; --sup-sobre-2: #d3e4f1; --sup-ativo: rgba(255,255,255,.16); --sup-hover: rgba(255,255,255,.1);
+  --n-info: #1f6fb2; --n-atencao: #c98a00; --n-alerta: #d2581f; --n-critico: #a41f15; --n-insuf: #6b7a85; --n-insuf-bg: #eef1f3;
+  /* preenchimento das células da grade (proposta: --grade-*) */
+  --grade-obs: #d6e6f5; --grade-obs-borda: #1f6fb2;
+  --grade-ate: #f7d980; --grade-ate-borda: #a87300;
+  --grade-ale: #f2a27a; --grade-ale-borda: #b5461a;
+  --grade-cri: #a41f15; --grade-cri-borda: #6e130c; --grade-cri-texto: #ffffff;
+  --grade-sem: #eef1f3; --grade-sem-borda: #6b7a85;
+  --listra: rgba(255,255,255,.55); --listra-cri: rgba(255,255,255,.2);
+  --g-seq-1: #e3eef7; --g-seq-2: #b9d4ea; --g-seq-3: #86b3d9; --g-seq-4: #4f8cc2; --g-seq-6: #17558a; --g-seq-7: #0e3a60;
+  --fonte: "Atkinson Hyperlegible Next", "Atkinson Hyperlegible", system-ui, sans-serif;
+  --fonte-titulo: "Outfit", var(--fonte);
+  /* escala compacta da proposta: 12 / 13 / 14 / 16 / 20 */
+  --t-meta: 0.75rem; --t-apoio: 0.8125rem; --t-corpo: 0.875rem; --t-titulo: 1rem; --t-numero: 1.25rem;
+  --r-campo: 4px; --r-celula: 6px; --r-painel: 10px;
+  --alvo: 32px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --cs-mare: #7fb6e0; --cs-mare-suave: rgba(127,182,224,.12); --cs-mangue: #4fc1b6; --cs-foco: #ffb45c;
+    --cs-papel: #13222c; --cs-nevoa: #0c1820; --cs-tinta: #e8f0f5; --cs-tinta-2: #b4c4cf;
+    --cs-linha: #2a3d4a; --cs-linha-forte: #6b8494; --sup-mare: #0c3f62; --n-insuf-bg: #24323b;
+    --grade-obs: #1d3f5f; --grade-obs-borda: #4a93d6; --grade-ate: #5e4a0e; --grade-ate-borda: #f2c23a;
+    --grade-ale: #6e3416; --grade-ale-borda: #f08a55; --grade-cri: #b3261b; --grade-cri-borda: #ff8a7a;
+    --grade-sem: #1b2a33; --grade-sem-borda: #8fa3b1; --listra: rgba(255,255,255,.08); --listra-cri: rgba(255,255,255,.14);
+    --g-seq-1: #17324a; --g-seq-2: #1f4a6e; --g-seq-3: #2b6496; --g-seq-4: #4f8cc2; --g-seq-6: #86b3d9; --g-seq-7: #b9d4ea;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --cs-mare: #7fb6e0; --cs-mare-suave: rgba(127,182,224,.12); --cs-mangue: #4fc1b6; --cs-foco: #ffb45c;
+  --cs-papel: #13222c; --cs-nevoa: #0c1820; --cs-tinta: #e8f0f5; --cs-tinta-2: #b4c4cf;
+  --cs-linha: #2a3d4a; --cs-linha-forte: #6b8494; --sup-mare: #0c3f62; --n-insuf-bg: #24323b;
+  --grade-obs: #1d3f5f; --grade-obs-borda: #4a93d6; --grade-ate: #5e4a0e; --grade-ate-borda: #f2c23a;
+  --grade-ale: #6e3416; --grade-ale-borda: #f08a55; --grade-cri: #b3261b; --grade-cri-borda: #ff8a7a;
+  --grade-sem: #1b2a33; --grade-sem-borda: #8fa3b1; --listra: rgba(255,255,255,.08); --listra-cri: rgba(255,255,255,.14);
+  --g-seq-1: #17324a; --g-seq-2: #1f4a6e; --g-seq-3: #2b6496; --g-seq-4: #4f8cc2; --g-seq-6: #86b3d9; --g-seq-7: #b9d4ea;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0; font-family: var(--fonte); font-size: var(--t-corpo); line-height: 1.4;
+  color: var(--cs-tinta); background: var(--cs-nevoa);
+  -webkit-tap-highlight-color: transparent;
+}
+button, input { font: inherit; color: inherit; }
+button { cursor: pointer; touch-action: manipulation; }
+:focus-visible { outline: 2px solid var(--cs-foco); outline-offset: 2px; }
+.so-leitor { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.num { font-variant-numeric: tabular-nums; }
+
+/* ---------- faixa do protótipo ---------- */
+.exemplo {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 6px 16px;
+  padding: 6px 16px; background: var(--cs-sol); color: #0e2433; font-size: var(--t-apoio);
+}
+.exemplo strong { font-weight: 800; letter-spacing: .01em; }
+.exemplo .estados { display: flex; flex-wrap: wrap; gap: 4px; margin-left: auto; align-items: center; }
+.exemplo .estados button {
+  border: 1px solid rgba(14,36,51,.45); background: transparent; border-radius: 999px; padding: 2px 10px; font-size: var(--t-meta);
+}
+.exemplo .estados button[aria-pressed="true"] { background: #0e2433; color: #fff; border-color: #0e2433; }
+
+/* ---------- casca ---------- */
+.app { display: grid; grid-template-columns: 56px minmax(0,1fr); height: calc(100dvh - var(--h-exemplo, 34px)); }
+.trilho { background: var(--sup-mare); display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 8px 0; }
+.trilho a {
+  width: 44px; height: 44px; display: grid; place-items: center; border-radius: 10px; color: var(--sup-sobre-2);
+}
+.trilho a:hover { background: var(--sup-hover); }
+.trilho a[aria-current="page"] { background: var(--sup-ativo); color: var(--sup-sobre); box-shadow: inset 3px 0 0 var(--cs-sol); }
+.trilho svg { width: 22px; height: 22px; }
+.tela { display: grid; grid-template-rows: auto minmax(0,1fr); min-width: 0; }
+
+/* ---------- barra de indicadores ---------- */
+.barra {
+  display: grid; grid-template-columns: auto minmax(0,1fr); align-items: stretch; gap: 0 16px;
+  padding: 8px 16px; background: var(--cs-papel); border-bottom: 1px solid var(--cs-linha);
+}
+.titulo { display: grid; align-content: center; gap: 2px; }
+.barra h1 { font-family: var(--fonte-titulo); font-weight: 600; font-size: 1.125rem; margin: 0; line-height: 1.1; }
+.kpis { display: flex; gap: 0; min-width: 0; }
+.kpi {
+  flex: 1 1 0; min-width: 0; padding: 0 12px; border-left: 1px solid var(--cs-linha); display: grid; align-content: center; gap: 1px;
+  background: none; border-top: 0; border-right: 0; border-bottom: 0; text-align: left;
+}
+.kpi:first-child { border-left: 0; }
+.kpi-rotulo { font-size: var(--t-meta); color: var(--cs-tinta-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.kpi-valor { font-size: var(--t-numero); font-weight: 700; line-height: 1.15; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; }
+.kpi-valor small { font-size: var(--t-apoio); font-weight: 500; color: var(--cs-tinta-2); }
+.kpi-meta { font-size: var(--t-meta); color: var(--cs-tinta-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.kpi-insuf .kpi-valor { font-size: var(--t-corpo); color: var(--cs-tinta); }
+.kpi-cop { flex: 0 0 auto; gap: 2px; }
+.linha-cop { display: flex; align-items: center; gap: 8px; }
+.link { border: 0; background: none; padding: 0; color: var(--cs-mare); font-weight: 700; font-size: var(--t-meta); text-decoration: underline; text-underline-offset: 2px; text-align: left; }
+.kpi-rotulo .link { margin-left: 6px; }
+.kpi-bairros { flex: 0 0 auto; }
+.contagens { display: flex; gap: 2px; flex-wrap: nowrap; }
+.contagem {
+  display: inline-flex; align-items: baseline; gap: 4px; border: 1px solid transparent; border-radius: var(--r-campo);
+  padding: 1px 5px; background: transparent; font-size: var(--t-apoio); white-space: nowrap;
+}
+.contagem b { font-size: var(--t-titulo); font-variant-numeric: tabular-nums; }
+.contagem::before { content: ""; width: 10px; height: 10px; border-radius: 2px; align-self: center; background: var(--f); border: 1px solid var(--b); }
+.contagem:hover { border-color: var(--cs-linha-forte); }
+.contagem[aria-pressed="true"] { border-color: var(--cs-tinta); background: var(--cs-mare-suave); }
+.barra-94 { display: flex; height: 6px; border-radius: 3px; overflow: hidden; margin-top: 3px; background: var(--cs-linha); }
+.barra-94 i { display: block; height: 100%; }
+.atualizado { margin: 0; font-size: var(--t-meta); color: var(--cs-tinta-2); white-space: nowrap; }
+.atualizado b { color: var(--cs-tinta); }
+.atualizado .falha { color: var(--n-alerta); font-weight: 700; display: block; }
+
+/* selos */
+.selo {
+  display: inline-flex; align-items: center; height: 22px; padding: 0 8px; border-radius: 999px; font-size: var(--t-apoio);
+  font-weight: 700; white-space: nowrap; background: var(--f); color: var(--t, var(--cs-tinta)); border: 1px solid var(--b);
+}
+.selo.grande { height: 28px; font-size: var(--t-corpo); padding: 0 12px; }
+[data-e="critico"] { --f: var(--grade-cri); --b: var(--grade-cri-borda); --t: var(--grade-cri-texto); --lis: var(--listra-cri); }
+[data-e="alerta"] { --f: var(--grade-ale); --b: var(--grade-ale-borda); --lis: var(--listra); }
+[data-e="atencao"] { --f: var(--grade-ate); --b: var(--grade-ate-borda); --lis: var(--listra); }
+[data-e="observacao"] { --f: var(--grade-obs); --b: var(--grade-obs-borda); --lis: var(--listra); }
+[data-e="sem_dados"] { --f: var(--grade-sem); --b: var(--grade-sem-borda); --lis: transparent; }
+.selo[data-e="sem_dados"] { border-style: dashed; font-weight: 500; }
+.selo-desat { display: inline-flex; align-items: center; height: 18px; padding: 0 6px; border-radius: 999px; font-size: var(--t-meta);
+  background: var(--grade-ate); color: var(--cs-tinta); font-weight: 700; margin-left: 4px; }
+.selo-exp { display: inline-block; font-size: var(--t-meta); font-weight: 700; padding: 0 6px; border-radius: 999px; border: 1px solid var(--cs-mangue); color: var(--cs-mangue); }
+
+/* ---------- corpo em três colunas ---------- */
+.corpo { display: grid; grid-template-columns: 264px minmax(0,1fr) 352px; min-height: 0; }
+.coluna { min-height: 0; overflow: auto; overscroll-behavior: contain; }
+.lista { background: var(--cs-papel); border-right: 1px solid var(--cs-linha); display: grid; grid-template-rows: auto minmax(0,1fr) auto; overflow: hidden; }
+.mapa { display: grid; grid-template-rows: auto minmax(0,1fr) auto; overflow: hidden; }
+.painel { background: var(--cs-papel); border-left: 1px solid var(--cs-linha); }
+
+h2 { font-family: var(--fonte-titulo); font-weight: 600; font-size: var(--t-titulo); margin: 0; text-wrap: balance; }
+h3 { font-size: var(--t-apoio); font-weight: 700; margin: 0 0 4px; color: var(--cs-tinta-2); }
+
+.seg { display: inline-flex; border: 1px solid var(--cs-linha-forte); border-radius: var(--r-campo); overflow: hidden; }
+.seg button { border: 0; background: var(--cs-papel); padding: 0 10px; height: 28px; font-size: var(--t-apoio); border-left: 1px solid var(--cs-linha); }
+.seg button:first-child { border-left: 0; }
+.seg button[aria-pressed="true"] { background: var(--cs-mare); color: var(--cs-papel); font-weight: 700; }
+:root[data-theme="dark"] .seg button[aria-pressed="true"] { color: #0c1820; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .seg button[aria-pressed="true"] { color: #0c1820; } }
+
+/* lista de prioritários */
+.lista-topo { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 12px 8px; }
+.prio { list-style: none; margin: 0; padding: 0 6px; overflow: auto; overscroll-behavior: contain; }
+.prio li + li { border-top: 1px solid var(--cs-linha); }
+.prio button {
+  width: 100%; display: grid; grid-template-columns: 22px minmax(0,1fr) auto; gap: 0 8px; align-items: center;
+  padding: 6px 6px; border: 0; background: none; text-align: left; border-radius: var(--r-campo);
+}
+.prio button:hover { background: var(--cs-mare-suave); }
+.prio button[aria-pressed="true"] { background: var(--cs-mare-suave); box-shadow: inset 3px 0 0 var(--cs-mare); }
+.prio .pos { font-weight: 700; color: var(--cs-tinta-2); font-variant-numeric: tabular-nums; text-align: right; grid-row: span 2; align-self: start; }
+.prio .nome { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.prio .det { grid-column: 2 / -1; font-size: var(--t-meta); color: var(--cs-tinta-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.prio .selo { height: 20px; font-size: var(--t-meta); padding: 0 6px; }
+.rodape { padding: 8px 12px; border-top: 1px solid var(--cs-linha); font-size: var(--t-meta); color: var(--cs-tinta-2); }
+.rodape p { margin: 0; }
+.rodape p + p { margin-top: 2px; }
+.mais { border: 0; background: none; color: var(--cs-mare); font-weight: 700; padding: 6px 12px; text-align: left; font-size: var(--t-apoio); }
+
+/* ferramentas da grade */
+.ferramentas { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 8px 12px; }
+.ferramentas .rot { font-size: var(--t-meta); color: var(--cs-tinta-2); margin-right: 4px; }
+.alternar { display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 10px; border: 1px solid var(--cs-linha-forte); border-radius: var(--r-campo); background: var(--cs-papel); font-size: var(--t-apoio); }
+.alternar[aria-pressed="true"] { border-color: var(--cs-mare); background: var(--cs-mare-suave); font-weight: 700; }
+.alternar svg { width: 14px; height: 14px; }
+.busca { margin-left: auto; position: relative; }
+.busca input { height: 28px; width: 150px; border: 1px solid var(--cs-linha-forte); border-radius: var(--r-campo); padding: 0 8px 0 28px; background: var(--cs-papel); font-size: var(--t-apoio); }
+.busca svg { position: absolute; left: 8px; top: 7px; width: 14px; height: 14px; color: var(--cs-tinta-2); }
+.aviso-linha { margin: 0 12px 8px; padding: 6px 10px; border-radius: var(--r-campo); font-size: var(--t-apoio); background: var(--grade-ate); color: var(--cs-tinta); display: flex; gap: 10px; align-items: center; }
+.aviso-linha button { margin-left: auto; border: 1px solid currentColor; background: transparent; border-radius: var(--r-campo); padding: 2px 10px; font-weight: 700; font-size: var(--t-apoio); }
+
+/* grade dos 94 bairros */
+.grade { overflow: auto; overscroll-behavior: contain; padding: 0 12px 8px; column-width: 210px; column-gap: 10px; }
+.bloco { break-inside: avoid; margin: 0 0 10px; background: var(--cs-papel); border: 1px solid var(--cs-linha); border-left: 4px solid var(--ds); border-radius: var(--r-celula); padding: 6px 8px 8px; }
+.bloco-cab { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; margin-bottom: 6px; }
+.bloco-cab button { white-space: nowrap; border: 0; background: none; padding: 0; font-family: var(--fonte-titulo); font-weight: 600; font-size: var(--t-corpo); text-decoration: underline; text-decoration-color: var(--cs-linha-forte); text-underline-offset: 3px; }
+.bloco-cab button:hover { text-decoration-color: currentColor; }
+.bloco-cab .selo { height: 20px; font-size: var(--t-meta); padding: 0 6px; }
+.bloco-cab .qtd { margin-left: auto; font-size: var(--t-meta); color: var(--cs-tinta-2); white-space: nowrap; }
+.celulas { display: flex; flex-wrap: wrap; gap: 4px; }
+.cel {
+  position: relative; display: inline-flex; align-items: center; gap: 4px; height: 24px; padding: 0 7px; max-width: 100%;
+  border-radius: var(--r-celula); font-size: var(--t-apoio); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  background-color: var(--f); color: var(--t, var(--cs-tinta)); border: 1px solid var(--b);
+  transition: opacity 120ms ease-out;
+}
+.cel[data-o="declarado"] { font-weight: 700; }
+.cel[data-o="sugerido"] { background-image: repeating-linear-gradient(135deg, transparent 0 5px, var(--lis) 5px 8px); }
+.cel[data-e="sem_dados"] { border-style: dashed; color: var(--cs-tinta-2); }
+.cel[aria-pressed="true"] { outline: 2px solid var(--cs-tinta); outline-offset: 2px; z-index: 1; }
+.cel.apagada { opacity: .25; }
+.grade[data-cor="distrito"] .cel { --f: var(--cs-papel); --t: var(--cs-tinta); --b: var(--cs-linha-forte); background-image: none; font-weight: 500; border-style: solid; box-shadow: inset 4px 0 0 var(--ds); padding-left: 10px; }
+.grade[data-cor="prioridade"] .cel { background-image: none; font-weight: 500; border-style: solid; }
+.grade[data-cor="prioridade"] .cel[data-p="0"] { --f: var(--g-seq-7); --t: #fff; --b: var(--g-seq-7); }
+.grade[data-cor="prioridade"] .cel[data-p="1"] { --f: var(--g-seq-6); --t: #fff; --b: var(--g-seq-6); }
+.grade[data-cor="prioridade"] .cel[data-p="2"] { --f: var(--g-seq-4); --t: #fff; --b: var(--g-seq-4); }
+.grade[data-cor="prioridade"] .cel[data-p="3"] { --f: var(--g-seq-2); --t: var(--cs-tinta); --b: var(--g-seq-3); }
+.grade[data-cor="prioridade"] .cel[data-p="4"] { --f: var(--g-seq-1); --t: var(--cs-tinta); --b: var(--g-seq-2); }
+.mk-risco { width: 0; height: 0; border-left: 5px solid transparent; border-right: 5px solid transparent; border-bottom: 8px solid currentColor; flex: none; }
+.mk-saude { flex: none; font-size: var(--t-meta); font-weight: 700; padding: 0 3px; border-radius: 3px; background: var(--cs-papel); color: var(--cs-mangue); line-height: 1.3; border: 1px solid var(--cs-mangue); }
+
+.legenda { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; padding: 6px 12px 8px; border-top: 1px solid var(--cs-linha); font-size: var(--t-meta); color: var(--cs-tinta-2); background: var(--cs-papel); }
+.legenda .sw { display: inline-flex; align-items: center; gap: 4px; }
+.legenda .sw i { width: 12px; height: 12px; border-radius: 3px; background: var(--f); border: 1px solid var(--b); }
+.legenda .sw i.lis { background-image: repeating-linear-gradient(135deg, transparent 0 3px, var(--lis) 3px 5px); }
+.legenda .sw[data-e="sem_dados"] i { border-style: dashed; }
+.legenda .fonte { flex-basis: 100%; }
+
+.geo { margin: 0 12px 12px; display: grid; place-items: center; border: 1px dashed var(--cs-linha-forte); border-radius: var(--r-painel); color: var(--cs-tinta-2); text-align: center; padding: 24px; }
+
+/* ---------- painel ---------- */
+.p-cab { position: sticky; top: 0; z-index: 2; background: var(--cs-papel); display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 0 8px; padding: 10px 14px 8px; border-bottom: 1px solid var(--cs-linha); }
+.p-cab .sub { font-size: var(--t-meta); color: var(--cs-tinta-2); }
+.voltar { border: 0; background: none; padding: 0; color: var(--cs-mare); font-weight: 700; font-size: var(--t-meta); display: inline-flex; align-items: center; gap: 2px; margin-bottom: 2px; }
+.fechar { width: 32px; height: 32px; border: 0; background: none; border-radius: var(--r-campo); display: grid; place-items: center; color: var(--cs-tinta-2); }
+.fechar:hover { background: var(--cs-mare-suave); }
+.fechar svg { width: 18px; height: 18px; }
+.sec { padding: 10px 14px; border-bottom: 1px solid var(--cs-linha); }
+.sec:last-child { border-bottom: 0; }
+.vigor { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.vigor .quem { font-size: var(--t-apoio); color: var(--cs-tinta-2); }
+.frase { margin: 6px 0 0; font-size: var(--t-apoio); }
+.motivos { margin: 6px 0 0; padding: 0 0 0 16px; font-size: var(--t-apoio); }
+.motivos li + li { margin-top: 1px; }
+.meta { font-size: var(--t-meta); color: var(--cs-tinta-2); margin: 4px 0 0; }
+.acoes { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+.btn { height: var(--alvo); padding: 0 14px; border-radius: 999px; border: 1px solid var(--cs-mare); background: var(--cs-mare); color: var(--cs-papel); font-weight: 700; font-size: var(--t-apoio); }
+.btn:hover { background: var(--cs-mare-forte); }
+.btn.sec2 { background: transparent; color: var(--cs-mare); }
+.btn.sec2:hover { background: var(--cs-mare-suave); }
+:root[data-theme="dark"] .btn { color: #0c1820; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .btn { color: #0c1820; } :root:not([data-theme="light"]) .btn.sec2 { color: var(--cs-mare); } }
+.trio { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 8px; margin: 0; }
+.trio div { min-width: 0; }
+.trio dt { font-size: var(--t-meta); color: var(--cs-tinta-2); }
+.trio dd { margin: 0; font-size: var(--t-titulo); font-weight: 700; font-variant-numeric: tabular-nums; }
+.trio dd.insuf { font-size: var(--t-apoio); font-weight: 700; line-height: 1.25; }
+.trio dd small { display: block; font-size: var(--t-meta); font-weight: 400; color: var(--cs-tinta-2); }
+.duo { grid-template-columns: repeat(2, minmax(0,1fr)); }
+.itens { list-style: none; margin: 4px 0 0; padding: 0; font-size: var(--t-apoio); }
+.itens li { display: flex; gap: 6px; align-items: baseline; padding: 2px 0; }
+.itens li span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.tag-risco { flex: none; font-size: var(--t-meta); font-weight: 700; color: var(--n-alerta); }
+.alerta-of { font-size: var(--t-apoio); }
+.alerta-of b { display: block; }
+.alerta-of a { color: var(--cs-mare); font-weight: 700; }
+.confira { font-size: var(--t-meta); color: var(--cs-tinta-2); margin: 6px 0 0; }
+.vazio { padding: 16px 14px; display: grid; gap: 10px; align-content: start; }
+.vazio p { margin: 0; color: var(--cs-tinta-2); font-size: var(--t-apoio); }
+.atalho { display: grid; grid-template-columns: minmax(0,1fr) auto; align-items: center; gap: 8px; border: 1px solid var(--cs-linha); border-radius: var(--r-painel); padding: 8px 10px; background: var(--cs-nevoa); text-align: left; }
+.atalho:hover { border-color: var(--cs-linha-forte); }
+.atalho b { display: block; }
+.atalho small { color: var(--cs-tinta-2); font-size: var(--t-meta); }
+.mini { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+.mini .cel { height: 24px; font-size: var(--t-meta); }
+
+/* estados */
+.esq { display: block; border-radius: 4px; background: linear-gradient(90deg, var(--cs-linha) 0 40%, var(--cs-nevoa) 50%, var(--cs-linha) 60% 100%); background-size: 300% 100%; animation: brilho 1.4s linear infinite; }
+@keyframes brilho { from { background-position: 100% 0; } to { background-position: 0 0; } }
+@media (prefers-reduced-motion: reduce) { .esq { animation: none; } .cel, .painel { transition: none !important; } }
+.insuf-caixa { margin: 0 12px 10px; padding: 10px 12px; border: 1px dashed var(--grade-sem-borda); border-radius: var(--r-celula); background: var(--grade-sem); font-size: var(--t-apoio); }
+.insuf-caixa b { display: block; }
+
+.toast { position: fixed; left: 50%; bottom: 16px; transform: translateX(-50%); background: var(--cs-tinta); color: var(--cs-papel); padding: 8px 14px; border-radius: var(--r-painel); font-size: var(--t-apoio); max-width: calc(100vw - 32px); z-index: 50; }
+.toast[hidden] { display: none; }
+
+.abas-movel, .alca { display: none; }
+
+/* ---------- 1920 ---------- */
+@media (min-width: 1600px) {
+  .corpo { grid-template-columns: 300px minmax(0,1fr) 400px; }
+}
+/* ---------- telas médias ---------- */
+@media (max-width: 1279px) {
+  .corpo { grid-template-columns: 232px minmax(0,1fr) 320px; }
+  .kpi { padding: 0 10px; }
+  .kpi-meta { max-width: 150px; }
+  .busca input { width: 140px; }
+}
+/* ---------- celular e tablet estreito ---------- */
+@media (max-width: 899px) {
+  .app { display: block; height: auto; padding-bottom: 64px; }
+  .trilho { position: fixed; z-index: 30; left: 0; right: 0; bottom: 0; flex-direction: row; justify-content: space-around; padding: 6px 8px calc(6px + env(safe-area-inset-bottom)); }
+  .trilho a[aria-current="page"] { box-shadow: inset 0 3px 0 var(--cs-sol); }
+  .tela { display: block; }
+  .barra { grid-template-columns: minmax(0,1fr); padding: 8px 16px; gap: 6px; }
+  .titulo { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+  .barra h1 { font-size: 1rem; }
+  .atualizado .falha { display: inline; margin-left: 4px; }
+  .kpis { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 8px 0; }
+  .kpi { padding: 0 8px; }
+  .kpi-cop { grid-row: 1; grid-column: 1 / -1; border-left: 0; padding-left: 0; }
+  .link { min-height: 32px; }
+  .kpi-bairros { grid-row: 2; grid-column: 1 / -1; border-left: 0; padding: 6px 0 0; border-top: 1px solid var(--cs-linha); }
+  .kpi-chuva { grid-row: 3; border-left: 0; padding-left: 0; }
+  .kpi-prev, .kpi-mare { grid-row: 3; }
+  .contagens { flex-wrap: wrap; }
+  .kpi-valor { font-size: var(--t-titulo); }
+  .kpi-meta { white-space: normal; }
+  .ferramentas > span { display: flex; align-items: center; flex: 1 1 100%; }
+  .ferramentas > span .seg { flex: 1; }
+  .ferramentas .seg button { flex: 1; }
+  .corpo { display: block; }
+  .coluna { overflow: visible; }
+  .abas-movel { display: flex; margin: 10px 16px 0; }
+  .abas-movel .seg { width: 100%; }
+  .abas-movel .seg button { flex: 1; height: 36px; }
+  .lista, .mapa { border: 0; display: block; }
+  body[data-aba="grade"] .lista { display: none; }
+  body[data-aba="lista"] .mapa { display: none; }
+  .ferramentas { padding: 10px 16px; }
+  .busca { margin-left: 0; flex: 1 1 100%; }
+  .busca input { width: 100%; height: 40px; }
+  .grade { padding: 0 16px 8px; column-width: auto; column-count: 1; }
+  .legenda { padding: 8px 16px; }
+  .prio { padding: 0 10px; }
+  .lista-topo { padding: 10px 16px 6px; }
+  .painel {
+    position: fixed; z-index: 40; left: 0; right: 0; bottom: 0; max-height: 72dvh; overflow: auto; overscroll-behavior: contain;
+    border: 0; border-radius: 16px 16px 0 0; box-shadow: 0 -12px 32px rgba(14,36,51,.25);
+    transform: translateY(105%); transition: transform 200ms ease-out; padding-bottom: env(safe-area-inset-bottom);
+  }
+  body[data-sel="sim"] .painel { transform: translateY(0); }
+  .alca { display: block; width: 40px; height: 4px; border-radius: 2px; background: var(--cs-linha-forte); margin: 6px auto 0; }
+  .painel .vazio { display: none; }
+  .toast { bottom: 76px; }
+}
+@media (pointer: coarse) {
+  :root { --alvo: 44px; }
+  .cel { height: 40px; padding: 0 12px; font-size: var(--t-corpo); }
+  .prio button { min-height: 48px; }
+  .seg button, .alternar { height: 40px; }
+  .fechar { width: 44px; height: 44px; }
+  .contagem { padding: 4px 8px; }
+}
+</style>
+</head>
+<body data-estado="normal" data-aba="grade" data-sel="nao">
+
+<div class="exemplo" id="exemplo" role="note">
+  <span><strong>EXEMPLO — protótipo.</strong> Nomes de bairros reais; estágios, números e horas inventados para discutir o layout. Nada aqui é dado do ClimaSense.</span>
+  <span class="estados" role="group" aria-label="Estado da tela no protótipo">
+    <span>Estado:</span>
+    <button type="button" data-estado="normal" aria-pressed="true">Normal</button>
+    <button type="button" data-estado="carregando" aria-pressed="false">Carregando</button>
+    <button type="button" data-estado="semdados" aria-pressed="false">Sem dados</button>
+    <button type="button" data-estado="erro" aria-pressed="false">Erro</button>
+  </span>
+</div>
+
+<div class="app">
+  <nav class="trilho" aria-label="Telas">
+    <a href="#" aria-current="page" aria-label="Mapa" title="Mapa"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2Z"/><path d="M9 4v14M15 6v14"/></svg></a>
+    <a href="#" aria-label="Situação do evento" title="Situação do evento"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg></a>
+    <a href="#" aria-label="Saúde" title="Saúde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 5v14M5 12h14"/><rect x="3" y="3" width="18" height="18" rx="4"/></svg></a>
+    <a href="#" aria-label="Ações" title="Ações"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m4 12 5 5L20 6"/></svg></a>
+    <a href="#" aria-label="Simulador" title="Simulador"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg></a>
+  </nav>
+
+  <div class="tela">
+    <header class="barra">
+      <div class="titulo"><h1>Mapa</h1><p class="atualizado" id="atualizado"></p></div>
+      <div class="kpis" id="kpis" aria-live="polite"></div>
+    </header>
+
+    <div class="abas-movel">
+      <div class="seg" role="group" aria-label="Ver">
+        <button type="button" data-aba="grade" aria-pressed="true">Bairros</button>
+        <button type="button" data-aba="lista" aria-pressed="false">Prioritários</button>
+      </div>
+    </div>
+
+    <div class="corpo">
+      <aside class="coluna lista" aria-labelledby="t-prio">
+        <div class="lista-topo">
+          <h2 id="t-prio">Prioritários</h2>
+          <div class="seg" role="group" aria-label="Nível">
+            <button type="button" data-nivel="bairro" aria-pressed="true">Bairros</button>
+            <button type="button" data-nivel="distrito" aria-pressed="false">Distritos</button>
+          </div>
+        </div>
+        <div id="lista-corpo" style="min-height:0;overflow:auto"></div>
+        <div class="rodape" id="lista-rodape"></div>
+      </aside>
+
+      <section class="coluna mapa" aria-labelledby="t-grade">
+        <h2 id="t-grade" class="so-leitor">Bairros por distrito sanitário</h2>
+        <div>
+          <div class="ferramentas">
+            <div class="seg" role="group" aria-label="Vista">
+              <button type="button" data-vista="grade" aria-pressed="true">Grade</button>
+              <button type="button" data-vista="geo" aria-pressed="false">Geográfico</button>
+            </div>
+            <span><span class="rot">Cor</span>
+              <span class="seg" role="group" aria-label="Colorir por">
+                <button type="button" data-cor="estagio" aria-pressed="true">Estágio</button>
+                <button type="button" data-cor="distrito" aria-pressed="false">Distrito</button>
+                <button type="button" data-cor="prioridade" aria-pressed="false">Prioridade</button>
+              </span>
+            </span>
+            <button type="button" class="alternar" data-camada="risco" aria-pressed="false"><span class="mk-risco" aria-hidden="true" style="color:var(--n-alerta)"></span>Áreas de risco</button>
+            <button type="button" class="alternar" data-camada="saude" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Saúde</button>
+            <label class="busca"><span class="so-leitor">Buscar bairro</span>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>
+              <input id="busca" type="search" name="bairro" placeholder="Buscar bairro…" autocomplete="off" spellcheck="false">
+            </label>
+          </div>
+          <div id="aviso"></div>
+        </div>
+        <div class="grade" id="grade" data-cor="estagio"></div>
+        <div class="legenda" id="legenda"></div>
+      </section>
+
+      <aside class="coluna painel" id="painel" aria-label="Detalhe do território"></aside>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast" role="status" hidden></div>
+
+<script>
+/* ============ DADOS DE EXEMPLO (protótipo) ============
+   Nomes de bairros e distritos reais; tudo o mais é inventado. Maiúscula = declarado pela equipe, minúscula = sugerido. */
+const ESTAGIO = {
+  critico: { r: "Crítico", o: 3 }, alerta: { r: "Alerta", o: 2 }, atencao: { r: "Atenção", o: 1 },
+  observacao: { r: "Observação", o: 0 }, sem_dados: { r: "Dados insuficientes", o: -1 },
+};
+const COD = { c: "critico", a: "alerta", t: "atencao", o: "observacao", x: "sem_dados" };
+const DS = {
+  "ds-1": { cor: "#0072B2", chuva: 22, est: [2, 2], p24: 40, p72: 70, e: "atencao", o: "sugerido" },
+  "ds-2": { cor: "#E69F00", chuva: 31, est: [3, 3], p24: 55, p72: 96, e: "alerta", o: "sugerido" },
+  "ds-3": { cor: "#009E73", chuva: 29, est: [2, 3], p24: 50, p72: 90, e: "atencao", o: "declarado" },
+  "ds-4": { cor: "#CC79A7", chuva: 18, est: [2, 2], p24: 35, p72: 60, e: "atencao", o: "sugerido" },
+  "ds-5": { cor: "#56B4E9", chuva: 20, est: [2, 2], p24: 38, p72: 66, e: "atencao", o: "sugerido" },
+  "ds-6": { cor: "#D55E00", chuva: null, est: [0, 2], p24: 45, p72: 80, e: "sem_dados", o: "sem_dados" },
+  "ds-7": { cor: "#F0E442", chuva: 38, est: [3, 3], p24: 62, p72: 118, e: "alerta", o: "declarado" },
+  "ds-8": { cor: "#332288", chuva: 35, est: [2, 2], p24: 58, p72: 104, e: "critico", o: "sugerido" },
+};
+const BAIRROS_TXT = {
+  "ds-7": "Nova Descoberta:C,Passarinho:c,Vasco da Gama:A,Córrego do Jenipapo:A,Brejo da Guabiraba:a,Alto José do Pinho:A,Mangabeira:t,Morro da Conceição:t,Alto José Bonifácio:t,Brejo de Beberibe:t,Macaxeira:t",
+  "ds-8": "Ibura:C,Jordão:A,Cohab:t",
+  "ds-2": "Dois Unidos:A,Linha do Tiro:A,Beberibe:T,Peixinhos:T,Água Fria:t,Alto Santa Terezinha:t,Bomba do Hemetério:t,Campina do Barreto:t,Arruda:o,Cajueiro:o,Campo Grande:o,Encruzilhada:o,Fundão:o,Hipódromo:o,Ponto de Parada:o,Porto da Madeira:o,Rosarinho:o,Torreão:o",
+  "ds-3": "Sítio dos Pintos:a,Casa Amarela:T,Alto do Mandu:t,Guabiraba:x,Pau Ferro:x,Aflitos:o,Apipucos:o,Casa Forte:o,Derby:o,Dois Irmãos:o,Espinheiro:o,Graças:o,Jaqueira:o,Monteiro:o,Parnamirim:o,Poço da Panela:o,Santana:o,Tamarineira:o",
+  "ds-5": "San Martin:t,Mustardinha:t,Jardim São Paulo:t,Afogados:o,Areias:o,Barro:o,Bongi:o,Caçote:o,Coqueiral:o,Curado:o,Estância:o,Jiquiá:o,Mangueira:o,Sancho:o,Tejipió:o,Totó:o",
+  "ds-6": "Boa Viagem:x,Brasília Teimosa:x,Imbiribeira:x,Ipsep:x,Pina:x",
+  "ds-4": "Iputinga:T,Várzea:t,Caxangá:t,Torrões:t,Cordeiro:o,Engenho do Meio:o,Ilha do Retiro:o,Madalena:o,Prado:o,Torre:o,Zumbi:o,Cidade Universitária:o",
+  "ds-1": "Coelhos:a,Cabanga:x,Ilha Joana Bezerra:x,Boa Vista:o,Ilha do Leite:o,Paissandu:o,Recife:o,Santo Amaro:o,Santo Antônio:o,São José:o,Soledade:o",
+};
+const OCORR = { // [alagamentos, deslizamentos] (exemplo)
+  "Nova Descoberta": [41, 23], "Ibura": [38, 19], "Passarinho": [22, 27], "Vasco da Gama": [25, 18], "Córrego do Jenipapo": [19, 21],
+  "Jordão": [27, 9], "Dois Unidos": [18, 16], "Alto José do Pinho": [12, 20], "Linha do Tiro": [14, 15], "Brejo da Guabiraba": [10, 17],
+  "Sítio dos Pintos": [9, 14], "Coelhos": [21, 0], "Casa Amarela": [15, 6], "Imbiribeira": [24, 0], "Boa Viagem": [20, 0], "Iputinga": [17, 2],
+};
+const MORROS = new Set(["ds-7", "ds-8", "ds-2", "ds-3"]);
+const h = (s) => { let x = 7; for (const c of s) x = (x * 31 + c.charCodeAt(0)) >>> 0; return x; };
+const fmt = new Intl.NumberFormat("pt-BR");
+
+const bairros = [];
+for (const [ds, txt] of Object.entries(BAIRROS_TXT)) {
+  for (const par of txt.split(",")) {
+    const [nome, c] = par.split(":");
+    const e = COD[c.toLowerCase()];
+    const o = e === "sem_dados" ? "sem_dados" : c === c.toUpperCase() ? "declarado" : "sugerido";
+    const x = h(nome);
+    const oc = OCORR[nome] ?? [x % 12, MORROS.has(ds) ? (x >> 4) % 6 : 0];
+    bairros.push({
+      id: "b-" + x, nome, ds, e, o,
+      sug: nome === "Nova Descoberta" ? "alerta" : e,
+      alag: oc[0], desl: oc[1],
+      idosos: 600 + (x % 5200), criancas: 800 + ((x >> 3) % 7400),
+      saude: (x >> 6) % 5, saudeRisco: MORROS.has(ds) && (x >> 6) % 5 > 1 ? 1 : 0,
+      areas: ds === "ds-6" || ds === "ds-1" ? null : MORROS.has(ds) ? 2 + ((x >> 8) % 14) : (x >> 8) % 4,
+    });
+  }
+}
+// prioridade: mais ocorrências registradas primeiro (o critério real vem da API)
+const porPrio = [...bairros].sort((a, b) => (b.alag + b.desl) - (a.alag + a.desl) || a.nome.localeCompare(b.nome, "pt-BR"));
+porPrio.forEach((b, i) => { b.pos = i + 1; b.classe = Math.min(4, Math.floor(i / (bairros.length / 5))); });
+const distritos = Object.keys(DS).map((id) => {
+  const bs = bairros.filter((b) => b.ds === id);
+  const s = (k) => bs.reduce((n, b) => n + b[k], 0);
+  return { id, n: Number(id.slice(3)), ...DS[id], bairros: bs, idosos: s("idosos"), criancas: s("criancas"), alag: s("alag"), desl: s("desl") };
+}).sort((a, b) => (b.alag + b.desl) - (a.alag + a.desl));
+distritos.forEach((d, i) => (d.pos = i + 1));
+const dsPorId = Object.fromEntries(distritos.map((d) => [d.id, d]));
+const bPorId = Object.fromEntries(bairros.map((b) => [b.id, b]));
+const gravidade = (a, b) => ESTAGIO[b.e].o - ESTAGIO[a.e].o || a.pos - b.pos;
+
+const FALTA = {
+  "ds-6": "chuva medida em 24 h: o Distrito 6 está sem estação válida",
+  outro: "histórico de alagamento do bairro",
+};
+function motivos(b) {
+  const d = dsPorId[b.ds];
+  if (b.e === "sem_dados") return [];
+  const m = [];
+  if (d.p24 >= 50) m.push(`Chuva prevista em 24 h de ${d.p24} mm no distrito`);
+  else m.push(`Chuva prevista em 24 h de ${d.p24} mm no distrito`);
+  if (b.alag + b.desl >= 15) m.push(`${b.alag + b.desl} ocorrências registradas de 2014 a 2024`);
+  if (d.chuva !== null && d.chuva >= 30) m.push(`Chuva medida de ${d.chuva} mm em 24 h`);
+  m.push("Maré alta de 2,4 m às 16:40, perto do pico de chuva");
+  return m.slice(0, 3);
+}
+
+/* ============ ESTADO DA TELA ============ */
+const st = { estado: "normal", cor: "estagio", vista: "grade", filtro: null, busca: "", nivel: "bairro", camadas: { risco: false, saude: false }, sel: null, dsAntes: null, todos: false };
+const $ = (s) => document.querySelector(s);
+const esc = (t) => String(t).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+// selo curto (listas e cabeçalhos): "Sem dados", o nome do estágio no RF-29; o painel diz "Dados insuficientes" e o que falta
+const selo = (e, extra = "") => `<span class="selo ${extra}" data-e="${e}">${extra === "curto" && e === "sem_dados" ? "Sem dados" : ESTAGIO[e].r}</span>`;
+const origemTxt = (o) => (o === "declarado" ? "declarado" : o === "sugerido" ? "sugerido" : "sem dados");
+const semDados = () => st.estado === "semdados";
+const carregando = () => st.estado === "carregando";
+const eDe = (b) => (semDados() ? "sem_dados" : b.e);
+const oDe = (b) => (semDados() ? "sem_dados" : b.o);
+const esqueleto = (w, hgt = 14) => `<span class="esq" style="width:${w};height:${hgt}px"></span>`;
+
+function renderKpis() {
+  const k = $("#kpis");
+  if (carregando()) {
+    k.innerHTML = ["cop", "bairros", "chuva", "prev", "mare"].map((c) =>
+      `<div class="kpi kpi-${c}" role="status" aria-busy="true"><span class="kpi-rotulo">${{ cop: "Estágio do COP", bairros: "Bairros por estágio", chuva: "Chuva 24 h", prev: "Prevista 24 h", mare: "Maré alta hoje" }[c]}</span>${esqueleto(c === "bairros" ? "260px" : "64px", 20)}<span class="so-leitor">Carregando…</span></div>`).join("");
+    $("#atualizado").innerHTML = `Carregando…`;
+    return;
+  }
+  const sd = semDados();
+  const cont = ["critico", "alerta", "atencao", "observacao", "sem_dados"].map((e) => ({ e, n: bairros.filter((b) => eDe(b) === e).length }));
+  const decl = sd ? 0 : bairros.filter((b) => b.o === "declarado").length;
+  const desat = st.estado === "erro" ? `<span class="selo-desat">desatualizado</span>` : "";
+  k.innerHTML = `
+    <div class="kpi kpi-cop">
+      <span class="kpi-rotulo">Estágio do COP <button type="button" class="link" data-acao="cop">${sd ? "Informar" : "Atualizar"}</button></span>
+      <span class="linha-cop">${sd ? `<b>Dados insuficientes</b>` : selo("atencao", "grande")}<span class="kpi-meta">${sd ? "Falta o estágio do COP. Não é risco baixo." : "COP, informado às 14:05"}</span></span>
+      ${sd ? `<span class="kpi-meta">Alertas oficiais: Dados insuficientes (falta a fonte)</span>` : `<button type="button" class="link" data-acao="alertas">1 alerta oficial ativo: APAC, 11:30</button>`}
+    </div>
+    <div class="kpi kpi-bairros">
+      <span class="kpi-rotulo">Bairros por estágio <span class="num">(94)</span>${desat}</span>
+      <span class="contagens" role="group" aria-label="Mostrar só os bairros de um estágio">
+        ${cont.filter((c) => c.n > 0).map((c) => `<button type="button" class="contagem" data-e="${c.e}" data-filtro="${c.e}" aria-pressed="${st.filtro === c.e}"><b>${c.n}</b>${c.e === "sem_dados" ? "Sem dados" : ESTAGIO[c.e].r}</button>`).join("")}
+      </span>
+      <span class="barra-94" aria-hidden="true">${cont.map((c) => `<i data-e="${c.e}" style="width:${(c.n / 94) * 100}%;background:var(--f)"></i>`).join("")}</span>
+      <span class="kpi-meta">${sd ? "Falta a previsão de chuva e de maré para sugerir." : `${decl} declarados pela equipe, ${94 - decl - cont[4].n} sugeridos pelo sistema`}</span>
+    </div>
+    ${kpi("chuva", "Chuva 24 h", sd ? null : `38 mm <small>D7</small>`, sd ? "Falta: estações válidas (APAC e Cemaden)" : "APAC e Cemaden, 14:00 (16 de 19 estações)")}
+    ${kpi("prev", "Prevista 24 h", sd ? null : `62 mm <small>D7</small>`, sd ? "Falta: previsão (Open-Meteo)" : "Open-Meteo, 13:00")}
+    ${kpi("mare", "Maré alta hoje", sd ? null : `2,4 m <small>16:40</small>`, sd ? "Falta: previsão de maré" : "Open-Meteo, 06:00")}`;
+  $("#atualizado").innerHTML = st.estado === "erro"
+    ? `Atualizado às <b class="num">13:40</b><span class="falha">falhou às 14:12</span>`
+    : `Atualizado às <b class="num">14:12</b>`;
+}
+function kpi(c, rot, valor, meta) {
+  return `<div class="kpi kpi-${c} ${valor === null ? "kpi-insuf" : ""}"><span class="kpi-rotulo">${rot}</span><span class="kpi-valor">${valor === null ? "Dados insuficientes" : valor}</span><span class="kpi-meta" title="${esc(meta)}">${meta}</span></div>`;
+}
+
+function casa(b) {
+  const q = st.busca && !norm(b.nome).includes(norm(st.busca));
+  const f = st.filtro && eDe(b) !== st.filtro;
+  return !(q || f);
+}
+const norm = (t) => t.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim();
+
+function celula(b) {
+  const e = eDe(b), o = oDe(b);
+  const sel = st.sel && st.sel.tipo === "bairro" && st.sel.id === b.id;
+  const marcas = (st.camadas.risco && b.areas ? `<span class="mk-risco" aria-hidden="true"></span>` : "") +
+    (st.camadas.saude && b.saude ? `<span class="mk-saude" aria-hidden="true">+${b.saude}</span>` : "");
+  const rotulo = `${b.nome}: ${ESTAGIO[e].r}${o !== "sem_dados" ? ", " + origemTxt(o) : ""}; prioridade ${b.pos}º de 94` +
+    (st.camadas.risco && b.areas ? `; ${b.areas} áreas de risco` : "") + (st.camadas.saude && b.saude ? `; ${b.saude} unidades de saúde` : "");
+  return `<button type="button" class="cel ${casa(b) ? "" : "apagada"}" data-id="${b.id}" data-e="${e}" data-o="${o}" data-p="${b.classe}" style="--ds:${dsPorId[b.ds].cor}" aria-pressed="${sel}" aria-label="${esc(rotulo)}">${marcas}${esc(b.nome)}</button>`;
+}
+
+function renderGrade() {
+  const g = $("#grade");
+  g.dataset.cor = st.cor;
+  $("#aviso").innerHTML = st.estado === "erro"
+    ? `<p class="aviso-linha" role="alert"><span><b>Não foi possível atualizar os estágios às 14:12.</b> Mostrando os de 13:40.</span><button type="button" data-acao="tentar">Tentar de novo</button></p>` : "";
+  if (st.vista === "geo") {
+    g.innerHTML = `<div class="geo"><p><b>Vista geográfica</b><br>No produto, é o mapa MapLibre atual com os polígonos dos 94 bairros, as mesmas cores, as camadas e o mesmo painel ao lado. Fora deste protótipo.</p></div>`;
+    renderLegenda();
+    return;
+  }
+  if (carregando()) {
+    g.innerHTML = `<p class="so-leitor" role="status">Carregando os estágios…</p>` + distritos.map((d) =>
+      `<div class="bloco" style="--ds:${d.cor}" aria-hidden="true"><div class="bloco-cab"><b>Distrito ${d.n}</b></div><div class="celulas">${d.bairros.map((b) => `<span class="cel" data-e="sem_dados" style="border-style:solid;color:transparent;width:${60 + (h(b.nome) % 50)}px">.</span>`).join("")}</div></div>`).join("");
+    renderLegenda();
+    return;
+  }
+  const insuf = semDados() ? `<div class="insuf-caixa" style="margin:0 0 10px;break-inside:avoid"><b>Dados insuficientes em todos os bairros.</b> Falta a previsão de chuva e de maré (Open-Meteo) para o sistema sugerir, e ninguém declarou. Cinza não quer dizer risco baixo.</div>` : "";
+  g.innerHTML = insuf + distritos.map((d) => {
+    const de = semDados() ? "sem_dados" : d.e;
+    const bs = [...d.bairros].sort((a, b) => (semDados() ? a.pos - b.pos : gravidade(a, b)));
+    return `<div class="bloco" style="--ds:${d.cor}">
+      <div class="bloco-cab"><button type="button" data-ds="${d.id}" aria-label="Distrito ${d.n}: ${ESTAGIO[de].r}. Abrir o distrito">Distrito ${d.n}</button>${selo(de, "curto")}<span class="qtd">${d.bairros.length} bairros</span></div>
+      <div class="celulas">${bs.map(celula).join("")}</div></div>`;
+  }).join("");
+  renderLegenda();
+}
+
+function renderLegenda() {
+  const l = $("#legenda");
+  if (st.cor === "prioridade") {
+    l.innerHTML = `<span>Mais prioritários</span>${[0, 1, 2, 3, 4].map((p) => `<span class="sw"><i style="--f:var(--g-seq-${[7, 6, 4, 2, 1][p]});--b:var(--g-seq-${[7, 6, 4, 3, 2][p]})"></i></span>`).join("")}<span>Menos</span>
+      <span>Prioridade é onde agir primeiro, não chance de acontecer.</span>
+      <span class="fonte">Fonte: ocorrências da Defesa Civil (2014 a 2024), consultado às 14:10.</span>`;
+    return;
+  }
+  if (st.cor === "distrito") {
+    l.innerHTML = `<span>Cor da barra lateral: distrito sanitário.</span><span class="fonte">Fonte: base territorial da Prefeitura do Recife.</span>`;
+    return;
+  }
+  l.innerHTML = ["critico", "alerta", "atencao", "observacao"].map((e) => `<span class="sw" data-e="${e}"><i></i>${ESTAGIO[e].r}</span>`).join("") +
+    `<span class="sw" data-e="sem_dados"><i></i>Dados insuficientes</span>
+     <span class="sw" data-e="atencao"><i></i>cheio e negrito: declarado</span>
+     <span class="sw" data-e="atencao"><i class="lis"></i>listrado: sugerido</span>
+     ${st.camadas.risco ? `<span class="sw"><span class="mk-risco" style="color:var(--cs-tinta)"></span>tem área de risco mapeada</span>` : ""}
+     ${st.camadas.saude ? `<span class="sw"><span class="mk-saude">+2</span>unidades de saúde (CNES)</span>` : ""}
+     <span class="fonte">Estágios: equipe e sugestão do ClimaSense, ${st.estado === "erro" ? "13:40 (desatualizado)" : "14:10"}. Cinza tracejado é falta de dado, não risco baixo.</span>`;
+}
+
+function renderLista() {
+  const c = $("#lista-corpo");
+  document.querySelectorAll("[data-nivel]").forEach((b) => b.setAttribute("aria-pressed", b.dataset.nivel === st.nivel));
+  if (carregando()) {
+    c.innerHTML = `<p class="so-leitor" role="status">Carregando as prioridades…</p><ol class="prio">${Array.from({ length: 9 }, () => `<li><div style="padding:8px 6px;display:grid;gap:4px">${esqueleto("70%")}${esqueleto("50%", 10)}</div></li>`).join("")}</ol>`;
+    $("#lista-rodape").innerHTML = "";
+    return;
+  }
+  const limite = st.todos ? 999 : 12;
+  if (st.nivel === "distrito") {
+    c.innerHTML = `<ol class="prio">${distritos.map((d) => {
+      const e = semDados() ? "sem_dados" : d.e;
+      return `<li><button type="button" data-ds="${d.id}" aria-pressed="${st.sel?.id === d.id}"><span class="pos">${d.pos}</span><span class="nome">Distrito ${d.n}</span>${selo(e, "curto")}<span class="det">${fmt.format(d.alag)} alagamentos, ${fmt.format(d.desl)} deslizamentos</span></button></li>`;
+    }).join("")}</ol>`;
+  } else {
+    const lista = porPrio.slice(0, limite);
+    c.innerHTML = `<ol class="prio">${lista.map((b) => {
+      const e = eDe(b);
+      return `<li><button type="button" data-id="${b.id}" aria-pressed="${st.sel?.id === b.id}"><span class="pos">${b.pos}</span><span class="nome">${esc(b.nome)}</span>${selo(e, "curto")}<span class="det">D${dsPorId[b.ds].n}, ${b.alag} alagamentos, ${b.desl} deslizamentos</span></button></li>`;
+    }).join("")}</ol><button type="button" class="mais" data-acao="todos">${st.todos ? "Mostrar só os 12 primeiros" : "Ver os 94 bairros"}</button>`;
+  }
+  $("#lista-rodape").innerHTML = `<p>Fonte: ocorrências da Defesa Civil, 2014 a 2024. Consultado às 14:10.</p><p>Prioridade é onde agir primeiro, não chance de acontecer.</p>`;
+}
+
+const X_SVG = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>`;
+function cab(titulo, sub, voltar) {
+  return `<div class="alca" aria-hidden="true"></div><header class="p-cab"><div>${voltar ? `<button type="button" class="voltar" data-ds="${voltar.id}">‹ ${voltar.rot}</button>` : ""}<h2 id="p-titulo" tabindex="-1">${titulo}</h2><span class="sub">${sub}</span></div><button type="button" class="fechar" data-acao="fechar" aria-label="Fechar o painel">${X_SVG}</button></header>`;
+}
+
+function renderPainel(focar) {
+  const p = $("#painel");
+  document.body.dataset.sel = st.sel ? "sim" : "nao";
+  if (!st.sel) {
+    const top = [...bairros].sort(gravidade)[0];
+    p.innerHTML = `<div class="vazio">
+      <h2>Escolha um bairro</h2>
+      <p>Toque num bairro na grade ou na lista. Toque no nome do distrito para ver o distrito inteiro. Esc fecha.</p>
+      ${carregando() || semDados() ? "" : `<button type="button" class="atalho" data-id="${top.id}"><span><b>Começar pelo mais grave</b><small>${esc(top.nome)}, Distrito ${dsPorId[top.ds].n}</small></span>${selo(top.e)}</button>`}
+    </div>`;
+    return;
+  }
+  if (st.sel.tipo === "alertas") p.innerHTML = painelAlertas();
+  else if (st.sel.tipo === "distrito") p.innerHTML = painelDistrito(dsPorId[st.sel.id]);
+  else p.innerHTML = painelBairro(bPorId[st.sel.id]);
+  if (focar) $("#p-titulo")?.focus({ preventScroll: true });
+}
+
+function linhaVigor(e, o, quem) {
+  return `<div class="vigor">${selo(e, "grande")}<span class="quem">${quem}</span></div>`;
+}
+
+function painelBairro(b) {
+  const d = dsPorId[b.ds];
+  const sd = semDados();
+  const e = eDe(b), o = oDe(b);
+  const falta = d.id === "ds-6" ? FALTA["ds-6"] : FALTA.outro;
+  let estagio;
+  if (o === "declarado") {
+    estagio = linhaVigor(e, o, "declarado por Carla Lima às 13:50") +
+      `<p class="frase">“Morros com solo encharcado desde ontem.”</p>` +
+      `<p class="meta">Sugerido pelo sistema: <b>${ESTAGIO[b.sug].r}</b>. ${motivos(b)[0]}.</p>`;
+  } else if (o === "sugerido") {
+    estagio = linhaVigor(e, o, "sugerido pelo sistema; ninguém declarou") +
+      `<ul class="motivos">${motivos(b).map((m) => `<li>${m}</li>`).join("")}</ul>` +
+      `<p class="meta">Fonte: APAC e Cemaden (14:00), Open-Meteo (13:00), Defesa Civil. Calculado às 14:10.</p>`;
+  } else {
+    estagio = linhaVigor("sem_dados", o, "o sistema não consegue sugerir e ninguém declarou") +
+      `<p class="frase">Falta: ${sd ? "previsão de chuva e de maré (Open-Meteo)" : falta}. Isso não quer dizer risco baixo.</p>`;
+  }
+  const chuva = sd || d.chuva === null
+    ? `<dd class="insuf">Dados insuficientes<small>${sd ? "falta a fonte" : "0 de 2 estações válidas"}</small></dd>`
+    : `<dd>${d.chuva} mm<small>${d.est[0]} de ${d.est[1]} estações</small></dd>`;
+  const prev = (v) => (sd ? `<dd class="insuf">Dados insuficientes</dd>` : `<dd>${v} mm</dd>`);
+  const equip = b.saude === 0
+    ? `<p class="frase">Nenhuma unidade de saúde registrada no CNES neste bairro.</p>`
+    : `<p class="frase"><b>${b.saude} ${b.saude === 1 ? "unidade" : "unidades"} de saúde</b>${b.saudeRisco ? `, <b style="color:var(--n-alerta)">${b.saudeRisco} em área de risco</b>` : ""}</p>
+       <ul class="itens">${Array.from({ length: Math.min(3, b.saude) }, (_, i) => `<li><span>${["USF", "UBS", "Policlínica"][i]} ${esc(b.nome)}${i ? " " + (i + 1) : ""}</span>${i === 0 && b.saudeRisco ? `<span class="tag-risco">em área de risco</span>` : ""}</li>`).join("")}</ul>`;
+  const areas = b.areas === null
+    ? `<p class="frase"><b>Áreas de risco:</b> Dados insuficientes. Falta o mapeamento da Defesa Civil neste bairro.</p>`
+    : `<p class="frase"><b>${b.areas} áreas de risco mapeadas</b>, cobertura parcial.</p>`;
+  return cab(esc(b.nome), `Distrito ${d.n}, prioridade ${b.pos}º de 94`, { id: d.id, rot: `Distrito ${d.n}` }) + `
+    <section class="sec" aria-labelledby="s-est"><h3 id="s-est">Estágio</h3>${estagio}
+      <div class="acoes"><button type="button" class="btn" data-acao="declarar">Declarar estágio</button>${o === "declarado" ? `<button type="button" class="btn sec2" data-acao="retirar">Retirar</button>` : ""}</div>
+    </section>
+    <section class="sec" aria-labelledby="s-chuva"><h3 id="s-chuva">Chuva no Distrito ${d.n}</h3>
+      <dl class="trio"><div><dt>Medida 24 h</dt>${chuva}</div><div><dt>Prevista 24 h</dt>${prev(d.p24)}</div><div><dt>Prevista 72 h</dt>${prev(d.p72)}</div></dl>
+      <p class="meta">${sd ? "Falta: APAC, Cemaden e Open-Meteo." : "APAC e Cemaden, 14:00; previsão Open-Meteo, 13:00. O bairro usa a chuva do distrito."}</p>
+    </section>
+    <section class="sec" aria-labelledby="s-pop"><h3 id="s-pop">Pessoas que moram no bairro</h3>
+      <dl class="trio"><div><dt>Idosos (60+)</dt><dd>${fmt.format(b.idosos)}</dd></div><div><dt>Crianças (0 a 14)</dt><dd>${fmt.format(b.criancas)}</dd></div><div><dt>Com deficiência</dt><dd class="insuf">Dados insuficientes<small>sem fonte por bairro</small></dd></div></dl>
+      <p class="meta">IBGE, Censo 2022. Só contagens agregadas.</p>
+    </section>
+    <section class="sec" aria-labelledby="s-saude"><h3 id="s-saude">Saúde e risco</h3>${equip}${areas}
+      <p class="meta">CNES, 01/11/2026; Defesa Civil, setores de risco. ${b.alag} alagamentos e ${b.desl} deslizamentos registrados de 2014 a 2024.</p>
+    </section>
+    <section class="sec" aria-labelledby="s-al"><h3 id="s-al">Alertas oficiais</h3>
+      ${sd ? `<p class="frase">Dados insuficientes. Falta a fonte de alertas (APAC, Cemaden).</p>` : `<div class="alerta-of"><b>APAC: chuva moderada a forte</b>Emitido às 11:30, vale até 23:59. Território: Região Metropolitana do Recife. <a href="#" data-acao="fonte">Ver na fonte<span class="so-leitor"> (abre em nova aba)</span></a></div>`}
+      <p class="confira">Confira sempre na APAC ou no Cemaden antes de agir.</p>
+    </section>`;
+}
+
+function painelDistrito(d) {
+  const sd = semDados();
+  const e = sd ? "sem_dados" : d.e, o = sd ? "sem_dados" : d.o;
+  const bs = [...d.bairros].sort(gravidade);
+  const quem = o === "declarado" ? "declarado por Carla Lima às 13:20" : o === "sugerido" ? "sugerido pelo sistema; ninguém declarou" : "o sistema não consegue sugerir e ninguém declarou";
+  return cab(`<span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:${d.cor};margin-right:6px" aria-hidden="true"></span>Distrito ${d.n}`, `${d.bairros.length} bairros, prioridade ${d.pos}º de 8`) + `
+    <section class="sec" aria-labelledby="s-dest"><h3 id="s-dest">Estágio do distrito</h3>${linhaVigor(e, o, quem)}
+      ${o === "sem_dados" ? `<p class="frase">Falta: ${sd ? "previsão de chuva e de maré" : FALTA["ds-6"]}. Isso não quer dizer risco baixo.</p>` : ""}
+      <div class="acoes"><button type="button" class="btn" data-acao="declarar">Declarar estágio do distrito</button></div>
+    </section>
+    <section class="sec" aria-labelledby="s-dnum"><h3 id="s-dnum">Números do distrito</h3>
+      <dl class="trio duo"><div><dt>Idosos (60+)</dt><dd>${fmt.format(d.idosos)}</dd></div><div><dt>Crianças (0 a 14)</dt><dd>${fmt.format(d.criancas)}</dd></div>
+      <div><dt>Alagamentos registrados</dt><dd>${fmt.format(d.alag)}</dd></div><div><dt>Deslizamentos registrados</dt><dd>${fmt.format(d.desl)}</dd></div></dl>
+      <p class="meta">IBGE, Censo 2022; Defesa Civil, 2014 a 2024. Consultado às 14:10.</p>
+    </section>
+    <section class="sec" aria-labelledby="s-db"><h3 id="s-db">Bairros, mais graves primeiro</h3>
+      <div class="mini">${bs.map((b) => `<button type="button" class="cel" data-id="${b.id}" data-e="${eDe(b)}" data-o="${oDe(b)}" aria-label="${esc(b.nome)}: ${ESTAGIO[eDe(b)].r}">${esc(b.nome)}</button>`).join("")}</div>
+    </section>`;
+}
+
+function painelAlertas() {
+  return cab("Alertas oficiais", "1 ativo agora") + `
+    <section class="sec"><div class="alerta-of"><b>APAC: chuva moderada a forte</b>Nível da fonte: atenção. Emitido às 11:30, vale até 23:59.<br>Território: Região Metropolitana do Recife. <a href="#" data-acao="fonte">Ver na fonte<span class="so-leitor"> (abre em nova aba)</span></a></div></section>
+    <section class="sec"><h3>Sem alerta ativo</h3><p class="frase">INMET, Cemaden e Defesa Civil do Recife: nenhum alerta registrado às 14:10. Isso não quer dizer que não haja.</p>
+    <p class="confira">O ClimaSense não emite alerta em nome de nenhum órgão. Confira na APAC ou no Cemaden.</p></section>`;
+}
+
+function renderTudo(focar) {
+  document.querySelectorAll(".exemplo [data-estado]").forEach((b) => b.setAttribute("aria-pressed", b.dataset.estado === st.estado));
+  document.querySelectorAll("[data-cor]").forEach((b) => b.tagName === "BUTTON" && b.setAttribute("aria-pressed", b.dataset.cor === st.cor));
+  document.querySelectorAll("[data-vista]").forEach((b) => b.setAttribute("aria-pressed", b.dataset.vista === st.vista));
+  document.querySelectorAll("[data-camada]").forEach((b) => b.setAttribute("aria-pressed", st.camadas[b.dataset.camada]));
+  renderKpis(); renderGrade(); renderLista(); renderPainel(focar);
+}
+
+let tToast;
+function avisar(t) { const el = $("#toast"); el.textContent = t; el.hidden = false; clearTimeout(tToast); tToast = setTimeout(() => (el.hidden = true), 3200); }
+
+document.addEventListener("click", (ev) => {
+  const t = ev.target.closest("button, a");
+  if (!t) return;
+  const ds = t.dataset;
+  if (t.closest(".exemplo") && ds.estado) { st.estado = ds.estado; st.filtro = null; return renderTudo(); }
+  if (ds.aba) { document.body.dataset.aba = ds.aba; document.querySelectorAll("[data-aba]").forEach((b) => b.tagName === "BUTTON" && b.setAttribute("aria-pressed", b.dataset.aba === ds.aba)); return; }
+  if (ds.cor && t.tagName === "BUTTON") { st.cor = ds.cor; return renderTudo(); }
+  if (ds.vista) { st.vista = ds.vista; return renderTudo(); }
+  if (ds.camada) { st.camadas[ds.camada] = !st.camadas[ds.camada]; return renderTudo(); }
+  if (ds.nivel) { st.nivel = ds.nivel; return renderLista(); }
+  if (ds.filtro) { st.filtro = st.filtro === ds.filtro ? null : ds.filtro; return renderTudo(); }
+  if (ds.id && bPorId[ds.id]) { st.sel = { tipo: "bairro", id: ds.id }; return renderTudo(true); }
+  if (ds.ds) { st.sel = { tipo: "distrito", id: ds.ds }; return renderTudo(true); }
+  switch (ds.acao) {
+    case "fechar": fecharNivel(); break;
+    case "alertas": st.sel = { tipo: "alertas" }; renderTudo(true); break;
+    case "todos": st.todos = !st.todos; renderLista(); break;
+    case "tentar": st.estado = "normal"; renderTudo(); avisar("Estágios atualizados às 14:13."); break;
+    case "declarar": avisar("No produto: abre o diálogo atual de declaração (estágio, justificativa, mensagem para WhatsApp)."); break;
+    case "retirar": avisar("No produto: abre o diálogo atual para retirar a declaração."); break;
+    case "cop": avisar("No produto: abre o diálogo atual para informar o estágio do COP."); break;
+    case "fonte": ev.preventDefault(); avisar("No produto: abre o aviso no site da APAC."); break;
+  }
+});
+function fecharNivel() {
+  if (st.sel?.tipo === "bairro") st.sel = { tipo: "distrito", id: bPorId[st.sel.id].ds };
+  else st.sel = null;
+  renderTudo(true);
+}
+document.addEventListener("keydown", (e) => { if (e.key === "Escape" && st.sel) fecharNivel(); });
+$("#busca").addEventListener("input", (e) => { st.busca = e.target.value; renderGrade(); });
+$("#busca").addEventListener("keydown", (e) => {
+  if (e.key !== "Enter") return;
+  const b = bairros.find((x) => norm(x.nome).includes(norm(st.busca)));
+  if (b) { st.sel = { tipo: "bairro", id: b.id }; renderTudo(true); }
+});
+const ajustarFaixa = () => document.documentElement.style.setProperty("--h-exemplo", $("#exemplo").offsetHeight + "px");
+addEventListener("resize", ajustarFaixa);
+ajustarFaixa();
+// o endereço guarda a seleção (#bairro=Ibura, #distrito=7) para compartilhar o link
+const alvo = decodeURIComponent(location.hash.slice(1));
+if (alvo.startsWith("bairro=")) { const b = bairros.find((x) => x.nome === alvo.slice(7)); if (b) st.sel = { tipo: "bairro", id: b.id }; }
+if (alvo.startsWith("distrito=") && dsPorId["ds-" + alvo.slice(9)]) st.sel = { tipo: "distrito", id: "ds-" + alvo.slice(9) };
+const renderBase = renderTudo;
+renderTudo = (f) => {
+  renderBase(f);
+  const s = st.sel;
+  const hash = !s ? "" : s.tipo === "bairro" ? "#bairro=" + encodeURIComponent(bPorId[s.id].nome) : s.tipo === "distrito" ? "#distrito=" + s.id.slice(3) : "";
+  try { history.replaceState(null, "", hash || location.pathname); } catch { /* file:// em alguns navegadores */ }
+};
+renderTudo();
+</script>
+</body>
+</html>

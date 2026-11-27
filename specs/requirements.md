@@ -402,7 +402,7 @@ Os nomes e os critérios dos níveis DEVEM ser validados com a equipe da Vigilâ
 | ID | Requisito | Medida verificável |
 |---|---|---|
 | RNF-ACE-01 | Conformidade **WCAG 2.2 nível AA**. | Auditoria automática (axe) sem violações críticas, mais um checklist manual. |
-| RNF-ACE-02 | Texto base de **18 px** (mínimo 16 px em textos secundários). Títulos com hierarquia clara. | Inspeção do design system. |
+| RNF-ACE-02 | Texto base de **16 px** (mínimo 13 px em rótulos e textos secundários), revisado pelo ADR 0018 (26/11/2026). Títulos com hierarquia clara. | Inspeção do design system. |
 | RNF-ACE-03 | Contraste mínimo de **4,5:1** para o texto e **3:1** para os componentes. Meta de **7:1** para o texto dos avisos públicos. | Verificador de contraste nos tokens. |
 | RNF-ACE-04 | Alvos de clique de pelo menos **44 × 44 px**. | Inspeção. |
 | RNF-ACE-05 | Ícones sempre acompanhados de texto nos menus e botões principais. | Revisão de telas. |
