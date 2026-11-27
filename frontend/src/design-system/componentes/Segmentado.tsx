@@ -4,6 +4,9 @@ import estilos from "./Segmentado.module.css";
 export interface OpcaoSegmentada<V extends string | number> {
   valor: V;
   rotulo: string;
+  /** Opção que ainda não pode ser usada; a `dica` diz por quê ("Ainda não disponível"). */
+  desabilitado?: boolean;
+  dica?: string;
 }
 
 export interface SegmentadoProps<V extends string | number> {
@@ -33,8 +36,19 @@ export function Segmentado<V extends string | number>({
       <legend className={rotuloOculto ? "so-leitor" : estilos.legenda}>{rotulo}</legend>
       <div className={estilos.trilho}>
         {opcoes.map((o) => (
-          <label key={String(o.valor)} data-marcado={o.valor === valor}>
-            <input type="radio" name={nome} checked={o.valor === valor} onChange={() => aoMudar(o.valor)} />
+          <label
+            key={String(o.valor)}
+            data-marcado={o.valor === valor}
+            data-desabilitado={o.desabilitado ? "true" : undefined}
+            title={o.dica}
+          >
+            <input
+              type="radio"
+              name={nome}
+              checked={o.valor === valor}
+              disabled={o.desabilitado}
+              onChange={() => aoMudar(o.valor)}
+            />
             <span>{o.rotulo}</span>
           </label>
         ))}

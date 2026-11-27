@@ -7,7 +7,7 @@
   box-sizing: border-box;
 }
 html {
-  font-size: 18px; /* RNF-ACE-02: texto base de 18 px */
+  font-size: 16px; /* RNF-ACE-02 revisado pelo ADR 0018: base de 16 px, densidade compacta */
   -webkit-text-size-adjust: 100%;
 }
 body {

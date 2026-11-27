@@ -311,6 +311,11 @@
 .conteudo:focus {
   outline: none;
 }
+/* tela de painel (Dashboards): cabe inteira na janela, sem rolar a página; usa a largura toda */
+.conteudo[data-tela="painel"] {
+  max-width: none;
+  padding: var(--e-3) var(--e-4);
+}
 
 /* ---------- gaveta (< 1024 px) */
 .veu {
@@ -424,5 +429,96 @@
     padding: 0;
     margin: 0;
     background: #fff;
+  }
+}
+
+/* ---------- menu recolhido (computador): trilho de ícones, o nome fica no title e no aria-label */
+.grade {
+  transition: grid-template-columns var(--mov-rapido);
+}
+.grade[data-recolhido="true"] {
+  grid-template-columns: 72px minmax(0, 1fr);
+}
+/* item "Recolher menu", logo abaixo de Fontes: mesmo jeito dos outros itens */
+.itemMenu {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--e-3);
+  width: 100%;
+  min-height: 44px;
+  padding: 0 var(--e-3) 0 var(--e-4);
+  border: 0;
+  border-radius: var(--r-pilula);
+  background: transparent;
+  color: var(--sup-sobre-2);
+  font: inherit;
+  font-size: var(--t-apoio);
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    background-color var(--mov-rapido),
+    color var(--mov-rapido);
+}
+.itemMenu:hover {
+  background: var(--sup-hover);
+  color: var(--sup-sobre);
+}
+.lateral[data-recolhido="true"] .itemMenu {
+  justify-content: center;
+  width: 48px;
+  padding: 0;
+}
+@media (prefers-reduced-motion: reduce) {
+  .grade,
+  .itemMenu {
+    transition: none;
+  }
+}
+.lateral[data-recolhido="true"] {
+  align-items: center;
+  padding-inline: var(--e-2);
+}
+.lateral[data-recolhido="true"] .marca {
+  padding: 0;
+}
+.lateral[data-recolhido="true"] .marca span span {
+  display: none;
+}
+.lateral[data-recolhido="true"] .nav a {
+  justify-content: center;
+  width: 48px;
+  padding: 0;
+}
+.lateral[data-recolhido="true"] .nav a:global(.active)::before {
+  left: 0;
+}
+.lateral[data-recolhido="true"] .rotuloItem,
+.lateral[data-recolhido="true"] .pessoaTextos,
+.lateral[data-recolhido="true"] .sairTexto {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+.lateral[data-recolhido="true"] .pessoa {
+  padding: var(--e-1);
+}
+.lateral[data-recolhido="true"] .sair {
+  width: 48px;
+  padding: 0;
+}
+.lateral[data-recolhido="true"] .rios {
+  display: none;
+}
+@media (max-width: 1023px) {
+  .grade[data-recolhido="true"] {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .conteudo[data-tela="painel"] {
+    padding: var(--e-4) var(--e-4) var(--e-6);
   }
 }

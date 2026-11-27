@@ -67,3 +67,14 @@
     padding: 0 var(--e-3);
   }
 }
+
+.trilho label[data-desabilitado="true"] {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.trilho label[data-desabilitado="true"]:hover {
+  background: transparent;
+}
+.trilho label[data-desabilitado="true"] input {
+  cursor: not-allowed;
+}

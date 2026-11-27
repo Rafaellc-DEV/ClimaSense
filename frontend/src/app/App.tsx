@@ -15,8 +15,13 @@ const carregar = <K extends string>(f: () => Promise<Record<K, React.ComponentTy
 const Vitrine = carregar(() => import("@/features/vitrine/Vitrine"), "Vitrine");
 const Entrar = carregar(() => import("@/features/entrar/Entrar"), "Entrar");
 const DetalheAvisoPublico = carregar(() => import("@/features/landing/DetalheAviso"), "DetalheAviso");
+const Apresentacao = carregar(
+  () => import("@/features/apresentacao/PaginaApresentacao"),
+  "PaginaApresentacao",
+);
 const AppShell = carregar(() => import("./AppShell"), "AppShell");
 const Mapa = carregar(() => import("@/features/mapa/TelaMapa"), "TelaMapa");
+const Dashboards = carregar(() => import("@/features/dashboards/TelaDashboards"), "TelaDashboards");
 const Situacao = carregar(() => import("@/features/situacao/TelaSituacao"), "TelaSituacao");
 const Chuva = carregar(() => import("@/features/chuva/TelaChuva"), "TelaChuva");
 const Simulador = carregar(() => import("@/features/simulador/TelaSimulador"), "TelaSimulador");
@@ -73,6 +78,7 @@ export function App() {
           <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
             <Suspense fallback={<Carregando />}>
               <Routes>
+                <Route path="/apresentacao" element={<Apresentacao />} />
                 {landing ? (
                   <>
                     <Route path="/" element={<PaginaInicial />} />
@@ -85,6 +91,7 @@ export function App() {
                 <Route path="/entrar" element={<Entrar />} />
                 <Route path="/app" element={<AppShell />}>
                   <Route index element={<Mapa />} />
+                  <Route path="dashboards" element={<Dashboards />} />
                   <Route path="situacao" element={<Situacao />} />
                   <Route path="chuva" element={<Chuva />} />
                   <Route path="simulador" element={<Simulador />} />
