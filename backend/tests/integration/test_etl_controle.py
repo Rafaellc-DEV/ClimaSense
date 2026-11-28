@@ -60,11 +60,17 @@ def test_trava_entre_conexoes_e_repeticao_nao_reexecuta_conector(engine_teste):
             assert repetida["status"] == "em_andamento" and chamadas == [eid]
             with pytest.raises(execucao.ExecucaoEmAndamento):
                 execucao.iniciar(engine_teste, fonte)
+
+            # a trava é por fonte (ADR 0019): outra fonte roda junto, sem esperar a lenta
+            class Rapido(Lento):
+                def executar(self, ctx):
+                    return ResultadoExecucao(lidos=1, gravados=1)
+
             outro = execucao.iniciar(engine_teste, "open-meteo-mare")
             r = execucao.executar(
-                engine_teste, None, configuracao_teste(), "open-meteo-mare", outro, conector=Lento()
+                engine_teste, None, configuracao_teste(), "open-meteo-mare", outro, conector=Rapido()
             )
-            assert r["status"] == "falha" and "Outra coleta" in r["erro"]
+            assert r["status"] == "sucesso"
         finally:
             liberar.set()
         assert f.result()["status"] == "sucesso"

@@ -74,7 +74,7 @@ CADENCIA_PREVISAO_MIN = 180  # 3 h: a previsão vence em 6 h; cada rodada grava 
 CADENCIA_DIARIA_MIN = 24 * 60
 CADENCIA_SEMANAL_MIN = 7 * 24 * 60
 CADENCIA_MENSAL_MIN = 30 * 24 * 60
-RETENTAR_FALHA_MIN = 60
+RETENTAR_FALHA_MIN = 60  # esbarrar na trava de outra coleta não conta como falha (MSG_OUTRA_COLETA)
 INTERVALOS_OPERACIONAIS_MIN = {
     # tempo real
     "apac-chuva": CADENCIA_TEMPO_REAL_MIN,
@@ -242,9 +242,15 @@ def _dentro_da_cadencia(
             text(
                 "select exists(select 1 from app.etl_execucoes where fonte_id=:f and ("
                 "(status='sucesso' and fim > now() - :min * interval '1 minute') or "
-                "(status<>'sucesso' and inicio > now() - :falha * interval '1 minute')))"
+                "(status<>'sucesso' and erro is distinct from :trava "
+                "and inicio > now() - :falha * interval '1 minute')))"
             ),
-            {"f": fonte, "min": intervalo, "falha": min(intervalo, RETENTAR_FALHA_MIN)},
+            {
+                "f": fonte,
+                "min": intervalo,
+                "falha": min(intervalo, RETENTAR_FALHA_MIN),
+                "trava": execucao.MSG_OUTRA_COLETA,
+            },
         ).scalar_one()
     if recente:
         return "coleta recente dentro da cadência operacional"

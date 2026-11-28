@@ -34,6 +34,8 @@ FONTE_TERRITORIO = "territorio-oficial"  # carga pelo módulo territorio, sem co
 TRAVA_ETL = 1129072973
 TRAVA_FONTE = 1129072974
 TRAVA_TRABALHO = 1129072975
+# Também usada pelo orquestrador: esbarrar na trava não é falha da fonte e não adia a próxima tentativa.
+MSG_OUTRA_COLETA = "Outra coleta desta fonte está em execução. Aguarde a conclusão e tente novamente."
 
 
 class ExecucaoEmAndamento(RuntimeError):
@@ -75,8 +77,10 @@ def reservar(db, fonte_id: str, disparado_por: uuid.UUID | None = None) -> dict:
 
 
 @contextmanager
-def exclusividade(engine: Engine, execucao_id: str):
-    """Uma carga por banco, também entre processos. Trava transacional compatível com pooler.
+def exclusividade(engine: Engine, execucao_id: str, fonte_id: str = ""):
+    """Uma carga por fonte, também entre processos. Trava transacional compatível com pooler.
+
+    A trava é por fonte (ADR 0019): uma base anual pesada não segura a chuva, os alertas nem o botão da tela Fontes.
 
     A transação dedicada só mantém a trava; gravações do conector usam suas próprias transações.
     """
@@ -89,9 +93,12 @@ def exclusividade(engine: Engine, execucao_id: str):
         if not trabalho_livre:
             yield None  # a mesma tarefa já está sendo executada; não muda seu status
             return
-        livre = c.execute(text("select pg_try_advisory_xact_lock(:n, 0)"), {"n": TRAVA_ETL}).scalar_one()
+        da_fonte = int.from_bytes(hashlib.sha256(fonte_id.encode()).digest()[:4], signed=True)
+        livre = c.execute(
+            text("select pg_try_advisory_xact_lock(:n, :f)"), {"n": TRAVA_ETL, "f": da_fonte}
+        ).scalar_one()
         if not livre:
-            raise ExecucaoEmAndamento("Outra coleta está em execução. Aguarde a conclusão e tente novamente.")
+            raise ExecucaoEmAndamento(MSG_OUTRA_COLETA)
         yield c
 
 
@@ -142,7 +149,7 @@ def executar(
     modo: str | None = None,
 ) -> dict:
     try:
-        with exclusividade(engine, execucao_id) as c:
+        with exclusividade(engine, execucao_id, fonte_id) as c:
             if c is None:
                 with engine.connect() as leitura:
                     anterior = (
