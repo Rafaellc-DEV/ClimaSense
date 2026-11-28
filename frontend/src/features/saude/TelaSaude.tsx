@@ -8,11 +8,11 @@ import { CarregandoLista } from "@/design-system/componentes/Esqueleto";
 import { fontesDado, LegendaFonte } from "@/design-system/componentes/EstadoDados";
 import { ValorSuprimido } from "@/design-system/componentes/ValorSuprimido";
 import { EstadoConsulta } from "@/features/evento/Evento";
-import { diaMes, nomeCurto, quandoAs } from "@/features/evento/textos";
+import { diaMes, nomeCurto } from "@/features/evento/textos";
 import { consulta, ErroApi } from "@/lib/api";
 import { INTERVALO, useConsultaViva, ultimaAtualizacao } from "@/lib/consultas";
 import { diaNoRecife, formatarNumero, somarDias } from "@/lib/formatos";
-import { fontesDe, supressaoMinima, type FonteMeta } from "@/lib/frescor";
+import { estaVencida, fontesDe, supressaoMinima, type FonteMeta } from "@/lib/frescor";
 import { dadosDe, type Agravo, type ResumoAgravo, type ResumoSaude, type SerieSemanal } from "./tipos";
 import estilos from "./Saude.module.css";
 
@@ -79,7 +79,7 @@ export const FRASE_LEPTO =
 
 /**
  * Saúde depois da chuva (RF-16): só o que ajuda a decidir. Dengue, chikungunya e zika com a semana mais recente,
- * tendência em palavras e as últimas 8 semanas. O que está velho ou sem fonte fica recolhido num item só.
+ * tendência em palavras e as últimas 8 semanas. O que está velho ou de fonte vencida não aparece (ADR 0019).
  * Prevenção, não diagnóstico. Sem probabilidade (RN-06); contagem pequena fica omitida (RNF-03).
  */
 export function TelaSaude() {
@@ -91,21 +91,9 @@ export function TelaSaude() {
   const agora = new Date();
 
   const linhas = ARBOVIROSES.map((a) => ({ ...a, item: r?.agravos.find((x) => x.agravo === a.id) }));
-  const uteis = linhas.filter((l) => utilizavel(l.item, agora));
-  const velhos = r
-    ? [
-        ...linhas.filter((l) => !utilizavel(l.item, agora)),
-        ...(r.agravos.some((x) => x.agravo === "leptospirose" && utilizavel(x, agora))
-          ? []
-          : [
-              {
-                id: "leptospirose",
-                nome: "Leptospirose",
-                item: r.agravos.find((x) => x.agravo === "leptospirose"),
-              },
-            ]),
-      ]
-    : [];
+  // fonte vencida: o agravo some da tela (ADR 0019)
+  const vencidas = new Set(fontes.filter(estaVencida).map((f) => f.id));
+  const uteis = linhas.filter((l) => utilizavel(l.item, agora) && !vencidas.has(l.item?.fonte_id ?? ""));
 
   return (
     <>
@@ -137,7 +125,6 @@ export function TelaSaude() {
                 <b>Dados insuficientes:</b> nenhuma arbovirose tem dado recente. Veja abaixo o que falta.
               </p>
             )}
-            {velhos.length > 0 && <Desatualizados itens={velhos} fontes={fontes} agora={agora} />}
           </>
         )}
       </div>
@@ -318,47 +305,5 @@ function MiniGrafico({ nome, itens }: { nome: string; itens: SerieSemanal["itens
         opts={{ renderer: "svg" }}
       />
     </div>
-  );
-}
-
-/* ------------------------------------------------------------------ o que está velho ou sem fonte */
-function Desatualizados({
-  itens,
-  fontes,
-  agora,
-}: {
-  itens: { id: string; nome: string; item: ResumoAgravo | undefined }[];
-  fontes: FonteMeta[];
-  agora: Date;
-}) {
-  return (
-    <details className={estilos.velhos}>
-      <summary>Dados que não estão atualizados ({itens.length})</summary>
-      <ul>
-        {itens.map(({ id, nome, item }) => {
-          const inicio = inicioDaSemana(item);
-          const fonte = item ? fontes.find((f) => f.id === item.fonte_id) : undefined;
-          return (
-            <li key={id}>
-              <b>{nome}:</b>{" "}
-              {item && inicio ? (
-                <>
-                  último dado da semana de {diaMes(inicio)} (há {diasEntre(inicio, agora)} dias).
-                  {fonte && (
-                    <>
-                      {" "}
-                      Fonte: {fonte.nome}
-                      {fonte.atualizado_em ? `, carregada ${quandoAs(fonte.atualizado_em)}` : ""}.
-                    </>
-                  )}
-                </>
-              ) : (
-                <>Dados insuficientes: falta a fonte de casos de {nome.toLowerCase()}.</>
-              )}
-            </li>
-          );
-        })}
-      </ul>
-    </details>
   );
 }

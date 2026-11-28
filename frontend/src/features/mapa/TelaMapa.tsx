@@ -5,18 +5,13 @@ import { classesBotao } from "@/design-system/componentes/Botao";
 import { CabecalhoTela } from "@/design-system/componentes/CabecalhoTela";
 import { Dialogo } from "@/design-system/componentes/Dialogo";
 import { Esqueleto } from "@/design-system/componentes/Esqueleto";
-import {
-  EstadoDados,
-  LegendaFonte,
-  SeloDesatualizado,
-  fontesDado,
-} from "@/design-system/componentes/EstadoDados";
+import { EstadoDados, LegendaFonte, fontesDado } from "@/design-system/componentes/EstadoDados";
 import { FalhaCarga } from "@/design-system/componentes/Painel";
 import { token, useTemaAtual } from "@/charts/tema";
 import { consulta } from "@/lib/api";
 import { useConsulta, useConsultaViva, ultimaAtualizacao } from "@/lib/consultas";
 import { formatarHoraMinuto } from "@/lib/formatos";
-import { fontesDe, juntarFontes } from "@/lib/frescor";
+import { algumaVencida, fontesDe } from "@/lib/frescor";
 import { useSessao } from "@/lib/sessao";
 import { MapaBairros, type Aparencia, type ColecaoFeicoes, type ModoCor } from "@/map/MapaBairros";
 import type { ColecaoDistritos } from "@/map/MapaTerritorio";
@@ -51,6 +46,7 @@ import {
   emVigor,
   ordenarPorGravidade,
   periodoOcorrencias,
+  semSugestaoVencida,
   textoPeriodo,
   type ItemPrioridadeTerritorio,
 } from "./tipos";
@@ -86,10 +82,18 @@ export function TelaMapa() {
     staleTime: 30 * 60_000,
   });
 
-  const itensBairro = useMemo(() => listaDe<ItemEstagio>(bairros.data), [bairros.data]);
-  const itensDistrito = useMemo(() => listaDe<ItemEstagio>(distritos.data), [distritos.data]);
+  // dado de fonte vencida não aparece (ADR 0019): sugestão e insumos somem; a prioridade inteira também
+  const itensBairro = useMemo(
+    () => semSugestaoVencida(listaDe<ItemEstagio>(bairros.data), bairros.data),
+    [bairros.data],
+  );
+  const itensDistrito = useMemo(
+    () => semSugestaoVencida(listaDe<ItemEstagio>(distritos.data), distritos.data),
+    [distritos.data],
+  );
   const listaPrioridade = useMemo(
-    () => listaDe<ItemPrioridadeTerritorio>(prioridade.data),
+    () =>
+      algumaVencida(fontesDe(prioridade.data)) ? [] : listaDe<ItemPrioridadeTerritorio>(prioridade.data),
     [prioridade.data],
   );
   const posicao = useMemo(
@@ -314,7 +318,6 @@ export function TelaMapa() {
         : !prioridade.isPending);
   const colorindoPorOutra = camadas.ligadas.populacao;
 
-  const fontes = fontesDado(juntarFontes(bairros.data, distritos.data));
   const momento = ultimaAtualizacao(oficial, distritos, bairros, prioridade);
   const carregandoMapa = geoBairros.isPending && !modoDistrito;
   const bairrosDoDs = distrito && !modoDistrito ? bairrosDoDistrito(territorios, distrito) : [];
@@ -412,7 +415,6 @@ export function TelaMapa() {
             )}
             {(colorir === "estagio" || colorir === "impacto") && !colorindoPorOutra && (
               <LegendaEstagios
-                fontes={fontes}
                 consultadoEm={colorir === "impacto" ? decisao.impacto.dataUpdatedAt : bairros.dataUpdatedAt}
                 impacto={colorir === "impacto" ? perigo : null}
               />
@@ -580,11 +582,9 @@ function LegendaPrioridade({
 }
 
 function LegendaEstagios({
-  fontes,
   consultadoEm,
   impacto,
 }: {
-  fontes: ReturnType<typeof fontesDado>;
   consultadoEm: number;
   /** Colorindo pela classe prevista de um perigo (Experimental): sem declarado nem sugerido, só a classe. */
   impacto: Perigo | null;
@@ -621,12 +621,6 @@ function LegendaEstagios({
           ? `Classe prevista de ${impacto === "alagamento" ? "alagamento" : "deslizamento"} (experimental): regras sobre a previsão de chuva da Open-Meteo e o histórico da Defesa Civil. É ordem de atenção, não chance de acontecer`
           : "Fonte: estágios do ClimaSense (declaração da equipe e sugestão do sistema)"}
         {consultadoEm ? `, consultado às ${formatarHoraMinuto(consultadoEm)}` : ""}.
-        {fontes.some((f) => f.desatualizado === true) && (
-          <>
-            {" "}
-            <SeloDesatualizado /> Alguma fonte da sugestão está vencida: confira antes de decidir.
-          </>
-        )}
       </p>
     </div>
   );

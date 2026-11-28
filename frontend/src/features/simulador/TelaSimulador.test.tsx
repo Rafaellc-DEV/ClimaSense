@@ -641,14 +641,16 @@ describe("Simulador", () => {
     expect(document.body).not.toHaveTextContent(/Distrito Sanit|DS [IV]/);
   });
 
-  it("previsão atual velha: um aviso só, no topo", async () => {
+  it("previsão atual de fonte vencida não pré-preenche nem avisa: o valor some (ADR 0019)", async () => {
     const velha = fonte("open-meteo-previsao", "Open-Meteo", { desatualizado: true });
     simularApi(rotas({ "/cenarios/premissas-atuais": atuais({}, [velha, fonte("apac-chuva", "APAC")]) }), {
       "/cenarios/simular": resultado,
     });
     abrir();
-    expect(await screen.findByText("A previsão atual está desatualizada")).toBeInTheDocument();
-    expect(screen.getAllByText(/desatualizada/i)).toHaveLength(1);
+    // a chuva acumulada (APAC, em dia) entra; a prevista (Open-Meteo, vencida) fica vazia
+    await waitFor(() => expect(screen.getByLabelText("Chuva acumulada em 72 h")).toHaveValue("118"));
+    expect(screen.getByLabelText("Chuva prevista em 24 h")).toHaveAttribute("aria-valuetext", "Sem dado");
+    expect(screen.queryByText(/desatualizada/i)).not.toBeInTheDocument();
   });
 
   it("o mapa de bairros é o elemento principal: seletor Ver, legenda, lista dos mais afetados e clique abre o porquê", async () => {

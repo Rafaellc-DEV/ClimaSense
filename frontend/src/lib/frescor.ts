@@ -44,3 +44,22 @@ export function haQuanto(iso: string | Date, agora: Date = new Date()): string {
   if (h < 48) return `há ${h} h`;
   return `há ${Math.floor(h / 24)} dias`;
 }
+
+/**
+ * Dado vencido some da interface (ADR 0019, amplia RF-19): passado o limite de frescor da fonte, o valor não é
+ * mostrado nem com selo. Só `desatualizado === true` conta: `null` (sem como saber) segue a regra de "Dados
+ * insuficientes" (RN-01). A tela Fontes continua listando tudo, porque o frescor é o assunto dela.
+ */
+export function estaVencida(f: { desatualizado?: boolean | null } | null | undefined): boolean {
+  return f?.desatualizado === true;
+}
+
+/** Alguma das fontes do dado passou do limite: o dado inteiro deixa de aparecer. */
+export function algumaVencida(fontes: readonly ({ desatualizado?: boolean | null } | null | undefined)[]) {
+  return fontes.some(estaVencida);
+}
+
+/** Lista sem as fontes vencidas. */
+export function semVencidas<T extends { desatualizado?: boolean | null }>(fontes: readonly T[]): T[] {
+  return fontes.filter((f) => !estaVencida(f));
+}

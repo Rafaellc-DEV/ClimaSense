@@ -61,18 +61,23 @@ test("trava o botão antes do POST e espera a primeira fonte antes de iniciar a 
   expect(screen.queryByText("Dados atualizados.")).not.toBeInTheDocument();
 });
 
-test("mostra coleta pendente sem mudar frescor do dado", async () => {
+test("mostra só fontes atualizadas: atrasadas, com falha e nunca carregadas não aparecem", async () => {
   simularApi({
     "/auth/eu": usuarioTeste(),
     "/fontes": [
       fonte("open-meteo-previsao", {
-        ultima_execucao_status: "em_andamento",
-        ultima_execucao_em: AGORA,
+        nome: "Previsão em dia",
+        status: "atualizada",
+        ultima_atualizacao: AGORA,
       }),
+      fonte("infodengue", { nome: "Fonte atrasada", status: "desatualizada", ultima_atualizacao: AGORA }),
+      fonte("sisagua", { nome: "Fonte com falha", status: "com_falha", ultima_atualizacao: null }),
     ],
   });
   window.history.pushState({}, "", "/app/fontes");
   render(<App />);
-  expect(await screen.findByText(/Coleta em andamento desde/)).toBeInTheDocument();
-  expect(screen.getAllByText("Desatualizada").length).toBeGreaterThan(0);
+  expect(await screen.findByText("Previsão em dia")).toBeInTheDocument();
+  expect(screen.queryByText("Fonte atrasada")).not.toBeInTheDocument();
+  expect(screen.queryByText("Fonte com falha")).not.toBeInTheDocument();
+  expect(screen.queryByText("Nunca carregada")).not.toBeInTheDocument();
 });

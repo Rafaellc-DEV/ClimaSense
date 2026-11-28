@@ -12,10 +12,9 @@ import { Segmentado } from "@/design-system/componentes/Segmentado";
 import { api, enviar, type ErroApi } from "@/lib/api";
 import { useConsulta, useConsultaViva } from "@/lib/consultas";
 import { quandoRelativo } from "@/lib/formatos";
-import { juntarFontes, type FonteMeta } from "@/lib/frescor";
+import { algumaVencida, estaVencida, fontesDe, juntarFontes, semVencidas } from "@/lib/frescor";
 import { useSessao } from "@/lib/sessao";
 import { EstadoConsulta } from "@/features/evento/Evento";
-import { quandoAs } from "@/features/evento/textos";
 import { limiaresDe } from "@/features/evento/tipos";
 import { MapaDoCenario } from "./MapaDoCenario";
 import { DetalheDistrito, EstagioPorDistrito } from "./EstagioPorDistrito";
@@ -109,7 +108,20 @@ export function TelaSimulador() {
   const salvos = useConsulta<Envelope<CenarioSalvo[]>>("/cenarios", { staleTime: 30_000 });
 
   // ---- premissas: o que a pessoa mudou por cima dos valores atuais
-  const valoresAtuais = atuais.data?.dados;
+  // valor atual de fonte vencida não aparece nem preenche o formulário (ADR 0019)
+  const valoresAtuais = useMemo(() => {
+    const v = atuais.data?.dados;
+    const vencidas = new Set(
+      fontesDe(atuais.data)
+        .filter(estaVencida)
+        .map((f) => f.id),
+    );
+    const porCampo = fontePorPremissaDe(atuais.data);
+    if (!v || vencidas.size === 0 || !porCampo) return v;
+    return Object.fromEntries(
+      Object.entries(v).filter(([c]) => !vencidas.has(porCampo[c as CampoNumerico] ?? "")),
+    ) as Partial<Premissas>;
+  }, [atuais.data]);
   const base = useMemo(() => deAtuais(valoresAtuais), [valoresAtuais]);
   const [editado, setEditado] = useState<Formulario | null>(null);
   const form = editado ?? base;
@@ -150,7 +162,13 @@ export function TelaSimulador() {
     staleTime: 5 * 60_000,
     retry: false,
   });
-  const resultado = modo === "atual" ? analise.data?.dados : calculo.data?.dados;
+  // a análise da previsão atual feita com fonte vencida some inteira (ADR 0019)
+  const resultado =
+    modo === "atual"
+      ? algumaVencida(fontesDe(analise.data))
+        ? undefined
+        : analise.data?.dados
+      : calculo.data?.dados;
   const itens = useMemo(() => resultado?.itens ?? [], [resultado]);
   const distritos = useMemo(() => itens.filter((i) => i.nivel === "distrito"), [itens]);
   const bairros = useMemo(() => itens.filter((i) => i.nivel === "bairro"), [itens]);
@@ -170,11 +188,7 @@ export function TelaSimulador() {
   const todosIguais = distritos.length > 1 && estagios.size === 1 && [...estagios][0] !== "sem_dados";
   const rotuloIgual = infoEstagio([...estagios][0]).rotulo;
 
-  // ---- aviso único quando a previsão atual está velha (RF-19)
-  const fontes = juntarFontes(modo === "atual" ? analise.data : atuais.data);
-  const previsaoVelha = fontes.filter(
-    (f: FonteMeta) => f.id.includes("previsao") && f.desatualizado === true,
-  );
+  const fontes = semVencidas(juntarFontes(modo === "atual" ? analise.data : atuais.data));
 
   // ---- salvar e abrir (RF-27)
   const [dialogo, setDialogo] = useState<"salvar" | "salvos" | null>(null);
@@ -241,15 +255,6 @@ export function TelaSimulador() {
             ? "Cenário hipotético: as premissas escolhidas são aplicadas aos territórios; não representam a previsão específica de cada distrito."
             : "Previsão atual: cada bairro herda os valores do seu distrito. Avaliação experimental, não é estágio oficial."}
         </p>
-        {previsaoVelha.length > 0 && (
-          <p className={estilos.avisoVelho} role="status">
-            <b>A previsão atual está desatualizada</b>
-            {previsaoVelha[0].atualizado_em
-              ? ` (última carga ${quandoAs(previsaoVelha[0].atualizado_em)})`
-              : ""}
-            . Confira o alerta oficial na APAC e no Cemaden antes de decidir.
-          </p>
-        )}
 
         <div className={estilos.grade}>
           {modo === "manual" ? (

@@ -1,4 +1,4 @@
-import { render, screen, within } from "@testing-library/react";
+import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { App } from "@/app/App";
 import { AGORA, itemEstagio, simularApi, usuarioTeste } from "@/features/evento/testes";
@@ -130,19 +130,22 @@ test("KPIs curtos com fonte e hora; sem dado diz Dados insuficientes e o que fal
   expect(numeros).toHaveTextContent("Sistema sugere Alerta");
 });
 
-test("aviso de dado vencido é um só, no topo, e leva aos Detalhes; os cartões não repetem selos", async () => {
+test("dado de fonte vencida some: sem número, sem selo e sem aviso (ADR 0019)", async () => {
   const vencida = [{ ...FONTES[0], desatualizado: true }, FONTES[1]];
-  await abrir(
-    api({
-      "/estagios?nivel=distrito": { dados: { itens: distritos }, meta: { fontes: vencida } },
-    }),
-  );
-  const aviso = await screen.findByRole("button", { name: /Alguns dados estão desatualizados/ });
-  expect(screen.queryAllByText("Desatualizado")).toHaveLength(0);
-  await userEvent.setup().click(aviso);
-  const dialogo = await screen.findByRole("dialog", { name: "Detalhes do painel" });
-  expect(within(dialogo).getByText(/Dá para confiar nos números de agora/)).toBeInTheDocument();
-  expect(await within(dialogo).findByText("Desatualizado")).toBeInTheDocument();
+  const base = api();
+  const pedidos = simularApi({
+    ...base,
+    "/situacao/chuva": { ...(base["/situacao/chuva"] as object), meta: { fontes: vencida } },
+  });
+  window.history.pushState({}, "", "/app/dashboards");
+  render(<App />);
+  const numeros = await screen.findByRole("list", { name: "Números principais" });
+  await within(numeros).findByText("Sistema sugere Alerta");
+  await waitFor(() => expect(pedidos.some((p) => p.url.includes("/situacao/chuva"))).toBe(true));
+  await act(() => new Promise((r) => setTimeout(r, 30)));
+  expect(numeros).not.toHaveTextContent(/12 de 19 estações/);
+  expect(screen.queryByText("Desatualizado")).not.toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: /desatualizados/ })).not.toBeInTheDocument();
 });
 
 test("filtros ficam no endereço e abrem do jeito que o link manda", async () => {

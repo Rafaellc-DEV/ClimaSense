@@ -11,7 +11,6 @@ type Fonte = Esquemas["FontePublica"];
 function textoStatus(f: Fonte): string {
   if (f.status === "atualizada")
     return f.ultima_atualizacao ? `Atualizada ${quandoRelativo(f.ultima_atualizacao)}` : "Atualizada";
-  if (f.status === "desatualizada") return "Desatualizada";
   return "Com falha na última carga";
 }
 
@@ -44,7 +43,8 @@ function Fontes() {
       </div>
     );
 
-  const doProduto = fontes.data.filter(noProduto);
+  // fonte vencida não aparece (ADR 0019)
+  const doProduto = fontes.data.filter(noProduto).filter((f) => f.status !== "desatualizada");
   const emUso = doProduto.filter((x) => x.status !== "planejada");
   const planejadas = doProduto.length - emUso.length;
 

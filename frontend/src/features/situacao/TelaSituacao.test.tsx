@@ -1,4 +1,4 @@
-import { render, screen, within } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import { App } from "@/app/App";
 import { AGORA, itemEstagio, simularApi, usuarioTeste } from "@/features/evento/testes";
 import { clienteConsultas } from "@/lib/api";
@@ -136,11 +136,22 @@ test("estágio oficial ainda não disponível no servidor (404) diz Dados insufi
   expect(await screen.findAllByText(/falta o estágio informado pelo COP/)).not.toHaveLength(0);
 });
 
-test("fontes: chuva medida vencida aparece como Desatualizado", async () => {
-  simularApi(api([distrito("ds-1", "Distrito Sanitário I")]));
+test("chuva medida de fonte vencida some: sem cartão, sem lista e sem linha na fonte (ADR 0019)", async () => {
+  const base = api([distrito("ds-1", "Distrito Sanitário I")]);
+  simularApi({
+    ...base,
+    "/estagios?": {
+      dados: { nivel: "distrito", itens: [distrito("ds-1", "Distrito Sanitário I")] },
+      meta: { fontes: [{ ...FONTES[0], desatualizado: true }, FONTES[1], FONTES[2]] },
+    },
+  });
   abrir();
+  // depois de carregar, o cartão da previsão fica; o da chuva medida some
+  await waitFor(() => expect(screen.queryByText("Chuva medida 24 h")).not.toBeInTheDocument());
+  expect(screen.getByText("Chuva prevista 24 h")).toBeInTheDocument();
   const bloco = await screen.findByRole("region", { name: "Fontes e atualização" });
-  expect(await within(bloco).findByText("Desatualizado")).toBeInTheDocument();
+  expect(within(bloco).queryByText(/Chuva medida \(pluviômetros/)).not.toBeInTheDocument();
+  expect(screen.queryByText("Desatualizado")).not.toBeInTheDocument();
 });
 
 describe("regras", () => {

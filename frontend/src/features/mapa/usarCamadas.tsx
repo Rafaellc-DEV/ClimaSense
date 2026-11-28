@@ -7,7 +7,8 @@ import { useTemaAtual } from "@/charts/tema";
 import { fontesDado, type FonteDado } from "@/design-system/componentes/EstadoDados";
 import { ErroApi } from "@/lib/api";
 import { INTERVALO, useConsultaViva } from "@/lib/consultas";
-import { fontesDe } from "@/lib/frescor";
+import { useFontesVencidas } from "@/lib/fontes";
+import { algumaVencida, fontesDe } from "@/lib/frescor";
 import type { AparenciaPopulacao, TipoPino } from "@/map/MapaBairros";
 import {
   CAMINHO_CAMADA,
@@ -43,6 +44,13 @@ export type EstadoCamada =
 /** Faixas de cor da população, da menor para a maior contagem. */
 export const TOKENS_POPULACAO = ["--g-seq-2", "--g-seq-3", "--g-seq-4", "--g-seq-6", "--g-seq-7"];
 
+/** Fonte de cada camada em `GET /fontes`: camada de fonte vencida some do controle e do mapa (ADR 0019). */
+const FONTE_ID: Record<Dependentes, string> = {
+  equipamentos: "cnes-equipamentos",
+  populacao: "ibge-censo-2022-bairro",
+  areas: "recife-areas-risco",
+};
+
 const FALTA_PADRAO: Record<Dependentes, string> = {
   equipamentos: "CNES",
   populacao: "IBGE, Censo 2022",
@@ -69,6 +77,7 @@ function estadoDe(
     return { tipo: "erro", erro: q.error ?? new Error("Falha ao carregar a camada.") };
   }
   if (q.isPending) return { tipo: "carregando" };
+  if (algumaVencida(fontesDe(q.data))) return { tipo: "desligada" }; // vencida: some (ADR 0019)
   const falta = faltaDe(q.data);
   if (falta !== null) return { tipo: "insuficiente", falta: falta || FALTA_PADRAO[camada] };
   if (vazio) return { tipo: "insuficiente", falta: FALTA_PADRAO[camada] };
@@ -90,6 +99,13 @@ export function useCamadas() {
     equipamentos: false,
   });
   const [indicador, setIndicador] = useState<Indicador>("idosos_60_mais");
+  const vencidas = useFontesVencidas();
+  const disponiveis: Record<Dependentes, boolean> = {
+    equipamentos: !vencidas.has(FONTE_ID.equipamentos),
+    populacao: !vencidas.has(FONTE_ID.populacao),
+    areas: !vencidas.has(FONTE_ID.areas),
+  };
+  const ativa = (id: Dependentes) => ligadas[id] && disponiveis[id];
 
   /** População e estágio disputam a cor do bairro: ligar um desliga o outro. */
   const alternar = (id: IdCamada) =>
@@ -101,20 +117,20 @@ export function useCamadas() {
     });
 
   const eq = useConsultaViva<unknown>(
-    ligadas.equipamentos ? CAMINHO_CAMADA.equipamentos : null,
+    ativa("equipamentos") ? CAMINHO_CAMADA.equipamentos : null,
     INTERVALO.saude,
   );
-  const vul = useConsultaViva<unknown>(ligadas.populacao ? CAMINHO_CAMADA.populacao : null, INTERVALO.saude);
-  const ar = useConsultaViva<unknown>(ligadas.areas ? CAMINHO_CAMADA.areas : null, INTERVALO.saude);
+  const vul = useConsultaViva<unknown>(ativa("populacao") ? CAMINHO_CAMADA.populacao : null, INTERVALO.saude);
+  const ar = useConsultaViva<unknown>(ativa("areas") ? CAMINHO_CAMADA.areas : null, INTERVALO.saude);
 
   const featEq = useMemo(() => featuresDe<PropsEquipamento>(eq.data), [eq.data]);
   const featAr = useMemo(() => featuresDe<PropsAreaRisco>(ar.data), [ar.data]);
   const itensVul = useMemo(() => itensVulneraveis(vul.data), [vul.data]);
 
   const estados: Record<Dependentes, EstadoCamada> = {
-    equipamentos: estadoDe(ligadas.equipamentos, eq, featEq.length === 0 && !!eq.data, "equipamentos"),
-    populacao: estadoDe(ligadas.populacao, vul, itensVul.length === 0 && !!vul.data, "populacao"),
-    areas: estadoDe(ligadas.areas, ar, featAr.length === 0 && !!ar.data, "areas"),
+    equipamentos: estadoDe(ativa("equipamentos"), eq, featEq.length === 0 && !!eq.data, "equipamentos"),
+    populacao: estadoDe(ativa("populacao"), vul, itensVul.length === 0 && !!vul.data, "populacao"),
+    areas: estadoDe(ativa("areas"), ar, featAr.length === 0 && !!ar.data, "areas"),
   };
   const consultas = { equipamentos: eq, populacao: vul, areas: ar };
   const fontes = Object.fromEntries(
@@ -162,7 +178,7 @@ export function useCamadas() {
     [featAr],
   );
 
-  const modo: "estagio" | "populacao" | "nenhum" = ligadas.populacao
+  const modo: "estagio" | "populacao" | "nenhum" = ativa("populacao")
     ? populacaoOk
       ? "populacao"
       : "nenhum"
@@ -196,6 +212,7 @@ export function useCamadas() {
 
   return {
     ligadas,
+    disponiveis,
     alternar,
     indicador,
     setIndicador,

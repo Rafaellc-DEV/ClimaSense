@@ -6,11 +6,11 @@
 import { useMemo } from "react";
 import { useQueries } from "@tanstack/react-query";
 import { desembrulhar, limiaresDe, listaDe, type ItemEstagio } from "@/features/evento/tipos";
-import type { ItemPrioridadeTerritorio } from "@/features/mapa/tipos";
+import { semSugestaoVencida, type ItemPrioridadeTerritorio } from "@/features/mapa/tipos";
 import type { ResumoSaude } from "@/features/saude/tipos";
 import { api, consulta } from "@/lib/api";
 import { useConsultaViva, ultimaAtualizacao } from "@/lib/consultas";
-import { juntarFontes } from "@/lib/frescor";
+import { algumaVencida, estaVencida, fontesDe, juntarFontes, semVencidas } from "@/lib/frescor";
 import {
   chuvaMedida,
   decisoesPendentes,
@@ -26,6 +26,11 @@ import {
   type MaiorChuva,
   type SituacaoChuvaApi,
 } from "./indicadores";
+
+/** Dado de fonte vencida não aparece (ADR 0019): a resposta vencida conta como ausente. */
+function valida(r: unknown): unknown {
+  return algumaVencida(fontesDe(r)) ? undefined : r;
+}
 
 export function useDadosDecisao({
   janela,
@@ -55,21 +60,37 @@ export function useDadosDecisao({
     staleTime: 30 * 60_000,
   });
 
-  const itensDistrito = useMemo(() => listaDe<ItemEstagio>(distritos.data), [distritos.data]);
-  const itensBairro = useMemo(() => listaDe<ItemEstagio>(bairros.data), [bairros.data]);
+  const itensDistrito = useMemo(
+    () => semSugestaoVencida(listaDe<ItemEstagio>(distritos.data), distritos.data),
+    [distritos.data],
+  );
+  const itensBairro = useMemo(
+    () => semSugestaoVencida(listaDe<ItemEstagio>(bairros.data), bairros.data),
+    [bairros.data],
+  );
   const posicao = useMemo(
     () =>
       new Map(
-        listaDe<ItemPrioridadeTerritorio>(prioridade.data).map((p) => [p.territorio_id, p.posicao] as const),
+        listaDe<ItemPrioridadeTerritorio>(valida(prioridade.data)).map(
+          (p) => [p.territorio_id, p.posicao] as const,
+        ),
       ),
     [prioridade.data],
   );
   const limiares = useMemo(() => limiaresDe(parametros.data), [parametros.data]);
-  const chuva = desembrulhar<SituacaoChuvaApi>(situacao.data);
-  const dadosImpacto = desembrulhar<ImpactoApi>(impacto.data);
+  const chuva = desembrulhar<SituacaoChuvaApi>(valida(situacao.data));
+  const dadosImpacto = desembrulhar<ImpactoApi>(valida(impacto.data));
   const dadosAcoes = desembrulhar<AcoesApi>(acoes.data);
-  const dadosSaude = desembrulhar<ResumoSaude>(saude.data);
-  const bairrosVulneraveis = listaDe<BairroVulneravel>(vulneraveis.data);
+  const dadosSaude = useMemo(() => {
+    const r = desembrulhar<ResumoSaude>(saude.data);
+    const vencidas = new Set(
+      fontesDe(saude.data)
+        .filter(estaVencida)
+        .map((f) => f.id),
+    );
+    return r && vencidas.size > 0 ? { ...r, agravos: r.agravos.filter((x) => !vencidas.has(x.fonte_id)) } : r;
+  }, [saude.data]);
+  const bairrosVulneraveis = listaDe<BairroVulneravel>(valida(vulneraveis.data));
 
   // referência do mês (reanálise ERA5) por distrito: muda devagar, fica em cache por horas (I-04)
   const refs = useQueries({
@@ -113,7 +134,7 @@ export function useDadosDecisao({
   const pessoas = pessoasEmAlerta(dadosImpacto, distritoId);
 
   const fontes = useMemo(
-    () => juntarFontes(distritos.data, situacao.data, impacto.data),
+    () => semVencidas(juntarFontes(distritos.data, situacao.data, impacto.data)),
     [distritos.data, situacao.data, impacto.data],
   );
   const momento = ultimaAtualizacao(oficial, distritos, bairros, situacao, impacto);

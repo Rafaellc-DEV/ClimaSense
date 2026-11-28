@@ -4,7 +4,6 @@
  */
 import type { ReactNode } from "react";
 import { Esqueleto } from "@/design-system/componentes/Esqueleto";
-import { SeloDesatualizado } from "@/design-system/componentes/EstadoDados";
 import { Experimental } from "@/design-system/componentes/Pilula";
 import { infoEstagio } from "@/features/evento/estagios";
 import { formatarHoraMinuto, formatarNumero } from "@/lib/formatos";
@@ -36,12 +35,6 @@ function Rodape({
             {i > 0 && "; "}
             {f.nome}
             {f.atualizado_em ? ` · ${formatarHoraMinuto(f.atualizado_em)}` : " · sem hora de atualização"}
-            {f.desatualizado === true && (
-              <>
-                {" "}
-                <SeloDesatualizado />
-              </>
-            )}
           </span>
         ))}
       </p>

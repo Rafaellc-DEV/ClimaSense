@@ -10,7 +10,8 @@ import { AtualizadoAs, EstadoDados, LegendaFonte, fontesDado } from "@/design-sy
 import { Pilula } from "@/design-system/componentes/Pilula";
 import { consulta, type Esquemas } from "@/lib/api";
 import { useConsulta, useConsultaViva } from "@/lib/consultas";
-import { juntarFontes } from "@/lib/frescor";
+import { algumaVencida, fontesDe, juntarFontes } from "@/lib/frescor";
+import { semSugestaoVencida } from "@/features/mapa/tipos";
 import { formatarDataHora, formatarHora, formatarMm, formatarNumero, FUSO } from "@/lib/formatos";
 import { infoEstagio } from "@/features/evento/estagios";
 import { EstadoConsulta } from "@/features/evento/Evento";
@@ -220,7 +221,8 @@ export function ProximosDias() {
   };
   const itens = useMemo(
     () =>
-      listaDe<ItemEstagio>(r.data).sort((a, b) =>
+      // fonte vencida: a previsão e a maré somem (ADR 0019)
+      semSugestaoVencida(listaDe<ItemEstagio>(r.data), r.data).sort((a, b) =>
         a.territorio_nome.localeCompare(b.territorio_nome, "pt-BR", { numeric: true }),
       ),
     [r.data],
@@ -239,7 +241,10 @@ export function ProximosDias() {
     { staleTime: 5 * 60_000 },
   );
   const grafico = useMemo(
-    () => (cenario.data ? montarGrafico(cenario.data.dados, limites.mareAlta) : null),
+    () =>
+      cenario.data && !algumaVencida(fontesDe(cenario.data))
+        ? montarGrafico(cenario.data.dados, limites.mareAlta)
+        : null,
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [cenario.data, limites.mareAlta, modo],
   );

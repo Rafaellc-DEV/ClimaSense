@@ -4,7 +4,7 @@
  * linha de fonte e hora (RF-19). Sem dado: "Dados insuficientes" e a fonte que falta, nunca zero (RN-01).
  */
 import type { CSSProperties, ReactNode } from "react";
-import { ClipboardCheck, Clock, CloudRain, Gauge, Radio } from "lucide-react";
+import { ClipboardCheck, CloudRain, Gauge, Radio } from "lucide-react";
 import { Esqueleto } from "@/design-system/componentes/Esqueleto";
 import { infoEstagio } from "@/features/evento/estagios";
 import { quandoAs } from "@/features/evento/textos";
@@ -35,7 +35,7 @@ export function curto(x: FonteMeta): string {
   return x.nome;
 }
 
-/** "APAC 01:13": nome curto e hora da última atualização da fonte, com um relógio se estiver vencida (RF-19). */
+/** "APAC 01:13": nome curto e hora da última atualização da fonte (RF-19). Fonte vencida nem chega aqui (ADR 0019). */
 export function RodapeFonte({
   ids,
   padrao,
@@ -65,12 +65,6 @@ export function RodapeFonte({
           {i > 0 && " · "}
           {curto(x)}
           {x.atualizado_em ? ` ${formatarHoraMinuto(x.atualizado_em)}` : " sem hora"}
-          {x.desatualizado === true && (
-            <span className={estilos.vencida} title="Desatualizado">
-              <Clock aria-hidden="true" size={14} />
-              <span className="so-leitor"> (desatualizado)</span>
-            </span>
-          )}
         </span>
       ))}
     </>

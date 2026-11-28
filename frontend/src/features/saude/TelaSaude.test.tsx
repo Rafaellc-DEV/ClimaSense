@@ -1,5 +1,4 @@
 import { render, screen, within } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
 import { App } from "@/app/App";
 import { simularApi, usuarioTeste } from "@/features/evento/testes";
 import { clienteConsultas } from "@/lib/api";
@@ -101,7 +100,7 @@ function abrir(mapa: Record<string, unknown>) {
   render(<App />);
 }
 
-test("mostra só arboviroses recentes e recolhe o velho e o sem fonte, sem cartão com número", async () => {
+test("mostra só arboviroses recentes; o velho, o sem fonte e o de fonte vencida não aparecem", async () => {
   abrir({ "/saude/resumo": resumo(), "/saude/semanal": itens([10, 12, 14, 20, 30, 36]) });
   const dengue = await screen.findByRole("region", { name: "Dengue" });
   expect(within(dengue).getByText("36")).toBeInTheDocument();
@@ -109,16 +108,20 @@ test("mostra só arboviroses recentes e recolhe o velho e o sem fonte, sem cart�
   expect(within(dengue).getByText(/InfoDengue, atualizado/)).toBeInTheDocument();
   const chik = screen.getByRole("region", { name: "Chikungunya" });
   expect(within(chik).getByText(/< 5/)).toBeInTheDocument();
-  // velhos: leptospirose (25 dias) e zika (sem fonte) só no item recolhido
+  // leptospirose (25 dias) e zika (sem fonte) somem, sem item recolhido (ADR 0019)
   expect(screen.queryByRole("region", { name: "Leptospirose" })).not.toBeInTheDocument();
   expect(screen.queryByRole("region", { name: "Zika" })).not.toBeInTheDocument();
-  const resumoVelhos = screen.getByText(/Dados que não estão atualizados \(2\)/);
-  await userEvent.click(resumoVelhos);
-  expect(screen.getByText(/Leptospirose:/).closest("li")).toHaveTextContent(/há \d+ dias/);
-  expect(screen.getByText(/Zika:/).closest("li")).toHaveTextContent(
-    "Dados insuficientes: falta a fonte de casos de zika",
-  );
+  expect(screen.queryByText(/Dados que não estão atualizados/)).not.toBeInTheDocument();
   expect(document.body.textContent).not.toMatch(/%/);
+});
+
+test("fonte vencida tira o agravo da tela (ADR 0019)", async () => {
+  const r = resumo();
+  r.meta.fontes = [{ ...FONTES[0], desatualizado: true }, FONTES[1]];
+  abrir({ "/saude/resumo": r, "/saude/semanal": itens([10, 12, 14, 20, 30, 36]) });
+  expect(await screen.findByText(/nenhuma arbovirose tem dado recente/)).toBeInTheDocument();
+  expect(screen.queryByRole("region", { name: "Dengue" })).not.toBeInTheDocument();
+  expect(screen.queryByText("36")).not.toBeInTheDocument();
 });
 
 test("janela de leptospirose só aparece com alagamento declarado, curta e com a fonte", async () => {

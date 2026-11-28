@@ -7,7 +7,8 @@ import { EstadoDados, LegendaFonte, fontesDado } from "@/design-system/component
 import { Painel } from "@/design-system/componentes/Painel";
 import { consulta, type Esquemas } from "@/lib/api";
 import { useConsulta } from "@/lib/consultas";
-import { juntarFontes } from "@/lib/frescor";
+import { algumaVencida, fontesDe, juntarFontes } from "@/lib/frescor";
+import { semSugestaoVencida } from "@/features/mapa/tipos";
 import { diaNoRecife, formatarMm, formatarNumero, nomeMes } from "@/lib/formatos";
 import { EstadoConsulta } from "@/features/evento/Evento";
 import { atualizada, listaEmFrase, useFontesResumo } from "@/features/evento/textos";
@@ -77,8 +78,11 @@ export function Historico() {
   );
   const bairros = useConsulta<unknown>(`/estagios${consulta({ nivel: "bairro" })}`);
   const fontes = useFontesResumo();
+  // fonte vencida: o histórico some (ADR 0019)
   const dados =
-    sazonal.data && !sazonal.data.meta.dados_insuficientes ? anosComDado(sazonal.data.dados) : null;
+    sazonal.data && !sazonal.data.meta.dados_insuficientes && !algumaVencida(fontesDe(sazonal.data))
+      ? anosComDado(sazonal.data.dados)
+      : null;
 
   const grafico = useMemo(() => {
     if (!dados) return null;
@@ -165,7 +169,7 @@ export function Historico() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sazonal.data, ano, modo]);
 
-  const alagou = ondeAlagou(listaDe<ItemEstagio>(bairros.data));
+  const alagou = ondeAlagou(semSugestaoVencida(listaDe<ItemEstagio>(bairros.data), bairros.data));
   const maximo = alagou?.[0]?.n ?? 1;
 
   return (

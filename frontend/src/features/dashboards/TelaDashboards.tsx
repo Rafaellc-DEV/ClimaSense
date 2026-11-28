@@ -4,7 +4,6 @@ import type { EChartsOption } from "echarts";
 import {
   ChevronRight,
   CircleOff,
-  Clock,
   Crosshair,
   FlaskConical,
   Hospital,
@@ -35,7 +34,7 @@ import { consulta } from "@/lib/api";
 import { INTERVALO, useConsultaViva } from "@/lib/consultas";
 import { siglaDistrito } from "@/lib/distritos";
 import { diaNoRecife, formatarHoraMinuto, formatarNumero, somarDias } from "@/lib/formatos";
-import { fontesDe, haQuanto } from "@/lib/frescor";
+import { fontesDe, haQuanto, semVencidas } from "@/lib/frescor";
 import { CartaoPainel, GraficoPainel, SeloExp, Vazio } from "./CartaoPainel";
 import {
   COR_ESTAGIO,
@@ -184,11 +183,9 @@ export function TelaDashboards() {
     agora,
     quando,
   });
-  // o aviso de fonte vencida é um só, no topo; as frases do topo ficam com o que muda a decisão
+  // dado de fonte vencida não aparece (ADR 0019): nem o número, nem aviso sobre ele
   const chipsFrases = insights.filter((i) => i.id !== "fonte-vencida").slice(0, 2);
-  const desatualizado =
-    d.fontes.some((f) => f.desatualizado === true) ||
-    fontesDe(d.saude.data).some((f) => f.desatualizado === true);
+  const fontesSaude = semVencidas(fontesDe(d.saude.data));
 
   // chuva por distrito
   const grafChuva =
@@ -356,19 +353,8 @@ export function TelaDashboards() {
         </div>
       </header>
 
-      {(desatualizado || chipsFrases.length > 0 || !d.distritos.isPending) && (
+      {(chipsFrases.length > 0 || !d.distritos.isPending) && (
         <ul className={estilos.chips} aria-label="Avisos e destaques">
-          {desatualizado && (
-            <li>
-              <button
-                type="button"
-                className={[estilos.chip, estilos.chipAviso].join(" ")}
-                onClick={() => setDetalhes(true)}
-              >
-                <Clock aria-hidden="true" size={16} /> Alguns dados estão desatualizados: ver Detalhes
-              </button>
-            </li>
-          )}
           {chipsFrases.map((i) => (
             <li key={i.id} className={estilos.chip} title={i.texto}>
               <Sparkles aria-hidden="true" size={16} />
@@ -376,7 +362,7 @@ export function TelaDashboards() {
               {i.experimental && <SeloExp />}
             </li>
           ))}
-          {!d.distritos.isPending && chipsFrases.length === 0 && !desatualizado && (
+          {!d.distritos.isPending && chipsFrases.length === 0 && (
             <li className={[estilos.chip, estilos.chipVazio].join(" ")}>
               <CircleOff aria-hidden="true" size={16} /> Sem destaques: dados insuficientes
             </li>
@@ -595,7 +581,7 @@ export function TelaDashboards() {
                 ids={[...new Set(agravos.map((a) => a.fonte_id))]}
                 padrao="InfoDengue"
                 consultadoEm={d.saude.dataUpdatedAt}
-                fontes={fontesDe(d.saude.data)}
+                fontes={fontesSaude}
               />
             </>
           }
@@ -817,15 +803,10 @@ export function TelaDashboards() {
               <EstadoDados tipo="insuficiente">Falta: a hora de atualização das fontes.</EstadoDados>
             ) : (
               <ul className={estilos.fontes}>
-                {[...confianca.fontes, ...fontesDe(d.saude.data)].map((f) => (
+                {[...confianca.fontes, ...fontesSaude].map((f) => (
                   <li key={f.id}>
                     {f.nome}
                     {f.atualizado_em ? ` · ${haQuanto(f.atualizado_em)}` : " · sem hora"}
-                    {f.desatualizado === true && (
-                      <Pilula tom="atencao" pequena icone={<Clock />}>
-                        Desatualizado
-                      </Pilula>
-                    )}
                   </li>
                 ))}
               </ul>

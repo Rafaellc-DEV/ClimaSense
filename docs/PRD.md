@@ -207,7 +207,7 @@ Ver seção 8 (RF-23 a RF-28, RF-33 e RF-34).
 
 | ID | Fase | Requisito |
 | --- | --- | --- |
-| RF-19 | 1 | Cada indicador mostra a fonte e a hora da última atualização; dado vencido recebe aviso de desatualizado. |
+| RF-19 | 1 | Cada indicador mostra a fonte e a hora da última atualização; dado de fonte vencida não aparece nas telas; a tela Fontes lista só as fontes atualizadas (ADR 0019). |
 | RF-20 | 1 | Telas e funcionalidades intuitivas e simples de usar: poucos indicadores por tela, apenas os que o cliente pediu, e uso compreensível sem treinamento longo. |
 | RF-21 | 1 | Funcionar bem no celular, já que a rotina do cliente passa muito por WhatsApp. |
 | RF-22 | 1 | Territórios mais vulneráveis aparecem primeiro nas listas e nos destaques. |
@@ -352,7 +352,7 @@ Cadência e atraso medidos nas pesquisas de 06/11/2026 (`docs/pesquisa/api-*.md`
 ### Regras de frescor
 
 - Cada indicador exibe a hora da última atualização e a fonte.
-- Passado um limite definido por tipo de dado, o indicador é marcado como desatualizado.
+- Passado um limite definido por tipo de dado, o indicador deixa de aparecer nas telas, e a tela Fontes lista só o que está atualizado (ADR 0019).
 - Quando uma fonte não tem integração automática, a equipe consegue lançar ou importar o dado, e o registro guarda a hora.
 - Sem dado, a tela mostra "Dados insuficientes" e a fonte que falta, nunca zero nem "baixo" (RN-01, RN-02).
 
@@ -372,7 +372,7 @@ Segurança de dados e integração com os sistemas existentes são os critérios
 | RNF-02 | Segurança | O cliente relatou que uma falha em PHP deixou todos sem acesso aos sistemas da prefeitura. A plataforma deve funcionar de forma independente desses sistemas, com hospedagem segura e sem depender de PHP exposto. |
 | RNF-03 | LGPD | Só dados agregados, sem registros individuais na interface ou na API (RN-13). Dados de pessoas vulneráveis (deficiência, idosos, crianças) com acesso restrito, e uso limitado ao planejamento de resgate e da resposta. (v4: fontes com linha individual, como SAMU, lotes e logradouros alagados, são agregadas na leitura e a linha não é guardada; a base da Celpe com nome de cliente não é lida.) |
 | RNF-04 | Integração | Integrar com as fontes do COP, da Defesa Civil e do centro de vigilância epidemiológica (e da Assistência Social para agregados de população vulnerável, P-12); ter importação manual como alternativa. |
-| RNF-05 | Frescor | Atualização automática das telas e indicação de dado desatualizado (RF-10 e RF-19). |
+| RNF-05 | Frescor | Atualização automática das telas e dos dados: o ETL roda a cada 15 min, cada fonte na sua cadência, e dado vencido não aparece (RF-10, RF-19, ADR 0019). |
 | RNF-06 | Desempenho | Carregar a tela principal e recalcular o simulador em segundos, mesmo durante um evento. |
 | RNF-07 | Disponibilidade | Disponível durante eventos de chuva, quando o uso é maior; meta de disponibilidade a definir. |
 | RNF-08 | Usabilidade | Telas e funcionalidades intuitivas e simples de usar, para duas usuárias que só consomem dados; funcionar no celular. |
@@ -471,3 +471,4 @@ Perguntas da v4 (detalhe em `docs/perguntas-abertas.md`, P-32 a P-54):
 | 2 | 06/11/2026 | Alinhada ao repositório existente: manter, adaptar ou remover contra o código; regras herdadas; estágio por território e mensagem de WhatsApp (RF-29 a RF-32) | Onda 0 |
 | 3 | 06/11/2026 | Mudança de escopo pedida pelo dono do projeto. **Sai:** tudo de abrigos (RF-08 removido; camada de abrigos de RF-02; abrigos próximos de RF-07; "nos abrigos" de RF-13; premissa "Resposta disponível" e pressão nos abrigos do simulador; fontes de abrigos da seção 9; pergunta sobre ocupação e desabrigados). **Muda:** RF-09 (Situação do evento com estágio oficial do COP, chuva e maré), RF-12 (inclui arboviroses), RF-15 (ação na cidade, no distrito ou no bairro, com exclusão auditada em qualquer situação). **Entra:** RF-33 (arboviroses por distrito como contexto do simulador) e RF-34 (ordem de atenção dos distritos). Riscos e perguntas novas (P-27 a P-31). | ADR 0016 (proposta; aprovação em D-13) |
 | 4 | 06/11/2026 | Ampliação de escopo pedida pelo dono, a partir de cinco dores do cliente e de cinco pesquisas de fontes reais (`docs/pesquisa/api-*.md`). **Entra:** RF-35 (hidrologia), RF-36 (meteorologia observada), RF-37 (cobertura territorial dos 94 bairros), RF-38 (cruzamento de camadas), RF-39 (saúde antes, durante e depois do evento), RF-40 (central de alertas), RF-41 (histórico de eventos e relatório executivo), RF-42 (metadados de cada dado), todos nas cinco telas existentes. **Muda:** §5 (o histórico de eventos entra; lições aprendidas continuam fora; lista de fontes que não entram), §9 (fontes novas com cadência real e o que não existe), RNF-03 (agregação na leitura), §11, §12 e §13. **Não muda:** abrigos continuam fora (ADR 0016), mesmo citados no pedido. Perguntas novas P-32 a P-54. | ADR 0017 (proposta; aprovação em D-16) |
+| 5 | 28/11/2026 | Pedido do dono antes da apresentação: dado de fonte vencida deixa de aparecer nas telas (antes, selo "Desatualizado"); a tela Fontes passa a listar só as fontes atualizadas. O ETL roda sozinho a cada 15 min, cada fonte na sua cadência. Mudam RF-19, RNF-05 e as regras de frescor da seção 9. | ADR 0019 |

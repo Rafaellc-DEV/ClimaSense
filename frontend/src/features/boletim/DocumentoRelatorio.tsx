@@ -7,7 +7,7 @@ import { CarregandoLista } from "@/design-system/componentes/Esqueleto";
 import { Marca } from "@/design-system/componentes/Marca";
 import { consulta, ErroApi, type Esquemas } from "@/lib/api";
 import { INTERVALO, useConsultaViva } from "@/lib/consultas";
-import { juntarFontes } from "@/lib/frescor";
+import { estaVencida, fontesDe, juntarFontes, semVencidas } from "@/lib/frescor";
 import { fontesDado, TextoFonte } from "@/design-system/componentes/EstadoDados";
 import { formatarData, formatarHora, formatarMm, formatarNumero } from "@/lib/formatos";
 import { noProduto } from "@/lib/fontes";
@@ -54,7 +54,17 @@ export function DocumentoRelatorio() {
       .sort((a, c) => a.localeCompare(c, "pt-BR"));
 
   const b = r.data?.dados as Boletim | undefined;
-  const saude = dadosDe<ResumoSaude>(saudeR.data);
+  // agravo de fonte vencida não entra no relatório (ADR 0019)
+  const saudeBruta = dadosDe<ResumoSaude>(saudeR.data);
+  const saudeVencidas = new Set(
+    fontesDe(saudeR.data)
+      .filter(estaVencida)
+      .map((f) => f.id),
+  );
+  const saude = saudeBruta && {
+    ...saudeBruta,
+    agravos: saudeBruta.agravos.filter((x) => !saudeVencidas.has(x.fonte_id)),
+  };
   const distritos = [...(b?.estagios ?? [])].sort(ordemPorNome);
   const emAndamento = b?.acoes_em_andamento ?? [];
   const concluidas = b?.acoes_concluidas ?? [];
@@ -62,7 +72,7 @@ export function DocumentoRelatorio() {
     ? [fraseSituacao(distritos), fraseChuva(b.chuva), fraseSaude(saude, saudeR.isError)].filter(Boolean)
     : [];
   const topicos = destaques(b, saude, emAndamento.length);
-  const fontesMeta = fontesDado(juntarFontes(r.data, saudeR.data));
+  const fontesMeta = fontesDado(semVencidas(juntarFontes(r.data, saudeR.data)));
   const fontesAtivas = fontes.lista.filter((f) => f.status !== "planejada").filter(noProduto);
 
   const texto = [

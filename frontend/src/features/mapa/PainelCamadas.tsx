@@ -1,7 +1,7 @@
 /** Controle e legenda das camadas do mapa (RF-02, RF-03, RF-19, RF-26). A lógica fica em `useCamadas`. */
 import { useId } from "react";
 import { token } from "@/charts/tema";
-import { EstadoDados, LegendaFonte, SeloDesatualizado } from "@/design-system/componentes/EstadoDados";
+import { EstadoDados, LegendaFonte } from "@/design-system/componentes/EstadoDados";
 import { EstadoConsulta } from "@/features/evento/Evento";
 import { formatarHoraMinuto, formatarNumero } from "@/lib/formatos";
 import {
@@ -86,7 +86,7 @@ export function ControleCamadas({
             </label>
           </li>
         )}
-        {ORDEM.map((id) => (
+        {ORDEM.filter((id) => c.disponiveis[id]).map((id) => (
           <li key={id}>
             <label className={estilos.camada}>
               <input type="checkbox" checked={c.ligadas[id]} onChange={() => c.alternar(id)} />
@@ -98,7 +98,7 @@ export function ControleCamadas({
           </li>
         ))}
       </ul>
-      {c.ligadas.populacao && (
+      {c.ligadas.populacao && c.disponiveis.populacao && (
         <fieldset className={estilos.indicadores}>
           <legend>População a mostrar</legend>
           <div className={estilos.chips}>
@@ -123,7 +123,7 @@ export function ControleCamadas({
           </p>
         </fieldset>
       )}
-      {c.ligadas.populacao && (
+      {c.ligadas.populacao && c.disponiveis.populacao && (
         <p className={estilos.nota}>
           A população substitui a cor do mapa. Desligue-a para voltar à cor anterior.
         </p>
@@ -174,13 +174,12 @@ function Amostra({ cor, hachura, nome }: { cor?: string; hachura?: "supr" | "sem
 
 /** Legenda e fonte com hora de cada camada ligada, em texto (RF-19). */
 export function LegendaCamadas({ c }: { c: Camadas }) {
-  const ligadas = ORDEM.filter((id) => c.ligadas[id]);
+  const ligadas = ORDEM.filter((id) => c.ligadas[id] && c.estados[id].tipo !== "desligada");
   if (ligadas.length === 0) return null;
   return (
     <div className={estilos.legendas} role="group" aria-label="Legenda das camadas">
       {ligadas.map((id) => {
         const estado = c.estados[id];
-        const venceu = c.fontes[id].fontes.some((f) => f.desatualizado === true);
         return (
           <section key={id} className={estilos.legenda} aria-label={`Legenda: ${ROTULO_CAMADA[id]}`}>
             <h3>{ROTULO_CAMADA[id]}</h3>
@@ -206,11 +205,6 @@ export function LegendaCamadas({ c }: { c: Camadas }) {
                       ))}
                     </ul>
                   </>
-                )}
-                {venceu && (
-                  <p className={estilos.estado} data-aviso="desatualizado">
-                    <SeloDesatualizado /> Fonte vencida: confira antes de decidir.
-                  </p>
                 )}
               </>
             )}

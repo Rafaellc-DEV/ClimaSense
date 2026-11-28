@@ -6,6 +6,7 @@
  */
 import { ESTAGIOS, infoEstagio } from "@/features/evento/estagios";
 import type { Estagio, ItemEstagio } from "@/features/evento/tipos";
+import { estaVencida, fontesDe } from "@/lib/frescor";
 
 /** Estágio da cidade informado pelo COP. `estagio: null` (ou resposta nula) = ninguém informou (RN-01). */
 export interface EstagioOficial {
@@ -95,6 +96,48 @@ export interface EmVigor {
   /** 0 a 3 (observação a crítico); `null` = sem dado. */
   ordem: number | null;
   origem: OrigemEstagio;
+}
+
+/** Insumos da sugestão por fonte de `GET /estagios` (backend `servicos/estagios.py`). */
+const INSUMOS_DA_FONTE: Record<string, string[]> = {
+  "open-meteo-previsao": [
+    "chuva_prev_24h_mm",
+    "chuva_prev_72h_mm",
+    "horas_previstas_72h",
+    "pico_chuva_em",
+    "previsao_emitida_em",
+  ],
+  "open-meteo-mare": ["mare_max_m", "mare_max_em", "mare_no_pico_m", "mare_emitida_em"],
+  "recife-alagamento": ["ocorrencias_historicas"],
+};
+
+/**
+ * Itens de `GET /estagios` sem o que vem de fonte vencida (ADR 0019). Cada insumo some só se a fonte dele venceu
+ * (a chuva medida segue as fontes listadas em `chuva_24h_fontes`); a sugestão do sistema some se qualquer fonte dela
+ * venceu, porque foi calculada com o dado velho. A declaração da equipe fica: é registro humano, não fonte.
+ */
+export function semSugestaoVencida(itens: ItemEstagio[], resposta: unknown): ItemEstagio[] {
+  const vencidas = new Set(
+    fontesDe(resposta)
+      .filter(estaVencida)
+      .map((f) => f.id),
+  );
+  if (vencidas.size === 0) return itens;
+  return itens.map((i) => {
+    const insumos = { ...i.sugerido.insumos };
+    for (const [fonte, campos] of Object.entries(INSUMOS_DA_FONTE))
+      if (vencidas.has(fonte)) for (const c of campos) delete insumos[c];
+    const daChuva = (insumos.chuva_24h_fontes as string[] | undefined) ?? ["apac-chuva"];
+    if (daChuva.some((f) => vencidas.has(f))) {
+      delete insumos.chuva_24h_mm;
+      delete insumos.chuva_24h_fontes;
+    }
+    return {
+      ...i,
+      alertas_oficiais: vencidas.has("alertas-oficiais") ? [] : i.alertas_oficiais,
+      sugerido: { ...i.sugerido, estagio: "sem_dados", motivos: [], insumos, calculado_em: null },
+    };
+  });
 }
 
 /** Estágio em vigor do território: o declarado; sem declaração, o sugerido; sem nenhum, "sem dados" (nunca "observação"). */

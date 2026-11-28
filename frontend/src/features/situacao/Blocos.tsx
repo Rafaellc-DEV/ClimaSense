@@ -164,12 +164,6 @@ function seloDaFonte(f: LinhaFonte) {
         Sem dado
       </Pilula>
     );
-  if (f.desatualizado === true)
-    return (
-      <Pilula tom="alerta" pequena>
-        Desatualizado
-      </Pilula>
-    );
   if (f.parcial)
     return (
       <Pilula tom="atencao" pequena>
@@ -204,7 +198,6 @@ export function FontesAtualizacao({ linhas, carregando }: { linhas: LinhaFonte[]
                     ? `Atualizado ${haQuanto(f.atualizadoEm)} (${formatarHoraMinuto(f.atualizadoEm)}).`
                     : "Dados insuficientes: a fonte ainda não enviou dados."}
                   {f.parcial && ` ${f.parcial}`}
-                  {f.desatualizado === true && " O dado está vencido: use com cautela."}
                 </span>
               </span>
             </li>

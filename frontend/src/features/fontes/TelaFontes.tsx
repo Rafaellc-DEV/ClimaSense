@@ -5,8 +5,6 @@ import { useQueryClient } from "@tanstack/react-query";
 import { CabecalhoTela } from "@/app/AppShell";
 import { useAviso } from "@/design-system/componentes/Aviso";
 import { Botao } from "@/design-system/componentes/Botao";
-import { CarregandoLista } from "@/design-system/componentes/Esqueleto";
-import { Dica } from "@/design-system/componentes/Dica";
 import { Indicador } from "@/design-system/componentes/Indicador";
 import { FalhaCarga, Painel } from "@/design-system/componentes/Painel";
 import { Pilula } from "@/design-system/componentes/Pilula";
@@ -144,14 +142,14 @@ export function TelaFontes() {
   const f = useConsulta<Fonte[]>("/fontes", { refetchInterval: false });
   const todas = f.data?.filter(noProduto) ?? [];
   const ativas = todas.filter((x) => x.status !== "planejada");
-  const planejadas = todas.filter((x) => x.status === "planejada");
+  // a tela mostra só o que está atualizado; o botão continua tentando atualizar todas as fontes em uso
+  const atualizadas = ativas.filter((x) => x.status === "atualizada" && x.ultima_atualizacao);
   const { botao } = useBuscarRecentes(ativas, () => f.refetch());
-  const conta = (s: string) => ativas.filter((x) => x.status === s).length;
   return (
     <>
       <CabecalhoTela
         titulo="Fontes de dados"
-        proposito="De onde vem cada dado e se está em dia. Dado atrasado aparece como atrasado, nunca como zero."
+        proposito="De onde vem cada dado e quando foi atualizado pela última vez."
         acoes={f.data && botao}
       />
       {f.isError && <FalhaCarga erro={f.error} aoTentar={() => f.refetch()} />}
@@ -160,25 +158,7 @@ export function TelaFontes() {
           <div className={estilos.resumo}>
             <Indicador
               rotulo="Atualizadas"
-              valor={f.data ? conta("atualizada") : null}
-              unidade="fontes"
-              carregando={f.isPending}
-            />
-            <Indicador
-              rotulo="Desatualizadas"
-              valor={f.data ? conta("desatualizada") : null}
-              unidade="fontes"
-              carregando={f.isPending}
-            />
-            <Indicador
-              rotulo="Com falha"
-              valor={f.data ? conta("com_falha") : null}
-              unidade="fontes"
-              carregando={f.isPending}
-            />
-            <Indicador
-              rotulo="Planejadas"
-              valor={f.data ? planejadas.length : null}
+              valor={f.data ? atualizadas.length : null}
               unidade="fontes"
               carregando={f.isPending}
             />
@@ -187,7 +167,7 @@ export function TelaFontes() {
             <ListaAdaptavel
               legenda="Fontes em uso, com status e última atualização"
               carregando={f.isPending}
-              linhas={ativas}
+              linhas={atualizadas}
               chaveLinha={(x) => x.id}
               vazio={<VazioConvidativo titulo="Nenhuma fonte em uso." />}
               colunas={[
@@ -250,38 +230,6 @@ export function TelaFontes() {
                 },
               ]}
             />
-          </Painel>
-          <Painel
-            titulo="Planejadas"
-            id="f-planejadas"
-            className={estilos.planejadasPainel}
-            dica="Estas fontes já foram escolhidas, mas ainda não têm conector. Enquanto isso, elas não geram nenhum dado, e as telas que dependem delas mostram “Dados insuficientes”."
-          >
-            {f.isPending ? (
-              <CarregandoLista linhas={2} altura="5rem" />
-            ) : (
-              <ul className={estilos.planejadas}>
-                {planejadas.map((x) => (
-                  <li key={x.id}>
-                    <div className={estilos.planejadaTopo}>
-                      <h3>
-                        <Link to={`/app/fontes/${x.id}`}>{x.nome}</Link>
-                      </h3>
-                      <StatusFonte status="planejada" />
-                    </div>
-                    <p className={estilos.plano}>
-                      <span>{PLANOS[x.id] ?? x.orgao}</span>
-                      <Dica
-                        texto={PLANOS[x.id] ?? x.orgao}
-                        rotulo={`O que traz: ${x.nome}`}
-                        lado="acima"
-                        alinhar="fim"
-                      />
-                    </p>
-                  </li>
-                ))}
-              </ul>
-            )}
           </Painel>
         </div>
       )}

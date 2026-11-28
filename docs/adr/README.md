@@ -19,5 +19,7 @@
 | [0015](0015-prazo-de-guarda.md) | Prazo de guarda e limites de frescor | aceita |
 | [0016](0016-escopo-sem-abrigos-foco-chuva-mare-arboviroses.md) | Escopo sem abrigos; foco em chuva, maré, cenário e arboviroses | proposta |
 | [0017](0017-ampliacao-escopo-hidrologia-territorio-saude-historico.md) | Ampliação de escopo: hidrologia, território, saúde durante o evento e histórico de eventos | proposta |
+| [0018](0018-tipografia-compacta.md) | Tipografia compacta: texto base de 16 px | aceita |
+| [0019](0019-dado-vencido-some-e-etl-agendado.md) | Dado vencido some da interface; ETL agendado para todas as fontes | aceita |
 
-Próximo número livre: **0018**.
+Próximo número livre: **0020**.

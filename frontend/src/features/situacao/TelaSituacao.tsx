@@ -6,11 +6,11 @@ import campo from "@/design-system/componentes/Campo.module.css";
 import { EstadoConsulta, SeloEstagio } from "@/features/evento/Evento";
 import { nomeCurto, quandoAs } from "@/features/evento/textos";
 import { desembrulhar, listaDe, type ItemEstagio } from "@/features/evento/tipos";
-import { nomeDaFonte, type EstagioOficial } from "@/features/mapa/tipos";
+import { nomeDaFonte, semSugestaoVencida, type EstagioOficial } from "@/features/mapa/tipos";
 import { consulta, ErroApi } from "@/lib/api";
 import { useConsultaViva, ultimaAtualizacao } from "@/lib/consultas";
 import { formatarNumero } from "@/lib/formatos";
-import { fontesDe } from "@/lib/frescor";
+import { algumaVencida, fontesDe } from "@/lib/frescor";
 import {
   CartaoIndicador,
   ChuvaPorDistrito,
@@ -51,12 +51,18 @@ export function TelaSituacao() {
   const definido = estagio?.estagio ? estagio : null;
   const oficialIndisponivel = oficial.error instanceof ErroApi && oficial.error.status === 404;
 
-  const todos = useMemo(() => listaDe<ItemEstagio>(distritos.data), [distritos.data]);
+  // dado de fonte vencida não aparece (ADR 0019): o insumo some e o cartão, o gráfico ou a fonte também
+  const todos = useMemo(
+    () => semSugestaoVencida(listaDe<ItemEstagio>(distritos.data), distritos.data),
+    [distritos.data],
+  );
   const escolhidos = useMemo(
     () => (territorio === "recife" ? todos : todos.filter((i) => i.territorio_id === territorio)),
     [todos, territorio],
   );
   const metaFontes = fontesDe(distritos.data);
+  const vencida = (...ids: string[]) => algumaVencida(achaFonte(metaFontes, ...ids));
+  const previsaoVencida = vencida("open-meteo-previsao");
 
   const medida = maiorDe(escolhidos, "chuva_24h_mm");
   const prev24 = maiorDe(escolhidos, "chuva_prev_24h_mm");
@@ -197,85 +203,100 @@ export function TelaSituacao() {
           />
         ) : (
           <div className={estilos.cartoes}>
-            <CartaoIndicador
-              rotulo="Chuva medida 24 h"
-              selo={idsMedida.includes("apac-chuva") ? "Observado" : "Estimado"}
-              tomSelo="info"
-              carregando={carregando}
-              valor={medida ? mm(medida.valor) : null}
-              unidade="mm"
-              detalhe={
-                medida && territorio === "recife"
-                  ? `Maior valor entre os distritos: ${nomeDe(medida.item)}`
-                  : null
-              }
-              faltando="a chuva medida nas últimas 24 h (pluviômetros, APAC)"
-              fontes={achaFonte(metaFontes, ...idsMedida)}
-            />
-            <CartaoIndicador
-              rotulo="Chuva prevista 24 h"
-              selo="Previsto"
-              tomSelo="marca"
-              carregando={carregando}
-              valor={prev24 ? mm(prev24.valor) : null}
-              unidade="mm"
-              detalhe={
-                prev24 && (
-                  <>
-                    {territorio === "recife" && `${nomeDe(prev24.item)}. `}
-                    {faixa
-                      ? `Faixa de ${formatarNumero(faixa.min, 0)} a ${formatarNumero(faixa.max, 0)} mm.`
-                      : null}
-                  </>
-                )
-              }
-              faltando="a previsão de chuva por distrito (Open-Meteo)"
-              fontes={achaFonte(metaFontes, "open-meteo-previsao")}
-            />
-            <CartaoIndicador
-              rotulo="Maré máxima prevista"
-              selo="Previsto"
-              tomSelo="marca"
-              carregando={carregando}
-              valor={mare ? formatarNumero(mare.valor, 2) : null}
-              unidade="m"
-              detalhe={typeof mareEm === "string" ? `Pico ${quandoAs(mareEm)}` : null}
-              faltando="a previsão de maré (Open-Meteo Marine)"
-              fontes={achaFonte(metaFontes, "open-meteo-mare")}
-            />
-            <CartaoIndicador
-              rotulo="Chuva prevista 72 h"
-              selo="Previsto"
-              tomSelo="marca"
-              carregando={carregando}
-              valor={prev72 ? mm(prev72.valor) : null}
-              unidade="mm"
-              detalhe={prev72 && territorio === "recife" ? nomeDe(prev72.item) : null}
-              faltando="a previsão de chuva por distrito (Open-Meteo)"
-              fontes={achaFonte(metaFontes, "open-meteo-previsao")}
-              extra={
-                <p className={estilos.insuficiente}>
-                  <b>Dados insuficientes:</b> falta a umidade do solo para dizer se está saturado.
-                </p>
-              }
-            />
+            {!vencida(...idsMedida) && (
+              <CartaoIndicador
+                rotulo="Chuva medida 24 h"
+                selo={idsMedida.includes("apac-chuva") ? "Observado" : "Estimado"}
+                tomSelo="info"
+                carregando={carregando}
+                valor={medida ? mm(medida.valor) : null}
+                unidade="mm"
+                detalhe={
+                  medida && territorio === "recife"
+                    ? `Maior valor entre os distritos: ${nomeDe(medida.item)}`
+                    : null
+                }
+                faltando="a chuva medida nas últimas 24 h (pluviômetros, APAC)"
+                fontes={achaFonte(metaFontes, ...idsMedida)}
+              />
+            )}
+            {!previsaoVencida && (
+              <CartaoIndicador
+                rotulo="Chuva prevista 24 h"
+                selo="Previsto"
+                tomSelo="marca"
+                carregando={carregando}
+                valor={prev24 ? mm(prev24.valor) : null}
+                unidade="mm"
+                detalhe={
+                  prev24 && (
+                    <>
+                      {territorio === "recife" && `${nomeDe(prev24.item)}. `}
+                      {faixa
+                        ? `Faixa de ${formatarNumero(faixa.min, 0)} a ${formatarNumero(faixa.max, 0)} mm.`
+                        : null}
+                    </>
+                  )
+                }
+                faltando="a previsão de chuva por distrito (Open-Meteo)"
+                fontes={achaFonte(metaFontes, "open-meteo-previsao")}
+              />
+            )}
+            {!vencida("open-meteo-mare") && (
+              <CartaoIndicador
+                rotulo="Maré máxima prevista"
+                selo="Previsto"
+                tomSelo="marca"
+                carregando={carregando}
+                valor={mare ? formatarNumero(mare.valor, 2) : null}
+                unidade="m"
+                detalhe={typeof mareEm === "string" ? `Pico ${quandoAs(mareEm)}` : null}
+                faltando="a previsão de maré (Open-Meteo Marine)"
+                fontes={achaFonte(metaFontes, "open-meteo-mare")}
+              />
+            )}
+            {!previsaoVencida && (
+              <CartaoIndicador
+                rotulo="Chuva prevista 72 h"
+                selo="Previsto"
+                tomSelo="marca"
+                carregando={carregando}
+                valor={prev72 ? mm(prev72.valor) : null}
+                unidade="mm"
+                detalhe={prev72 && territorio === "recife" ? nomeDe(prev72.item) : null}
+                faltando="a previsão de chuva por distrito (Open-Meteo)"
+                fontes={achaFonte(metaFontes, "open-meteo-previsao")}
+                extra={
+                  <p className={estilos.insuficiente}>
+                    <b>Dados insuficientes:</b> falta a umidade do solo para dizer se está saturado.
+                  </p>
+                }
+              />
+            )}
           </div>
         )}
 
         <div className={estilos.dupla}>
-          <GraficoChuvaMare cenario={grafico} fontes={metaFontes} />
-          <ChuvaPorDistrito
-            carregando={carregando}
-            erro={distritos.isError ? distritos.error : null}
-            aoTentar={() => distritos.refetch()}
-            linhas={linhasMedidas(todos)}
-            fontes={achaFonte(metaFontes, ...idsMedida)}
-            destaque={territorio === "recife" ? null : territorio}
-          />
+          {!previsaoVencida && !algumaVencida(fontesDe(grafico.data)) && (
+            <GraficoChuvaMare cenario={grafico} fontes={metaFontes} />
+          )}
+          {!vencida(...idsMedida) && (
+            <ChuvaPorDistrito
+              carregando={carregando}
+              erro={distritos.isError ? distritos.error : null}
+              aoTentar={() => distritos.refetch()}
+              linhas={linhasMedidas(todos)}
+              fontes={achaFonte(metaFontes, ...idsMedida)}
+              destaque={territorio === "recife" ? null : territorio}
+            />
+          )}
         </div>
 
         <div className={estilos.dupla}>
-          <FontesAtualizacao linhas={linhasFonte} carregando={fontesApi.isPending && distritos.isPending} />
+          <FontesAtualizacao
+            linhas={linhasFonte.filter((l) => l.desatualizado !== true)}
+            carregando={fontesApi.isPending && distritos.isPending}
+          />
           <MensagemEstagio
             estagio={definido?.estagio ?? null}
             territorioId={territorio}

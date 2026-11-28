@@ -101,7 +101,8 @@ export function TextoFonte({ f }: { f: FonteDado }) {
  * “Fonte: … atualizado há …” — todo valor exibido se relaciona a uma fonte e a um horário (CA-02, RF-19).
  * Sem fontes, não desenha nada.
  */
-export function LegendaFonte({ fontes, children }: { fontes: FonteDado[]; children?: ReactNode }) {
+export function LegendaFonte({ fontes: todas, children }: { fontes: FonteDado[]; children?: ReactNode }) {
+  const fontes = todas.filter((f) => f.desatualizado !== true); // fonte vencida não aparece (ADR 0019)
   if (fontes.length === 0 && !children) return null;
   return (
     <p className={estilos.legendaFonte}>
