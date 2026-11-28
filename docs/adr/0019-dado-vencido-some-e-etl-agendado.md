@@ -44,3 +44,7 @@ tempos em tempos, e que dado desatualizado não apareça no sistema.
   cota. A saída não é afrouxar limites.
 - A tarefa do Windows só roda com a máquina ligada e o usuário conectado. A disponibilidade contínua depende do
   workflow do GitHub ou de hospedagem (ADR 0013).
+- A trava do ETL passa a ser por fonte, não por banco: uma base anual pesada não segura a chuva, os alertas nem o botão
+  da tela Fontes. Esbarrar na trava não conta como falha e não adia a próxima tentativa.
+- A coordenação (gestor) ganha `executar_etl`: o botão "Buscar dados mais recentes" da tela Fontes dispara a coleta das
+  fontes que não estão em dia e das que vencem em até 6 h (chuva, rios, alertas, previsão). Fonte já em coleta é pulada.

@@ -10,7 +10,7 @@ import { FalhaCarga, Painel } from "@/design-system/componentes/Painel";
 import { Pilula } from "@/design-system/componentes/Pilula";
 import { VazioConvidativo } from "@/design-system/componentes/VazioConvidativo";
 import { ListaAdaptavel } from "@/features/fluxo/ListaAdaptavel";
-import { type Esquemas } from "@/lib/api";
+import { ErroApi, type Esquemas } from "@/lib/api";
 import { useConsulta } from "@/lib/consultas";
 import { noProduto } from "@/lib/fontes";
 import { formatarDataHora, formatarNumero } from "@/lib/formatos";
@@ -65,7 +65,12 @@ function useBuscarRecentes(ativas: Fonte[], aoVerificar: () => Promise<unknown>)
         return;
       }
       setBuscando(true);
-      const alvos = ativas.filter((x) => !SEM_CONECTOR_MANUAL.has(x.id));
+      // rápido: só o que não está em dia e as fontes que vencem em poucas horas (chuva, rios, alertas, previsão)
+      const alvos = ativas.filter(
+        (x) =>
+          !SEM_CONECTOR_MANUAL.has(x.id) &&
+          (x.status !== "atualizada" || (x.limite_desatualizacao_h ?? Infinity) <= 6),
+      );
       aviso({
         titulo: "Buscando os dados mais recentes.",
         texto: `${alvos.length} fontes, uma por vez. Pode levar alguns minutos.`,
@@ -93,6 +98,8 @@ function useBuscarRecentes(ativas: Fonte[], aoVerificar: () => Promise<unknown>)
           }
         } catch (erro) {
           if (c.signal.aborted) return;
+          // já em coleta (ex.: pelo agendamento): segue para a próxima fonte
+          if (erro instanceof ErroApi && erro.status === 409) continue;
           falhas++;
           aviso({
             tipo: "erro",

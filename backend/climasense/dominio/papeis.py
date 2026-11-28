@@ -32,14 +32,16 @@ _BASE = {Permissao.CONSULTAR, Permissao.EDITAR}
 PERMISSOES: dict[Papel, frozenset[Permissao]] = {
     Papel.ANALISTA: frozenset(_BASE),
     Papel.REVISOR: frozenset(_BASE | {Permissao.REVISAR}),
-    Papel.COORDENACAO: frozenset(_BASE | {Permissao.REVISAR, Permissao.PUBLICAR, Permissao.PARAMETRIZAR}),
+    Papel.COORDENACAO: frozenset(
+        _BASE | {Permissao.REVISAR, Permissao.PUBLICAR, Permissao.PARAMETRIZAR, Permissao.EXECUTAR_ETL}
+    ),
     Papel.ADMINISTRADOR: frozenset(Permissao),
 }
 
 DESCRICOES: dict[Papel, str] = {
     Papel.ANALISTA: "Consulta os dados, registra avaliações e escreve rascunhos de comunicado.",
     Papel.REVISOR: "Tudo do analista, e também aprova ou devolve avaliações e comunicados de outras pessoas.",
-    Papel.COORDENACAO: "Tudo do revisor, e também publica e encerra comunicados aprovados.",
+    Papel.COORDENACAO: "Tudo do revisor, e também publica e encerra comunicados aprovados e busca dados novos nas fontes.",
     Papel.ADMINISTRADOR: "Gerencia contas, papéis, fontes de dados e a auditoria.",
 }
 
