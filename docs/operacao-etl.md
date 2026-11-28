@@ -311,3 +311,63 @@ Os DELETEs usados para recompor Gold ficam em transações do conector; não apa
 | Frontend funcionando | Verificado no recorte testado | 250 testes; desktop/celular com captura real e acessibilidade; tiles externos indisponíveis |
 | Atualização automatizada preparada | Preparada, não registrada | Definição única validada; capacidade/cadência e host dependem do grupo |
 | Testes de regressão | Aprovados no recorte, quatro falhas anteriores na suíte completa | Backend 1.331 + 56 no recorte final; frontend 250; quatro casos de navegador |
+
+## K. Atualização automática (28/11/2026, ADR 0019)
+
+Recuperação autorizada pelo dono em 28/11/2026, no Neon/Atlas compartilhados:
+
+- As 180 execuções abertas de 13/11 (23:01:18 a 23:01:45 UTC, sem processo ativo) foram encerradas como `falha` com a
+  mensagem fixa da seção I. Nada foi apagado; o estado anterior está em `tmp/execucoes-abandonadas-2026-11-13.json`.
+- Migração `0025` aplicada sobre a `0024`.
+- Carga completa, uma fonte por vez, de todas as fontes implementadas (`tmp/carga-completa.sh`, log em
+  `tmp/carga-completa.log`).
+
+### Escala de cadências
+
+Um só agendamento a cada 15 min chama `python -m climasense.etl operacional`. Cada fonte só é baixada quando passou da
+sua cadência (`INTERVALOS_OPERACIONAIS_MIN` em `backend/climasense/etl/orquestrador.py`). A cadência é sempre no máximo
+metade do limite de `frescor.toml`, garantido pelo teste `test_cadencia_cabe_no_limite_de_frescor`.
+
+| Faixa | Fontes | Cadência |
+|---|---|---|
+| Tempo real | `apac-chuva`, `apac-rios`, `alertas-oficiais` · `apac-previsao` | 15 min · 60 min |
+| Previsão de modelo | `open-meteo-previsao`, `open-meteo-temperatura`, `open-meteo-solo` · `open-meteo-mare` · `apac-reservatorios` | 3 h · 6 h · 12 h |
+| Diária | `open-meteo-historico`, `infodengue`, `sisagua` · `sinan-leptospirose` | 24 h · 3 dias |
+| Semanal | `samu-recife`, `cnes-equipamentos`, `recife-alagamento` | 7 dias |
+| Mensal | arboviroses por bairro, áreas de risco, grau de risco, alagamento 2026, carta SGB, Atlas, Censo | 30 dias |
+
+- Uma fonte que falhou tenta de novo no máximo a cada 60 min, para não rebaixar um arquivo grande a cada 15 min.
+- `apac-chuva --modo historico`, `open-meteo-solo --modo historico` e `verificar-gold` rodam uma vez por dia, na
+  primeira rodada depois das 06h UTC (03h no Recife). Se essa rodada for perdida, ficam para o dia seguinte: são
+  séries de apoio, não entram no frescor.
+- Ordem: do mais urgente ao mais pesado, para que uma carga longa não atrase a chuva e os alertas.
+
+### Onde roda
+
+**Windows (ativo nesta máquina).** Tarefa `ClimaSense-ETL-Operacional`, a cada 15 min, uma instância por vez
+(`IgnoreNew`), sem privilégio elevado. Cada rodada acrescenta ao log `logs/etl-operacional-AAAA-MM.log`.
+
+```powershell
+# conferir
+Get-ScheduledTask -TaskName ClimaSense-ETL-Operacional | Get-ScheduledTaskInfo
+Get-Content .\logs\etl-operacional-$(Get-Date -Format yyyy-MM).log -Tail 40
+# rodar uma rodada agora, à mão
+powershell -ExecutionPolicy Bypass -File .\scripts\atualizar-operacional.ps1 -PermitirRemoto
+# desligar
+Unregister-ScheduledTask -TaskName ClimaSense-ETL-Operacional -Confirm:$false
+```
+
+Limite: só roda com o PC ligado e o usuário conectado.
+
+**GitHub Actions (preparado, desligado).** `.github/workflows/etl-operacional.yml` faz a mesma rodada a cada 15 min,
+sem depender de um PC. Para ligar, o dono cadastra em Settings > Secrets and variables > Actions os secrets
+`DATABASE_URL`, `DATABASE_URL_MIGRACOES`, `MONGO_URI` e `MONGO_DB_TERRITORIO` (e, se usar, `ANA_USUARIO` e `ANA_SENHA`),
+cria a variável `ETL_AGENDADO = true` e libera no Atlas o acesso de rede dos runners do GitHub. O cron do GitHub pode
+atrasar alguns minutos em horário de pico. Os dois agendadores podem rodar juntos: a trava no banco e a cadência por
+fonte evitam carga em dobro.
+
+### Capacidade
+
+A previsão a cada 3 h grava cerca de 17 mil linhas por dia em `silver.observacoes`, e a bronze é acumulativa. Em
+28/11 o Neon tinha 172 MB. Acompanhar o tamanho por semana; perto de 70% da cota, definir arquivamento da bronze e da
+silver antiga com o grupo. Não afrouxar limites de frescor para esconder atraso.

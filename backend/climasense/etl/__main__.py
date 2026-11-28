@@ -7,12 +7,14 @@ python -m climasense.etl verificar-gold
 python -m climasense.etl atualizar [--forcar] [--sem-territorio]
 python -m climasense.etl tempo-real          # APAC e alertas oficiais (a cada 10–15 min)
 python -m climasense.etl semanal             # saúde: InfoDengue e SINAN leptospirose (uma vez por semana)
+python -m climasense.etl operacional         # agendado a cada 15 min: todas as fontes, cada uma na sua cadência
 """
 
 from __future__ import annotations
 
 import argparse
 import sys
+from datetime import UTC, datetime
 from urllib.parse import urlsplit
 
 from climasense.config import obter_configuracao
@@ -47,7 +49,7 @@ def main(argv: list[str] | None = None) -> int:
     a.add_argument("--sem-territorio", action="store_true", help="Não recarrega a base territorial")
     sub.add_parser("tempo-real", help="Só as fontes rápidas: APAC e alertas oficiais")
     sub.add_parser("semanal", help="Só as séries de saúde: InfoDengue e SINAN leptospirose")
-    op = sub.add_parser("operacional", help="Rotina única de clima atual, com cadência por fonte")
+    op = sub.add_parser("operacional", help="Rotina agendada: todas as fontes, cada uma na sua cadência")
     op.add_argument(
         "--permitir-remoto", action="store_true", help="Autoriza destinos remotos após aprovação do operador"
     )
@@ -84,7 +86,10 @@ def main(argv: list[str] | None = None) -> int:
         }[args.comando]
         with conectar(config) as mongo:
             opcoes = (
-                {"intervalos_min": orquestrador.INTERVALOS_OPERACIONAIS_MIN}
+                {
+                    "intervalos_min": orquestrador.INTERVALOS_OPERACIONAIS_MIN,
+                    "verificar_gold": orquestrador.rodada_diaria(datetime.now(UTC)),
+                }
                 if args.comando == "operacional"
                 else {}
             )

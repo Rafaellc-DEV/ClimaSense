@@ -38,3 +38,6 @@ tmp/
 # Script de recuperação pontual de uma execução antiga; não faz parte da aplicação.
 /recuperar_etl_seguro_corrigido.py
 *.joblib
+
+# Saída da tarefa agendada do ETL (scripts/atualizar-operacional.ps1)
+logs/

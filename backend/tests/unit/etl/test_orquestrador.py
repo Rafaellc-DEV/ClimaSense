@@ -181,3 +181,52 @@ def test_silver_e_construida_a_partir_da_leitura_do_atlas_e_so_do_lote_atual():
     assert r.lidos == 2 and sorted(conector.visto["a"]) == [1, 2]  # veio do Atlas, sem o lote antigo
     assert mongo["bronze"]["teste"].count_documents({}) == 3  # bronze cumulativa
     assert pd.Series(conector.visto.columns).tolist() == ["a"]
+
+
+def test_operacional_cobre_todas_as_fontes_implementadas():
+    from climasense.etl.conectores import IMPLEMENTADOS
+
+    nas_rodadas = {f for f, _m, _l in orquestrador.ORDEM_OPERACIONAL}
+    assert nas_rodadas == set(IMPLEMENTADOS)
+    assert set(orquestrador.INTERVALOS_OPERACIONAIS_MIN) == set(IMPLEMENTADOS)
+
+
+def test_cadencia_cabe_no_limite_de_frescor():
+    """Uma rodada perdida não pode deixar a fonte vencida: cadência no máximo metade do limite (RF-19)."""
+    from climasense.etl import frescor
+
+    for fonte, minutos in orquestrador.INTERVALOS_OPERACIONAIS_MIN.items():
+        limite = frescor.limite_frescor_h(fonte)
+        if limite is not None:
+            assert minutos <= limite * 60 / 2, fonte
+
+
+def test_modo_secundario_roda_uma_vez_por_dia(ambiente, monkeypatch):
+    from datetime import UTC, datetime
+
+    monkeypatch.setattr(
+        _Conexao,
+        "execute",
+        lambda self, sql, p: type("R", (), {"scalar_one": lambda s: True})(),
+        raising=False,
+    )
+    ordem = (("apac-chuva", None, None), ("apac-chuva", "historico", 2))
+
+    def rodar(hora, minuto):
+        return {
+            p.nome: p.status
+            for p in orquestrador.atualizar(
+                _Engine(),
+                None,
+                None,
+                executar=_ok,
+                ordem=ordem,
+                intervalos_min=orquestrador.INTERVALOS_OPERACIONAIS_MIN,
+                verificar_gold=False,
+                agora=lambda: datetime(2026, 11, 28, hora, minuto, tzinfo=UTC),
+            )
+        }
+
+    assert rodar(14, 5) == {"apac-chuva": "pulado", "apac-chuva (historico)": "pulado"}
+    assert rodar(orquestrador.HORA_DIARIA_UTC, 3)["apac-chuva (historico)"] == "sucesso"
+    assert orquestrador.rodada_diaria(datetime(2026, 11, 28, orquestrador.HORA_DIARIA_UTC, 3, tzinfo=UTC))
